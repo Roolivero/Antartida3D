@@ -1,0 +1,35 @@
+#!/bin/sh
+# Blocks commits that are not tied to an issue claimed by the current user.
+# Rules in AGENTS.md. Enable once per clone: git config core.hooksPath .githooks
+# Emergency bypass (delivery day only): git commit --no-verify
+
+branch=$(git symbolic-ref --short HEAD 2>/dev/null)
+
+case "$branch" in
+  main|master)
+    echo "✗ No se commitea en $branch. Creá la rama del issue: gh issue develop <N> --base main --checkout" >&2
+    exit 1 ;;
+esac
+
+issue=$(printf '%s' "$branch" | sed -n 's/^\([0-9][0-9]*\)-.*/\1/p')
+if [ -z "$issue" ]; then
+  echo "✗ La rama '$branch' no empieza con número de issue. Usá: gh issue develop <N> --base main --checkout" >&2
+  exit 1
+fi
+
+if ! command -v gh >/dev/null 2>&1; then
+  echo "⚠ gh no está instalado: no se pudo verificar que #$issue esté asignado a vos." >&2
+  exit 0
+fi
+
+me=$(gh api user --jq .login 2>/dev/null) &&
+  assignees=$(gh issue view "$issue" --json assignees --jq '.assignees[].login' 2>/dev/null)
+if [ $? -ne 0 ] || [ -z "$me" ]; then
+  echo "⚠ Sin conexión con GitHub: no se pudo verificar la asignación de #$issue." >&2
+  exit 0
+fi
+
+if ! printf '%s\n' "$assignees" | grep -qx "$me"; then
+  echo "✗ El issue #$issue no está asignado a $me. Reclamalo primero: gh issue edit $issue --add-assignee @me" >&2
+  exit 1
+fi
