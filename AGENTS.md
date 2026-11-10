@@ -79,7 +79,14 @@ Un issue asignado sin actividad por más de 24 h se puede reclamar, previo aviso
 
 ## Contenido y datos (eje 2)
 
-- Toda información lleva su fuente citada.
+- Toda información lleva su fuente verificada: se sabe de dónde se extrae. Cada fuente registra:
+  - referencia o URL;
+  - organismo o autor que la publica;
+  - fecha de consulta.
+- Preferir fuentes primarias: organismos científicos, publicaciones, archivos oficiales.
+- Un dato sin fuente no se publica. Un agente de IA nunca inventa ni completa fuentes: si no encuentra el origen, lo marca como pendiente.
+- En la revisión de cada PR, quien revisa abre las fuentes nuevas y confirma que dicen lo que el contenido afirma.
+- Poncho (#9) requiere atención especial: trata sobre personas y hechos reales.
 - Nunca presentar una simulación o reconstrucción como dato real. Marcar en la interfaz qué es cada cosa.
 - Documentar la licencia de cada recurso de terceros (textos, imágenes, modelos, datos).
 
