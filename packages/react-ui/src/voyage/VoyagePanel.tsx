@@ -196,7 +196,8 @@ function TravelBar({ voyage, animated, onExit }: { voyage: VoyageController; ani
             onBlur={() => voyage.hold(false)}
             onContextMenu={(e) => e.preventDefault()}
           >
-            Mantené para avanzar{voyage.gear > 0 && ` · ×${String(VOYAGE_GEARS[voyage.gear]).replace('.', ',')}`}
+            Mantené para avanzar
+            {voyage.gear > 0 && <span className="vgear">×{String(VOYAGE_GEARS[voyage.gear]).replace('.', ',')}</span>}
           </button>
         )}
         <button type="button" className={'btn' + (animated ? '' : ' primary')} onClick={voyage.skip}>Ir al próximo hito</button>

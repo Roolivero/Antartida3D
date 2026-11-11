@@ -22,7 +22,9 @@
 .vprog{height:8px;border-radius:4px;background:var(--glacier);overflow:hidden}
 .vprog i{display:block;height:100%;background:var(--ocre);transform-origin:left center;transform:scaleX(0)}
 .vnext{margin:8px 0}
-.vhold{touch-action:none;user-select:none;-webkit-user-select:none}
+.vhold{position:relative;touch-action:none;user-select:none;-webkit-user-select:none}
+/* Gear badge on the corner: it must not change the button size, or the row reflows under the pointer. */
+.vgear{position:absolute;top:-12px;right:-8px;padding:2px 8px;border-radius:12px;border:2px solid var(--ink);background:var(--ocre);color:var(--ink);font-size:13px;line-height:1.2;pointer-events:none}
 @media (min-width:821px){
   .vbar{right:auto;width:440px;left:24px;bottom:24px}
 }
