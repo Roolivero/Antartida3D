@@ -1,5 +1,6 @@
 export * from './content/points.ts';
 export * from './content/fossils.ts';
+export * from './content/poncho.ts';
 export * from './projection.ts';
 export * from './route.ts';
 export * from './clustering.ts';
