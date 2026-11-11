@@ -1,0 +1,6 @@
+packages:
+  - packages/*
+  - apps/*
+  - scripts/bench
+allowBuilds:
+  esbuild: true

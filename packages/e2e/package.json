@@ -1,0 +1,13 @@
+{
+  "name": "@antartida/e2e",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./ports": "./ports.ts",
+    "./browser": "./browser.ts"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.65.0"
+  }
+}

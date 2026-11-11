@@ -1,0 +1,39 @@
+{
+  "name": "@antartida/core",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "sideEffects": [
+    "*.css"
+  ],
+  "exports": {
+    ".": "./src/index.ts",
+    "./styles/*": "./src/styles/*",
+    "./assets/*": "./src/assets/*"
+  },
+  "scripts": {
+    "coastline": "tsx scripts/build-coastline.ts",
+    "terrain": "tsx scripts/build-terrain.ts",
+    "test": "vitest run",
+    "typecheck": "tsc -p .",
+    "map-raster": "tsx scripts/build-map-raster.ts"
+  },
+  "dependencies": {
+    "@fontsource/atkinson-hyperlegible": "5.3.0",
+    "@fontsource/caveat": "5.3.0",
+    "@fontsource/fraunces": "5.3.0"
+  },
+  "devDependencies": {
+    "@types/d3-geo": "3.1.1",
+    "@types/geojson": "7946.0.16",
+    "d3-geo": "3.1.2",
+    "tsx": "4.23.15",
+    "vitest": "5.1.0",
+    "@playwright/test": "1.65.0",
+    "geotiff": "3.0.5",
+    "proj4": "2.22.0",
+    "@types/proj4": "2.19.0",
+    "@mapbox/martini": "0.2.0",
+    "sharp": "0.35.5"
+  }
+}
