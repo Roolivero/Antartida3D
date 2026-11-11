@@ -15,6 +15,7 @@
     "coastline": "tsx scripts/build-coastline.ts",
     "terrain": "tsx scripts/build-terrain.ts",
     "bathymetry": "tsx scripts/build-bathymetry.ts",
+    "fuegia": "tsx scripts/build-fuegia.ts",
     "test": "vitest run",
     "typecheck": "tsc -p .",
     "map-raster": "tsx scripts/build-map-raster.ts"

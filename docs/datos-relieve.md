@@ -128,6 +128,32 @@ El shader del terreno está en `packages/react-ui/src/map3d/paintedTerrain.glsl.
 
 La vista inicial del 3D encuadra el continente según el tamaño de la pantalla (`homePose3D` en `packages/core/src/camera.ts`), con una inclinación de 38° sobre el horizonte.
 
+## Tierra del Fuego, Patagonia sur y Malvinas (IBCSO v2)
+
+Bedmap3 termina en 60° S, así que el 3D no tenía tierra en Sudamérica: Ushuaia quedaba sobre agua y el Canal Beagle no existía. Esa tierra se genera aparte, desde IBCSO v2.
+
+| Dato | Valor |
+| :--- | :--- |
+| Dataset | Dorschel, B. et al. (2022), *The International Bathymetric Chart of the Southern Ocean Version 2 (IBCSO v2)* |
+| Organismo | SCAR / IBCSO, Alfred Wegener Institute; publicado en PANGAEA |
+| DOI | https://doi.org/10.1594/PANGAEA.937574 |
+| Archivo | `IBCSO_v2_bed.tif` (unos 160 MB), https://download.pangaea.de/dataset/937574/files/IBCSO_v2_bed.tif |
+| Licencia | CC BY 4.0 |
+| Proyección | EPSG:9354 (estereográfica polar IBCSO, paralelo estándar 65° S) |
+| Fecha de consulta | 11 de noviembre de 2026 |
+
+- **Por qué este dataset:** cubre todo al sur de 50° S, incluida la tierra, en una grilla de 500 m. El Beagle, de unos 5 km de ancho, queda con unas 10 celdas. Es el mismo dataset que ya usa el fondo del mar, así que no se suma una fuente ni una licencia nueva.
+- **Región:** caja del mapa `FUEGIA_BOX` (x de −96 a 100, y de 194 a 390), desde el Cabo de Hornos hasta 50° S, donde terminan los datos. Incluye las Islas Malvinas. En los últimos 0,6° la tierra baja suavemente al nivel del mar y se disuelve en el océano, para no terminar en una línea recta.
+- **Costa:** sale de la propia elevación (tierra es todo lo que está sobre el nivel del mar), no de Natural Earth. Por eso relieve y costa coinciden.
+- **Malla:** `fuegia-mesh-hi.bin` (unos 3,8 MB, 1,4 MB comprimido) para pantallas anchas y `fuegia-mesh-lo.bin` (unos 2,2 MB, 0,8 MB comprimido) para celular. Se arman sobre una grilla de 4097 × 4097 (celdas de unos 350 m). Usan el mismo formato `MESH` que el terreno antártico, sin grilla de elevación. Se descargan solo cuando la cámara se acerca a la región (`FUEGIA_LOAD_DISTANCE`).
+- **Agua cercana a la costa:** la malla incluye también el agua a menos de 4 unidades de la costa (unos 30 km), pintada según la profundidad de IBCSO, y se funde con el plano del océano. Hace falta porque ese plano todavía toma su costa de Natural Earth y dibuja una banda de espuma más ancha que los canales. En esa franja el agua no tiene la animación del mar. Lo correcto a futuro es regenerar la batimetría del océano con esta misma costa.
+- **Exageración vertical ×10**, no ×50: a ×50 una sierra de 1000 m mediría seis unidades del mapa junto a un canal de menos de una, y lo taparía. La leyenda lo declara.
+- **Color:** tinte según la altura y la pendiente: pasto en la costa, verde de bosque hasta unos 600 m, roca arriba y en las laderas empinadas, nieve desde unos 1000 m. No representa la cobertura real del suelo; la leyenda dice «color según altura».
+- **Precisión:** la simplificación de la malla conserva la costa, pero el relieve interior tiene un error de hasta unos 310 m (malla ancha) y 500 m (celular). Sirve para leer la forma del terreno, no para medir alturas.
+- **Cámara:** sobre esta región se puede acercar hasta 8 unidades (`FUEGIA_MIN_DISTANCE`); sobre la Antártida el mínimo sigue en 60.
+- **Regenerar:** bajar `IBCSO_v2_bed.tif` a `~/.cache/antartida3d/ibcso/` (o indicar la carpeta con `IBCSO_DIR`) y correr `pnpm --filter @antartida/core fuegia`.
+- **El mapa 2D no cambia:** sigue con la costa de Natural Earth.
+
 ## Otros datos geográficos del mapa (ya existían)
 
 - **Costa, islas y barreras de hielo:** Natural Earth (`ne_50m_land`, `ne_50m_antarctic_ice_shelves_polys`), dominio público, https://www.naturalearthdata.com/. Están en `packages/core/src/coastline.ts`, y se regeneran con `pnpm coastline`. Natural Earth corta el continente y la barrera de Ross sobre el antimeridiano (la línea de 180°). En 2D ese corte se tapa con un trazo, y en 3D se omite con `isAntimeridianSeam`.

@@ -141,4 +141,53 @@ test.describe('3D relief view', () => {
 
     expect(isTerrainVisible).toBe(true);
   });
+
+  test('Tierra del Fuego has relief and the camera gets closer there than over Antarctica', async ({ page }) => {
+    await page.goto('/');
+    await page.getByRole('group', { name: 'Modo de vista' }).getByRole('button', { name: 'Relieve 3D' }).click();
+    await page.waitForFunction(() => (window as any).__cameraControls);
+
+    // Look at Ushuaia (map 31.5, 313.6 -> world -468.5, -186.4).
+    await page.evaluate(() => {
+      (window as any).__cameraControls.setLookAt(-455, 40, -170, -468.5, 0, -186.4, false);
+      (window as any).__invalidate();
+    });
+
+    // The regional mesh is fetched once the camera is near and carries a land/water attribute.
+    await page.waitForFunction(
+      () => {
+        let found = false;
+        (window as any).__scene.traverse((o: any) => {
+          if (o.isMesh && o.geometry?.attributes?.aLand) found = true;
+        });
+        (window as any).__invalidate();
+        return found;
+      },
+      null,
+      { timeout: 20000 },
+    );
+
+    const distance = () => page.evaluate(() => (window as any).__cameraControls.distance as number);
+    const settle = (check: string) =>
+      page.waitForFunction(
+        (c) => {
+          (window as any).__invalidate();
+          const cc = (window as any).__cameraControls;
+          return new Function('cc', `return ${c}`)(cc);
+        },
+        check,
+        { timeout: 10000 },
+      );
+
+    // Around Ushuaia the camera may go well below the Antarctic limit of 60.
+    await settle('cc.minDistance < 60');
+    await page.evaluate(() => void (window as any).__cameraControls.dollyTo(1, false));
+    await settle('cc.distance < 20');
+    const minHere = await page.evaluate(() => (window as any).__cameraControls.minDistance as number);
+    expect(await distance()).toBeGreaterThanOrEqual(minHere - 0.01);
+
+    // Moving the target to the South Pole pushes it back out.
+    await page.evaluate(() => void (window as any).__cameraControls.moveTo(0, 0, 0, false));
+    await settle('cc.minDistance === 60 && cc.distance >= 59.9');
+  });
 });
