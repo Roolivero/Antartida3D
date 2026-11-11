@@ -42,6 +42,9 @@ export const VOYAGE_SOURCES = {
   O30: { org: 'Rosciano, Svagelj y Raya Rey (CADIC y CENPAT-CONICET)', title: 'Revista de Biología Marina y Oceanografía 48(1), 2013 (cormorán imperial en el Beagle)', url: 'https://www.redalyc.org/pdf/479/47926382012.pdf' },
   O31: { org: 'Meza y Ochoa (IMARPE, Perú)', title: 'Boletín del Instituto del Mar del Perú 36(1), 2021: aves en Bransfield e isla Elefante, campaña ANTAR XXVI', url: 'https://revistas.imarpe.gob.pe/index.php/boletin/article/download/319/304/595' },
   O32: { org: 'Aguilar-Arakaki y Ochoa-Madrid (IMARPE, Perú)', title: 'Boletín del Instituto del Mar del Perú 37(1), 2022: cetáceos de la campaña ANTAR XXVI', url: 'https://revistas.imarpe.gob.pe/index.php/boletin/article/download/361/354/660' },
+  O33: { org: 'CONICET (CADIC-CONICET)', title: '«Pingüinos en plan de ahorro de energía» (28-11-2012)', url: 'https://www.conicet.gov.ar/pinguinos-en-plan-de-ahorro-de-energia/' },
+  O34: { org: 'Armada Argentina', title: '«Día Nacional de la Isla de los Estados» (10-08-2022)', url: 'https://www.argentina.gob.ar/node/331249' },
+  O35: { org: 'Gobierno de Tierra del Fuego (Instituto Fueguino de Turismo)', title: '«El Instituto Fueguino de Turismo invita a recorrer la historia del faro Les Eclaireurs a través de imágenes» (22-12-2020)', url: 'https://www.tierradelfuego.gob.ar/blog/2020/12/22/el-instituto-fueguino-de-turismo-invita-a-recorrer-la-historia-del-faro-les-eclaireurs-a-traves-de-imagenes/' },
   I1: { org: 'Secretaría del Tratado Antártico', title: 'Tratado Antártico (1959), art. VI', url: 'https://documents.ats.aq/keydocs/vol_1/vol1_2_AT_Antarctic_Treaty_e.pdf' },
   I5: { org: 'NASA Earth Observatory', title: '«Cape Horn: A Mariner\'s Nightmare» (24-12-2017)', url: 'https://science.nasa.gov/earth/earth-observatory/cape-horn-a-mariners-nightmare-91472/' },
   I6: { org: 'Eos / AGU', title: '«Notorious ocean current is far stronger than previously thought» (27-12-2016)', url: 'https://eos.org/research-spotlights/notorious-ocean-current-is-far-stronger-than-previously-thought' },
@@ -240,7 +243,7 @@ export const VOYAGE_TOURISM_NOTE: VoyageFact = {
   sources: ['U3'],
 };
 
-export type SightingIcon = 'bird' | 'penguin' | 'whale' | 'dolphin' | 'seal';
+export type SightingIcon = 'bird' | 'penguin' | 'whale' | 'dolphin' | 'seal' | 'lighthouse';
 
 /** An animal the traveller may spot from a ship. Only species with an open, read source. */
 export interface Sighting {
@@ -248,12 +251,17 @@ export interface Sighting {
   name: string;
   latin: string;
   icon: SightingIcon;
-  /** Point of the sea route the animal shows up near, as [lon, lat]. */
+  /** Point of the sea route it shows up near, as [lon, lat]. */
   anchor: readonly [lon: number, lat: number];
   /** Map units to the side of the route (positive: starboard). Small inside the Beagle Channel. */
   offset: number;
   /** The Beagle Channel is a short stretch of the trip: its animals stay in view for less of it. */
   brief?: boolean;
+  /**
+   * A place, not an animal: it is drawn here, at its own approximate position as [lon, lat],
+   * instead of beside the route. `latin` then says where it is.
+   */
+  place?: readonly [lon: number, lat: number];
   fact: VoyageFact;
 }
 
@@ -265,10 +273,16 @@ export const SIGHTINGS: readonly Sighting[] = [
   // Beagle Channel
   { id: 'cormoran', name: 'Cormorán imperial', latin: 'Leucocarbo atriceps', icon: 'bird', anchor: [-68, -54.89], offset: -0.2, brief: true,
     fact: { text: 'Es el ave marina más abundante del canal. En el verano 2008-09 anidaba en 5 islas del sector argentino, con 7.703 nidos activos.', kind: 'real', sources: ['O20', 'O30'] } },
+  { id: 'eclaireurs', name: 'Faro Les Éclaireurs', latin: 'Canal Beagle', icon: 'lighthouse', anchor: [-67.88, -54.89], offset: 0, brief: true, place: [-68.083, -54.871],
+    fact: { text: 'Es una torre de piedra de 11 m, pintada de rojo y blanco. Entró en servicio el 23 de diciembre de 1920. El nombre de los islotes, «los exploradores», se lo puso el capitán francés Louis Ferdinand Martial.', kind: 'real', sources: ['O35'] } },
   { id: 'lobos', name: 'Lobos marinos', latin: 'dos especies', icon: 'seal', anchor: [-67.66, -54.905], offset: 0.2, brief: true,
     fact: { text: 'Dos especies viven en las islas del canal: el lobo marino sudamericano todo el año y el de dos pelos entre febrero y agosto.', kind: 'real', sources: ['O20'] } },
+  { id: 'martillo', name: 'Pingüinera de Isla Martillo', latin: 'Canal Beagle · pingüino de Magallanes', icon: 'penguin', anchor: [-67.38, -54.92], offset: 0, brief: true, place: [-67.383, -54.905],
+    fact: { text: 'Es la colonia de pingüinos de Magallanes más cercana a Ushuaia, a unos 40 km al este. Investigadores del CADIC-CONICET vieron que aprovechan las corrientes de marea para ir y volver de los sitios donde comen.', kind: 'real', sources: ['O33'] } },
   { id: 'delfin-austral', name: 'Delfín austral', latin: 'Lagenorhynchus australis', icon: 'dolphin', anchor: [-66.78, -55.03], offset: -0.22, brief: true,
     fact: { text: 'Es un delfín costero del archipiélago fueguino: llega hasta el Cabo de Hornos. Se lo ve en los bosques de macroalgas o cerca de ellos.', kind: 'real', sources: ['U7'] } },
+  { id: 'san-juan', name: 'Faro San Juan de Salvamento', latin: 'Isla de los Estados · lejos de esta ruta, al este', icon: 'lighthouse', anchor: [-66.4, -55.2], offset: 0, place: [-63.82, -54.73],
+    fact: { text: 'Fue bautizado «Faro del Fin del Mundo». Lo puso en servicio el 25 de mayo de 1884 la División Expedicionaria al Atlántico Sur, al mando del comodoro Augusto Lasserre. Es Monumento Histórico Nacional.', kind: 'real', sources: ['O34'] } },
   // Drake Passage
   { id: 'albatros', name: 'Albatros errante', latin: 'Diomedea exulans', icon: 'bird', anchor: [-66.45, -57.3], offset: 4,
     fact: { text: 'Los que crían en Georgias del Sur se mueven desde el sur de Brasil hasta la Península Antártica. Para alimentarse se alejan hasta 4.000 km de su colonia.', kind: 'real', sources: ['I11'] } },
@@ -295,7 +309,12 @@ export const SIGHTINGS: readonly Sighting[] = [
 ];
 
 /** Shown with the sightings: where an animal appears on the map is not data. */
-export const SIGHTINGS_NOTE = 'Avistajes ilustrativos: la posición de cada animal en el mapa no es un dato.';
+const SIGHTINGS_NOTE = 'Avistajes ilustrativos: la posición de cada animal en el mapa no es un dato.';
+const PLACES_NOTE = 'Posición aproximada en el mapa.';
+/** What the card of a sighting says about where it is drawn. */
+export const sightingNote = (s: Sighting) => (s.place ? PLACES_NOTE : SIGHTINGS_NOTE);
+export const FAUNA_COUNT = SIGHTINGS.filter((s) => !s.place).length;
+export const PLACES_COUNT = SIGHTINGS.length - FAUNA_COUNT;
 
 /** Shown while travelling: the drawn path is not the real track of any ship or plane. */
 export const VOYAGE_ROUTE_NOTE = 'Ruta y avistajes ilustrativos. Vehículo con tamaño exagerado.';

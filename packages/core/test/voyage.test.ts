@@ -216,7 +216,7 @@ describe('flight altitude', () => {
 describe('sightings', () => {
   const spots = voyageSightings('ship');
 
-  it('gives every animal a sourced fact', () => {
+  it('gives every animal and place a sourced fact', () => {
     for (const s of SIGHTINGS) {
       expect(s.fact.kind).toBe('real');
       expect(s.fact.sources.length, s.name).toBeGreaterThan(0);
@@ -233,12 +233,19 @@ describe('sightings', () => {
   });
 
   it('has more of them the farther south', () => {
-    const south = spots.filter((s) => unproject(s.x, s.y).lat < -60).length;
-    expect(south).toBeGreaterThan(spots.length - south);
+    const fauna = spots.filter((s) => !s.sighting.place);
+    const south = fauna.filter((s) => unproject(s.x, s.y).lat < -60).length;
+    expect(south).toBeGreaterThan(fauna.length - south);
   });
 
-  it('draws each one near its anchor on the route', () => {
+  it('draws each animal near its anchor on the route and each place where it is', () => {
     for (const s of spots) {
+      if (s.sighting.place) {
+        const at = project(s.sighting.place[0], s.sighting.place[1]);
+        expect(s.x, s.sighting.name).toBeCloseTo(at.x);
+        expect(s.y, s.sighting.name).toBeCloseTo(at.y);
+        continue;
+      }
       const anchor = project(s.sighting.anchor[0], s.sighting.anchor[1]);
       expect(Math.hypot(s.x - anchor.x, s.y - anchor.y), s.sighting.name).toBeLessThan(Math.abs(s.sighting.offset) + 4);
     }

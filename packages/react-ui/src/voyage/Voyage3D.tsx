@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
-import { BufferGeometry, Group, Line, LineDashedMaterial, Mesh, Vector3 } from 'three';
+import { BufferGeometry, Group, Line, LineDashedMaterial, Mesh, Vector3, type Camera, type Object3D } from 'three';
 import { useFrame, useThree } from '@react-three/fiber';
 import { Html, type CameraControls } from '@react-three/drei';
 import {
-  SIGHTINGS_NOTE,
+  sightingNote,
   TRANSPORTS,
   VOYAGE_POINT,
   flightClearance,
@@ -65,6 +65,24 @@ function heightOf(kind: TransportKind, t: number, size: number): number {
 /** Trip fraction used to measure the slope of the flight for the plane's pitch. */
 const PITCH_SPAN = 0.004;
 const MAX_PITCH = 0.4;
+
+/** Room kept for the title and the trip panel when a far place is held at the edge of the screen, in px. */
+const EDGE = { side: 36, top: 130, bottom: 210 };
+const projected = new Vector3();
+
+/**
+ * Screen position of a place. One that is out of view, like a lighthouse far from the route, stays
+ * at the edge of the screen in its direction, so it can still be found and opened.
+ */
+function placeOnScreen(el: Object3D, camera: Camera, size: { width: number; height: number }): number[] {
+  projected.setFromMatrixPosition(el.matrixWorld).project(camera);
+  const x = ((projected.x + 1) / 2) * size.width;
+  const y = ((1 - projected.y) / 2) * size.height;
+  return [
+    Math.min(size.width - EDGE.side, Math.max(EDGE.side, x)),
+    Math.min(size.height - EDGE.bottom, Math.max(EDGE.top, y)),
+  ];
+}
 
 const routeMaterial = new LineDashedMaterial({ color: 0x1f2a36, dashSize: 0.8, gapSize: 0.6, transparent: true, opacity: 0.75 });
 
@@ -202,7 +220,7 @@ export function Voyage3D({ bus, reduced, overlay }: {
   return (
     <>
       {voyageSightings(kind).filter((v) => ids.includes(v.sighting.id)).map((v) => (
-        <Html key={v.sighting.id} position={[v.x - 500, 0.3, v.y - 500]} center portal={overlay as RefObject<HTMLElement>} zIndexRange={v.sighting.id === open ? [6, 6] : [4, 4]}>
+        <Html key={v.sighting.id} position={[v.x - 500, 0.3, v.y - 500]} center calculatePosition={v.sighting.place ? placeOnScreen : undefined} portal={overlay as RefObject<HTMLElement>} zIndexRange={v.sighting.id === open ? [6, 6] : [4, 4]}>
           <button
             type="button"
             className={'vspot' + (seen.includes(v.sighting.id) ? ' seen' : '')}
@@ -216,7 +234,7 @@ export function Voyage3D({ bus, reduced, overlay }: {
           </button>
           {v.sighting.id === open && (
             <section
-              className="vpop"
+              className={'vpop' + (v.sighting.place ? ' under' : '')}
               role="dialog"
               aria-label={v.sighting.name}
               onKeyDown={(e) => e.key === 'Escape' && bus.closeSighting()}
@@ -225,7 +243,7 @@ export function Voyage3D({ bus, reduced, overlay }: {
               <h3>{v.sighting.name}</h3>
               <p className="vlatin">{v.sighting.latin}</p>
               <ul className="vfacts"><Fact fact={v.sighting.fact} onSource={bus.openSource} /></ul>
-              <p className="vsmall">{SIGHTINGS_NOTE}</p>
+              <p className="vsmall">{sightingNote(v.sighting)}</p>
             </section>
           )}
         </Html>

@@ -152,7 +152,7 @@ export interface SightingSpot {
   y: number;
 }
 
-/** Sightings of the sea trip with their windows and places, in trip order. A plane sees none. */
+/** Sightings of the sea trip (animals and places) with their windows and positions, in trip order. A plane sees none. */
 const SPOTS: SightingSpot[] = SIGHTINGS.map((sighting) => {
   const target = project(sighting.anchor[0], sighting.anchor[1]);
   let at = 0;
@@ -169,8 +169,10 @@ const SPOTS: SightingSpot[] = SIGHTINGS.map((sighting) => {
     sighting,
     from: Math.max(0.004, at - half),
     to: Math.min(0.996, at + half),
-    x: p.x - Math.sin(heading) * sighting.offset,
-    y: p.y + Math.cos(heading) * sighting.offset,
+    // An animal goes beside the route; a place stays where it is.
+    ...(sighting.place
+      ? project(sighting.place[0], sighting.place[1])
+      : { x: p.x - Math.sin(heading) * sighting.offset, y: p.y + Math.cos(heading) * sighting.offset }),
   };
 });
 

@@ -45,6 +45,8 @@
 @keyframes vspot{from{transform:translate3d(0,0,0)}to{transform:translate3d(0,-6px,0)}}
 /* Card of an animal, opened from its circle on wide screens: the trip controls stay where they are. */
 .vpop{position:absolute;left:34px;bottom:34px;width:300px;padding:12px 14px;background:var(--paper);border:2px solid var(--ink);border-radius:10px 16px 12px 14px;box-shadow:2px 3px 0 rgba(31,42,54,.25);pointer-events:auto;text-align:left;animation:fadein .2s ease both}
+/* A place can be held at the top edge of the screen: its card opens downwards. */
+.vpop.under{bottom:auto;top:34px;left:auto;right:34px}
 .vpop h3{margin:0 28px 0 0;font-family:'Fraunces',Georgia,serif;font-size:20px;line-height:1.1}
 .vpop .vfacts{margin:6px 0}
 .vpopclose{position:absolute;top:4px;right:4px;width:32px;height:32px;border:0;background:none;font-size:22px;line-height:1;color:var(--ink);cursor:pointer}

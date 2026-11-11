@@ -169,6 +169,18 @@ Animales que pueden aparecer durante el viaje, por zona (ver [diseño](./desde-u
 
 **Descartadas o pendientes:** ballena azul (hay ficha de NOAA, pero ningún registro para esta ruta), «rorcual aliblanco» (nombre ambiguo), delfín cruzador, y el petrel damero en el Drake propiamente dicho (solo hay registros ciudadanos).
 
+## 8 bis. Lugares del viaje
+
+Lugares que se pueden abrir durante el viaje en barco, igual que los avistajes de fauna. Fuentes leídas el 11-11-2026. **La posición en el mapa es aproximada:** las coordenadas no salen de las fuentes citadas.
+
+| Lugar | Dato | Fuente |
+| :--- | :--- | :--- |
+| Faro Les Éclaireurs (canal Beagle) | Torre de piedra de 11 m, pintada de rojo y blanco. Entró en servicio el 23 de diciembre de 1920. El nombre de los islotes, «los exploradores», se lo puso el capitán francés Louis Ferdinand Martial. | `[O35]` |
+| Pingüinera de Isla Martillo (canal Beagle) | Colonia de pingüinos de Magallanes más cercana a Ushuaia, a unos 40 km al este. Investigadores del CADIC-CONICET vieron que aprovechan las corrientes de marea para ir y volver de los sitios donde comen. | `[O33]` |
+| Faro San Juan de Salvamento (Isla de los Estados) | Bautizado «Faro del Fin del Mundo». Lo puso en servicio el 25 de mayo de 1884 la División Expedicionaria al Atlántico Sur, al mando del comodoro Augusto Lasserre. Es Monumento Histórico Nacional. Queda lejos de la ruta: en pantalla se sostiene en el borde, en su dirección. | `[O34]` |
+
+No se publica (las fuentes leídas no lo dicen): la relación del faro San Juan de Salvamento con la novela de Julio Verne, el año en que dejó de funcionar, y los pingüinos papúa de Isla Martillo.
+
 ## 9. Pendiente: no se publica hasta tener fuente
 
 - Duración del vuelo del C-130 desde Ushuaia (hay 3,5 h desde Río Gallegos `[O14]`).

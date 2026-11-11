@@ -28,6 +28,8 @@ El turismo se menciona como una línea de contexto: no es un transporte jugable 
 - Un animal ya visto no desaparece: queda en gris en el mapa y se puede volver a abrir. Los animales siguen visibles mientras hay una tarjeta de hito abierta. Desde el avión no hay avistajes.
 - Más fauna cuanto más al sur. El cuaderno cuenta los avistajes («4 de 9»); los perdidos quedan como siluetas «sin ver», lo que invita a repetir el viaje con otro medio.
 - Los animales son botones HTML proyectados sobre el canvas, como los marcadores actuales (`ProjectMarkers`): accesibles por teclado, con `aria-label`, sin raycasting. El cuaderno incluye la lista de avistajes alcanzable con Tab.
+- También hay **lugares** (faros Les Éclaireurs y San Juan de Salvamento, pingüinera de Isla Martillo): se abren igual que los animales, se dibujan en su posición aproximada y el cuaderno los cuenta aparte. Un lugar fuera de la vista queda sostenido en el borde de la pantalla, en su dirección.
+- Durante el viaje se puede retroceder manteniendo «◀»; los hitos ya vistos no repiten su tarjeta. Cada hito se marca en el mapa con un pin (ocre si falta llegar, gris si ya se pasó).
 - Solo hay especies con ficha y fuente verificada. Las posiciones son **ilustrativas** y se rotula en pantalla.
 - Solapa con #16 (fauna, Irízar, ruta Ushuaia–Marambio): ver «Coordinación».
 

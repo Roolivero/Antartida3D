@@ -1,7 +1,9 @@
 import { lazy, Suspense, useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import {
   SIGHTINGS,
-  SIGHTINGS_NOTE,
+  FAUNA_COUNT,
+  PLACES_COUNT,
+  sightingNote,
   TRANSPORTS,
   VOYAGE_GEARS,
   VOYAGE_ROUTE_NOTE,
@@ -129,7 +131,7 @@ function SightingCard({ voyage, onSource }: { voyage: VoyageController; onSource
       <h2 id="voyage-title" className="vsighting"><SightingIcon icon={sighting.icon} />{sighting.name}</h2>
       <p className="vlatin">{sighting.latin}</p>
       <ul className="vfacts"><Fact fact={sighting.fact} onSource={onSource} /></ul>
-      <p className="vsmall">{SIGHTINGS_NOTE}</p>
+      <p className="vsmall">{sightingNote(sighting)}</p>
       <div className="row vactions">
         <button type="button" className="btn primary" onClick={voyage.closeSighting}>Seguir viaje</button>
       </div>
@@ -143,9 +145,15 @@ function SightingCard({ voyage, onSource }: { voyage: VoyageController; onSource
  * chance to spot them on the map, so every one opens from here.
  */
 function Notebook({ voyage, animated }: { voyage: VoyageController; animated: boolean }) {
+  const seenFauna = SIGHTINGS.filter((s) => !s.place && voyage.seen.includes(s.id)).length;
   return (
     <div className="vnotebook">
-      <p><strong>Cuaderno de avistajes:</strong> {animated ? `viste ${voyage.seen.length} de ${SIGHTINGS.length}` : `${SIGHTINGS.length} animales de esta ruta`}</p>
+      <p>
+        <strong>Cuaderno de avistajes:</strong>{' '}
+        {animated
+          ? `viste ${seenFauna} de ${FAUNA_COUNT} animales y ${voyage.seen.length - seenFauna} de ${PLACES_COUNT} lugares`
+          : `${FAUNA_COUNT} animales y ${PLACES_COUNT} lugares de esta ruta`}
+      </p>
       <ul>
         {SIGHTINGS.map((s) => {
           const open = !animated || voyage.seen.includes(s.id);
