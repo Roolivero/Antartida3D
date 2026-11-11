@@ -1,169 +1,184 @@
-# Expedición #4 — Desde Ushuaia: El Viaje a la Antártida
+# Expedición #4 — Desde Ushuaia
 
-Documentación de investigación y respaldo científico-histórico para la expedición **«Desde Ushuaia»** (Issue #4).
+Contenido verificado para la expedición **«Desde Ushuaia»** (issue #4): el viaje, solo de ida, desde Ushuaia hasta la Antártida en los medios científicos argentinos.
 
-Fecha de consulta y verificación de fuentes: **11 de noviembre de 2026**.
+- **Fecha de consulta de todas las fuentes:** 2026-11-11.
+- **Fuentes:** cada afirmación lleva su código `[U#]`, `[O#]` o `[I#]`, del [catálogo de fuentes](./desde-ushuaia-fuentes.md).
+- **Reglas del eje 2:** un dato sin fuente no se publica; queda en la sección «Pendiente». Las simulaciones y reconstrucciones se marcan como tales en la interfaz.
+- **Alcance:** medios científicos y argentinos. El turismo se menciona solo como contexto (sección 7).
+- Este texto fue redactado con asistencia de IA a partir de páginas abiertas por agentes. **Quien revise el PR debe abrir las fuentes nuevas** y confirmar que dicen lo que se afirma.
 
-> **Regla del Eje 2 (Hackatón SoberaníaTech):** Toda la información contenida en este documento está respaldada por fuentes primarias de organismos oficiales argentinos e internacionales. Cada afirmación incluye su referencia cruzada (`[F1]` a `[F16]`) vinculada al catálogo en [desde-ushuaia-fuentes.md](./desde-ushuaia-fuentes.md).
+## Tipos de contenido en la interfaz
 
----
-
-## 1. ¿Por qué Ushuaia es la «Puerta de Entrada a la Antártida» y qué relevancia tiene para la Argentina?
-
-### 1.1. Ventaja geográfica y portuaria
-* **La ciudad más austral del mundo:** Ubicada sobre la costa norte del Canal Beagle (`54° 48′ S, 68° 18′ O`), Ushuaia es el puerto continental con infraestructura urbana, aeroportuaria y naval más próximo al continente antártico `[F10, F11]`.
-* **Menor distancia de cruce:** Entre el puerto de Ushuaia y el extremo norte de la Península Antártica / Islas Shetland del Sur median aproximadamente **1.000 kilómetros** (unas 540 millas náuticas) a través del **Pasaje de Drake**, lo que representa alrededor de **48 horas de navegación** o **3 a 3,5 horas de vuelo** en avión de transporte militar `[F1, F5, F11]`.
-* **Puerto natural de aguas profundas:** La bahía de Ushuaia y el Canal Beagle ofrecen aguas protegidas para el alistamiento, reabastecimiento de combustible (*Gasoil Antártico — GOA*), carga de víveres frescos y recambio de dotaciones o pasajeros antes de ingresar al océano Austral `[F2, F5, F10]`.
-* **Concentración del tráfico mundial:** Alrededor del **90 % al 93 % del turismo marítimo antártico mundial** zarpa o recala en el Puerto de Ushuaia, posicionándola por encima de las otras cuatro ciudades «puerta de entrada» del hemisferio sur (Punta Arenas en Chile, Ciudad del Cabo en Sudáfrica, Hobart en Australia y Christchurch/Lyttelton en Nueva Zelanda) `[F10, F11, F14]`.
-
-### 1.2. Relevancia geopolítica, soberana y administrativa para la Argentina
-* **Capital tricontinental:** Por la **Ley Nacional N.º 23.775** (sancionada en 1990), Ushuaia es la capital de la **Provincia de Tierra del Fuego, Antártida e Islas del Atlántico Sur** `[F9]`. Esto significa que las bases argentinas ubicadas en el Sector Antártico Argentino forman parte de su jurisdicción provincial, policial, electoral y educativa (por ejemplo, la **Escuela Provincial N.º 38 «Presidente Raúl Ricardo Alfonsín»** en Base Esperanza depende del Ministerio de Educación fueguino) `[F6, F9]`.
-* **Nodo de la Campaña Antártica de Verano (CAV):** Es el asiento del **Área Naval Austral (ANAU)**, la **Base Naval Ushuaia** y el punto logístico donde el **Comando Conjunto Antártico (COCOANTAR)** articula el reabastecimiento naval y aéreo de las 13 bases argentinas `[F1, F2, F5]`.
+| Etiqueta | Qué es |
+| :--- | :--- |
+| **Dato real** | Afirmación respaldada por la fuente citada. |
+| **Estimación** | Cálculo propio a partir de datos de fuente (se indica el cálculo). |
+| **Ruta ilustrativa** | El trazado entre puntos de anclaje no es la derrota real: no existe fuente pública. |
+| **Ilustración** | Animales, témpanos y modelos 3D. Representativos, no son posiciones ni medidas reales. |
 
 ---
 
-## 2. Historia: ¿Desde qué año se viaja a la Antártida desde Ushuaia?
+## 1. Por qué se parte desde Ushuaia
 
-| Año / Período | Hito histórico verificado | Modalidad | Fuente |
-| :--- | :--- | :--- | :--- |
-| **1903–1904** | La corbeta **ARA *Uruguay*** al mando del teniente de navío Julián Irízar rescata a la expedición sueca de Otto Nordenskjöld (en la que participaba el alférez argentino José María Sobral) haciendo escala en Ushuaia. El **22 de febrero de 1904** se iza el pabellón argentino en el observatorio de la Isla Laurie (**Base Orcadas**), iniciando la presencia humana permanente e ininterrumpida más antigua de la Antártida. | Científica y Soberana | `[F4, F6]` |
-| **1947–1954** | Instalación de destacamentos navales y bases en el archipiélago Melchior (1947), Isla Decepción (1948), Almirante Brown (1951), San Martín (1951), Esperanza (1952) y Cámara (1953). En **1951** se crea el **Instituto Antártico Argentino (IAA)** (primer instituto científico antártico del mundo) y en **1954** se incorpora el primer rompehielos argentino, **ARA *General San Martín* (Q-4)**, con recaladas logísticas en Ushuaia. | Científica y Logística | `[F2, F4, F8]` |
-| **16 de enero de 1958** | **Primer viaje turístico marítimo de la historia mundial a la Antártida:** zarpa desde el Puerto de Ushuaia el transporte de la Armada Argentina **ARA *Les Eclaireurs*** (comandado por el capitán de corbeta Eduardo G. Llosa) con **98 pasajeros turistas** que habían volado desde Buenos Aires a Ushuaia en aviones Douglas DC-4. Visitó los destacamentos Decepción, Cámara, Jubany (hoy Carlini), Almirante Brown y Melchior. En conmemoración, el 16 de enero es el **Día del Turismo Antártico Argentino**. | Turística (Pionera estatal) | `[F11, F15]` |
-| **29 de octubre de 1969** | Fundación de la **Base Marambio** y apertura de su pista de tierra y *permafrost*, que rompe el aislamiento invernal y permite el primer aterrizaje de aviones con tren convencional (**C-130 Hércules**), conectando la Patagonia austral y Tierra del Fuego por vía aérea durante todo el año. | Aérea / Logística | `[F2, F6, F16]` |
-| **Década de 1990–Actualidad** | Con la entrada en vigor del **Protocolo de Madrid (1991/1998)**, la creación de la **IAATO (1991)** y la ampliación del puerto y del Aeropuerto Internacional de Ushuaia (1995), la ciudad se consolida como el epicentro de más del 90 % de los cruceros de expedición del mundo. | Turística y Científica | `[F10, F11, F12, F14]` |
+- Ushuaia está a unos **1.000 km de la Península Antártica** `[U3]` `[O21]`.
+- Tiene «características naturales de puerto de aguas profundas y bahía abrigada» `[U4]`.
+- En una campaña antártica tradicional, el Irízar hace tres etapas: «Buenos Aires - Bahía Blanca - Antártida - Ushuaia», «Ushuaia - Antártida (Base Belgrano II) - Ushuaia» y «Ushuaia - Antártida - Buenos Aires» `[O1]`. En la campaña 2025/26 la etapa 3 salió de Ushuaia y volvió a Ushuaia `[O22]` `[O23]`.
+- Tierra del Fuego, Antártida e Islas del Atlántico Sur es una provincia por la **Ley 23.775** (1990) `[O18]`. La capital, Ushuaia, la fija la **Constitución provincial (1991), art. 3** `[O19]`. El Sector Antártico Argentino «forma parte del territorio de la Provincia», aunque está sujeto al régimen del Tratado Antártico `[O28]`.
 
----
+## 2. Tres formas de cruzar (elige el usuario)
 
-## 3. ¿Quiénes pueden viajar y qué estudios médicos y psicofísicos se exigen?
+### 2.1. Rompehielos ARA *Almirante Irízar* (Q-5)
 
-Existen dos canales de acceso con exigencias muy diferentes:
+- Es «el buque insignia del Comando Conjunto Antártico» `[O5]`.
+- Datos de ficha: eslora 121,3 m, manga 25,2 m, desplazamiento 14.140 t a plena carga, velocidad de crucero 14 kt `[O5]`.
+- Campaña 2025/26, etapa 3: salió de Ushuaia con 65 t de carga y 260 tambores y tubos de gasoil antártico, gas y aceites; abasteció San Martín, Esperanza y Carlini y cerró Brown y Primavera `[O22]`. Duró 20 días y volvió al muelle comercial de Ushuaia tras cruzar el Drake `[O23]`.
+- En la campaña 2024/25, de regreso de Carlini a Ushuaia, cruzó el Drake «en menos de dos días», a 14 nudos de promedio `[O16]`.
+- Lleva dos helicópteros Sea King `[O16]`. En Marambio, que está en una meseta, la carga y el personal pasan del buque a la base solo con un Sea King `[O24]`. (La página de logística de la Cancillería dice «Super Puma»; se usa lo que publica la Armada.)
+- **Estimación** (cálculo propio): 1.000 km a 14 kt son unas 39 h.
 
-### 3.1. Vía Oficial: Científicos, Técnicos, Militares, Docentes y Familias
-Coordinada por la **Dirección Nacional del Antártico (DNA)**, el **Instituto Antártico Argentino (IAA)** y el **Comando Conjunto Antártico (COCOANTAR)** `[F1, F8]`.
+### 2.2. Avión Hércules C-130 (Fuerza Aérea Argentina)
 
-#### ¿Quiénes integran las dotaciones?
-1. **Investigadores, becarios y técnicos científicos:** Personal del IAA, CONICET, universidades nacionales, Servicio Meteorológico Nacional (SMN), Servicio de Hidrografía Naval (SHN) e Instituto Geográfico Nacional (IGN) `[F1, F6, F8]`.
-2. **Personal militar y logístico de las tres Fuerzas Armadas:** Ejército Argentino, Armada Argentina y Fuerza Aérea Argentina (pilotos, marinos, mecánicos, meteorólogos, comunicantes, cocineros, médicos, enfermeros y patrullas de búsqueda y rescate) `[F1, F2, F5]`.
-3. **Docentes y familias:** Únicamente en la **Base Esperanza**, donde invernan familias completas y docentes fueguinos a cargo de la Escuela Provincial N.º 38 y de la emisora **LRA 36 Radio Nacional «Arcángel San Gabriel»** `[F6]`.
+- Los C-130 cubren el cruce entre «Río Gallegos o Ushuaia» y la Base Marambio `[O10]`.
+- En abril de 2026 un C-130 de la I Brigada Aérea acompañó el cruce de un Twin Otter con escala en Ushuaia `[O15]`.
+- Desde Río Gallegos el vuelo dura unas tres horas y media `[O14]`.
+- El primer C-130 aterrizó en Marambio el **11 de abril de 1970** (C-130H TC-61, salido de Río Gallegos) `[O13]`.
+- Distancia Ushuaia–Marambio: unos 1.230 km. **Estimación** (ortodrómica calculada; ninguna fuente del catálogo da la distancia).
 
-#### Estudios médicos y psicofísicos obligatorios («Aptitud Antártica»)
-Debido a que en el continente antártico no existen hospitales de alta complejidad y una evacuación aérea o marítima en pleno invierno puede demorar días o semanas por condiciones meteorológicas extremas, todo postulante debe aprobar un examen psicofísico exhaustivo (con **validez de 1 año**) supervisado por sanidades militares, el **Instituto Nacional de Medicina Aeroespacial (INMAE)** y la Dirección de Salud de Cancillería `[F1, F16]`:
+### 2.3. Aviso ARA *Puerto Argentino* (A-21)
 
-* **Evaluación Psicológica y Psiquiátrica (Excluyente):**
-  * Batería de tests psicométricos y proyectivos, más entrevistas individuales y grupales.
-  * Evalúa la tolerancia al aislamiento prolongado, la convivencia en espacios cerrados (*síndrome de invernada*), el control de impulsos, la estabilidad emocional frente a la falta de luz solar (en bases al sur del Círculo Polar como San Martín o Belgrano II) y la ausencia de adicciones o trastornos depresivos/ansiosos `[F16]`.
-  * Por preservación de la salud mental, **no se autorizan dos invernadas consecutivas** `[F16]`.
-* **Evaluación Odontológica (Tolerancia cero a focos infecciosos):**
-  * Se exige boca libre de caries activas, enfermedad periodontal, prótesis defectuosas o tratamientos de conducto sin finalizar.
-  * Las **muelas de juicio (terceros molares) retenidas o con riesgo de pericoronaritis/absceso** deben evaluarse y, de presentar riesgo, extraerse preventivamente antes de viajar `[F16]`.
-* **Evaluación Clínica, Quirúrgica y Diagnóstico por Imágenes:**
-  * **Ecografía abdominal y hepatobiliar/renal:** Fundamental para descartar litiasis vesicular (cálculos en la vesícula) o litiasis renal (cálculos renales), así como hernias abdominales o inguinales que puedan estrangularse `[F16]`.
-  * **Criterio sobre apendicectomía:** Cualquier antecedente abdominal agudo no resuelto es causal de ineptitud. *(Nota comparativa: mientras que para residentes civiles o médicos de invernada en ciertas bases extranjeras como Villa Las Estrellas de Chile o estaciones australianas se exige apendicectomía profiláctica obligatoria, en el programa argentino se realiza un cribado clínico-ecográfico integral estricto para descartar cuadros quirúrgicos latentes)* `[F16]`.
-* **Evaluación Cardiológica y Respiratoria:**
-  * Electrocardiograma (ECG), ergometría graduada (prueba de esfuerzo), ecocardiograma Doppler, radiografía de tórax de frente/perfil y espirometría computadorizada (crucial para resistir el aire polar frío, seco y los vientos intensos) `[F16]`.
-* **Laboratorio completo, Oftalmología y Otorrinolaringología:**
-  * Hemograma completo, glucemia, uremia, creatininemia, hepatograma, lipidograma, coagulograma, serologías infecciosas, orina completa, audiometría tonal (por exposición a motores de aviones/generadores) y examen oftalmológico con fondo de ojo y visión cromática `[F16]`.
+- En la campaña 2025/26 zarpó de Puerto Belgrano a principios de noviembre Como Buque de Servicio Antártico hizo patrullas, mantuvo balizas y abasteció bases. Además cumplió tareas de **Buque de Estación desde la ciudad de Ushuaia** `[O7]`.
+- Eslora 81,37 m, manga 16,3 m, desplazamiento 2.723 t, velocidad 15 kt, autonomía de 40 días a 12 kt `[O6]`.
+- En la etapa final zarpó de Ushuaia junto al Irízar y cerraba el reaprovisionamiento de la base Petrel `[O22]`.
 
-### 3.2. Vía Turística Comercial (Pasajeros de cruceros desde Ushuaia)
-* **Acceso abierto:** Cualquier persona de cualquier nacionalidad que contrate una plaza en un buque miembro de la **IAATO** `[F14]`.
-* **Requisitos obligatorios para turistas:**
-  1. **Formulario médico previo:** Declaración jurada de salud (con firma médica en caso de enfermedades crónicas o edades avanzadas) para certificar estabilidad clínica durante los 4 días totales de cruce del Pasaje de Drake `[F14]`.
-  2. **Seguro médico de evacuación polar:** Póliza internacional obligatoria que cubra evacuación sanitaria de emergencia desde zonas remotas `[F11, F14]`.
-  3. **Aptitud motriz básica:** Capacidad para desplazarse por cubiertas húmedas y embarcar en botes neumáticos *Zodiac* desde la planchada del buque `[F14]`.
+## 3. La ruta y sus hitos
 
----
+**Ruta ilustrativa:** no existe fuente pública de la derrota real de los buques ni de los aviones. Solo algunos puntos de anclaje tienen fuente; el trazado entre ellos lo armó un agente de IA y es **aproximado**. Hay que validarlo contra la costa en alta resolución antes de publicarlo, porque el Beagle tiene 1,8 km de ancho en un punto.
 
-## 4. Medios de Transporte: ¿Cómo se viaja y cómo se mueven en la Antártida?
+Puntos `[lon, lat]` (WGS84) de partida para la ruta marítima. Marcados `fuente` si salen de una fuente citada; el resto es **estimación**:
 
-El sistema de transporte se divide en **transporte intercontinental** (el cruce entre Sudamérica y la Antártida) y **transporte interno antártico** (entre buques, bases, glaciares y campamentos científicos).
+1. `[-68.30, -54.81]` Puerto de Ushuaia (estimación: sin coordenada oficial, ver «Pendiente»)
+2. `[-67.60, -54.90]` Canal Beagle hacia el este (estimación; el canal está a 54°53′ S `[U1]`)
+3. `[-67.00, -54.92]` cerca del paso Mackinlay (estimación)
+4. `[-66.50, -55.05]` boca oriental del Beagle (solo la longitud, unos 66°30′ O, sale de `[U1]`; la latitud es estimación)
+5. `[-66.80, -56.20]` al sur y al este del Cabo de Hornos (estimación)
+6. `[-65.20, -58.00]` Drake central (estimación)
+7. `[-63.50, -60.00]` cruce de 60° S (estimación)
+8. `[-61.80, -61.80]` llegada a las Shetland del Sur (estimación)
+9. `[-60.63, -62.95]` Isla Decepción (`fuente` `[I9]`)
+10. `[-58.50, -63.20]` Estrecho de Bransfield (estimación)
+11. `[-57.00, -63.40]` Esperanza (`fuente` `[O2]`)
+12. `[-56.62, -64.23]` Marambio (`fuente` `[O2]`)
 
-### 4.1. Transporte para llegar a la Antártida
-1. **Avión Lockheed C-130 *Hércules* (Fuerza Aérea Argentina):**
-   * **Función:** Es el vector estratégico del puente aéreo argentino entre el continente americano y la **Base Marambio** desde 1969 `[F2, F6, F16]`.
-   * **Operación:** Despega desde su base operativa adelantada en **Río Gallegos** o desde el Aeropuerto Internacional de **Ushuaia**, sobrevuela el Pasaje de Drake en **3 a 3,5 horas** y aterriza sobre ruedas en la pista de *permafrost* (suelo congelado y roca) de la meseta de la Isla Marambio (`200 m s. n. m.`, `1.200 metros` de longitud) `[F6, F16]`.
-   * **Qué transporta:** Científicos, dotaciones de recambio, carga seca urgente, repuestos críticos, correo y evacuaciones aeromédicas (**MEDEVAC**) durante todo el año `[F1, F16]`.
-2. **Rompehielos *ARA Almirante Irízar* (Q-5) y Avisos Polares (Armada Argentina):**
-   * **Función:** El rompehielos *ARA Almirante Irízar* es el buque insignia de la Campaña Antártica de Verano (CAV), acompañado por avisos polares de la Armada (como el *ARA Puerto Argentino*, *ARA Estrecho de San Carlos*, *ARA Bahía Agradable* o *ARA Islas Malvinas*) `[F1, F5]`.
-   * **Operación desde Ushuaia:** Utiliza el Puerto de Ushuaia como nodo logístico para reaprovisionamiento, embarque de cargas y recambio de personal, y desde allí penetra los campos de hielo marino (incluso la densa banquisa del Mar de Weddell) para abastecer a las 13 bases argentinas `[F1, F5]`.
-   * **Qué transporta:** Grandes volúmenes de combustible antártico (GOA), toneladas de víveres congelados y secos, materiales de construcción, vehículos, científicos y el repliegue de todos los residuos generados en las bases para su tratamiento en el continente (en cumplimiento del Protocolo de Madrid) `[F3, F5]`.
-3. **Buques de Crucero de Expedición Polar y Veleros (Turismo desde Ushuaia):**
-   * Buques con casco reforzado para hielo (*Ice Class*) que parten del Muelle Comercial de Ushuaia durante la temporada estival (octubre a fines de marzo / principios de abril) `[F10, F11]`.
+La ruta aérea Ushuaia → Marambio es una **ortodrómica calculada** (la derrota real del C-130 es pendiente).
 
-### 4.2. Transporte Interno dentro de la Antártida
-En la Antártida **no existen rutas ni ferrocarriles**. Una vez en el continente blanco, el desplazamiento depende de:
+| Hito | Datos con fuente |
+| :--- | :--- |
+| **Canal Beagle y Ushuaia** | Mide unos 180 km y conecta el extremo sur del Pacífico con el del Atlántico. Profundidad máxima de 300 m. Ancho medio de 5 km y mínimo de 1,8 km en el paso Mackinlay (isla Gable), que tiene solo 30 m de profundidad. Es un valle tectónico cubierto por hielo en la última glaciación. La costa sur son las islas Hoste y Navarino (Chile) `[U1]`. |
+| **Salida al mar abierto** | El canal se abre al Atlántico por su boca oriental, cerca de 66°30′ O `[U1]`. Desde allí la ruta ilustrativa gira al sur hacia el Drake. |
+| **Fauna del Beagle** | Dos especies de lobo marino viven en las islas del canal (el sudamericano todo el año y el de dos pelos entre febrero y agosto). El cormorán imperial es el ave marina más abundante `[O20]`. |
+| **Cabo de Hornos** | El holandés Willem Schouten trazó por primera vez un rumbo alrededor del cabo en 1616 `[I5]` (quién lo nombró queda en «Pendiente»). Cientos de barcos se hundieron allí. Al sudoeste el fondo sube de 4.020 m a 100 m en pocos kilómetros y, junto a los vientos del oeste, levanta olas enormes `[I5]`. |
+| **Pasaje de Drake** | Unos 800 km de ancho entre el Cabo de Hornos y las Shetland del Sur. Por él pasa la Corriente Circumpolar Antártica, con un flujo medio de 173,3 Sv (30 % más que el valor clásico de 134 Sv), medido entre 2007 y 2011 `[I6]`. |
+| **Convergencia Antártica** | Límite norte de la zona antártica. En el frente, la temperatura de la superficie del mar ronda los 5–6 °C `[I7]`. Alrededor del continente se ubica entre los 44° y los 64° S, con un cambio medio de 1,7 °C cada 100 km `[I8]`. |
+| **Paralelo 60° S** | El Tratado Antártico se aplica al sur de los 60° de latitud sur, incluidas todas las barreras de hielo (art. VI; traducción propia del texto en inglés) `[I1]`. Argentina es uno de los 12 firmantes originales `[O12]`. El punto exacto en que la ruta lo cruza es una **estimación**. |
+| **Islas Shetland del Sur y Decepción** | Isla Decepción es una caldera inundada, con forma de herradura, y su única entrada son los Fuelles de Neptuno, de unos 500 m de ancho. `[I9]`. Se registraron erupciones en 1842, 1967, 1969 y 1970 `[U2]`. |
+| **Marambio** | Fundada el **29 de octubre de 1969**. Es la única base argentina con pista para aviones de carga y pasajeros, a unos 200 m sobre el nivel del mar `[O2]` `[O24]`. Fue «la primera pista de aterrizaje de tierra, precisamente permafrost, en el Continente Antártico» `[O12]`. |
 
-* **Avión DHC-6 *Twin Otter* (Fuerza Aérea Argentina):**
-  * Bimotor turbohélice con capacidad **STOL** (*Short Take-Off and Landing*, despegue y aterrizaje en pistas muy cortas) equipado con un sistema mixto de **ruedas y esquíes** `[F2, F16]`.
-  * Tiene asiento permanente en la Base Marambio y permite volar hacia glaciares, barreras de hielo y bases como Esperanza, Matienzo, Petrel o San Martín, además de desplegar campamentos científicos paleontológicos y glaciológicos en lugares inaccesibles por mar `[F6, F16]`.
-* **Helicópteros pesados y medianos (*Sea King* y *Bell 212 / 412*):**
-  * **Sikorsky SH-3H / S-61 *Sea King* (Aviación Naval — Armada Argentina):** Operan embarcados en el hangar y cubierta de vuelo del rompehielos *ARA Almirante Irízar*. Como la mayoría de las bases antárticas no tienen muelle para que amarre un buque grande y están rodeadas de hielo, los helicópteros *Sea King* realizan el «puente aéreo logístico» llevando cargas colgadas en eslingas y trasladando al personal entre el rompehielos y la base `[F5]`.
-  * **Bell 212 y Bell 412 (Fuerza Aérea Argentina):** Se despliegan durante el verano en la Base Marambio para trasladar investigadores y abastecer campamentos científicos cercanos `[F1, F16]`.
-* **Botes neumáticos semirrígidos (*Zodiac*) y lanchas de desembarco (EDPV):**
-  * Son el medio indispensable para desembarcar en costas rocosas o playas con hielo flotante (*escombros de hielo* o *gruñidores*), tanto en operativos navales y científicos (por ejemplo, en Base Carlini o Base Orcadas) como en cada bajada a tierra de los cruceros turísticos `[F5, F14]`.
-* **Vehículos a oruga y motos de nieve:**
-  * Para moverse sobre nieve y glaciares con grietas ocultas se emplean vehículos articulados a oruga tipo **Hägglunds BV206** (usados en bases como Esperanza, San Martín y Belgrano II), tractores polares *Snowcat* y motos de nieve (*Ski-Doo*) con trineos de arrastre `[F1, F6]`.
+## 4. Las bases argentinas
 
----
+- La Argentina tiene **13 bases: 7 permanentes y 6 temporarias** `[O8]`.
+  - Permanentes: Orcadas, Carlini, Esperanza, Marambio, San Martín, Belgrano II y Petrel.
+  - Temporarias: Brown, Decepción, Cámara, Primavera, Melchior y Matienzo.
+- **Discrepancia entre fuentes oficiales:** el Comando Conjunto Antártico `[O8]` y la Armada `[O2]` listan Petrel como permanente. Se reabrió el 15 de noviembre de 2021 `[O33]`. La página de bases de la Cancillería todavía la muestra como temporaria y cuenta 6 permanentes y 7 temporarias `[O34]`. Se usa la versión del COCOANTAR y la Armada.
+- **Orcadas** (isla Laurie, 60°45′ S, 44°43′ O) se fundó el 22 de febrero de 1904 y es «la más antigua de todas las bases ubicadas en la Antártida» `[O2]`. El escocés William Bruce donó su observatorio al Estado argentino a fines de 1903 y lo entregó el 22 de febrero de 1904 `[O25]`.
+- **Esperanza:** «la única base argentina en la que viven familias y tiene una escuela» `[O2]`.
+- **San Martín:** «la primera instalación argentina al sur del Círculo Polar Antártico» `[O2]`.
+- Coordenadas verificadas: Carlini 62°14′ S 58°40′ O, Marambio 64°14′ S 56°37′ O, Esperanza 63°24′ S 57°00′ O, Orcadas 60°45′ S 44°43′ O `[O2]`.
+- **Decepción:** las fuentes no coinciden en la posición de la base. La Armada da 62°52′ S 60°43′ O `[O3]` y el plan de gestión ZAEA n.º 4 da 62°58′20″ S 60°41′40″ O `[I9]` (la isla está a 62°57′ S 60°38′ O). No se muestra una coordenada de la base hasta unificarla.
 
-## 5. Preparativos y Limitaciones
+## 5. Historia que acompaña el viaje
 
-### 5.1. Preparativos Técnicos y Personales
-1. **Entrenamiento Preantártico (Vía Oficial):**
-   * Todo personal militar y científico debe cursar la capacitación en la Dirección Nacional del Antártico / Comando Conjunto Antártico sobre normas ambientales del Tratado Antártico, prevención de incendios (el fuego es el mayor peligro dentro de una base polar por la sequedad del ambiente y la falta de agua líquida), primeros auxilios en hipotermia/congelamiento y técnicas de encordamiento y rescate en grietas glaciarias `[F1, F3, F8]`.
-2. **Sistema de vestimenta polar en 3 capas:**
-   * **Capa 1 (Térmica / Primera piel):** Polipropileno o lana merino pegada al cuerpo para evacuar la transpiración (el algodón está contraindicado porque retiene la humedad y enfría el cuerpo) `[F11, F16]`.
-   * **Capa 2 (Aislante):** Abrigo de *fleece* polar de alto gramaje y/o campera de plumón (*down*) o fibra sintética térmica que retiene el calor corporal `[F11, F16]`.
-   * **Capa 3 (Escudo exterior):** Campera o *parka* antártica y pantalón cubrepantalón impermeables, cortaviento y respirables (membrana tipo *Gore-Tex*), de colores de alta visibilidad (naranja, rojo o amarillo internacional) para facilitar la localización visual en medio de ventiscas (*blizzards*) o *whiteout* (blanco total) `[F16]`.
-   * **Accesorios críticos:** Botas térmicas impermeables (o botas de goma con aislación de neopreno para desembarcos húmedos en *Zodiac*), doble guante (primera piel + mitón impermeable), cuello polar/pasamontañas, protector solar factor 50+ y **lentes o antiparras con filtro UV 100 % y protección lateral** (indispensables por el alto índice de radiación ultravioleta reflejada por el hielo y la presencia del agujero de ozono primaveral) `[F11, F14, F16]`.
+- **Corbeta ARA *Uruguay*, 1903:** al mando de Julián Irízar, rescató a la expedición sueca de Nordenskjöld, en la que participaba el alférez José María Sobral. Según la Armada zarpó el 8 de octubre de 1903, con un paso por Ushuaia `[O17]`. La página histórica de la Armada dice «mayo de 1903», una contradicción interna de la fuente `[O4]`.
+- **Orcadas, 22 de febrero de 1904:** ver sección 4.
+- **Instituto Antártico Argentino, 1951:** según la Cancillería, «el primer organismo mundial dedicado exclusivamente a las investigaciones científicas antárticas». No hay confirmación independiente, por eso se atribuye `[O11]`.
+- **Marambio, 1969–1970:** la base se fundó el 29 de octubre de 1969. La inauguró oficialmente el Fokker F-27 TC-77 `[O26]`. Las fuentes oficiales no coinciden en cuál fue el primer avión en aterrizar: la Fuerza Aérea da el Beaver P-03 (25 de septiembre de 1969) y luego el C-47 TA-05 `[O26]`; otra nota oficial da el C-47 TA-05 `[O27]`. No se afirma cuál. El primer C-130 llegó el 11 de abril de 1970 `[O13]`.
+- **Primer viaje turístico, 1958:** el 16 de enero de 1958 zarpó de Ushuaia el ARA *Les Eclaireurs* con 98 pasajeros, por iniciativa del Estado argentino. En enero de 1958 hubo un segundo viaje con 96 pasajeros, `[U4]`: los dos suman 194 (suma propia). Fue una iniciativa estatal `[U5]`.
 
-### 5.2. Limitaciones Ambientales, Legales y Operativas
-Toda presencia humana al sur del paralelo `60° S` está regida por el **Tratado Antártico (1959)** y el **Protocolo al Tratado Antártico sobre Protección del Medio Ambiente (Protocolo de Madrid, firmado en 1991 y en vigor desde 1998)**, que declara a la Antártida como *«reserva natural consagrada a la paz y a la ciencia»* `[F3, F12, F13]`.
+## 6. Cuidado del ambiente
 
-* **Límites estrictos de desembarco turístico (Regla 100 / 500 de IAATO y Tratado Antártico):**
-  * **Máximo 100 pasajeros en tierra:** En ningún sitio de desembarco puede haber más de **100 pasajeros al mismo tiempo**, acompañados por al menos 1 guía especializado cada 20 visitantes `[F13, F14]`.
-  * **Prohibición de desembarco para buques de más de 500 pasajeros:** Los cruceros que transportan más de **500 pasajeros** tienen **prohibido realizar desembarcos** en la Antártida `[F14]`.
-* **Bioseguridad y descontaminación obligatoria:**
-  * Está terminantemente prohibido introducir especies exóticas, tierra, semillas, plantas o animales (los perros fueron retirados de la Antártida en 1994 por mandato del Protocolo de Madrid) `[F3, F12]`.
-  * Antes del primer desembarco se aspiran bolsillos, mochilas y tiras de *velcro*; y en cada bajada y subida del barco es obligatorio cepillar y sumergir las botas en bateas con solución biocida (**Virkon S**) para no transmitir virus ni patógenos aviares entre distintas colonias de pingüinos `[F13, F14]`.
-* **Reglas de conducta en tierra y frente a la fauna:**
-  * Distancia mínima de **5 metros** respecto de pingüinos y aves nidificantes, y de **15 a 25 metros** respecto de focas y lobos/elefantes marinos `[F13, F14]`.
-  * Prohibido alimentar o tocar a la fauna, pisar musgos o líquenes (que tardan décadas en crecer unos milímetros), fumar o llevar comida a tierra, volar drones recreativos (prohibidos por IAATO para no estresar a las colonias de aves) o recolectar piedras, huesos, plumas o souvenirs `[F12, F13, F14]`.
-* **Gestión de residuos («Todo lo que entra, vuelve»):**
-  * El Anexo III del Protocolo de Madrid obliga a clasificar, compactar y **replegar de regreso al continente americano** todos los residuos plásticos, baterías, aceites, metales y desechos peligrosos generados en las bases o expediciones `[F3, F12]`.
-* **Limitación meteorológica y de hielo marino:**
-  * En la Antártida ningún itinerario es rígido: los vientos catabáticos (que descienden de los glaciares superando los 150 km/h), la formación repentina de *pack* de hielo cerrado o la niebla baja (*engelante*) subordinan cualquier vuelo de Hércules C-130, operación de helicóptero o desembarco en *Zodiac* `[F7, F16]`.
+- El **Protocolo de Madrid** se firmó el 4 de octubre de 1991 y entró en vigor en 1998. Designa a la Antártida como «reserva natural dedicada a la paz y a la ciencia» (art. 2) `[I2]`.
+- **Residuos (Anexo III, art. 2.1):** «serán removidos del área del Tratado Antártico por los generadores de dichos residuos». La lista incluye baterías, combustibles, metales pesados, aceites lubricantes y plásticos. Solo los bidones y tambores y los residuos sólidos incombustibles pueden quedar si sacarlos causaría un daño ambiental mayor `[I3]`.
+- **Perros:** el Anexo II original (1991, art. 4.2) pedía retirarlos antes del 1 de abril de 1994 `[I4]`. La versión enmendada (Medida 16 de 2009) dice: «No se introducirán perros en tierra, en las barreras de hielo o en el hielo marino» `[I19]`.
 
----
+## 7. Turismo (contexto, sin mecánica propia)
 
-## 6. ¿Cuáles son los destinos a los que se viaja desde Ushuaia?
+- Ushuaia concentra entre el 85 % y el 90 % del flujo turístico antártico desde mediados de los años 90 `[U3]`. Los porcentajes de otras fuentes varían con el año y el criterio (INFUETUR da 92 % para 2008-09 `[O21]`; IAATO no da porcentaje `[I10]`).
+- El cruce del Drake en buque turístico lleva unas 36 horas según la tesis de la UNS `[U6]`.
+- El turismo no es parte del eje de este proyecto: no se ofrece como transporte jugable.
 
-### 6.1. Las 13 Bases Antárticas Argentinas (7 Permanentes y 6 Temporarias)
-Verificadas según los registros oficiales de la **Armada Argentina**, el **COCOANTAR** y la **Dirección Nacional del Antártico (Cancillería)** `[F4, F6, F7, F8]`:
+## 8. Fauna del viaje (avistajes)
 
-#### Bases Permanentes (Operativas todo el año)
-| Base | Ubicación geográfica | Coordenadas oficiales | Perfil y relevancia principal | Fuente |
-| :--- | :--- | :--- | :--- | :--- |
-| **1. Base Orcadas** | Istmo entre bahías Scotia y Uruguay, Isla Laurie (Islas Orcadas del Sur) | `60° 45′ S, 44° 43′ O` | Fundada el **22 de febrero de 1904**. Es la estación científica habitada de forma permanente más antigua de toda la Antártida (meteorología, geomagnetismo, glaciología y sismología). | `[F6, F8]` |
-| **2. Base Carlini** *(ex Jubany)* | Caleta Potter, Isla 25 de Mayo / Rey Jorge (Islas Shetland del Sur) | `62° 14′ S, 58° 40′ O` | Principal centro científico del **Instituto Antártico Argentino (IAA)**. Sede del laboratorio multidisciplinario *LAJUB* y del laboratorio binacional argentino-alemán *Dallmann* (biología marina, buceo científico, ecología). | `[F6, F8]` |
-| **3. Base Esperanza** | Punta Foca (Caleta Choza), Bahía Esperanza (Norte de la Península Antártica) | `63° 24′ S, 56° 59′ O` | Fundada en 1952. Única base argentina donde invernan familias; cuenta con la Escuela Provincial N.º 38, registro civil y la radio LRA 36. | `[F6, F8]` |
-| **4. Base Marambio** | Meseta de la Isla Marambio / Seymour (Mar de Weddell) | `64° 14′ S, 56° 38′ O` | Fundada el 29 de octubre de 1969. Principal puerta de entrada aérea argentina (pista de aterrizaje para Hércules C-130), centro meteorológico antártico y despliegue de campamentos paleontológicos. | `[F6, F8, F16]` |
-| **5. Base San Martín** | Islote Barry (Islotes Debenham), Bahía Margarita | `68° 08′ S, 67° 06′ O` | Fundada en 1951 por el Gral. Hernán Pujato; se ubica al oeste de la Península Antártica, **al sur del Círculo Polar Antártico**. | `[F6, F8]` |
-| **6. Base Belgrano II** | Nunatak Bertrab, Bahía Vahsel, Costa Confín (Tierra de Coats, Mar de Weddell) | `77° 51′ S, 34° 33′ O` | Fundada en 1979 sobre roca firme. Es la **base más austral de la República Argentina** (a ~1.300 km del Polo Sur); tiene 4 meses de día polar y 4 meses de noche polar continua, ideal para estudio de auroras australes y capa de ozono. | `[F6, F8]` |
-| **7. Base Petrel** | Rada Petrel, Isla Dundee (al norte de la Península Antártica) | `63° 28′ S, 56° 12′ O` | Histórica estación aeronaval a nivel del mar reactivada como base permanente para constituir un nodo logístico multimodal aéreo y marítimo conectado con Ushuaia. | `[F1, F7, F8]` |
+Animales que pueden aparecer durante el viaje, por zona (ver [diseño](./desde-ushuaia-diseno.md)). Solo entran especies con fuente abierta y leída. Las **posiciones y los movimientos son ilustrativos**: ninguna fuente respalda dónde está cada animal en un momento dado, ni cómo se mueve en pantalla (planeo, nado a saltos). **La asignación a cada zona también es ilustrativa** salvo donde la fuente nombra el lugar: las fuentes de las zonas B y D dan rangos de latitud o son fichas circumpolares, y no mencionan el Drake ni la Península. No se publican categorías de la UICN hasta verificarlas.
 
-#### Bases Temporarias (Operativas durante la Campaña Antártica de Verano)
-1. **Base Almirante Brown:** Punta Proa, Bahía Paraíso (`64° 52′ S, 62° 54′ O`) — Biología marina y oceanografía en uno de los puertos naturales más bellos de la Península `[F7, F8]`.
-2. **Base Decepción:** Bahía 1.º de Mayo (Puerto Foster), Isla Decepción (`62° 59′ S, 60° 43′ O`) — Monitoreo vulcanológico y sismológico en una isla volcánica activa cuyo cráter inundado es navegable `[F7, F8]`.
-3. **Base Cámara:** Caleta Menguante, Isla Media Luna (`62° 36′ S, 59° 54′ O`) — Estudios de aves marinas y mamíferos `[F7, F8]`.
-4. **Base Primavera:** Cabo Primavera, Costa Danco (`64° 09′ S, 60° 58′ O`) — Botánica antártica, musgos, líquenes y aves `[F7, F8]`.
-5. **Base Melchior:** Isla Observatorio, Archipiélago Melchior (`64° 20′ S, 62° 59′ O`) — Primera base argentina en el sector peninsular (1947), balizamiento e hidrografía `[F7, F8]`.
-6. **Base Matienzo:** Nunatak Larsen, Barrera de Hielos Larsen (`64° 58′ S, 60° 08′ O`) — Glaciología y meteorología `[F7, F8]`.
+**Fuentes universitarias:** no se encontró ninguna publicación de la UNTDF sobre la fauna de la ruta (su repositorio no está indexado en línea). Hay trabajos de CADIC-CONICET (Ushuaia), tesis de la UNLP y de la UBA. Alguien del equipo puede buscar a mano en el repositorio de la UNTDF.
 
-### 6.2. Destinos Clásicos de las Expediciones Turísticas desde Ushuaia
-Los itinerarios que parten de Ushuaia duran habitualmente entre **10 y 12 días** (o hasta **21 días** si incluyen Georgias del Sur, Orcadas del Sur o el cruce del Círculo Polar Antártico) y visitan `[F11, F14]`:
-* **Islas Shetland del Sur:** Isla Media Luna (*Half Moon Island*), Isla 25 de Mayo (*King George Island*) e **Isla Decepción** (ingreso por los estrechos *Fuelles de Neptuno* hacia Caleta Balleneros y Bahía Telefon).
-* **Estrecho de Gerlache y Costa Danco (Oeste de la Península Antártica):**
-  * **Bahía Paraíso (*Paradise Bay*) y Puerto Neko:** Desembarcos continentales entre glaciares de descarga y colonias de pingüinos papúa (*Pygoscelis papua*) y barbijo (*Pygoscelis antarcticus*).
-  * **Canal Neumayer y Puerto Lockroy (Isla Wiencke):** Antiguo destacamento británico convertido en museo histórico.
-  * **Canal Lemaire e Isla Petermann:** Paso angosto de aguas espejadas entre acantilados de hielo y roca.
-* **Estrecho Antarctic y Mar de Weddell:** Bahía Esperanza (vista de Base Esperanza), Isla Paulet (grandes colonias de pingüino de Adelia, *Pygoscelis adeliae*) e Isla Cerro Nevado (*Snow Hill*, donde se encuentra el refugio histórico de madera de la expedición de Nordenskjöld y Sobral de 1902, Monumento Histórico Antártico).
+### A. Canal Beagle (unos 54,8° S)
+
+| Especie | Dato curioso | Fuente |
+| :--- | :--- | :--- |
+| Ballena jorobada (*Megaptera novaeangliae*) | Cada ballena se reconoce por el diseño de la parte inferior de la cola, «como si fuesen huellas digitales». El catálogo del Beagle superó los 100 individuos. En 2013 se quedaron de febrero a abril. | `[O29]` |
+| Cormorán imperial (*Leucocarbo atriceps*) | Es el ave marina más abundante del canal `[O20]`. En el verano 2008-09 anidaba en 5 islas del sector argentino, con 7.703 nidos activos. Bucea hasta 40 m en el Beagle (dato de un trabajo inédito citado en la fuente) `[O30]`. | `[O20]` `[O30]` |
+| Delfín austral (*Lagenorhynchus australis*) | Especie costera del archipiélago fueguino: se distribuye hasta el Cabo de Hornos. Se lo ve en los bosques de macroalgas (*Macrocystis pyrifera*) o cerca de ellos. | `[U7]` |
+| Lobos marinos | Dos especies viven en las islas del canal: el sudamericano todo el año y el de dos pelos entre febrero y agosto. | `[O20]` |
+
+### B. Pasaje de Drake (aprox. 55–62° S; el reparto norte/centro/sur no tiene fuente)
+
+| Especie | Dato curioso | Fuente |
+| :--- | :--- | :--- |
+| Albatros errante (*Diomedea exulans*) | Los que crían en Georgias del Sur se mueven desde el sur de Brasil (25° S) hasta la Península Antártica (68° S). Las aves que crían se alimentan hasta a 4.000 km de su colonia (dato general de la especie). | `[I11]` |
+| Petrel gigante del sur (*Macronectes giganteus*) | Es carroñero: en los regurgitados de los pichones aparecen sobre todo restos de pingüino y también carne de foca. Cría en Isla de los Estados, Diego Ramírez, Shetland del Sur y la Península. | `[I12]` |
+| Delfín cruzado (*Lagenorhynchus cruciger*) | Es pelágico y circumpolar (de 45° S a cerca de 68° S). Nada en la proa de los barcos dando saltos. | `[I14]` |
+
+### C. Shetland del Sur y Estrecho de Bransfield (aprox. 61–63,5° S)
+
+| Especie | Dato curioso | Fuente |
+| :--- | :--- | :--- |
+| Ballena jorobada | Fue el cetáceo más abundante de la campaña peruana ANTAR XXVI: 207 individuos entre Bransfield, Joinville e isla Elefante, concentrados sobre todo en Bransfield. Algunas poblaciones del mundo nadan unas 5.000 millas entre zonas de cría y de alimentación. | `[O32]` `[I15]` |
+| Rorcual común (*Balaenoptera physalus*) | Es la segunda ballena más grande del mundo, de 75 a 85 pies (unos 23 a 26 m, conversión propia). En esa campaña se vieron 49 individuos, sobre todo cerca de isla Elefante. | `[I15]` `[O32]` |
+| Petrel damero (*Daption capense*) | Fue el ave más abundante de esa campaña en Bransfield e isla Elefante (809 individuos, 28,6 %). | `[O31]` |
+| Pingüino barbijo (*Pygoscelis antarcticus*) | Los pingüinos del género *Pygoscelis* suman el 70 % de la biomasa de aves de la Antártida (dato de 1977 citado por la tesis). Anida en la Península y en islas al sur de la Convergencia. | `[U8]` `[O31]` |
+| Elefante marino del sur (*Mirounga leonina*) | Se reproduce en la Península Potter (isla 25 de Mayo), donde está Punta Stranger. Los machos llegan a 3.000 kg y aguantan hasta 2 h bajo el agua. | `[U8]` `[I16]` |
+| Lobo marino antártico (*Arctocephalus gazella*) | Se reproduce en Shetland del Sur y Orcadas. Los machos de lobo marino llegan a 200 kg (la ficha cubre tres especies). La caza lo diezmó y después se recuperó. | `[I16]` |
+
+### D. Costa de la Península y norte del Weddell (aprox. 63–65° S; zona aproximada)
+
+| Especie | Dato curioso | Fuente |
+| :--- | :--- | :--- |
+| Pingüino papúa (*Pygoscelis papua*) | Cría en la Península. Se registró un buceo de 146 m en Punta Stranger (isla 25 de Mayo, Shetland del Sur). | `[U8]` `[I16]` |
+| Pingüino de Adelia (*Pygoscelis adeliae*) | Arma el nido con piedritas y nada a 4–8 km/h. En Punta Stranger (isla 25 de Mayo, Shetland del Sur) se registró un buceo de 118 m. | `[U8]` `[I16]` |
+| Foca leopardo (*Hydrurga leptonyx*) | Caza pingüinos y los sacude para sacarles la piel. Las hembras superan los 3,5 m y los 500 kg. | `[I16]` |
+| Foca cangrejera (*Lobodon carcinophagus*) | No come cangrejos sino krill, que filtra con dientes especiales. Con unos 15 millones, es la foca más abundante. | `[I16]` |
+| Foca de Weddell (*Leptonychotes weddellii*) | Es el mamífero que vive permanentemente más al sur. Bucea hasta 720 m y 45 minutos, y abre agujeros en el hielo con los dientes. | `[I16]` |
+| Ballena minke (la ficha usa *Balaenoptera acutorostrata* y habla de dos formas) | Es muy curiosa: rodea a los barcos chicos. En verano prefiere el hielo abierto (ficha de 2010). | `[I16]` |
+
+### Témpanos
+
+- Un témpano es hielo que se desprende de glaciares o barreras de hielo y flota en mar abierto. Los tabulares tienen paredes empinadas y techo plano. Según su altura sobre el agua, un témpano supera los 16 pies (unos 5 m); el *bergy bit* mide entre 3 y 16 pies; el *growler* queda por debajo de 3 pies, «del tamaño de un camión o un piano de cola» `[I17]`.
+- Dato argentino: en 1986 se desprendieron unos 13.000 km² de la barrera Filchner y formaron tres témpanos (1986 A, B y C). Sobre el A estaba la base Belgrano I, abandonada en 1980. La barrera medía entre 230 y 520 m de espesor `[I18]`.
+- La frase «el 90 % del témpano está bajo el agua» **no tiene fuente abierta**: no se publica.
+
+**Descartadas o pendientes:** ballena azul (hay ficha de NOAA, pero ningún registro para esta ruta), «rorcual aliblanco» (nombre ambiguo), delfín cruzador, y el petrel damero en el Drake propiamente dicho (solo hay registros ciudadanos).
+
+## 9. Pendiente: no se publica hasta tener fuente
+
+- Duración del vuelo del C-130 desde Ushuaia (hay 3,5 h desde Río Gallegos `[O14]`).
+- Profundidad y largo del Pasaje de Drake, y latitud del frente polar dentro del Drake.
+- Coordenada oficial del puerto de Ushuaia (pedir al Servicio de Hidrografía Naval; el Derrotero Argentino no está en línea).
+- Historia de William Smith y Bransfield; origen del nombre «Beagle» (hay fuente secundaria); quién nombró el Cabo de Hornos (Le Maire y Hoorn).
+- «Paso Mitre» y «Mar de Piedrabuena»: no se encontró ninguna fuente.
+- Duración del cruce en buque turístico con fuente oficial.
+- Tipo y largo actual de la pista de Marambio.
+
+## 10. Retirado del borrador anterior
+
+Se eliminaron por no tener fuente o ser incorrectos: «capital tricontinental», jurisdicción «policial y electoral», «ciudad más austral del mundo», «90–93 %» del turismo, «48 h» y «3–3,5 h» sin fuente, el comandante «Llosa», el «Día del Turismo Antártico», «el primer C-130 aterrizó en 1969», «residuos al continente americano», la «prohibición» de desembarco para buques de más de 500 pasajeros (la Medida 15 de 2009, que lo haría obligatorio, figura como «Not yet effective» en la Secretaría del Tratado `[I20]`), vientos catabáticos de 150 km/h, el laboratorio LAJUB, el «registro civil» de Esperanza, los exámenes médicos y la vestimenta polar (se apoyaban en una portada genérica) y los itinerarios turísticos.
