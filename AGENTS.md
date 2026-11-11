@@ -6,6 +6,7 @@ Reglas de trabajo para el equipo (5 integrantes) y para los agentes de IA que us
 
 ```sh
 git config core.hooksPath .githooks
+pnpm install
 ```
 
 El hook `.githooks/pre-commit` bloquea commits:
@@ -53,7 +54,7 @@ Si hay dos asignados, gana el primer comentario "Lo tomo." en el issue. El otro 
 
 ### 3. Entregar
 
-- Antes de abrir el PR: `git rebase origin/main`, `npm test` y `npm run build` sin errores.
+- Antes de abrir el PR: `git rebase origin/main`, `pnpm test` y `pnpm build` sin errores.
 - El PR incluye `Closes #<N>` en la descripción.
 - PRs chicos. Un issue, un PR.
 - Otra persona del equipo revisa y mergea. Nadie mergea su propio PR, salvo urgencia del día de entrega.
@@ -96,3 +97,23 @@ Un issue asignado sin actividad por más de 24 h se puede reclamar, previo aviso
 - **Mar 17 nov:** último día para sumar funcionalidades.
 - **Mié 18 nov 19:00:** `main` congelado. Solo arreglos críticos.
 - **Mié 18 nov 21:00:** entrega final.
+
+## Reglas para agentes
+
+Las reglas detalladas residen en `.agents/rules/` (con enlaces simbólicos en `.claude/rules/`):
+
+- **Proyecto (`.agents/rules/project/`):**
+  - `00-convenciones-del-proyecto.md`: Flujo de issues, ramas, idioma, fuentes verificadas y arquitectura S1.
+  - `20-web.md`: Accesibilidad, navegación por teclado, rendimiento en lienzo y pruebas E2E.
+- **Centrales (`.agents/rules/core/`):**
+  - `00-agent-workflow.md`: Flujo de trabajo, exploración previa y definición de terminado.
+  - `01-architecture-and-layers.md`: Estructura de capas y límites entre paquetes y apps.
+  - `03-imports-naming-and-folders.md`: Nombres de paquetes workspace y convenciones de carpetas.
+  - `04-single-source-and-dead-code.md`: Reutilización de lógica, fuente única y limpieza de código huérfano.
+  - `05-error-handling-and-logging.md`: Manejo controlado de errores en almacenamiento y WebGL.
+  - `06-security-baseline.md`: Seguridad base y auditoría de dependencias.
+  - `07-testing.md`: Pruebas automatizadas (unitarias, integración y E2E).
+  - `09-environments-and-secrets.md`: Manejo seguro de configuraciones y entornos.
+  - `10-git-and-commits.md`: Ramas vinculadas a issues y commits descriptivos.
+  - `13-honesty-and-verification.md`: Veracidad, verificación con comandos reales y transparencia.
+  - `14-ambiguous-requests.md`: Criterio ante solicitudes ambiguas.
