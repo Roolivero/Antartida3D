@@ -2,6 +2,8 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
+  FLIGHT_CRUISE,
+  FUEGIA_LAND_MASK,
   GEAR_TAP_MS,
   MILESTONES,
   TRANSPORTS,
@@ -14,8 +16,8 @@ import {
   advanceVoyage,
   closeVoyageCard,
   flightClearance,
+  fuegiaWorldHeight,
   heightAt,
-  inFuegia,
   nextGear,
   parseTerrainMesh,
   project,
@@ -173,12 +175,34 @@ describe('flight altitude', () => {
     }
   });
 
-  it('flies over every summit of Tierra del Fuego', () => {
-    // The highest land cell of the regional relief is 2622 m, drawn at x10.
-    const summit = (2622 * 10) / 8000;
-    for (let i = 30; i < 2000; i++) {
-      const p = voyageAt('plane', i / 2000);
-      if (inFuegia(p.x, p.y)) expect(flightClearance(i / 2000, terrain)).toBeGreaterThan(summit);
+  it('flies over the land of Tierra del Fuego under its path', () => {
+    // Checked against the regional relief mesh, which is built apart from the baked flight profile.
+    const raw = readFileSync(join(import.meta.dirname, '../src/assets/fuegia-mesh-hi.bin'));
+    const fuegia = parseTerrainMesh(raw.buffer.slice(raw.byteOffset, raw.byteOffset + raw.byteLength));
+    const path = Array.from({ length: 301 }, (_, i) => ({ t: (i / 300) * 0.13, ...voyageAt('plane', (i / 300) * 0.13) }));
+    const cell = fuegia.gridSize - 1;
+    let checked = 0;
+    for (let v = 0; v < fuegia.numVerts; v++) {
+      if (fuegia.masks[v] !== FUEGIA_LAND_MASK) continue;
+      const x = fuegia.minX + (fuegia.coordsXY[v * 2] / cell) * (fuegia.maxX - fuegia.minX);
+      const y = fuegia.minY + (fuegia.coordsXY[v * 2 + 1] / cell) * (fuegia.maxY - fuegia.minY);
+      const near = path.reduce((best, p) => (Math.hypot(p.x - x, p.y - y) < Math.hypot(best.x - x, best.y - y) ? p : best));
+      // Half the wingspan of the plane as drawn from the departure camera, past the first kilometers of the climb.
+      if (Math.hypot(near.x - x, near.y - y) > 0.6 || near.t < 0.012) continue;
+      checked++;
+      expect(flightClearance(near.t, terrain), `t=${near.t}`).toBeGreaterThan(fuegiaWorldHeight(fuegia.heights[v]));
+    }
+    expect(checked).toBeGreaterThan(50);
+  });
+
+  it('climbs little by little to its cruise height instead of shooting up', () => {
+    // Soon after take-off it is only as high as the hills of Navarino need.
+    expect(flightClearance(0.02, terrain)).toBeLessThan(FLIGHT_CRUISE * 0.6);
+    expect(flightClearance(0.1, terrain)).toBeLessThan(FLIGHT_CRUISE * 0.6);
+    expect(flightClearance(0.3, terrain)).toBeCloseTo(FLIGHT_CRUISE);
+    // Past the last islands (Cape Horn) it only climbs.
+    for (let i = 130; i < 250; i++) {
+      expect(flightClearance((i + 1) / 1000, terrain), `t=${i / 1000}`).toBeGreaterThanOrEqual(flightClearance(i / 1000, terrain));
     }
   });
 });

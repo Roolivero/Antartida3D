@@ -1,33 +1,13 @@
 import { MILESTONES, TRANSPORTS, type Milestone, type TransportId, type TransportKind } from './content/ushuaia.ts';
-import { fuegiaWorldHeight, inFuegia } from './fuegia.ts';
+import { FLIGHT_GROUND_M } from './flight-ground.ts';
+import { FLIGHT_GROUND_STEP, flightAt } from './flight-path.ts';
+import { fuegiaWorldHeight } from './fuegia.ts';
 import { project, unproject } from './projection.ts';
 import { worldHeight } from './relief.ts';
-import { ROUTE_WAYPOINTS, routeAt } from './route.ts';
+import { routeAt } from './route.ts';
 import { heightAt, type TerrainMesh } from './terrain.ts';
 
 type Point = { x: number; y: number };
-
-const RAD = Math.PI / 180;
-
-const toVector = ([lon, lat]: readonly [number, number]) => {
-  const cosLat = Math.cos(lat * RAD);
-  return [cosLat * Math.cos(lon * RAD), cosLat * Math.sin(lon * RAD), Math.sin(lat * RAD)];
-};
-
-const FLIGHT_FROM = toVector(ROUTE_WAYPOINTS[0]);
-const FLIGHT_TO = toVector(ROUTE_WAYPOINTS[ROUTE_WAYPOINTS.length - 1]);
-const FLIGHT_ANGLE = Math.acos(FLIGHT_FROM.reduce((sum, v, i) => sum + v * FLIGHT_TO[i], 0));
-
-/**
- * Flight path: the great circle between the two ends of the sea route. ILLUSTRATIVE, like the sea
- * route: the real track of the C-130 has no public source.
- */
-function flightAt(t: number): Point {
-  const a = Math.sin((1 - t) * FLIGHT_ANGLE) / Math.sin(FLIGHT_ANGLE);
-  const b = Math.sin(t * FLIGHT_ANGLE) / Math.sin(FLIGHT_ANGLE);
-  const [x, y, z] = FLIGHT_FROM.map((v, i) => a * v + b * FLIGHT_TO[i]);
-  return project(Math.atan2(y, x) / RAD, Math.asin(z) / RAD);
-}
 
 const clamp01 = (t: number) => Math.min(1, Math.max(0, t));
 const smooth01 = (v: number) => {
@@ -35,48 +15,67 @@ const smooth01 = (v: number) => {
   return c * c * (3 - 2 * c);
 };
 
-/** Above every summit of the Tierra del Fuego relief (highest IBCSO land cell there: 2622 m). */
-const FUEGIA_SUMMIT = fuegiaWorldHeight(2700);
-/** The plane stays this many world units above the relief under its path. */
-const FLIGHT_MARGIN = 1.5;
+/** Clear air kept over the relief, in world units: less over Tierra del Fuego, drawn at x10, than over Antarctica, at x50. */
+const FUEGIA_MARGIN = 0.6;
+const ANTARCTIC_MARGIN = 1.5;
 /** Trip fraction over which the plane leaves the ground and comes back to it (about 15 km). */
 const FLIGHT_WINDOW = 0.012;
 /** Trip fraction of relief looked at ahead and behind (about 37 km): the wider, the gentler the climbs. */
 const FLIGHT_LOOK = 0.03;
-/** Map units looked at to each side of the path: the drawn plane is much wider than a real one. */
+/** Map units looked at to each side of the path over Antarctica: the drawn plane is much wider than a real one. */
 const FLIGHT_SIDES = [-2.5, -1.25, 0, 1.25, 2.5];
 
-/** Highest ground under and beside the flight path within FLIGHT_LOOK of `at`, in world units. */
-function groundEnvelope(at: number, mesh?: TerrainMesh): number {
-  let ground = 0;
-  for (let k = -4; k <= 4; k++) {
-    const u = clamp01(at + (k * FLIGHT_LOOK) / 4);
+/**
+ * Cruise height: 10,000 ft (3048 m) at the x10 exaggeration of the regional relief, reached with a
+ * long steady climb. ILLUSTRATIVE: not a real flight level of the C-130.
+ */
+export const FLIGHT_CRUISE = fuegiaWorldHeight(3048);
+const CLIMB_SPAN = 0.25;
+const DESCENT_SPAN = 0.08;
+
+/** Land under and beside the path over Tierra del Fuego (baked from IBCSO), in world units. */
+function fuegiaGround(t: number): number {
+  const at = t / FLIGHT_GROUND_STEP;
+  const i = Math.floor(at);
+  const a = FLIGHT_GROUND_M[i] ?? 0;
+  const b = FLIGHT_GROUND_M[i + 1] ?? 0;
+  // Never below either neighbouring sample.
+  return fuegiaWorldHeight(at === i ? a : Math.max(a, b));
+}
+
+/** Height that clears the ground under and beside the flight path within FLIGHT_LOOK of `at`, in world units. */
+function clearEnvelope(at: number, mesh?: TerrainMesh): number {
+  let top = 0;
+  for (let k = -8; k <= 8; k++) {
+    const u = clamp01(at + (k * FLIGHT_LOOK) / 8);
+    const fuegia = fuegiaGround(u);
+    if (fuegia > 0) top = Math.max(top, fuegia + FUEGIA_MARGIN);
     const p = flightAt(u);
     const heading = voyageHeading('plane', u);
     for (const side of FLIGHT_SIDES) {
-      const x = p.x - Math.sin(heading) * side;
-      const y = p.y + Math.cos(heading) * side;
-      ground = Math.max(ground, inFuegia(x, y) ? FUEGIA_SUMMIT : worldHeight(heightAt(x, y, mesh)));
+      const ground = worldHeight(heightAt(p.x - Math.sin(heading) * side, p.y + Math.cos(heading) * side, mesh));
+      if (ground > 0) top = Math.max(top, ground + ANTARCTIC_MARGIN);
     }
   }
-  return ground;
+  return top;
 }
 
 /**
- * World height the plane must fly at, at fraction `t`, to pass over the relief instead of through
- * it: the highest ground under and beside the path nearby plus a margin. The envelope is averaged
- * over a span no wider than its own window, so the plane climbs and descends in a smooth line and
- * still never goes below the ground under it. It starts on the ground in Ushuaia and ends on the
- * Marambio plateau. ILLUSTRATIVE: not a real flight profile.
+ * World height of the flight at fraction `t`. The plane climbs only as much as it needs to pass
+ * over the relief under and beside its path, keeps climbing steadily to FLIGHT_CRUISE, and comes
+ * down to the Marambio plateau, rising again over the Antarctic relief on the way. The clearance is
+ * averaged over a span no wider than its own window, so the line is smooth and still never goes
+ * below the ground. ILLUSTRATIVE: not a real flight profile.
  */
 export function flightClearance(t: number, mesh?: TerrainMesh): number {
   const at = clamp01(t);
-  let ground = 0;
-  for (let k = -3; k <= 3; k++) ground += groundEnvelope(clamp01(at + (k * FLIGHT_LOOK) / 3), mesh) / 7;
+  let clear = 0;
+  for (let k = -3; k <= 3; k++) clear += clearEnvelope(clamp01(at + (k * FLIGHT_LOOK) / 3), mesh) / 7;
+  const cruise = FLIGHT_CRUISE * Math.min(smooth01(at / CLIMB_SPAN), smooth01((1 - at) / DESCENT_SPAN));
   const end = flightAt(1);
   const runway = at < 0.5 ? 0 : worldHeight(heightAt(end.x, end.y, mesh));
   const airborne = Math.min(smooth01(at / FLIGHT_WINDOW), smooth01((1 - at) / FLIGHT_WINDOW));
-  return runway + (ground + FLIGHT_MARGIN - runway) * airborne;
+  return runway + (Math.max(clear, cruise) - runway) * airborne;
 }
 
 /** Position in map space at fraction `t` of the trip (0 = Ushuaia, 1 = Marambio). */

@@ -16,6 +16,7 @@
     "terrain": "tsx scripts/build-terrain.ts",
     "bathymetry": "tsx scripts/build-bathymetry.ts",
     "fuegia": "tsx scripts/build-fuegia.ts",
+    "flight-ground": "tsx scripts/build-flight-ground.ts",
     "test": "vitest run",
     "typecheck": "tsc -p .",
     "map-raster": "tsx scripts/build-map-raster.ts"
