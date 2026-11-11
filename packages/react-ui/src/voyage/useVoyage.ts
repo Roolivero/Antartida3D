@@ -15,6 +15,8 @@ export interface VoyageBus {
   spot: (id: string, beside: boolean) => void;
   /** The animal whose card is open next to it on the map, or null. */
   beside: string | null;
+  /** The animal or place whose card is open, wherever it is shown, or null. */
+  open: string | null;
   /** The vehicle is going back, or stopped after going back: it is drawn turned round. */
   back: boolean;
   closeSighting: () => void;
@@ -51,7 +53,7 @@ export interface VoyageController {
 
 export function useVoyage(): VoyageController {
   const [state, setState] = useState<VoyageState | null>(null);
-  const bus = useRef<VoyageBus>({ state: null, seen: [], spot: () => {}, beside: null, back: false, closeSighting: () => {}, openSource: () => {}, listeners: new Set() }).current;
+  const bus = useRef<VoyageBus>({ state: null, seen: [], spot: () => {}, beside: null, open: null, back: false, closeSighting: () => {}, openSource: () => {}, listeners: new Set() }).current;
   const frame = useRef(0);
   const [gear, setGear] = useState(0);
   const press = useRef({ gear: 0, at: -Infinity });
@@ -77,6 +79,7 @@ export function useVoyage(): VoyageController {
 
   const showSighting = (next: { id: string; beside: boolean } | null) => {
     bus.beside = next?.beside ? next.id : null;
+    bus.open = next?.id ?? null;
     setSighting(next);
     notify();
   };
@@ -95,6 +98,7 @@ export function useVoyage(): VoyageController {
     bus.seen = [];
     setSeen([]);
     bus.beside = null;
+    bus.open = null;
     setSighting(null);
   };
 

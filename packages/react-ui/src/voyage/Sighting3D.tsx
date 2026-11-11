@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useRef, type RefObject } from 'react';
+import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import { Vector3, type Camera, type Group, type Object3D } from 'three';
 import { useFrame } from '@react-three/fiber';
 import { Html } from '@react-three/drei';
-import { heightAt, sightingNote, worldHeight, type SightingSpot } from '@antartida/core';
+import { fuegiaWorldHeight, heightAt, inFuegia, loadFuegiaMesh, sightingNote, worldHeight, type SightingSpot } from '@antartida/core';
 import { Fact } from './Fact.tsx';
 import { SightingIcon } from './SightingIcon.tsx';
 import { WING_ROOT, buildSightingGeometry, moveSighting } from './sightingModels.ts';
@@ -12,6 +12,8 @@ import { vehicleMaterial } from './vehicles.ts';
 /** Size of the model as a fraction of its distance to the camera: it fills the ring of its button. */
 const SIZE_PER_DISTANCE = 0.062;
 const MIN_SIZE = 0.3;
+/** A place grows while its card is open, to show its model. */
+const OPEN_PLACE_SCALE = 2.4;
 /** Height of the center of the button over the base of the model, in model units. */
 const RING_HEIGHT = 0.4;
 
@@ -58,12 +60,23 @@ export function Sighting3D({ spot, turn, seen, open, wide, bus, reduced, overlay
     geometry?.wings?.forEach((g) => g.dispose());
   }, [geometry]);
 
+  // A place around Tierra del Fuego stands on that relief, which is a separate mesh drawn at its own scale.
+  const [fuegiaGround, setFuegiaGround] = useState(0);
+  useEffect(() => {
+    if (!sighting.place || !inFuegia(spot.x, spot.y)) return;
+    let alive = true;
+    void loadFuegiaMesh('lo').then((mesh) => alive && setFuegiaGround(Math.max(0, fuegiaWorldHeight(heightAt(spot.x, spot.y, mesh)))));
+    return () => void (alive = false);
+  }, [sighting, spot]);
+
   useFrame(({ camera }) => {
     const g = group.current;
     if (!g) return;
     // On the ground or on the water; the relief may load after the trip starts.
-    g.position.set(spot.x - 500, Math.max(0, worldHeight(heightAt(spot.x, spot.y))), spot.y - 500);
-    g.scale.setScalar(Math.max(MIN_SIZE, camera.position.distanceTo(g.position) * SIZE_PER_DISTANCE));
+    g.position.set(spot.x - 500, Math.max(fuegiaGround, worldHeight(heightAt(spot.x, spot.y))), spot.y - 500);
+    const size = Math.max(MIN_SIZE, camera.position.distanceTo(g.position) * SIZE_PER_DISTANCE);
+    g.scale.setScalar(size);
+    model.current?.scale.setScalar(open && sighting.place ? OPEN_PLACE_SCALE : 1);
     if (model.current) moveSighting(model.current, sighting, reduced ? 0 : performance.now() / 1000);
   });
 

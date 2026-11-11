@@ -15,6 +15,9 @@ const GRASS = 0x9aa86a;
 const SEA_GREY = 0x6f7f8c;
 const BROWN = 0x6b5443;
 const WHALE_GREY = 0x55606b;
+const LAMP = 0xf2c14e;
+const ZINC = 0x7d868c;
+const SKY = 0x7fb6dc;
 
 interface Model {
   body: readonly Box[];
@@ -78,15 +81,30 @@ const dolphin = (back: number, belly: number, patch: number): Model => ({
   ],
 });
 
+// Humpback whale: body thinning to the tail, flat head, very long white flippers, white under the flukes.
 const WHALE: Box[] = [
-  [0, 0, 0, 0.8, 0.24, 0.26, WHALE_GREY],
-  [0.42, -0.02, 0, 0.2, 0.2, 0.22, WHALE_GREY],
-  [0.1, -0.11, 0, 0.6, 0.04, 0.22, WHITE],
-  [-0.48, 0.02, 0, 0.2, 0.1, 0.1, WHALE_GREY],
-  [-0.6, 0.04, 0, 0.1, 0.03, 0.4, WHALE_GREY],
-  [0.15, -0.08, 0.2, 0.3, 0.03, 0.12, WHITE],
-  [0.15, -0.08, -0.2, 0.3, 0.03, 0.12, WHITE],
-  [-0.1, 0.14, 0, 0.1, 0.05, 0.04, WHALE_GREY],
+  [0.02, 0, 0, 0.36, 0.24, 0.24, WHALE_GREY],
+  [0.27, -0.01, 0, 0.18, 0.22, 0.22, WHALE_GREY],
+  [0.42, -0.03, 0, 0.14, 0.17, 0.19, WHALE_GREY],
+  [0.52, -0.05, 0, 0.08, 0.11, 0.14, WHALE_GREY],
+  [-0.22, 0.01, 0, 0.18, 0.19, 0.18, WHALE_GREY],
+  [-0.38, 0.02, 0, 0.16, 0.13, 0.11, WHALE_GREY],
+  [-0.5, 0.03, 0, 0.1, 0.08, 0.06, WHALE_GREY],
+  [-0.57, 0.035, 0, 0.07, 0.03, 0.08, WHALE_GREY],
+  [-0.58, 0.035, 0.1, 0.1, 0.03, 0.16, WHALE_GREY],
+  [-0.58, 0.035, -0.1, 0.1, 0.03, 0.16, WHALE_GREY],
+  [-0.62, 0.035, 0.2, 0.06, 0.025, 0.08, WHALE_GREY],
+  [-0.62, 0.035, -0.2, 0.06, 0.025, 0.08, WHALE_GREY],
+  [-0.58, 0.018, 0.1, 0.08, 0.01, 0.14, WHITE],
+  [-0.58, 0.018, -0.1, 0.08, 0.01, 0.14, WHITE],
+  [-0.14, 0.14, 0, 0.1, 0.05, 0.04, WHALE_GREY],
+  [0.2, -0.1, 0.19, 0.12, 0.03, 0.16, WHITE],
+  [0.2, -0.1, -0.19, 0.12, 0.03, 0.16, WHITE],
+  [0.14, -0.1, 0.33, 0.1, 0.025, 0.14, WHITE],
+  [0.14, -0.1, -0.33, 0.1, 0.025, 0.14, WHITE],
+  [0.22, -0.115, 0, 0.5, 0.03, 0.2, WHITE],
+  [0.44, 0.02, 0.097, 0.03, 0.03, 0.01, BLACK],
+  [0.44, 0.02, -0.097, 0.03, 0.03, 0.01, BLACK],
 ];
 
 /** A seal resting with its head up: on a rock in the Beagle Channel, on an ice floe in Antarctica. */
@@ -109,43 +127,103 @@ const seal = (body: number, belly: number, ground: number): Model => ({
   ],
 });
 
-const penguinAt = (x: number, z: number, k: number): Box[] => [
-  [x, 0.04 + 0.23 * k, z, 0.2 * k, 0.46 * k, 0.24 * k, BLACK],
-  [x + 0.06 * k, 0.04 + 0.21 * k, z, 0.12 * k, 0.36 * k, 0.18 * k, WHITE],
-  [x, 0.04 + 0.52 * k, z, 0.18 * k, 0.14 * k, 0.18 * k, BLACK],
-  [x + 0.12 * k, 0.04 + 0.52 * k, z, 0.08 * k, 0.04 * k, 0.05 * k, ORANGE],
-  [x, 0.04 + 0.25 * k, z + 0.14 * k, 0.08 * k, 0.3 * k, 0.04 * k, BLACK],
-  [x, 0.04 + 0.25 * k, z - 0.14 * k, 0.08 * k, 0.3 * k, 0.04 * k, BLACK],
+type PenguinFace = 'strap' | 'ring' | 'band';
+
+/**
+ * A penguin standing at (x, z), `k` times the full size. The face tells the species apart:
+ * chinstrap (white face, thin black strap), Adélie (white ring around the eye), Magellanic (white band).
+ */
+const penguinAt = (x: number, z: number, k: number, face: PenguinFace): Box[] => {
+  const at = (cx: number, cy: number, cz: number, sx: number, sy: number, sz: number, color: number): Box =>
+    [x + cx * k, 0.04 + cy * k, z + cz * k, sx * k, sy * k, sz * k, color];
+  const marks: Box[] = face === 'strap'
+    ? [at(0.07, 0.53, 0, 0.05, 0.1, 0.15, WHITE), at(0.09, 0.485, 0, 0.03, 0.02, 0.16, BLACK)]
+    : face === 'ring'
+      ? [at(0.05, 0.56, 0.081, 0.04, 0.04, 0.005, WHITE), at(0.05, 0.56, -0.081, 0.04, 0.04, 0.005, WHITE)]
+      : [at(0.02, 0.51, 0, 0.165, 0.03, 0.165, WHITE), at(0.085, 0.4, 0, 0.03, 0.03, 0.19, BLACK)];
+  return [
+    at(0, 0.16, 0, 0.2, 0.26, 0.24, BLACK),
+    at(0, 0.38, 0, 0.18, 0.2, 0.2, BLACK),
+    at(0.01, 0.54, 0, 0.16, 0.14, 0.16, BLACK),
+    // White front that wraps round to the sides.
+    at(0.05, 0.25, 0, 0.125, 0.4, 0.245, WHITE),
+    at(0.12, 0.54, 0, 0.08, 0.04, 0.05, BLACK),
+    at(0.05, 0.02, 0.06, 0.14, 0.04, 0.08, ORANGE),
+    at(0.05, 0.02, -0.06, 0.14, 0.04, 0.08, ORANGE),
+    at(0, 0.32, 0.135, 0.1, 0.3, 0.035, BLACK),
+    at(0, 0.32, -0.135, 0.1, 0.3, 0.035, BLACK),
+    at(-0.12, 0.06, 0, 0.08, 0.04, 0.08, BLACK),
+    ...marks,
+  ];
+};
+
+const penguin = (face: PenguinFace): Box[] => [
+  [0, 0, 0, 0.8, 0.08, 0.6, ICE],
+  [-0.3, 0.02, 0.2, 0.3, 0.08, 0.3, ICE],
+  ...penguinAt(0.05, 0, 1, face),
 ];
 
-const PENGUIN: Box[] = [[0, 0, 0, 0.8, 0.08, 0.6, ICE], ...penguinAt(0, 0, 1)];
-
-/** The colony of Isla Martillo: a low island with penguins on it. */
+/** The colony of Isla Martillo: a low island with Magellanic penguins on it. */
 const COLONY: Box[] = [
   [0, 0, 0, 1.1, 0.08, 0.8, GRASS],
-  ...penguinAt(-0.3, -0.2, 0.5), ...penguinAt(0, 0.15, 0.5), ...penguinAt(0.3, -0.1, 0.5), ...penguinAt(-0.15, 0.28, 0.5), ...penguinAt(0.25, 0.25, 0.5),
+  [0.1, 0.03, 0.05, 0.8, 0.06, 0.5, 0xb3a878],
+  [-0.45, 0.02, -0.3, 0.3, 0.1, 0.25, ROCK],
+  ...penguinAt(-0.3, -0.12, 0.5, 'band'), ...penguinAt(0, 0.15, 0.5, 'band'), ...penguinAt(0.3, -0.1, 0.5, 'band'),
+  ...penguinAt(-0.15, 0.28, 0.5, 'band'), ...penguinAt(0.25, 0.25, 0.5, 'band'), ...penguinAt(0.05, -0.25, 0.5, 'band'),
 ];
 
-// Red and white stone tower on an islet: Les Éclaireurs, from photos.
+/** Rocky islet both lighthouses stand on. */
+const ISLET: Box[] = [
+  [0, 0.04, 0, 0.95, 0.08, 0.75, ROCK],
+  [0.05, 0.1, -0.02, 0.7, 0.06, 0.55, 0x9a9f9b],
+  [-0.36, 0.1, 0.24, 0.2, 0.1, 0.2, 0x767b78],
+  [0.38, 0.09, -0.26, 0.16, 0.08, 0.16, 0x767b78],
+];
+
+// Les Éclaireurs, from photos: stone tower that narrows upwards, red with a white band, black lantern.
 const TOWER: Box[] = [
-  [0, 0.05, 0, 0.9, 0.1, 0.7, ROCK],
-  [0, 0.2, 0, 0.24, 0.2, 0.24, RED],
-  [0, 0.4, 0, 0.22, 0.2, 0.22, WHITE],
-  [0, 0.6, 0, 0.2, 0.2, 0.2, RED],
-  [0, 0.72, 0, 0.28, 0.04, 0.28, BLACK],
-  [0, 0.8, 0, 0.14, 0.12, 0.14, CREAM],
-  [0, 0.89, 0, 0.18, 0.06, 0.18, BLACK],
+  ...ISLET,
+  [0, 0.18, 0, 0.27, 0.1, 0.27, RED],
+  [0, 0.28, 0, 0.255, 0.1, 0.255, RED],
+  [0, 0.38, 0, 0.24, 0.1, 0.24, WHITE],
+  [0, 0.48, 0, 0.225, 0.1, 0.225, WHITE],
+  [0, 0.58, 0, 0.21, 0.1, 0.21, RED],
+  [0, 0.68, 0, 0.2, 0.1, 0.2, RED],
+  [0.136, 0.2, 0, 0.01, 0.12, 0.07, BLACK],
+  [0.122, 0.48, 0, 0.01, 0.05, 0.04, BLACK],
+  [0, 0.745, 0, 0.3, 0.03, 0.3, BLACK],
+  [0, 0.82, 0, 0.15, 0.12, 0.15, LAMP],
+  [0.076, 0.82, 0.076, 0.02, 0.12, 0.02, BLACK],
+  [0.076, 0.82, -0.076, 0.02, 0.12, 0.02, BLACK],
+  [-0.076, 0.82, 0.076, 0.02, 0.12, 0.02, BLACK],
+  [-0.076, 0.82, -0.076, 0.02, 0.12, 0.02, BLACK],
+  [0, 0.9, 0, 0.2, 0.04, 0.2, BLACK],
+  [0, 0.94, 0, 0.1, 0.04, 0.1, BLACK],
+  [0, 0.99, 0, 0.02, 0.06, 0.02, BLACK],
 ];
 
-// Low wooden house with a stepped roof and a ball on top: San Juan de Salvamento, from photos of its replica.
+// San Juan de Salvamento, from photos of its replica: low eight-sided wooden house, windows for the
+// lamps on one side, stepped roof with a ball on top, flagpole.
 const HOUSE: Box[] = [
-  [0, 0.05, 0, 0.9, 0.1, 0.7, ROCK],
-  [0, 0.22, 0, 0.5, 0.24, 0.5, CREAM],
-  [0, 0.26, 0, 0.52, 0.08, 0.3, BLACK],
-  [0, 0.38, 0, 0.56, 0.06, 0.56, WOOD],
-  [0, 0.45, 0, 0.36, 0.08, 0.36, WOOD],
-  [0, 0.53, 0, 0.18, 0.08, 0.18, WOOD],
+  ...ISLET,
+  [0, 0.25, 0, 0.56, 0.24, 0.3, CREAM],
+  [0, 0.25, 0, 0.3, 0.24, 0.56, CREAM],
+  [0, 0.25, 0, 0.46, 0.24, 0.46, CREAM],
+  [0.282, 0.29, 0, 0.01, 0.07, 0.22, LAMP],
+  [0.232, 0.29, 0.19, 0.01, 0.07, 0.08, LAMP],
+  [0.232, 0.29, -0.19, 0.01, 0.07, 0.08, LAMP],
+  [-0.282, 0.21, 0, 0.01, 0.16, 0.08, WOOD],
+  [0, 0.385, 0, 0.62, 0.03, 0.34, ZINC],
+  [0, 0.385, 0, 0.34, 0.03, 0.62, ZINC],
+  [0, 0.385, 0, 0.5, 0.03, 0.5, ZINC],
+  [0, 0.43, 0, 0.38, 0.06, 0.38, ZINC],
+  [0, 0.49, 0, 0.24, 0.06, 0.24, ZINC],
+  [0, 0.55, 0, 0.12, 0.06, 0.12, ZINC],
   [0, 0.62, 0, 0.1, 0.1, 0.1, BLACK],
+  [-0.38, 0.4, 0.26, 0.02, 0.6, 0.02, BLACK],
+  [-0.31, 0.66, 0.26, 0.12, 0.03, 0.01, SKY],
+  [-0.31, 0.63, 0.26, 0.12, 0.03, 0.01, WHITE],
+  [-0.31, 0.6, 0.26, 0.12, 0.03, 0.01, SKY],
 ];
 
 const MODELS: Record<string, Model> = {
@@ -164,8 +242,8 @@ const MODELS: Record<string, Model> = {
   'delfin-austral': dolphin(0x3d4852, WHITE, 0xa9b3ba),
   'delfin-cruzado': dolphin(BLACK, WHITE, WHITE),
   jorobada: { body: WHALE },
-  barbijo: { body: PENGUIN },
-  adelia: { body: PENGUIN },
+  barbijo: { body: penguin('strap') },
+  adelia: { body: penguin('ring') },
 };
 
 export interface SightingGeometry {

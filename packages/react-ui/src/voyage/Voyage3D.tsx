@@ -64,6 +64,9 @@ function heightOf(kind: TransportKind, t: number, size: number): number {
 const PITCH_SPAN = 0.004;
 const MAX_PITCH = 0.4;
 
+/** A place farther than this from the vehicle, in map units, is out of view: the camera goes to it while its card is open. */
+const VISIT_DISTANCE = 6;
+
 const routeMaterial = new LineDashedMaterial({ color: 0x1f2a36, dashSize: 0.8, gapSize: 0.6, transparent: true, opacity: 0.75 });
 
 /** The vehicle travelling on the live map, its path and the camera, which stays centered on it. */
@@ -81,6 +84,8 @@ export function Voyage3D({ bus, reduced, overlay }: {
   const trailMesh = useRef<Mesh>(null);
   const [transport, setTransport] = useState<TransportId | null>(bus.state?.transport ?? null);
   const drawn = useRef({ t: -1, transport: null as TransportId | null });
+  // Far place the camera is at, and whether it is on its way back to the vehicle.
+  const visit = useRef({ id: null as string | null, returning: false });
   // Ids of the animals in view and of the ones already spotted, joined: React re-renders only when they change.
   const [inView, setInView] = useState('||');
 
@@ -189,7 +194,22 @@ export function Voyage3D({ bus, reduced, overlay }: {
       const departing = s.t === 0 && (drawn.current.t !== 0 || drawn.current.transport !== s.transport);
       if (departing) {
         void controls.setLookAt(takeoff.x + DEPARTURE_OFFSET.x, DEPARTURE_OFFSET.y, takeoff.z + DEPARTURE_OFFSET.z, takeoff.x, 0, takeoff.z, !reduced);
-      } else if (s.t > 0) void controls.moveTo(g.position.x, Math.max(0, height), g.position.z, false);
+      } else {
+        const open = bus.open ? voyageSightings(s.kind).find((v) => v.sighting.id === bus.open) : undefined;
+        const far = open?.sighting.place && Math.hypot(open.x - p.x, open.y - p.y) > VISIT_DISTANCE ? open : null;
+        if (far) {
+          // Opening a far place takes the camera there, to see it; the trip waits.
+          if (visit.current.id !== far.sighting.id) {
+            visit.current = { id: far.sighting.id, returning: false };
+            void controls.moveTo(far.x - 500, 0, far.y - 500, !reduced);
+          }
+        } else if (visit.current.id) {
+          // Closing it brings the camera back to the vehicle.
+          const state = { id: null, returning: true };
+          visit.current = state;
+          void controls.moveTo(g.position.x, Math.max(0, height), g.position.z, !reduced).then(() => void (state.returning = false));
+        } else if (s.t > 0 && !visit.current.returning) void controls.moveTo(g.position.x, Math.max(0, height), g.position.z, false);
+      }
     }
     drawn.current = { t: s.t, transport: s.transport };
   });
