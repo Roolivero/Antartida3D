@@ -6,27 +6,42 @@ type Point = { x: number; y: number };
  * Ushuaia–Marambio sea route as [lon, lat] waypoints.
  *
  * ILLUSTRATIVE: this is not the real track of any ship (no public source for it). It is a plausible
- * sea path drawn so that it never crosses land on the simplified Natural Earth ne_50m coastline of
- * coastline.ts, where the real channels are barely a map unit wide.
- * Ushuaia → east along the Beagle Channel north of Navarino → off Cape Horn → across the Drake
- * Passage → between King George and Livingston Islands (South Shetlands) → Bransfield Strait →
- * Antarctic Sound (between Joinville Island and the peninsula tip) → Marambio.
+ * sea path traced over the IBCSO v2 relief the 3D map shows, so the vehicle stays on the water:
+ * Ushuaia → east along the Beagle Channel, through Mackinlay Pass and north of Picton Island →
+ * east of Nueva Island → off Cape Horn → across the Drake Passage → Nelson Strait (South Shetlands)
+ * → Bransfield Strait → Antarctic Sound (between the peninsula tip and Joinville Island) → Marambio.
+ * The simplified Natural Earth coastline of the 2D map closes the Beagle, so the 2D line touches
+ * its drawn coast there.
  * Endpoints: Ushuaia (68.30° W, 54.81° S) and Base Marambio (56.62° W, 64.23° S). [Fuente a definir]
  */
 export const ROUTE_WAYPOINTS: readonly (readonly [number, number])[] = [
   [-68.3, -54.81], // Ushuaia
-  [-68.12, -54.9], // Beagle Channel
-  [-67.42, -54.95], // Beagle Channel, north of Navarino
-  [-67.02, -55.02],
-  [-66.85, -55.32], // Beagle eastern mouth
-  [-67.47, -56.22], // off Cape Horn
+  [-68.22, -54.84], // out of Ushuaia Bay
+  [-68.12, -54.865], // Beagle Channel
+  [-67.94, -54.88],
+  [-67.8, -54.893],
+  [-67.66, -54.905],
+  [-67.56, -54.915], // Mackinlay Pass, between Gable Island and Navarino
+  [-67.46, -54.9158],
+  [-67.38, -54.9155],
+  [-67.25, -54.916],
+  [-67.02, -54.965],
+  [-66.78, -55.03], // between Picton Island and Tierra del Fuego
+  [-66.5, -55.1], // Beagle eastern mouth
+  [-66.2, -55.25], // east of Nueva Island
+  [-66.25, -55.7],
+  [-66.6, -56.15], // off Cape Horn, to its east
   [-66.23, -59.62], // Drake Passage
   [-60, -62.03], // approaching the South Shetlands
-  [-59.28, -62.54], // between King George and Livingston
+  [-59.33, -62.32], // Nelson Strait, between Robert and Nelson Islands
+  [-59.15, -62.5],
   [-57.99, -62.98], // Bransfield Strait
-  [-56.85, -63.13], // around the peninsula tip
-  [-56.68, -63.45], // Antarctic Sound
-  [-56.58, -63.75],
+  [-56.95, -63.15], // around the peninsula tip
+  [-56.72, -63.3], // Antarctic Sound, between the peninsula and Joinville Island
+  [-56.6, -63.45],
+  [-56.38, -63.57], // east of Andersson Island
+  [-56.4, -63.85],
+  [-56.4, -64.1],
   [-56.62, -64.23], // Marambio
 ];
 

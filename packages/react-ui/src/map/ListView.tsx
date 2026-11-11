@@ -9,7 +9,7 @@ const GROUPS: { tier: Tier; id: string; tag: string; label?: string; desc: strin
 ];
 
 export function ListView({ explored, onClose, onPick }: {
-  explored: boolean;
+  explored: readonly string[];
   onClose: () => void;
   onPick: (p: MapPoint) => void;
 }) {
@@ -42,7 +42,7 @@ export function ListView({ explored, onClose, onPick }: {
                   <button type="button" className="li" onClick={() => onPick(p)}>
                     <span className="t"><strong>{p.title}</strong><span className="p">{p.place}</span></span>
                     <span className="go">
-                      {g.tier === 'A' ? (explored ? 'Explorado · volver a entrar' : 'Empezar expedición') : 'Ver ficha'}
+                      {g.tier === 'A' ? (explored.includes(p.id) ? 'Explorado · volver a entrar' : 'Empezar expedición') : 'Ver ficha'}
                     </span>
                   </button>
                 </li>

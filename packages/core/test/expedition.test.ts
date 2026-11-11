@@ -85,10 +85,16 @@ describe('storage', () => {
   });
 
   it('persists explored', () => {
-    expect(loadExplored()).toBe(false);
-    saveExplored(true);
-    expect(mem.get(EXPLORED_KEY)).toBe('1');
-    expect(loadExplored()).toBe(true);
+    expect(loadExplored()).toEqual([]);
+    saveExplored(['fosiles', 'campana']);
+    expect(loadExplored()).toEqual(['fosiles', 'campana']);
+  });
+
+  it('reads the old single-expedition format', () => {
+    mem.set(EXPLORED_KEY, '1');
+    expect(loadExplored()).toEqual(['fosiles']);
+    mem.set(EXPLORED_KEY, '0');
+    expect(loadExplored()).toEqual([]);
   });
 
   it('survives a throwing localStorage', () => {
@@ -96,7 +102,7 @@ describe('storage', () => {
       getItem: () => { throw new Error('blocked'); },
       setItem: () => { throw new Error('blocked'); },
     };
-    expect(loadExplored()).toBe(false);
-    expect(() => saveExplored(true)).not.toThrow();
+    expect(loadExplored()).toEqual([]);
+    expect(() => saveExplored(['fosiles'])).not.toThrow();
   });
 });

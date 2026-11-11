@@ -41,7 +41,8 @@ export type ScreenProjector = (x: number, y: number) => { left: number; top: num
 export function buildMarkers(
   size: Size,
   view: View,
-  explored: boolean,
+  /** Ids of the expeditions already completed. */
+  explored: readonly string[],
   points: readonly MapPoint[] = PTS,
   toScreenFn?: ScreenProjector
 ): Marker[] {
@@ -74,7 +75,7 @@ export function buildMarkers(
     const pos = projector(p.x, p.y);
     if (pos.visible === false) continue;
     const isA = p.tier === 'A';
-    const done = isA && explored;
+    const done = isA && explored.includes(p.id);
     markers.push({
       kind: 'point',
       key: p.id,

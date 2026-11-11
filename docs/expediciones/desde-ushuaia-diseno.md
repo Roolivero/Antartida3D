@@ -1,6 +1,6 @@
 # Diseño — Expedición #4: Desde Ushuaia («El cruce»)
 
-Estado: **diseño acordado con el equipo, sin implementar**. El contenido y las fuentes están en [desde-ushuaia.md](./desde-ushuaia.md) y [desde-ushuaia-fuentes.md](./desde-ushuaia-fuentes.md).
+Estado: **diseño acordado con el equipo; primera parte implementada** (elección de transporte, viaje sobre el mapa 3D con ritmo del usuario, hitos con fuentes, vehículos voxel). Falta: avistajes de fauna, icono del vehículo en el mapa 2D, sugerencia de la siguiente expedición y prueba en teléfonos reales. El contenido y las fuentes están en [desde-ushuaia.md](./desde-ushuaia.md) y [desde-ushuaia-fuentes.md](./desde-ushuaia-fuentes.md).
 
 ## Idea
 

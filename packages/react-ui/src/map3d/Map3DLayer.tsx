@@ -34,6 +34,7 @@ import { InkLines } from './InkLines.tsx';
 import { Graticule3D } from './Graticule3D.tsx';
 import { InkEffect } from './InkEffect.ts';
 import { SeaTimeContext, useAnimationClock } from './useAnimationClock.ts';
+import { Voyage3D } from '../voyage/Voyage3D.tsx';
 
 function SceneContent({
   wide,
@@ -47,6 +48,7 @@ function SceneContent({
   markers,
   overlayRef,
   enablePost,
+  voyage,
 }: {
   wide: boolean;
   lowQuality: boolean;
@@ -59,6 +61,7 @@ function SceneContent({
   markers: Marker[];
   overlayRef: RefObject<HTMLDivElement | null>;
   enablePost: boolean;
+  voyage: Layer3DProps['voyage'];
 }) {
   const seaTime = useAnimationClock({ lowQuality });
 
@@ -77,6 +80,7 @@ function SceneContent({
       <Fuegia wide={wide} />
       <Graticule3D />
       <InkLines />
+      {voyage && <Voyage3D bus={voyage} reduced={reduced} />}
       {enablePost && (
         <EffectComposer multisampling={0}>
           <InkEffect />
@@ -326,6 +330,7 @@ export function Map3DLayer({
   onPick,
   command,
   onCameraRest,
+  voyage,
 }: Map3DLayerProps) {
   const reduced = useReducedMotion();
   const overlayRef = useRef<HTMLDivElement>(null);
@@ -390,6 +395,7 @@ export function Map3DLayer({
           markers={markers}
           overlayRef={overlayRef}
           enablePost={enablePost}
+          voyage={voyage}
         />
       </Canvas>
       <div

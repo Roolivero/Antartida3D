@@ -109,7 +109,7 @@ export function Expedition({ reduced, onLeave }: { reduced: boolean; onLeave: (d
               <div className="anno">expedición registrada</div>
               <h2>Fósiles · Isla Marambio</h2>
               <p>Encontraste 3 restos, los comparaste y viste una reconstrucción posible del ambiente antes del hielo.</p>
-              <p className="small">Al volver, el punto queda marcado como explorado y tu registro pasa a 1/1.</p>
+              <p className="small">Al volver, el punto queda marcado como explorado y se suma a tu registro de exploración.</p>
             </div>
           )}
         </div>

@@ -2,8 +2,11 @@ import { lazy, Suspense, useEffect, useState } from 'react';
 import {
   DIVE_MS,
   FADE_MS,
+  AVAILABLE_COUNT,
+  EXPEDITION_POINT,
   RETURN_MS,
-  RETURN_TOAST,
+  VOYAGE_POINT,
+  returnToast,
   TOAST_MS,
   loadExplored,
   saveExplored,
@@ -42,7 +45,8 @@ function hasWebGL(): boolean {
 export function AntarcticaApp() {
   const [screen, setScreen] = useState<'map' | 'exp'>('map');
   const [phase, setPhase] = useState<Phase>('idle');
-  const [explored, setExplored] = useState(false);
+  const [explored, setExplored] = useState<string[]>([]);
+  const [voyaging, setVoyaging] = useState(false);
   const [toast, setToast] = useState('');
   const [legend, setLegend] = useState(true);
   const [returned, setReturned] = useState(false);
@@ -108,17 +112,34 @@ export function AntarcticaApp() {
     );
   };
 
+  /** Marks an expedition as explored and announces it. */
+  const complete = (point: { id: string; title: string }) => {
+    const ids = explored.includes(point.id) ? explored : [...explored, point.id];
+    setExplored(ids);
+    saveExplored(ids);
+    setToast(returnToast(point.title, ids.length, AVAILABLE_COUNT));
+    later('toast', () => setToast(''), TOAST_MS);
+  };
+
+  // The trip from Ushuaia happens on the 3D map; without WebGL it advances step by step on the 2D one.
+  const startVoyage = () => {
+    setToast('');
+    if (webglSupported) setMode('3d');
+    setVoyaging(true);
+  };
+
+  const endVoyage = (done: boolean) => {
+    setVoyaging(false);
+    if (done) complete(VOYAGE_POINT);
+  };
+
   const leave = (done: boolean) => {
-    if (done) {
-      setExplored(true);
-      saveExplored(true);
-    }
     setScreen('map');
     setPhase('ret');
     setReturned(true);
-    setToast(done ? RETURN_TOAST : '');
+    if (done) complete(EXPEDITION_POINT);
+    else setToast('');
     later('ret', () => setPhase('idle'), RETURN_MS);
-    if (done) later('toast', () => setToast(''), TOAST_MS);
   };
 
   return (
@@ -128,6 +149,7 @@ export function AntarcticaApp() {
         <MapView
           phase={phase}
           explored={explored}
+          voyaging={voyaging}
           toast={toast}
           legend={legend}
           focusExpedition={returned}
@@ -137,6 +159,8 @@ export function AntarcticaApp() {
           onToggleLegend={() => setLegend((l) => !l)}
           onToggleMode={toggleMode}
           onStart={start}
+          onStartVoyage={startVoyage}
+          onEndVoyage={endVoyage}
         />
       ) : (
         <Suspense fallback={null}>
