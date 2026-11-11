@@ -30,6 +30,7 @@ El turismo se menciona como una línea de contexto: no es un transporte jugable 
 - Los animales son botones HTML proyectados sobre el canvas, como los marcadores actuales (`ProjectMarkers`): accesibles por teclado, con `aria-label`, sin raycasting. El cuaderno incluye la lista de avistajes alcanzable con Tab.
 - También hay **lugares** (faros Les Éclaireurs y San Juan de Salvamento, pingüinera de Isla Martillo): se abren igual que los animales, se dibujan en su posición aproximada y el cuaderno los cuenta aparte. Un lugar fuera de la vista queda sostenido en el borde de la pantalla, en su dirección.
 - Durante el viaje se puede retroceder manteniendo «◀»; los hitos ya vistos no repiten su tarjeta. Cada hito se marca en el mapa con un pin (ocre si falta llegar, gris si ya se pasó).
+- Cada animal y cada lugar se ve en el mapa con un modelo voxel procedural, dentro de un aro punteado que late para mostrar que se puede tocar; el icono va en la esquina del aro. Los animales se mueven (las aves planean en círculo, los delfines saltan, la ballena sube a respirar, focas y pingüinos se mecen). **Modelos y movimientos son ilustrativos**; con movimiento reducido quedan quietos.
 - Solo hay especies con ficha y fuente verificada. Las posiciones son **ilustrativas** y se rotula en pantalla.
 - Solapa con #16 (fauna, Irízar, ruta Ushuaia–Marambio): ver «Coordinación».
 

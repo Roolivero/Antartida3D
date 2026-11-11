@@ -2,7 +2,7 @@ import { BufferAttribute, BufferGeometry, Color, MeshBasicMaterial } from 'three
 import type { TransportId } from '@antartida/core';
 
 /** [centerX, centerY, centerZ, sizeX, sizeY, sizeZ, color]. The bow or nose points to +x, y is up. */
-type Box = readonly [number, number, number, number, number, number, number];
+export type Box = readonly [number, number, number, number, number, number, number];
 
 // Approximate liveries, from photos. The models are illustrations, not measured.
 const HULL_RED = 0xc8472a;
@@ -76,12 +76,14 @@ const FACES: readonly { corners: readonly (readonly [number, number, number])[];
   { corners: [[1, -1, -1], [-1, -1, -1], [-1, 1, -1], [1, 1, -1]], shade: 0.62 },
 ];
 
+/** Voxel-style vehicle. */
+export const buildVehicleGeometry = (id: TransportId) => buildBoxGeometry(MODELS[id]);
+
 /**
- * Voxel-style vehicle: every box merged into one geometry with vertex colors, so each vehicle is a
+ * Voxel-style model: every box merged into one geometry with vertex colors, so each model is a
  * single draw call and needs no model file.
  */
-export function buildVehicleGeometry(id: TransportId): BufferGeometry {
-  const boxes = MODELS[id];
+export function buildBoxGeometry(boxes: readonly Box[]): BufferGeometry {
   const positions = new Float32Array(boxes.length * 6 * 6 * 3);
   const colors = new Float32Array(positions.length);
   const color = new Color();

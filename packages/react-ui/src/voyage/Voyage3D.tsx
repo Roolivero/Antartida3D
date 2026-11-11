@@ -1,9 +1,8 @@
 import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
-import { BufferGeometry, Group, Line, LineDashedMaterial, Mesh, Vector3, type Camera, type Object3D } from 'three';
+import { BufferGeometry, Group, Line, LineDashedMaterial, Mesh, Vector3 } from 'three';
 import { useFrame, useThree } from '@react-three/fiber';
-import { Html, type CameraControls } from '@react-three/drei';
+import type { CameraControls } from '@react-three/drei';
 import {
-  sightingNote,
   TRANSPORTS,
   VOYAGE_POINT,
   flightClearance,
@@ -21,8 +20,7 @@ import {
 } from '@antartida/core';
 import { buildPinGeometry, pinMaterial } from './pins.ts';
 import { buildVehicleGeometry, vehicleMaterial } from './vehicles.ts';
-import { Fact } from './Fact.tsx';
-import { SightingIcon } from './SightingIcon.tsx';
+import { Sighting3D } from './Sighting3D.tsx';
 import { buildTrailGeometry, trailMaterial, updateTrail } from './trail.ts';
 import { NARROW_PX, type VoyageBus } from './useVoyage.ts';
 
@@ -65,24 +63,6 @@ function heightOf(kind: TransportKind, t: number, size: number): number {
 /** Trip fraction used to measure the slope of the flight for the plane's pitch. */
 const PITCH_SPAN = 0.004;
 const MAX_PITCH = 0.4;
-
-/** Room kept for the title and the trip panel when a far place is held at the edge of the screen, in px. */
-const EDGE = { side: 36, top: 130, bottom: 210 };
-const projected = new Vector3();
-
-/**
- * Screen position of a place. One that is out of view, like a lighthouse far from the route, stays
- * at the edge of the screen in its direction, so it can still be found and opened.
- */
-function placeOnScreen(el: Object3D, camera: Camera, size: { width: number; height: number }): number[] {
-  projected.setFromMatrixPosition(el.matrixWorld).project(camera);
-  const x = ((projected.x + 1) / 2) * size.width;
-  const y = ((1 - projected.y) / 2) * size.height;
-  return [
-    Math.min(size.width - EDGE.side, Math.max(EDGE.side, x)),
-    Math.min(size.height - EDGE.bottom, Math.max(EDGE.top, y)),
-  ];
-}
 
 const routeMaterial = new LineDashedMaterial({ color: 0x1f2a36, dashSize: 0.8, gapSize: 0.6, transparent: true, opacity: 0.75 });
 
@@ -219,34 +199,18 @@ export function Voyage3D({ bus, reduced, overlay }: {
   const wide = viewport.width > NARROW_PX;
   return (
     <>
-      {voyageSightings(kind).filter((v) => ids.includes(v.sighting.id)).map((v) => (
-        <Html key={v.sighting.id} position={[v.x - 500, 0.3, v.y - 500]} center calculatePosition={v.sighting.place ? placeOnScreen : undefined} portal={overlay as RefObject<HTMLElement>} zIndexRange={v.sighting.id === open ? [6, 6] : [4, 4]}>
-          <button
-            type="button"
-            className={'vspot' + (seen.includes(v.sighting.id) ? ' seen' : '')}
-            onClick={() => (v.sighting.id === open ? bus.closeSighting() : bus.spot(v.sighting.id, wide))}
-            aria-expanded={wide ? v.sighting.id === open : undefined}
-            aria-label={seen.includes(v.sighting.id)
-              ? `${v.sighting.name}, ya visto. Tocá para volver a ver su ficha.`
-              : `Avistaje: ${v.sighting.name}. Tocá para ver su ficha.`}
-          >
-            <SightingIcon icon={v.sighting.icon} />
-          </button>
-          {v.sighting.id === open && (
-            <section
-              className={'vpop' + (v.sighting.place ? ' under' : '')}
-              role="dialog"
-              aria-label={v.sighting.name}
-              onKeyDown={(e) => e.key === 'Escape' && bus.closeSighting()}
-            >
-              <button type="button" className="vpopclose" onClick={bus.closeSighting} aria-label="Cerrar ficha">×</button>
-              <h3>{v.sighting.name}</h3>
-              <p className="vlatin">{v.sighting.latin}</p>
-              <ul className="vfacts"><Fact fact={v.sighting.fact} onSource={bus.openSource} /></ul>
-              <p className="vsmall">{sightingNote(v.sighting)}</p>
-            </section>
-          )}
-        </Html>
+      {voyageSightings(kind).map((v, i) => ids.includes(v.sighting.id) && (
+        <Sighting3D
+          key={v.sighting.id}
+          spot={v}
+          turn={i * 1.3}
+          seen={seen.includes(v.sighting.id)}
+          open={v.sighting.id === open}
+          wide={wide}
+          bus={bus}
+          reduced={reduced}
+          overlay={overlay}
+        />
       ))}
       <primitive object={route} />
       {pins.map((_, i) => (
