@@ -45,6 +45,9 @@ export const VOYAGE_SOURCES = {
   O33: { org: 'CONICET (CADIC-CONICET)', title: '«Pingüinos en plan de ahorro de energía» (28-11-2012)', url: 'https://www.conicet.gov.ar/pinguinos-en-plan-de-ahorro-de-energia/' },
   O34: { org: 'Armada Argentina', title: '«Día Nacional de la Isla de los Estados» (10-08-2022)', url: 'https://www.argentina.gob.ar/node/331249' },
   O35: { org: 'Gobierno de Tierra del Fuego (Instituto Fueguino de Turismo)', title: '«El Instituto Fueguino de Turismo invita a recorrer la historia del faro Les Eclaireurs a través de imágenes» (22-12-2020)', url: 'https://www.tierradelfuego.gob.ar/blog/2020/12/22/el-instituto-fueguino-de-turismo-invita-a-recorrer-la-historia-del-faro-les-eclaireurs-a-traves-de-imagenes/' },
+  O36: { org: 'Santos, Hinke, Coria, Fusaro, Silvestro y Juares (Instituto Antártico Argentino, CONICET, UNLP, NOAA)', title: '«Abundance estimation of Adélie penguins at the Esperanza/Hope Bay mega colony», Polar Biology, 2018', url: 'https://ri.conicet.gov.ar/handle/11336/81406' },
+  O37: { org: 'Negrete, Soibelzon, Soibelzon y Lusky (Instituto Antártico Argentino, UNLP, CONICET)', title: '«New records of mummified crabeater seals on islands bordering Admiralty Sound, Weddell Sea», Antarctic Science, 2019 (resumen)', url: 'https://ri.conicet.gov.ar/handle/11336/128016' },
+  O38: { org: 'Daneri, Negri, Coria, Negrete, Libertelli y Corbalán (MACN-CONICET e Instituto Antártico Argentino)', title: '«Fish prey of Weddell seals, Leptonychotes weddellii, at Hope Bay, Antarctic Peninsula, during the late summer», Polar Biology, 2018', url: 'https://ri.conicet.gov.ar/handle/11336/93207' },
   I1: { org: 'Secretaría del Tratado Antártico', title: 'Tratado Antártico (1959), art. VI', url: 'https://documents.ats.aq/keydocs/vol_1/vol1_2_AT_Antarctic_Treaty_e.pdf' },
   I5: { org: 'NASA Earth Observatory', title: '«Cape Horn: A Mariner\'s Nightmare» (24-12-2017)', url: 'https://science.nasa.gov/earth/earth-observatory/cape-horn-a-mariners-nightmare-91472/' },
   I6: { org: 'Eos / AGU', title: '«Notorious ocean current is far stronger than previously thought» (27-12-2016)', url: 'https://eos.org/research-spotlights/notorious-ocean-current-is-far-stronger-than-previously-thought' },
@@ -54,6 +57,9 @@ export const VOYAGE_SOURCES = {
   I11: { org: 'ACAP', title: 'Species assessment: Wandering Albatross (2009)', url: 'https://www.acap.aq/acap-species/304-wandering-albatross/file' },
   I12: { org: 'ACAP', title: 'Species assessment: Southern Giant Petrel (2010)', url: 'https://www.acap.aq/acap-species/288-southern-giant-petrel/file' },
   I14: { org: 'Ministerio del Medio Ambiente de Chile', title: 'Ficha RCE 13 de Lagenorhynchus cruciger', url: 'https://clasificacionespecies.mma.gob.cl/wp-content/uploads/2019/10/Lagenorhynchus_cruciger_FIN_13RCE.pdf' },
+  I19: { org: 'Kampp, K.', title: '«Seabird observations from the South and Central Atlantic Ocean, Antarctica to 30°N, March-April 1998 and 2000», Atlantic Seabirds 3(1), 2001', url: 'https://natuurtijdschriften.nl/pub/546113/ASB2001003001001.pdf' },
+  I20: { org: 'Santora, J. A.', title: '«Habitat use of hourglass dolphins near the South Shetland Islands, Antarctica», 2011 (doi:10.1007/s00300-011-1133-8; copia abierta en Zenodo)', url: 'https://zenodo.org/records/1232673' },
+  I21: { org: 'Woodman, Borras-Chavez, Goebel, Torres, Aguayo y Krause (NOAA Fisheries, SWFSC)', title: '«CS-PHOC: weekly census counts of Southern Ocean phocids at Cape Shirreff, Livingston Island», Scientific Data 11(1), 2024', url: 'https://repository.library.noaa.gov/view/noaa/65765' },
   I16: { org: 'Australian Antarctic Division', title: 'Fichas de especie: focas y pingüinos antárticos', url: 'https://www.antarctica.gov.au/about-antarctica/animals/' },
 } as const satisfies Record<string, VoyageSource>;
 
@@ -262,8 +268,6 @@ export interface Sighting {
    * instead of beside the route. `latin` then says where it is.
    */
   place?: readonly [lon: number, lat: number];
-  /** The source of the fact names this stretch of the trip as a place where the animal lives or was counted. */
-  zoneSourced?: true;
   fact: VoyageFact;
 }
 
@@ -273,51 +277,50 @@ export interface Sighting {
  */
 export const SIGHTINGS: readonly Sighting[] = [
   // Beagle Channel
-  { id: 'cormoran', name: 'Cormorán imperial', latin: 'Leucocarbo atriceps', icon: 'bird', anchor: [-68, -54.89], offset: -0.2, brief: true, zoneSourced: true,
+  { id: 'cormoran', name: 'Cormorán imperial', latin: 'Leucocarbo atriceps', icon: 'bird', anchor: [-68, -54.89], offset: -0.2, brief: true,
     fact: { text: 'Es el ave marina más abundante del canal. En el verano 2008-09 anidaba en 5 islas del sector argentino, con 7.703 nidos activos.', kind: 'real', sources: ['O20', 'O30'] } },
   { id: 'eclaireurs', name: 'Faro Les Éclaireurs', latin: 'Canal Beagle', icon: 'lighthouse', anchor: [-67.88, -54.89], offset: 0, brief: true, place: [-68.083, -54.871],
     fact: { text: 'Es una torre de piedra de 11 m, pintada de rojo y blanco. Entró en servicio el 23 de diciembre de 1920. El nombre de los islotes, «los exploradores», se lo puso el capitán francés Louis Ferdinand Martial.', kind: 'real', sources: ['O35'] } },
-  { id: 'lobos', name: 'Lobos marinos', latin: 'dos especies', icon: 'seal', anchor: [-67.66, -54.905], offset: 0.2, brief: true, zoneSourced: true,
+  { id: 'lobos', name: 'Lobos marinos', latin: 'dos especies', icon: 'seal', anchor: [-67.66, -54.905], offset: 0.2, brief: true,
     fact: { text: 'Dos especies viven en las islas del canal: el lobo marino sudamericano todo el año y el de dos pelos entre febrero y agosto.', kind: 'real', sources: ['O20'] } },
   { id: 'martillo', name: 'Pingüinera de Isla Martillo', latin: 'Canal Beagle · pingüino de Magallanes', icon: 'penguin', anchor: [-67.38, -54.92], offset: 0, brief: true, place: [-67.383, -54.905],
     fact: { text: 'Es la colonia de pingüinos de Magallanes más cercana a Ushuaia, a unos 40 km al este. Investigadores del CADIC-CONICET vieron que aprovechan las corrientes de marea para ir y volver de los sitios donde comen.', kind: 'real', sources: ['O33'] } },
-  { id: 'delfin-austral', name: 'Delfín austral', latin: 'Lagenorhynchus australis', icon: 'dolphin', anchor: [-66.78, -55.03], offset: -0.22, brief: true, zoneSourced: true,
+  { id: 'delfin-austral', name: 'Delfín austral', latin: 'Lagenorhynchus australis', icon: 'dolphin', anchor: [-66.78, -55.03], offset: -0.22, brief: true,
     fact: { text: 'Es un delfín costero del archipiélago fueguino: llega hasta el Cabo de Hornos. Se lo ve en los bosques de macroalgas o cerca de ellos.', kind: 'real', sources: ['U7'] } },
   { id: 'san-juan', name: 'Faro San Juan de Salvamento', latin: 'Isla de los Estados · lejos de esta ruta, al este', icon: 'lighthouse', anchor: [-66.4, -55.2], offset: 0, place: [-63.82, -54.73],
     fact: { text: 'Fue bautizado «Faro del Fin del Mundo». Lo puso en servicio el 25 de mayo de 1884 la División Expedicionaria al Atlántico Sur, al mando del comodoro Augusto Lasserre. Es Monumento Histórico Nacional.', kind: 'real', sources: ['O34'] } },
   // Drake Passage
   { id: 'albatros', name: 'Albatros errante', latin: 'Diomedea exulans', icon: 'bird', anchor: [-66.45, -57.3], offset: 4,
-    fact: { text: 'Los que crían en Georgias del Sur se mueven desde el sur de Brasil hasta la Península Antártica. Para alimentarse se alejan hasta 4.000 km de su colonia.', kind: 'real', sources: ['I11'] } },
+    fact: { text: 'Los que crían en Georgias del Sur se mueven desde el sur de Brasil hasta la Península Antártica. Para alimentarse se alejan hasta 4.000 km de su colonia. En marzo de 1998 y de 2000 se lo contó desde un barco en el Pasaje de Drake.', kind: 'real', sources: ['I11', 'I19'] } },
   { id: 'petrel-gigante', name: 'Petrel gigante del sur', latin: 'Macronectes giganteus', icon: 'bird', anchor: [-66.33, -58.6], offset: -4.5,
-    fact: { text: 'Es carroñero: en lo que regurgitan sus pichones aparecen sobre todo restos de pingüino y también carne de foca.', kind: 'real', sources: ['I12'] } },
+    fact: { text: 'Es carroñero: en lo que regurgitan sus pichones aparecen sobre todo restos de pingüino y también carne de foca. En marzo de 1998 y de 2000 se lo contó desde un barco en el Pasaje de Drake.', kind: 'real', sources: ['I12', 'I19'] } },
   { id: 'delfin-cruzado', name: 'Delfín cruzado', latin: 'Lagenorhynchus cruciger', icon: 'dolphin', anchor: [-63.4, -60.75], offset: 4,
-    fact: { text: 'Vive en mar abierto alrededor de toda la Antártida, de los 45° a cerca de los 68° de latitud sur. Nada en la proa de los barcos dando saltos.', kind: 'real', sources: ['I14'] } },
+    fact: { text: 'Vive en mar abierto alrededor de toda la Antártida, de los 45° a cerca de los 68° de latitud sur. Nada en la proa de los barcos dando saltos. Entre 2003 y 2011 se lo vio en aguas profundas del sur del Pasaje de Drake, al norte de las Shetland del Sur, casi siempre en grupos de 2 a 6.', kind: 'real', sources: ['I14', 'I20'] } },
   // South Shetlands and Bransfield Strait
+  { id: 'leopardo', name: 'Foca leopardo', latin: 'Hydrurga leptonyx', icon: 'seal', anchor: [-60, -61.95], offset: 3,
+    fact: { text: 'Caza pingüinos y los sacude para sacarles la piel. Las hembras superan los 3,5 m y los 500 kg. Desde 1997 se la cuenta cada semana del verano en el cabo Shirreff, isla Livingston.', kind: 'real', sources: ['I16', 'I21'] } },
   { id: 'barbijo', name: 'Pingüino barbijo', latin: 'Pygoscelis antarcticus', icon: 'penguin', anchor: [-59.33, -62.32], offset: -3,
-    fact: { text: 'Anida en la Península y en islas al sur de la Convergencia Antártica.', kind: 'real', sources: ['U8', 'O31'] } },
-  { id: 'jorobada', name: 'Ballena jorobada', latin: 'Megaptera novaeangliae', icon: 'whale', anchor: [-58.6, -62.75], offset: 4, zoneSourced: true,
+    fact: { text: 'Anida en la Península y en islas al sur de la Convergencia Antártica. La campaña científica peruana ANTAR XXVI (verano 2018-19) contó 472; los pingüinos se vieron sobre todo en el Estrecho de Bransfield.', kind: 'real', sources: ['U8', 'O31'] } },
+  { id: 'jorobada', name: 'Ballena jorobada', latin: 'Megaptera novaeangliae', icon: 'whale', anchor: [-58.6, -62.75], offset: 4,
     fact: { text: 'Fue el cetáceo más abundante de la campaña científica peruana ANTAR XXVI (verano 2018-19): 207 individuos, sobre todo en el Estrecho de Bransfield.', kind: 'real', sources: ['O32'] } },
-  { id: 'petrel-damero', name: 'Petrel damero', latin: 'Daption capense', icon: 'bird', anchor: [-57.6, -63.05], offset: -3.5, zoneSourced: true,
+  { id: 'orca', name: 'Orca', latin: 'Orcinus orca', icon: 'whale', anchor: [-58.1, -62.9], offset: -4,
+    fact: { text: 'La campaña científica peruana ANTAR XXVI (verano 2018-19) la vio una vez en el Estrecho de Bransfield, cerca de la isla Trinidad: eran 2 orcas.', kind: 'real', sources: ['O32'] } },
+  { id: 'petrel-damero', name: 'Petrel damero', latin: 'Daption capense', icon: 'bird', anchor: [-57.6, -63.05], offset: 4.5,
     fact: { text: 'Fue el ave más abundante de la campaña ANTAR XXVI (verano 2018-19) en Bransfield e isla Elefante: 809 individuos.', kind: 'real', sources: ['O31'] } },
   // Peninsula coast and northern Weddell Sea
   { id: 'adelia', name: 'Pingüino de Adelia', latin: 'Pygoscelis adeliae', icon: 'penguin', anchor: [-56.72, -63.3], offset: 2.5,
-    fact: { text: 'Arma el nido con piedritas y nada a entre 4 y 8 km/h.', kind: 'real', sources: ['I16'] } },
-  { id: 'leopardo', name: 'Foca leopardo', latin: 'Hydrurga leptonyx', icon: 'seal', anchor: [-56.38, -63.57], offset: 3,
-    fact: { text: 'Caza pingüinos y los sacude para sacarles la piel. Las hembras superan los 3,5 m y los 500 kg.', kind: 'real', sources: ['I16'] } },
+    fact: { text: 'Arma el nido con piedritas y nada a entre 4 y 8 km/h. En Bahía Esperanza, en la punta de la Península, está una de sus colonias más grandes: unas 104.000 parejas en el verano 2012-13.', kind: 'real', sources: ['I16', 'O36'] } },
+  { id: 'weddell', name: 'Foca de Weddell', latin: 'Leptonychotes weddellii', icon: 'seal', anchor: [-56.38, -63.57], offset: 3,
+    fact: { text: 'Es el mamífero que vive permanentemente más al sur. Bucea hasta 720 m y 45 minutos, y abre agujeros en el hielo con los dientes. En Bahía Esperanza se estudió qué come: sobre todo un pez, el plateado antártico.', kind: 'real', sources: ['I16', 'O38'] } },
   { id: 'cangrejera', name: 'Foca cangrejera', latin: 'Lobodon carcinophagus', icon: 'seal', anchor: [-56.4, -63.85], offset: 3,
-    fact: { text: 'No come cangrejos sino krill, que filtra con dientes especiales. Con unos 15 millones, es la foca más abundante.', kind: 'real', sources: ['I16'] } },
-  { id: 'weddell', name: 'Foca de Weddell', latin: 'Leptonychotes weddellii', icon: 'seal', anchor: [-56.4, -64.1], offset: 3,
-    fact: { text: 'Es el mamífero que vive permanentemente más al sur. Bucea hasta 720 m y 45 minutos, y abre agujeros en el hielo con los dientes.', kind: 'real', sources: ['I16'] } },
+    fact: { text: 'No come cangrejos sino krill, que filtra con dientes especiales. Con unos 15 millones, es la foca más abundante. Relevamientos aéreos de 2015 a 2017 la contaron en el estrecho Bouchard, junto a la isla Marambio.', kind: 'real', sources: ['I16', 'O37'] } },
 ];
 
 /** Shown with the sightings: where an animal appears on the map is not data. */
-const ZONE_SOURCED_NOTE = 'Su fuente lo ubica en esta zona del viaje. El punto exacto en el mapa es ilustrativo.';
-const ZONE_ILLUSTRATIVE_NOTE = 'Su fuente describe a la especie en general, no este tramo del viaje. Zona y punto en el mapa son ilustrativos.';
-const PLACES_NOTE = 'Posición aproximada en el mapa.';
-/** What the card of a sighting says about where it is drawn. */
-export const sightingNote = (s: Sighting) => (s.place ? PLACES_NOTE : s.zoneSourced ? ZONE_SOURCED_NOTE : ZONE_ILLUSTRATIVE_NOTE);
+/** What the card of a place says about where it is drawn. Animals carry no note: the trip says it once, before it starts. */
+export const sightingNote = (s: Sighting) => (s.place ? 'Posición aproximada en el mapa.' : null);
 export const FAUNA_COUNT = SIGHTINGS.filter((s) => !s.place).length;
 export const PLACES_COUNT = SIGHTINGS.length - FAUNA_COUNT;
 
 /** Shown while travelling: the drawn path is not the real track of any ship or plane. */
-export const VOYAGE_ROUTE_NOTE = 'Ruta y avistajes ilustrativos. Vehículo con tamaño exagerado.';
+export const VOYAGE_ROUTE_NOTE = 'La ruta dibujada, el punto exacto donde aparece cada animal y sus movimientos son ilustrativos. Los vehículos, animales y lugares se ven con tamaño exagerado.';

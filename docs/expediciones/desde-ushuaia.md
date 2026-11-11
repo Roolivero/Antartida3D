@@ -120,7 +120,23 @@ La ruta aérea Ushuaia → Marambio es una **ortodrómica calculada** (la derrot
 
 Animales que pueden aparecer durante el viaje, por zona (ver [diseño](./desde-ushuaia-diseno.md)). Solo entran especies con fuente abierta y leída. Las **posiciones y los movimientos son ilustrativos**: ninguna fuente respalda dónde está cada animal en un momento dado, ni cómo se mueve en pantalla (planeo, nado a saltos). **La asignación a cada zona también es ilustrativa** salvo donde la fuente nombra el lugar: las fuentes de las zonas B y D dan rangos de latitud o son fichas circumpolares, y no mencionan el Drake ni la Península. No se publican categorías de la UICN hasta verificarlas.
 
-**En la ficha de cada animal se dice cuál es el caso.** Con zona respaldada por su fuente: cormorán imperial, lobos marinos y delfín austral (Beagle), ballena jorobada y petrel damero (Bransfield). Sin zona respaldada todavía: albatros errante, petrel gigante, delfín cruzado, pingüino barbijo, pingüino de Adelia y focas leopardo, cangrejera y de Weddell. Pendiente: buscar para cada uno una fuente que lo ubique en su tramo, o moverlo.
+**Zona de cada animal (revisado el 11-11-2026).** Los 14 animales del viaje tienen una fuente que los registra en el tramo donde aparecen. La ficha de cada uno incluye ese dato:
+
+| Animal | Tramo | Qué dice la fuente | Fuente |
+| :--- | :--- | :--- | :--- |
+| Cormorán imperial, lobos marinos, delfín austral | Canal Beagle | Ver tabla A | `[O20]` `[O30]` `[U7]` |
+| Albatros errante | Pasaje de Drake | Conteos desde barco el 19-20 de marzo de 1998 y 2000: de 0,14 a 0,52 aves por hora según la franja de latitud | `[I19]` |
+| Petrel gigante del sur | Pasaje de Drake | Mismos conteos: de 1,40 a 4,70 aves por hora | `[I19]` |
+| Delfín cruzado | Sur del Drake | Relevamientos de 2003 a 2011: avistajes en aguas profundas al norte de las Shetland del Sur, grupos de 2 a 6 | `[I20]` |
+| Foca leopardo | Shetland del Sur | Censo semanal de focas en el cabo Shirreff (isla Livingston) en la mayoría de los veranos desde 1997 | `[I21]` |
+| Pingüino barbijo | Shetland y Bransfield | ANTAR XXVI: 472 individuos (16,70 %); los pingüinos tuvieron mayor presencia en el Estrecho de Bransfield | `[O31]` |
+| Ballena jorobada, petrel damero | Bransfield | Ver tabla C | `[O32]` `[O31]` |
+| Orca | Bransfield | ANTAR XXVI: 1 avistamiento, 2 individuos, en el Estrecho de Bransfield cerca de la isla Trinidad | `[O32]` |
+| Pingüino de Adelia | Bahía Esperanza | Colonia de unas 104.139 parejas en 2012-13, una de las más grandes de la Antártida | `[O36]` |
+| Foca de Weddell | Bahía Esperanza | 217 muestras de heces recolectadas allí en los veranos de 2003 a 2005; come sobre todo plateado antártico | `[O38]` |
+| Foca cangrejera | Isla Marambio | Relevamientos aéreos de 2015 a 2017 en el estrecho Bouchard; 96 ejemplares momificados en la isla | `[O37]` |
+
+El punto exacto, el momento y los movimientos siguen siendo ilustrativos; la interfaz lo dice una vez, antes de empezar el viaje. La foca leopardo se movió de la costa de la Península a las Shetland porque solo ahí tiene registro (los estudios argentinos sobre ella son de la costa de Danco, fuera de la ruta).
 
 **Fuentes universitarias:** no se encontró ninguna publicación de la UNTDF sobre la fauna de la ruta (su repositorio no está indexado en línea). Hay trabajos de CADIC-CONICET (Ushuaia), tesis de la UNLP y de la UBA. Alguien del equipo puede buscar a mano en el repositorio de la UNTDF.
 

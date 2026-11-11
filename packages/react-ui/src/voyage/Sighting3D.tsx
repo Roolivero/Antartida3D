@@ -119,7 +119,7 @@ export function Sighting3D({ spot, turn, seen, open, wide, bus, reduced, overlay
             <h3>{sighting.name}</h3>
             <p className="vlatin">{sighting.latin}</p>
             <ul className="vfacts"><Fact fact={sighting.fact} onSource={bus.openSource} /></ul>
-            <p className="vsmall">{sightingNote(sighting)}</p>
+            {sightingNote(sighting) && <p className="vsmall">{sightingNote(sighting)}</p>}
           </section>
         )}
       </Html>

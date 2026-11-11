@@ -110,6 +110,7 @@ function Picker({ onStart, onExit, onSource, preview, reduced }: {
         {transport.facts.map((f) => <Fact key={f.text} fact={f} onSource={onSource} />)}
         <Fact fact={VOYAGE_TOURISM_NOTE} onSource={onSource} />
       </ul>
+      <p className="vsmall">{VOYAGE_ROUTE_NOTE}</p>
       <div className="row vactions">
         <button type="button" className="btn primary" onClick={() => onStart(picked)}>
           {transport.kind === 'plane' ? 'Despegar' : 'Zarpar'}
@@ -139,7 +140,7 @@ function SightingCard({ voyage, onSource }: { voyage: VoyageController; onSource
       <h2 id="voyage-title" className="vsighting"><SightingIcon icon={sighting.icon} />{sighting.name}</h2>
       <p className="vlatin">{sighting.latin}</p>
       <ul className="vfacts"><Fact fact={sighting.fact} onSource={onSource} /></ul>
-      <p className="vsmall">{sightingNote(sighting)}</p>
+      {sightingNote(sighting) && <p className="vsmall">{sightingNote(sighting)}</p>}
       <div className="row vactions">
         <button type="button" className="btn primary" onClick={voyage.closeSighting}>Seguir viaje</button>
       </div>
@@ -270,7 +271,6 @@ function TravelBar({ voyage, animated, onExit }: { voyage: VoyageController; ani
           </span>
         )}
       </p>
-      <p className="vsmall">{VOYAGE_ROUTE_NOTE}</p>
       {/* One row, with the main button at the same corner as "Continuar" in the milestone card: the pointer stays put. */}
       <div className="row">
         {animated && (
@@ -298,7 +298,7 @@ function TravelBar({ voyage, animated, onExit }: { voyage: VoyageController; ani
             {voyage.gear > 0 && <span className="vgear">×{String(VOYAGE_GEARS[voyage.gear]).replace('.', ',')}</span>}
           </button>
         )}
-        <button type="button" className={'btn' + (animated ? '' : ' primary')} onClick={voyage.skip}>Próximo hito</button>
+        <button type="button" className={'btn' + (animated ? '' : ' primary')} onClick={() => voyage.skip(animated)}>Próximo hito</button>
         <button type="button" className="btn ghost vexit" onClick={onExit} aria-label="Salir del viaje" title="Salir del viaje">✕</button>
       </div>
     </div>
