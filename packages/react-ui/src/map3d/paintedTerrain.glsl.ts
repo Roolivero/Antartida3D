@@ -146,5 +146,8 @@ void main() {
   col = mix(col, col * paper * 1.2, 0.3);
 
   gl_FragColor = vec4(col, 1.0);
+  // Shading is done in linear space (sRGB textures decode on sampling). Encode for the screen
+  // when drawing straight to it; into the post-processing buffer this is a no-op.
+  #include <colorspace_fragment>
 }
 `;

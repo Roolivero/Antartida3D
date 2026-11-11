@@ -11,7 +11,7 @@ import {
   saveViewMode,
 } from '@antartida/core';
 import { useReducedMotion, useTimers } from './hooks.ts';
-import { MapView, type Phase, type ViewMode } from './map/MapView.tsx';
+import { MapView, type Layer3DProps, type Phase, type ViewMode } from './map/MapView.tsx';
 import { Filters } from './ui.tsx';
 
 const loadExpedition = () => import('./expedition/Expedition.tsx');
@@ -19,6 +19,16 @@ const Expedition = lazy(() => loadExpedition().then((m) => ({ default: m.Expedit
 
 const loadMap3D = () => import('./map3d/Map3DLayer.tsx');
 const Map3DLayerLazy = lazy(() => loadMap3D().then((m) => ({ default: m.Map3DLayer })));
+
+// Module-level so its identity is stable: an inline arrow would be a new component type on every
+// render and remount the whole 3D scene (resetting the camera) when, say, the legend toggles.
+function Layer3D(props: Layer3DProps) {
+  return (
+    <Suspense fallback={null}>
+      <Map3DLayerLazy {...props} />
+    </Suspense>
+  );
+}
 
 function hasWebGL(): boolean {
   try {
@@ -123,11 +133,7 @@ export function AntarcticaApp() {
           focusExpedition={returned}
           mode={mode}
           showToggle={webglSupported}
-          Layer3D={(props) => (
-            <Suspense fallback={null}>
-              <Map3DLayerLazy {...props} />
-            </Suspense>
-          )}
+          Layer3D={Layer3D}
           onToggleLegend={() => setLegend((l) => !l)}
           onToggleMode={toggleMode}
           onStart={start}

@@ -30,7 +30,8 @@ float computeFogFactor(vec3 worldPos) {
   vec2 dXZ = worldPos.xz - cameraPosition.xz;
   float distXZ = length(dXZ);
   float camY = max(cameraPosition.y, 10.0);
-  float onset = 700.0 + 2.2 * camY;
+  // Capped so onset < full at the highest camera (smoothstep is undefined when edge0 >= edge1).
+  float onset = min(700.0 + 2.2 * camY, 6000.0);
   float full = min(9000.0, onset * 2.8);
   return smoothstep(onset, full, distXZ);
 }

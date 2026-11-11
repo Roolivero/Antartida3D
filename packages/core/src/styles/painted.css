@@ -60,6 +60,12 @@ button:focus-visible,[tabindex]:focus-visible{outline:3px solid #1E3E5C;outline-
 
 .top{position:absolute;left:0;right:0;top:0;padding:14px 16px 28px;display:flex;justify-content:space-between;align-items:flex-start;gap:10px;background:linear-gradient(var(--paper) 55%,rgba(243,235,221,0));pointer-events:none}
 .top > *{pointer-events:auto}
+/* 3D: the sea reaches the screen edges, so the full-width paper bands read as a white fog.
+   Controls are already paper cards; only the bare title keeps a soft local watercolor wash. */
+.stage.m3d .top,.stage.m3d .bottom{background:none}
+.stage.m3d .brand{position:relative;isolation:isolate}
+.stage.m3d .brand::before{content:"";position:absolute;inset:-34px -80px -40px -50px;z-index:-1;background:radial-gradient(closest-side,rgba(243,235,221,.82),rgba(243,235,221,.6) 40%,rgba(243,235,221,.22) 70%,rgba(243,235,221,0));pointer-events:none}
+.stage.m3d .brand h1,.stage.m3d .brand p{text-shadow:0 0 2px var(--paper),0 0 8px var(--paper)}
 .brand h1{margin:0;font-family:'Fraunces',Georgia,serif;font-weight:700;font-size:24px;line-height:1.05;letter-spacing:-.01em}
 .brand p{margin:2px 0 0;font-family:'Caveat',cursive;font-size:19px;color:#1E3E5C;line-height:1}
 .reg{min-width:118px;background:#FBF4E6;border:1.5px solid var(--ink);border-radius:6px 12px 8px 10px;padding:6px 10px 8px;box-shadow:2px 3px 0 rgba(31,42,54,.18)}

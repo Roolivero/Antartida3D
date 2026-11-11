@@ -1,7 +1,7 @@
 import { EXPEDITION_POINT } from './content/points.ts';
 import { TERRAIN_BOX, heightAt } from './terrain.ts';
 import { worldHeight } from './relief.ts';
-import type { Size, View, Geometry } from './viewport.ts';
+import { MAX_K, clampView, type Size, type View, type Geometry } from './viewport.ts';
 
 export const FOV = 40;
 
@@ -76,6 +76,37 @@ export function homePose3D(aspect: number, margin = 1.08): CameraPose {
     pos: { x: target.x, y: distance * Math.sin(tilt), z: target.z + distance * Math.cos(tilt) },
     target,
   };
+}
+
+/** Camera-to-target distance of the 3D overview. */
+export function homeDistance3D(aspect: number): number {
+  const { pos, target } = homePose3D(aspect);
+  return Math.hypot(pos.x - target.x, pos.y - target.y, pos.z - target.z);
+}
+
+/**
+ * 3D zoom level as a 2D-style `k`: 1 at the overview, doubling each time the distance halves.
+ * Lets clustering and the 2D/3D switch share one zoom scale with the orbit camera.
+ */
+export function kFromDistance3D(aspect: number, distance: number): number {
+  return homeDistance3D(aspect) / Math.max(distance, 1e-6);
+}
+
+/** Inverse of kFromDistance3D. */
+export function distanceFromK3D(aspect: number, k: number): number {
+  return homeDistance3D(aspect) / k;
+}
+
+/**
+ * 2D view centered on a 3D camera target at the zoom implied by its distance. k is capped at
+ * MAX_K but may drop below MIN_K: farther than the overview, clusters must merge and labels hide
+ * instead of overlapping. Switching back to 2D brings such a view back to HOME.
+ */
+export function viewFrom3D(size: Size, geo: Geometry, target: Vector3Like, distance: number): View {
+  const k = Math.min(MAX_K, kFromDistance3D(size.vw / size.vh, distance));
+  const pxPerUnit = (geo.S * k) / 1000;
+  const map = fromWorld(target);
+  return clampView(size, k, size.vw / 2 - geo.ox - map.x * pxPerUnit, size.vh / 2 - geo.oy - map.y * pxPerUnit);
 }
 
 /** DIVE_3D: Low, south of Marambio looking north over the island, above heightAt. */

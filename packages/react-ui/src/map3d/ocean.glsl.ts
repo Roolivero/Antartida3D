@@ -296,5 +296,8 @@ void main() {
   vec3 finalCol = mix(waterLinear, uFogColor, fog);
 
   gl_FragColor = vec4(finalCol, 1.0);
+  // Shading is done in linear space (sRGB textures decode on sampling). Encode for the screen
+  // when drawing straight to it; into the post-processing buffer this is a no-op.
+  #include <colorspace_fragment>
 }
 `;

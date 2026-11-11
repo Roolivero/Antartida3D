@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react';
 import {
-  DRAG_THRESHOLD, EXPEDITION_POINT, HOME, PTS, ZOOM_MS,
+  DRAG_THRESHOLD, EXPEDITION_POINT, HOME, KEY_PAN, MIN_K, PTS, ZOOM_MS,
   buildMarkers, diveView, geometry, isWheelNotch, keyView, panBy, wheelFactor, zoomAround, zoomCenter,
   type MapPoint, type Marker, type Size, type View,
 } from '@antartida/core';
@@ -19,6 +19,25 @@ export type ViewMode = '2d' | '3d';
 
 const WHEEL_MS = 200;
 
+/**
+ * A request from the shared controls (buttons, keys, cluster clicks) to the 3D camera. In 3D the
+ * orbit camera owns zoom and pan, so the controls ask it to move instead of rewriting `view`.
+ */
+export type Camera3DCommand =
+  | { type: 'zoom'; factor: number }
+  | { type: 'home' }
+  | { type: 'focus'; view: View }
+  | { type: 'pan'; dx: number; dy: number }
+  | { type: 'rotate'; deg: number };
+
+export type Layer3DProps = LayerProps & {
+  size: Size;
+  /** `n` grows with every request so repeating the same command still fires. */
+  command: { n: number; cmd: Camera3DCommand } | null;
+  /** The camera came to rest: the 2D-style view it shows, for clustering and the 2D switch. */
+  onCameraRest: (view: View) => void;
+};
+
 export interface MapViewProps {
   phase: Phase;
   explored: boolean;
@@ -28,10 +47,23 @@ export interface MapViewProps {
   focusExpedition: boolean;
   mode?: ViewMode;
   showToggle?: boolean;
-  Layer3D?: (props: LayerProps & { size: Size }) => React.ReactNode;
+  Layer3D?: (props: Layer3DProps) => React.ReactNode;
   onToggleLegend: () => void;
   onToggleMode?: (next: ViewMode) => void;
   onStart: () => void;
+}
+
+/** Keyboard navigation of the 3D camera: same keys as 2D, plus Q and E to turn. */
+function keyCommand3D(key: string): Camera3DCommand | null {
+  if (key === 'ArrowLeft') return { type: 'pan', dx: KEY_PAN, dy: 0 };
+  if (key === 'ArrowRight') return { type: 'pan', dx: -KEY_PAN, dy: 0 };
+  if (key === 'ArrowUp') return { type: 'pan', dx: 0, dy: KEY_PAN };
+  if (key === 'ArrowDown') return { type: 'pan', dx: 0, dy: -KEY_PAN };
+  if (key === '+' || key === '=') return { type: 'zoom', factor: 1.5 };
+  if (key === '-' || key === '_') return { type: 'zoom', factor: 1 / 1.5 };
+  if (key === 'q' || key === 'Q') return { type: 'rotate', deg: 15 };
+  if (key === 'e' || key === 'E') return { type: 'rotate', deg: -15 };
+  return null;
 }
 
 export function MapView({
@@ -56,8 +88,23 @@ export function MapView({
   const [list, setList] = useState(false);
   const later = useTimers();
 
-  const live = useRef({ size, view, phase });
-  live.current = { size, view, phase };
+  const is3D = mode === '3d' && !!Layer3D;
+  const [command, setCommand] = useState<Layer3DProps['command']>(null);
+  const live = useRef({ size, view, phase, is3D });
+  live.current = { size, view, phase, is3D };
+
+  const send3D = (cmd: Camera3DCommand) => {
+    setCommand((c) => ({ n: (c?.n ?? 0) + 1, cmd }));
+    setTouched(true);
+  };
+
+  useEffect(() => {
+    if (is3D) return;
+    // A pending camera command must not replay when the 3D scene mounts again later.
+    setCommand(null);
+    // The 3D camera can zoom out past the overview (k < 1); the 2D map cannot.
+    setView((v) => (v.k < MIN_K ? HOME : v));
+  }, [is3D]);
   const ptrs = useRef(new Map<number, { x: number; y: number }>());
   const gesture = useRef<{ dragged: boolean; pan: null | { x: number; y: number; px: number; py: number }; pinch: null | (View & { d: number }) }>(
     { dragged: false, pan: null, pinch: null },
@@ -123,6 +170,15 @@ export function MapView({
     const g = gesture.current;
     const { size: sz, view: v } = live.current;
     ptrs.current.set(e.pointerId, p);
+    if (is3D) {
+      // The orbit camera handles drag and pinch itself; only track the drag so a marker under
+      // the pointer is not opened at the end of it.
+      if (g.pan && !g.dragged && Math.hypot(p.x - g.pan.x, p.y - g.pan.y) > DRAG_THRESHOLD) {
+        g.dragged = true;
+        setTouched(true);
+      }
+      return;
+    }
     if (ptrs.current.size >= 2 && g.pinch) {
       const [a, b] = [...ptrs.current.values()];
       const d = Math.hypot(a.x - b.x, a.y - b.y);
@@ -158,8 +214,12 @@ export function MapView({
     if (!el) return;
     const onWheel = (e: globalThis.WheelEvent) => {
       e.preventDefault();
-      const { size: sz, view: v, phase: ph } = live.current;
+      const { size: sz, view: v, phase: ph, is3D: in3D } = live.current;
       if (ph !== 'idle') return;
+      if (in3D) {
+        setTouched(true); // the orbit camera zooms on the wheel itself
+        return;
+      }
       const p = rel(e);
       // Compound from the latest target so quick notches add up instead of restarting.
       const next = zoomAround(sz, v, p.x, p.y, v.k * wheelFactor(e.deltaY, e.deltaMode));
@@ -177,6 +237,14 @@ export function MapView({
 
   const onKey = (e: KeyboardEvent) => {
     if (e.target !== vpRef.current) return;
+    if (is3D) {
+      const cmd = keyCommand3D(e.key);
+      if (cmd) {
+        e.preventDefault();
+        send3D(cmd);
+      }
+      return;
+    }
     const next = keyView(size, view, e.key);
     if (next) {
       e.preventDefault();
@@ -194,13 +262,16 @@ export function MapView({
 
   const onPick = (m: Marker) => {
     if (gesture.current.dragged) return;
-    if (m.kind === 'cluster') animateTo(m.target);
+    if (m.kind === 'cluster') {
+      if (is3D) send3D({ type: 'focus', view: m.target });
+      else animateTo(m.target);
+    }
     else openPoint(m.point);
   };
 
   const markers = useMemo(() => buildMarkers(size, view, explored, PTS), [size, view, explored]);
   const geo = geometry(size);
-  const stageCls = 'stage' + (phase === 'dive' ? ' dive' : phase === 'fade' ? ' fade' : phase === 'ret' ? ' ret' : '');
+  const stageCls = 'stage' + (is3D ? ' m3d' : '') + (phase === 'dive' ? ' dive' : phase === 'fade' ? ' fade' : phase === 'ret' ? ' ret' : '');
 
   return (
     <div className="stagewrap">
@@ -223,7 +294,17 @@ export function MapView({
           onKeyDown={onKey}
         >
           {mode === '3d' && Layer3D ? (
-            <Layer3D size={size} geo={geo} view={view} anim={anim} phase={phase} markers={markers} onPick={onPick} />
+            <Layer3D
+              size={size}
+              geo={geo}
+              view={view}
+              anim={anim}
+              phase={phase}
+              markers={markers}
+              onPick={onPick}
+              command={command}
+              onCameraRest={setView}
+            />
           ) : (
             <Map2DLayer geo={geo} view={view} anim={anim} phase={phase} markers={markers} onPick={onPick} />
           )}
@@ -254,9 +335,9 @@ export function MapView({
             )}
           </div>
           <div className="zoom">
-            <button type="button" className="iconbtn" onClick={() => animateTo(zoomCenter(size, view, 1.6))} aria-label="Acercar">{Icon.plus}</button>
-            <button type="button" className="iconbtn" onClick={() => animateTo(zoomCenter(size, view, 1 / 1.6))} aria-label="Alejar">{Icon.minus}</button>
-            <button type="button" className="iconbtn" onClick={() => animateTo(HOME)} aria-label="Ver todo el continente">{Icon.reset}</button>
+            <button type="button" className="iconbtn" onClick={() => (is3D ? send3D({ type: 'zoom', factor: 1.6 }) : animateTo(zoomCenter(size, view, 1.6)))} aria-label="Acercar">{Icon.plus}</button>
+            <button type="button" className="iconbtn" onClick={() => (is3D ? send3D({ type: 'zoom', factor: 1 / 1.6 }) : animateTo(zoomCenter(size, view, 1 / 1.6)))} aria-label="Alejar">{Icon.minus}</button>
+            <button type="button" className="iconbtn" onClick={() => (is3D ? send3D({ type: 'home' }) : animateTo(HOME))} aria-label="Ver todo el continente">{Icon.reset}</button>
           </div>
         </div>
 

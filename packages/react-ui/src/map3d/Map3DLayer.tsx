@@ -1,11 +1,17 @@
-import { useLayoutEffect, useRef, useState, type RefObject } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react';
 import { Box3, Vector3 } from 'three';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { CameraControls, PerformanceMonitor } from '@react-three/drei';
 import { EffectComposer } from '@react-three/postprocessing';
 import {
   homePose3D,
+  performanceBounds,
   DIVE_3D,
+  FOV,
+  distanceFromK3D,
+  homeDistance3D,
+  poseFromView,
+  viewFrom3D,
   toWorld,
   project,
   heightAt,
@@ -17,7 +23,7 @@ import {
 } from '@antartida/core';
 import { MarkerButton } from '../map/Markers.tsx';
 import { useReducedMotion } from '../hooks.ts';
-import type { Anim, Phase } from '../map/MapView.tsx';
+import type { Layer3DProps, Phase } from '../map/MapView.tsx';
 import { Ocean } from './Ocean.tsx';
 import { Terrain } from './Terrain.tsx';
 import { InkLines } from './InkLines.tsx';
@@ -32,7 +38,8 @@ function SceneContent({
   reduced,
   size,
   geo,
-  view,
+  command,
+  onCameraRest,
   markers,
   overlayRef,
   enablePost,
@@ -43,7 +50,8 @@ function SceneContent({
   reduced: boolean;
   size: Size;
   geo: Geometry;
-  view: View;
+  command: Layer3DProps['command'];
+  onCameraRest: (view: View) => void;
   markers: Marker[];
   overlayRef: RefObject<HTMLDivElement | null>;
   enablePost: boolean;
@@ -69,7 +77,14 @@ function SceneContent({
           <InkEffect />
         </EffectComposer>
       )}
-      <ControlsBridge phase={phase} reduced={reduced} size={size} geo={geo} view={view} />
+      <ControlsBridge
+        phase={phase}
+        reduced={reduced}
+        size={size}
+        geo={geo}
+        command={command}
+        onCameraRest={onCameraRest}
+      />
       <ProjectMarkers
         markers={markers}
         overlayRef={overlayRef}
@@ -79,34 +94,35 @@ function SceneContent({
   );
 }
 
-export interface Map3DLayerProps {
-  size: Size;
-  geo: Geometry;
-  view: View;
-  anim: Anim;
-  phase: Phase;
-  markers: Marker[];
-  onPick: (m: Marker) => void;
-  onCameraChange?: (view: View) => void;
-}
+export type Map3DLayerProps = Layer3DProps;
+
+// Zoom range of the orbit camera, as a distance to its target (the overview is ~800 on desktop
+// and ~2250 on a phone). Closer than MIN_DISTANCE the camera would graze the 4 km plateau
+// (25 world units high at x50); farther than MAX_DISTANCE the continent is a speck in the fog.
+const MIN_DISTANCE = 60;
+const MAX_DISTANCE = 5000;
 
 function ControlsBridge({
   phase,
   reduced,
   size,
   geo,
-  view,
+  command,
+  onCameraRest,
 }: {
   phase: Phase;
   reduced: boolean;
   size: Size;
   geo: Geometry;
-  view: View;
+  command: Layer3DProps['command'];
+  onCameraRest: (view: View) => void;
 }) {
   const controlsRef = useRef<CameraControls>(null);
   const invalidate = useThree((s) => s.invalidate);
   const scene = useThree((s) => s.scene);
   const initialized = useRef(false);
+  const live = useRef({ size, geo, onCameraRest });
+  live.current = { size, geo, onCameraRest };
 
   useLayoutEffect(() => {
     const cc = controlsRef.current;
@@ -142,27 +158,62 @@ function ControlsBridge({
     }
   }, [phase, reduced]);
 
-  // When view changes from UI buttons or cluster clicks, update camera target & distance to match
-  useLayoutEffect(() => {
+  // Report where the camera settled, so clustering and the 2D view follow the orbit camera.
+  useEffect(() => {
     const cc = controlsRef.current;
-    if (!cc || phase === 'dive' || !initialized.current) return;
-    if (view.k > 1.05) {
-      const pxPerUnit = (geo.S * view.k) / 1000;
-      const h = size.vh / (2 * Math.tan((40 * Math.PI) / 360) * pxPerUnit);
-      const targetX = (size.vw / 2 - geo.ox - view.px) / pxPerUnit;
-      const targetY = (size.vh / 2 - geo.oy - view.py) / pxPerUnit;
-      const target = { x: targetX - 500, y: 0, z: targetY - 500 };
-      const pitchRad = (38 * Math.PI) / 180;
-      const distance = h;
-      const posY = target.y + distance * Math.sin(pitchRad);
-      const posZ = target.z + distance * Math.cos(pitchRad);
-      cc.setLookAt(target.x, posY, posZ, target.x, target.y, target.z, true);
-    } else {
-      // Back to the overview (reset button, or zoomed all the way out).
-      const home = homePose3D(size.vw / size.vh);
-      cc.setLookAt(home.pos.x, home.pos.y, home.pos.z, home.target.x, home.target.y, home.target.z, !reduced);
+    if (!cc) return;
+    const onRest = () => {
+      const t = cc.getTarget(new Vector3());
+      const { size: sz, geo: g, onCameraRest: report } = live.current;
+      report(viewFrom3D(sz, g, t, cc.distance));
+    };
+    cc.addEventListener('rest', onRest);
+    return () => cc.removeEventListener('rest', onRest);
+  }, []);
+
+  // Buttons, keys and cluster clicks move the camera from where it is now; they never rebuild
+  // a pose from the 2D view, which used to undo the user's orbit and zoom.
+  useEffect(() => {
+    const cc = controlsRef.current;
+    if (!cc || !command || phase === 'dive') return;
+    const smooth = !reduced;
+    const { cmd } = command;
+    const aspect = size.vw / size.vh;
+    const clampDistance = (d: number) => Math.min(MAX_DISTANCE, Math.max(MIN_DISTANCE, d));
+    // Where the camera ends up; reported right away so clusters split as soon as you zoom,
+    // without waiting for the 'rest' event (instant moves under reduced motion may not fire it).
+    let endDistance = cc.distance;
+    if (cmd.type === 'zoom') {
+      endDistance = clampDistance(cc.distance / cmd.factor);
+      cc.dollyTo(endDistance, smooth);
+    } else if (cmd.type === 'home') {
+      const home = homePose3D(aspect);
+      endDistance = homeDistance3D(aspect);
+      cc.setLookAt(home.pos.x, home.pos.y, home.pos.z, home.target.x, home.target.y, home.target.z, smooth);
+    } else if (cmd.type === 'focus') {
+      const t = poseFromView(size, geo, cmd.view).target;
+      endDistance = clampDistance(distanceFromK3D(aspect, cmd.view.k));
+      cc.moveTo(t.x, 0, t.z, smooth);
+      cc.dollyTo(endDistance, smooth);
+    } else if (cmd.type === 'pan') {
+      // Move the target over the ground, in the camera's own left/right and forward directions.
+      const upp = (2 * cc.distance * Math.tan((FOV * Math.PI) / 360)) / size.vh; // world units per px
+      const az = cc.azimuthAngle;
+      const rx = -cmd.dx * upp;
+      const fz = cmd.dy * upp;
+      const t = cc.getTarget(new Vector3());
+      cc.moveTo(
+        t.x + Math.cos(az) * rx - Math.sin(az) * fz,
+        t.y,
+        t.z - Math.sin(az) * rx - Math.cos(az) * fz,
+        smooth
+      );
+    } else if (cmd.type === 'rotate') {
+      cc.rotate((cmd.deg * Math.PI) / 180, 0, smooth);
     }
-  }, [view.k, view.px, view.py, size, geo, phase, reduced]);
+    onCameraRest(viewFrom3D(size, geo, cc.getTarget(new Vector3()), endDistance));
+    invalidate();
+  }, [command]);
 
   useFrame(() => {
     const cc = controlsRef.current;
@@ -176,8 +227,8 @@ function ControlsBridge({
       ref={controlsRef}
       makeDefault
       dollyToCursor
-      minDistance={120}
-      maxDistance={3500}
+      minDistance={MIN_DISTANCE}
+      maxDistance={MAX_DISTANCE}
     />
   );
 }
@@ -252,10 +303,11 @@ function ProjectMarkers({
 export function Map3DLayer({
   size,
   geo,
-  view,
   phase,
   markers,
   onPick,
+  command,
+  onCameraRest,
 }: Map3DLayerProps) {
   const reduced = useReducedMotion();
   const overlayRef = useRef<HTMLDivElement>(null);
@@ -291,6 +343,7 @@ export function Map3DLayer({
         aria-hidden="true"
       >
         <PerformanceMonitor
+          bounds={() => performanceBounds(lowQuality)}
           onIncline={() => {
             setLowQuality(false);
             if (!enablePost) setEnablePost(true);
@@ -314,7 +367,8 @@ export function Map3DLayer({
           reduced={reduced}
           size={size}
           geo={geo}
-          view={view}
+          command={command}
+          onCameraRest={onCameraRest}
           markers={markers}
           overlayRef={overlayRef}
           enablePost={enablePost}

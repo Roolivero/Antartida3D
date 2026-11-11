@@ -30,6 +30,18 @@ export function seaAnimationFps(options: SeaAnimationFpsOptions): number {
 }
 
 /**
+ * fps bounds for the quality monitor of the 3D view: [decline below, incline above].
+ * With the camera still, only the sea animation draws, capped at seaAnimationFps. The default
+ * bounds (40-60 fps) read that cap as a slow GPU and kept lowering quality until post-processing
+ * switched off. Decline only when frames fall clearly behind the cap; incline on the full-rate
+ * frames of a camera move.
+ */
+export function performanceBounds(lowQuality: boolean): [number, number] {
+  const fps = seaAnimationFps({ hidden: false, is3D: true, reducedMotion: false, lowQuality });
+  return [fps * 0.8, 50];
+}
+
+/**
  * Pure frame-rate limiter helper.
  * Returns true if enough time has elapsed since lastTickMs to emit a frame at the given target fps.
  */

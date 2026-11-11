@@ -9,6 +9,7 @@ import {
   OCEAN_SIZE,
   DEPTH_ABSORB,
   SEA_FPS,
+  performanceBounds,
   seaAnimationFps,
   shouldTick,
 } from '../src/index.ts';
@@ -129,5 +130,17 @@ describe('ocean', () => {
       expect(shouldTick(165, lastTick, fps)).toBe(false);
       expect(shouldTick(167, lastTick, fps)).toBe(true);
     });
+  });
+
+  it('quality monitor bounds accept the capped sea animation rate (still camera)', () => {
+    // Regression: default 40-60 fps bounds read the 30 fps cap as a slow GPU, lowered quality
+    // until post-processing switched off and the sea turned dark after ~1 s still.
+    for (const low of [false, true]) {
+      const capped = seaAnimationFps({ hidden: false, is3D: true, reducedMotion: false, lowQuality: low });
+      const [lower, upper] = performanceBounds(low);
+      expect(capped).toBeGreaterThan(lower);
+      expect(capped).toBeLessThan(upper);
+      expect(60).toBeGreaterThan(upper); // a camera move at full rate restores quality
+    }
   });
 });
