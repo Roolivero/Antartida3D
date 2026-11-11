@@ -14,5 +14,7 @@ export * from './svg/art.ts';
 export * from './coastline.ts';
 export * from './relief.ts';
 export * from './terrain.ts';
+export * from './fuegia.ts';
+export * from './fuegia-mesh.ts';
 export * from './camera.ts';
 export * from './ocean.ts';

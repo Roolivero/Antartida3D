@@ -16,6 +16,9 @@ import {
   project,
   heightAt,
   worldHeight,
+  fromWorld,
+  minCameraDistance,
+  FUEGIA_MIN_DISTANCE,
   type Geometry,
   type Marker,
   type Size,
@@ -26,6 +29,7 @@ import { useReducedMotion } from '../hooks.ts';
 import type { Layer3DProps, Phase } from '../map/MapView.tsx';
 import { Ocean } from './Ocean.tsx';
 import { Terrain } from './Terrain.tsx';
+import { Fuegia } from './Fuegia.tsx';
 import { InkLines } from './InkLines.tsx';
 import { Graticule3D } from './Graticule3D.tsx';
 import { InkEffect } from './InkEffect.ts';
@@ -70,6 +74,7 @@ function SceneContent({
     <SeaTimeContext.Provider value={seaTime}>
       <Ocean wide={wide} timeUniform={seaTime} />
       <Terrain wide={wide} />
+      <Fuegia wide={wide} />
       <Graticule3D />
       <InkLines />
       {enablePost && (
@@ -101,6 +106,10 @@ export type Map3DLayerProps = Layer3DProps;
 // (25 world units high at x50); farther than MAX_DISTANCE the continent is a speck in the fog.
 const MIN_DISTANCE = 60;
 const MAX_DISTANCE = 5000;
+// The camera only gets closer than MIN_DISTANCE around Tierra del Fuego; there the near plane must
+// come in too, or the land in front of the target would be clipped.
+const NEAR = 10;
+const NEAR_CLOSE = NEAR * (FUEGIA_MIN_DISTANCE / MIN_DISTANCE);
 
 function ControlsBridge({
   phase,
@@ -179,7 +188,7 @@ function ControlsBridge({
     const smooth = !reduced;
     const { cmd } = command;
     const aspect = size.vw / size.vh;
-    const clampDistance = (d: number) => Math.min(MAX_DISTANCE, Math.max(MIN_DISTANCE, d));
+    const clampDistance = (d: number) => Math.min(MAX_DISTANCE, Math.max(cc.minDistance, d));
     // Where the camera ends up; reported right away so clusters split as soon as you zoom,
     // without waiting for the 'rest' event (instant moves under reduced motion may not fire it).
     let endDistance = cc.distance;
@@ -215,11 +224,20 @@ function ControlsBridge({
     invalidate();
   }, [command]);
 
-  useFrame(() => {
+  const target = useRef(new Vector3());
+  useFrame(({ camera }) => {
     const cc = controlsRef.current;
-    if (cc && cc.active) {
-      invalidate();
+    if (!cc) return;
+    const at = fromWorld(cc.getTarget(target.current));
+    cc.minDistance = minCameraDistance(at.x, at.y, MIN_DISTANCE);
+    // Panning out of Tierra del Fuego while close: back off before reaching the ice plateau.
+    if (cc.distance < cc.minDistance - 0.01) void cc.dollyTo(cc.minDistance, !reduced);
+    const near = cc.distance < MIN_DISTANCE ? NEAR_CLOSE : NEAR;
+    if (camera.near !== near) {
+      camera.near = near;
+      camera.updateProjectionMatrix();
     }
+    if (cc.active) invalidate();
   });
 
   return (
@@ -336,7 +354,7 @@ export function Map3DLayer({
         }}
         camera={{
           fov: 40,
-          near: 10,
+          near: NEAR,
           far: 20000,
           position: [homeStart.pos.x, homeStart.pos.y, homeStart.pos.z],
         }}
