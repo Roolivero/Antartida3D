@@ -25,6 +25,10 @@ import type { VoyageBus } from './useVoyage.ts';
 const SIZE_PER_DISTANCE = 0.075;
 const MIN_SIZE = 0.5;
 const ROUTE_SAMPLES = 240;
+/** Same breakpoint as the styles: below it the trip panel spans the bottom of the screen. */
+const NARROW_PX = 820;
+/** Fraction of the screen height the picture moves up on a phone. */
+const PANEL_SHIFT = 0.14;
 /** Camera offset from the vehicle at departure: close and low, to see the Beagle Channel. */
 const DEPARTURE_OFFSET = new Vector3(3, 9, 12);
 
@@ -66,6 +70,8 @@ export function Voyage3D({ bus, reduced, overlay }: {
   overlay: RefObject<HTMLElement | null>;
 }) {
   const invalidate = useThree((s) => s.invalidate);
+  const camera = useThree((s) => s.camera);
+  const viewport = useThree((s) => s.size);
   const controls = useThree((s) => s.controls) as unknown as CameraControls | null;
   const group = useRef<Group>(null);
   const [transport, setTransport] = useState<TransportId | null>(bus.state?.transport ?? null);
@@ -84,6 +90,19 @@ export function Voyage3D({ bus, reduced, overlay }: {
     bus.listeners.add(onChange);
     return () => void bus.listeners.delete(onChange);
   }, [bus, invalidate]);
+
+  // On a phone the trip panel covers the lower part of the map: shift the picture up so the vehicle,
+  // which the camera keeps at its center, stays in view above the panel.
+  useEffect(() => {
+    if (!('setViewOffset' in camera) || viewport.width > NARROW_PX) return;
+    const { width, height } = viewport;
+    camera.setViewOffset(width, height, 0, height * PANEL_SHIFT, width, height);
+    invalidate();
+    return () => {
+      camera.clearViewOffset();
+      invalidate();
+    };
+  }, [camera, viewport, invalidate]);
 
   const kind = transport ? TRANSPORTS.find((v) => v.id === transport)!.kind : null;
   const geometry = useMemo(() => (transport ? buildVehicleGeometry(transport) : null), [transport]);

@@ -298,4 +298,4 @@ export const SIGHTINGS: readonly Sighting[] = [
 export const SIGHTINGS_NOTE = 'Avistajes ilustrativos: la posición de cada animal en el mapa no es un dato.';
 
 /** Shown while travelling: the drawn path is not the real track of any ship or plane. */
-export const VOYAGE_ROUTE_NOTE = 'Ruta ilustrativa: no es la derrota real. Vehículo con tamaño exagerado.';
+export const VOYAGE_ROUTE_NOTE = 'Ruta y avistajes ilustrativos. Vehículo con tamaño exagerado.';

@@ -255,16 +255,16 @@ function TravelBar({ voyage, animated, onExit }: { voyage: VoyageController; ani
   return (
     <div className="vbar" role="group" aria-label="Controles del viaje">
       <div className="vprog" aria-hidden="true"><i ref={bar} /></div>
-      <p className="vnext">Próximo hito: <strong>{next.title}</strong></p>
-      {animated && voyageSightings(state.kind).length > 0 && (
-        <p className="vsmall" role="status">Avistajes: {voyage.seen.length} de {SIGHTINGS.length}. Tocá los animales que aparezcan cerca del barco.</p>
-      )}
-      {animated && <p className="vsmall">¿Apuro? Tocá dos o tres veces seguidas y mantené: va más rápido.</p>}
+      <p className="vnext">
+        <span>Próximo hito: <strong>{next.title}</strong></span>
+        {animated && voyageSightings(state.kind).length > 0 && (
+          <span className="vcount" role="status" aria-label={`Avistajes: ${voyage.seen.length} de ${SIGHTINGS.length}`}>
+            <SightingIcon icon="bird" />{voyage.seen.length}/{SIGHTINGS.length}
+          </span>
+        )}
+      </p>
       <p className="vsmall">{VOYAGE_ROUTE_NOTE}</p>
-      <div className="row">
-        <button type="button" className="btn ghost" onClick={onExit}>Salir del viaje</button>
-      </div>
-      {/* Last row, at the same corner as the "Continuar" button of the milestone card: the pointer stays put. */}
+      {/* One row, with the main button at the same corner as "Continuar" in the milestone card: the pointer stays put. */}
       <div className="row">
         {animated && (
           <button
@@ -278,12 +278,14 @@ function TravelBar({ voyage, animated, onExit }: { voyage: VoyageController; ani
             onKeyUp={holdKey(false)}
             onBlur={() => voyage.hold(false)}
             onContextMenu={(e) => e.preventDefault()}
+            title="Tocá dos o tres veces seguidas y mantené para ir más rápido"
           >
             Mantené para avanzar
             {voyage.gear > 0 && <span className="vgear">×{String(VOYAGE_GEARS[voyage.gear]).replace('.', ',')}</span>}
           </button>
         )}
-        <button type="button" className={'btn' + (animated ? '' : ' primary')} onClick={voyage.skip}>Ir al próximo hito</button>
+        <button type="button" className={'btn' + (animated ? '' : ' primary')} onClick={voyage.skip}>Próximo hito</button>
+        <button type="button" className="btn ghost" onClick={onExit} aria-label="Salir del viaje">Salir</button>
       </div>
     </div>
   );

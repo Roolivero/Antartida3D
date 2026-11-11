@@ -290,7 +290,7 @@ export function MapView({
 
   const markers = useMemo(() => buildMarkers(size, view, explored, PTS), [size, view, explored]);
   const geo = geometry(size);
-  const stageCls = 'stage' + (is3D ? ' m3d' : '') + (phase === 'dive' ? ' dive' : phase === 'fade' ? ' fade' : phase === 'ret' ? ' ret' : '');
+  const stageCls = 'stage' + (is3D ? ' m3d' : '') + (voyaging ? ' voyaging' : '') + (phase === 'dive' ? ' dive' : phase === 'fade' ? ' fade' : phase === 'ret' ? ' ret' : '');
 
   return (
     <div className="stagewrap">
