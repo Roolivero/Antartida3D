@@ -1,6 +1,7 @@
 export * from './content/points.ts';
 export * from './content/fossils.ts';
 export * from './projection.ts';
+export * from './route.ts';
 export * from './clustering.ts';
 export * from './labels.ts';
 export * from './viewport.ts';
