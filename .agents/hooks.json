@@ -1,0 +1,13 @@
+{
+  "project-verify": {
+    "Stop": [
+      { "type": "command", "command": "./hooks/verify.sh", "timeout": 300 }
+    ]
+  },
+  "project-format": {
+    "PostToolUse": [
+      { "matcher": "edit_file|write_file",
+        "hooks": [ { "type": "command", "command": "./hooks/format.sh", "timeout": 15 } ] }
+    ]
+  }
+}

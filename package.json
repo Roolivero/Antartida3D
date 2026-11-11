@@ -1,0 +1,27 @@
+{
+  "name": "antartida-por-descubrir",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.5.2",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @antartida/dibujado dev",
+    "dev:atlas": "pnpm --filter @antartida/atlas dev",
+    "build": "pnpm -r --filter \"./apps/*\" build",
+    "preview": "pnpm --filter @antartida/dibujado preview",
+    "test": "pnpm -r --if-present test",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "bathymetry": "pnpm --filter @antartida/core bathymetry",
+    "terrain": "pnpm --filter @antartida/core terrain",
+    "e2e": "pnpm --filter @antartida/dibujado e2e",
+    "coastline": "pnpm --filter @antartida/core coastline",
+    "map-raster": "pnpm --filter @antartida/core map-raster",
+    "bench": "pnpm --filter @antartida/bench bench"
+  },
+  "devDependencies": {
+    "typescript": "6.0.3",
+    "@types/node": "26.6.6"
+  }
+}

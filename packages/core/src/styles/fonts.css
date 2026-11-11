@@ -1,0 +1,9 @@
+/* Self-hosted with @fontsource (latin subset) so the benchmark does not depend on Google Fonts. */
+@import '@fontsource/fraunces/latin-500.css';
+@import '@fontsource/fraunces/latin-700.css';
+@import '@fontsource/fraunces/latin-500-italic.css';
+@import '@fontsource/atkinson-hyperlegible/latin-400.css';
+@import '@fontsource/atkinson-hyperlegible/latin-700.css';
+@import '@fontsource/atkinson-hyperlegible/latin-400-italic.css';
+@import '@fontsource/caveat/latin-500.css';
+@import '@fontsource/caveat/latin-700.css';

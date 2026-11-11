@@ -1,0 +1,29 @@
+node_modules/
+dist/
+.vite/
+*.tsbuildinfo
+coverage/
+test-results/
+playwright-report/
+blob-report/
+scripts/bench/out/
+scripts/bench/.cache/
+scripts/source-cache/
+.DS_Store
+*.log
+.env
+.env.*
+!.env.example
+
+# Memoria local de agentes y herramientas
+.projectmem/
+.projectmem/events.jsonl
+.projectmem/watch.pid
+.projectmem/watch.log
+.projectmem/structure.json
+.codegraph/
+packages/core/.cache/
+
+# Config local de agentes
+CLAUDE.local.md
+.claude/settings.local.json

@@ -1,0 +1,18 @@
+{
+  "name": "@antartida/bench",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "bench": "tsx src/run.ts",
+    "report": "tsx src/report.ts",
+    "typecheck": "tsc -p ."
+  },
+  "devDependencies": {
+    "@antartida/e2e": "workspace:*",
+    "@playwright/test": "1.65.0",
+    "chrome-launcher": "1.2.3",
+    "lighthouse": "13.6.0",
+    "tsx": "4.23.15"
+  }
+}

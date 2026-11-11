@@ -1,0 +1,1259 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<title>Antártida por descubrir</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,700;1,9..144,500&amp;family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&amp;family=Caveat:wght@500;700&amp;display=swap">
+<style>
+body{margin:0;background:#F3EBDD}
+a{color:#1E3E5C}a:hover{color:#A4471F}
+*{box-sizing:border-box}
+.app{position:relative;width:100%;height:100vh;min-height:600px;overflow:hidden;background:var(--paper);color:var(--ink);font-family:'Atkinson Hyperlegible',system-ui,sans-serif;font-size:16px;line-height:1.45}
+.serif{font-family:'Fraunces',Georgia,serif}
+.hand{font-family:'Caveat',cursive}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,[tabindex]:focus-visible{outline:3px solid #1E3E5C;outline-offset:3px;border-radius:12px}
+.grain{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;mix-blend-mode:multiply;opacity:.55}
+
+/* ---------- MAP ---------- */
+.stagewrap{position:absolute;inset:0;perspective:900px;perspective-origin:50% 40%}
+.stage{position:absolute;inset:0;transform-origin:50% 62%}
+.stage.dive{animation:dive 1.5s cubic-bezier(.55,0,.3,1) forwards}
+.stage.fade{animation:fadeout .55s ease forwards}
+.stage.ret{animation:fadein .7s ease both}
+@keyframes dive{0%{transform:none;opacity:1;filter:none}55%{transform:rotateX(26deg);opacity:1}100%{transform:rotateX(48deg) translateY(4%);opacity:0;filter:blur(3px)}}
+@keyframes fadeout{to{opacity:0}}
+@keyframes fadein{from{opacity:0}to{opacity:1}}
+.veil{position:absolute;inset:0;background:var(--paper);opacity:0;pointer-events:none}
+.veil.on{animation:veil 1.5s ease-in forwards}
+@keyframes veil{0%,55%{opacity:0}100%{opacity:1}}
+.vp{position:absolute;inset:0;overflow:hidden;touch-action:none;cursor:grab;outline:none}
+.vp:active{cursor:grabbing}
+.vp:focus-visible{box-shadow:inset 0 0 0 3px #1E3E5C}
+.layer{position:absolute;left:0;top:0;transform-origin:0 0;will-change:transform}
+.layer svg{display:block;width:100%;height:100%;overflow:visible}
+.ov{position:absolute;inset:0;pointer-events:none}
+.ov.zooming .mk{transition:left .45s cubic-bezier(.3,.6,.3,1),top .45s cubic-bezier(.3,.6,.3,1)}
+.ov.hide{opacity:0;transition:opacity .4s}
+
+.mk{position:absolute;width:48px;height:48px;margin:-24px 0 0 -24px;padding:0;border:0;background:transparent;pointer-events:auto;display:flex;align-items:center;justify-content:center;border-radius:50%}
+.mk .dot{position:relative;display:block;border-radius:50%}
+.mk.ta .dot{width:22px;height:22px;background:var(--ocre);border:2.5px solid var(--ink);box-shadow:0 0 0 3px rgba(243,235,221,.9)}
+.mk.ta .pulse{position:absolute;inset:-9px;border-radius:50%;border:2px solid var(--ocre);animation:pulse 2.4s ease-out infinite}
+.mk.ta.done .dot{background:#F7FAFB}
+.mk.ta.done .pulse{display:none}
+.mk.ta .dot svg{position:absolute;inset:2px;width:13px;height:13px}
+@keyframes pulse{0%{transform:scale(.6);opacity:.9}100%{transform:scale(1.7);opacity:0}}
+.mk.tb .dot{width:16px;height:16px;background:#D9E3E8;border:2px solid #3B4651}
+.mk.tb .dot::after{content:'';position:absolute;inset:3px;border-radius:50%;background:#8FA2AF}
+.mk.tc .dot{width:15px;height:15px;background:rgba(247,250,251,.55);border:1.6px dashed #5E656C}
+.mk.cluster .dot{width:34px;height:34px;background:#F7FAFB;border:2px solid #3B4651;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;color:var(--ink)}
+.mk.cluster.has-a .dot{border:3px solid var(--ocre);box-shadow:0 0 0 2px var(--ink)}
+.mk.cluster .dot::before{content:'';position:absolute;inset:-6px;border-radius:50%;border:1.5px dashed #3B4651;opacity:.55}
+.mlabel{position:absolute;left:44px;top:50%;transform:translateY(-50%);white-space:nowrap;background:rgba(247,250,251,.94);border:1px solid rgba(31,42,54,.35);border-radius:4px 10px 6px 9px;padding:3px 8px 4px;text-align:left;line-height:1.15;pointer-events:none;box-shadow:1px 2px 0 rgba(31,42,54,.12)}
+.mk.lbl-left .mlabel{left:auto;right:44px}
+.mlabel strong{display:block;font-family:'Fraunces',Georgia,serif;font-size:14px;font-weight:700}
+.mlabel span{display:block;font-size:12px;color:#3B4651}
+.mk.ta .mlabel{background:#FBF4E6;border-color:var(--ink)}
+.mk.tc .mlabel{background:rgba(247,250,251,.88);border-style:dashed}
+
+.top{position:absolute;left:0;right:0;top:0;padding:14px 16px 28px;display:flex;justify-content:space-between;align-items:flex-start;gap:10px;background:linear-gradient(var(--paper) 55%,rgba(243,235,221,0));pointer-events:none}
+.top > *{pointer-events:auto}
+.brand h1{margin:0;font-family:'Fraunces',Georgia,serif;font-weight:700;font-size:24px;line-height:1.05;letter-spacing:-.01em}
+.brand p{margin:2px 0 0;font-family:'Caveat',cursive;font-size:19px;color:#1E3E5C;line-height:1}
+.reg{min-width:118px;background:#FBF4E6;border:1.5px solid var(--ink);border-radius:6px 12px 8px 10px;padding:6px 10px 8px;box-shadow:2px 3px 0 rgba(31,42,54,.18)}
+.reg small{display:block;font-size:11px;line-height:1.1;text-transform:uppercase;letter-spacing:.06em;color:#3B4651}
+.reg b{display:block;font-family:'Fraunces',Georgia,serif;font-size:17px;margin-top:2px}
+.reg .bar{height:6px;margin-top:5px;border-radius:3px;background:#E3D6BF;overflow:hidden}
+.reg .bar i{display:block;height:100%;background:var(--ocre);transition:width .8s ease}
+
+.bottom{position:absolute;left:0;right:0;bottom:0;padding:24px 16px 16px;display:flex;justify-content:space-between;align-items:flex-end;gap:10px;background:linear-gradient(rgba(243,235,221,0),var(--paper) 45%);pointer-events:none}
+.bottom > *{pointer-events:auto}
+.btn{min-height:48px;padding:0 18px;border-radius:24px;border:2px solid var(--ink);background:#FBF4E6;font-weight:700;font-size:16px;display:inline-flex;align-items:center;justify-content:center;gap:8px;box-shadow:2px 3px 0 rgba(31,42,54,.2)}
+.btn:hover{background:#fff}
+.btn.primary{background:var(--deep);border-color:var(--deep);color:#F7FAFB}
+.btn.primary:hover{background:#16314A}
+.btn[disabled]{opacity:.55;cursor:not-allowed;box-shadow:none}
+.btn.ghost{background:transparent;box-shadow:none;border-color:rgba(31,42,54,.5)}
+.zoom{display:flex;flex-direction:column;gap:8px}
+.iconbtn{width:48px;height:48px;border-radius:50%;border:2px solid var(--ink);background:#FBF4E6;display:flex;align-items:center;justify-content:center;padding:0;box-shadow:2px 3px 0 rgba(31,42,54,.2)}
+.iconbtn svg{width:22px;height:22px}
+.leftcol{display:flex;flex-direction:column;gap:10px;align-items:flex-start}
+
+.legend{background:rgba(251,244,230,.96);border:1.5px solid var(--ink);border-radius:8px 14px 10px 12px;padding:8px 10px;max-width:230px;box-shadow:2px 3px 0 rgba(31,42,54,.15)}
+.legend button.lt{border:0;background:transparent;padding:4px 2px;min-height:32px;display:flex;align-items:center;gap:6px;font-weight:700;font-size:14px}
+.legend ul{list-style:none;margin:4px 0 2px;padding:0;display:flex;flex-direction:column;gap:6px}
+.legend li{display:flex;align-items:center;gap:8px;font-size:13px;line-height:1.2}
+.legend .sw{flex:none;width:18px;height:18px;display:flex;align-items:center;justify-content:center}
+.sw .a{width:14px;height:14px;border-radius:50%;background:var(--ocre);border:2px solid var(--ink)}
+.sw .b{width:12px;height:12px;border-radius:50%;background:#8FA2AF;border:2px solid #3B4651}
+.sw .c{width:12px;height:12px;border-radius:50%;border:1.5px dashed #5E656C}
+.hint{position:absolute;left:50%;top:96px;transform:translateX(-50%);font-family:'Caveat',cursive;font-size:19px;color:#1F2A36;background:rgba(251,244,230,.92);padding:2px 12px;border-radius:12px;white-space:nowrap;pointer-events:none;transition:opacity .5s}
+
+.toast{position:absolute;left:50%;top:92px;transform:translateX(-50%);background:var(--ink);color:#F7FAFB;padding:10px 16px;border-radius:12px;font-weight:700;box-shadow:0 6px 18px rgba(31,42,54,.25);animation:fadein .4s ease both;max-width:calc(100% - 32px);text-align:center}
+
+/* sheets */
+.scrim{position:absolute;inset:0;background:rgba(31,42,54,.28);animation:fadein .25s ease both}
+.sheet{position:absolute;left:0;right:0;bottom:0;max-height:86%;overflow:auto;background:var(--paper);border-top:2px solid var(--ink);border-radius:22px 22px 0 0;padding:10px 20px 24px;box-shadow:0 -10px 30px rgba(31,42,54,.2);animation:up .32s cubic-bezier(.2,.8,.3,1) both}
+@keyframes up{from{transform:translateY(40px);opacity:0}to{transform:none;opacity:1}}
+.grab{width:44px;height:5px;border-radius:3px;background:rgba(31,42,54,.25);margin:0 auto 12px}
+.sheet h2{margin:6px 0 2px;font-family:'Fraunces',Georgia,serif;font-size:26px;line-height:1.1}
+.sheet .place{margin:0 0 14px;color:#3B4651}
+.q{position:relative;margin:0 0 16px;padding:14px 16px;background:#FBF4E6;border:1.5px solid rgba(31,42,54,.4);border-radius:6px 14px 8px 12px}
+.q p{margin:0;font-family:'Fraunces',Georgia,serif;font-style:italic;font-size:19px;line-height:1.3}
+.q small{display:block;margin-top:8px;font-size:12px;color:#3B4651}
+.tag{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:4px 10px;border-radius:12px}
+.tag.ta{background:var(--ocre);color:var(--ink)}
+.tag.tb{background:#D9E3E8;color:#2B3640;border:1.5px solid #3B4651}
+.tag.tc{background:transparent;color:#4C535A;border:1.5px dashed #5E656C}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.anno{font-family:'Caveat',cursive;font-size:19px;color:#1E3E5C;line-height:1.1}
+
+.listview{position:absolute;inset:0;background:var(--paper);overflow:auto;animation:fadein .25s ease both}
+.listview .inner{max-width:680px;margin:0 auto;padding:16px 16px 40px}
+.listhead{position:sticky;top:0;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:6px 0 12px;background:var(--paper);z-index:1}
+.listhead h2{margin:0;font-family:'Fraunces',Georgia,serif;font-size:26px}
+.listview section{margin-top:18px}
+.listview h3{margin:0 0 4px;display:flex;align-items:center;gap:10px;font-family:'Fraunces',Georgia,serif;font-size:19px}
+.listview .gdesc{margin:0 0 10px;font-size:14px;color:#3B4651}
+.listview ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.li{width:100%;min-height:56px;text-align:left;display:flex;align-items:center;gap:12px;padding:10px 14px;border:1.5px solid rgba(31,42,54,.45);border-radius:6px 14px 8px 12px;background:#FBF4E6}
+.li:hover{background:#fff}
+.li .t{flex:1}
+.li strong{display:block;font-family:'Fraunces',Georgia,serif;font-size:17px}
+.li span.p{display:block;font-size:14px;color:#3B4651}
+.li .go{font-size:13px;font-weight:700;color:#1E3E5C;white-space:nowrap}
+
+/* ---------- EXPEDITION ---------- */
+.exp{position:absolute;inset:0;overflow:hidden;animation:fadein .8s ease both;background:#DCE8EF}
+.scene{position:absolute;inset:0;overflow:hidden}
+.pl{position:absolute;inset:-4%;width:108%;height:108%;transition:transform .25s ease-out}
+.pl svg{width:100%;height:100%;display:block}
+.cloud{animation:drift 26s ease-in-out infinite alternate}
+@keyframes drift{from{transform:translateX(-14px)}to{transform:translateX(18px)}}
+.etop{position:absolute;left:0;right:0;top:0;padding:12px 16px 22px;display:flex;flex-direction:column;gap:8px;background:linear-gradient(rgba(243,235,221,.97) 62%,rgba(243,235,221,0));z-index:3}
+.etop .r1{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.etop .ttl{flex:1;min-width:0;text-align:center}
+.etop .ttl b{display:block;font-family:'Fraunces',Georgia,serif;font-size:17px;line-height:1.1}
+.etop .ttl span{display:block;font-size:13px;color:#3B4651}
+.pill{min-height:44px;padding:0 14px;border-radius:22px;border:1.5px solid var(--ink);background:#FBF4E6;font-weight:700;font-size:15px;display:inline-flex;align-items:center;gap:6px}
+.pill[aria-expanded="true"]{background:var(--ink);color:#F7FAFB}
+.steps{display:flex;gap:5px}
+.steps i{flex:1;height:6px;border-radius:3px;background:rgba(31,42,54,.16)}
+.steps i.done{background:#1E3E5C}
+.steps i.cur{background:var(--ocre)}
+.steplbl{font-size:13px;color:#3B4651;text-align:center}
+
+.ebody{position:absolute;left:0;right:0;top:118px;bottom:84px;overflow:auto;z-index:2}
+.ebody .wrap{max-width:760px;margin:0 auto;padding:8px 16px 24px}
+.ebar{position:absolute;left:0;right:0;bottom:0;padding:14px 16px 16px;display:flex;gap:10px;justify-content:center;background:linear-gradient(rgba(243,235,221,0),rgba(243,235,221,.97) 40%);z-index:4}
+.ebar .btn{flex:1;max-width:420px}
+.ebar .btn.ghost{flex:0 0 auto}
+
+.bigq{margin:22px auto 0;max-width:520px;text-align:center}
+.bigq .kick{font-family:'Caveat',cursive;font-size:22px;color:#1E3E5C}
+.bigq h2{margin:4px 0 12px;font-family:'Fraunces',Georgia,serif;font-size:34px;line-height:1.08;font-weight:700;text-wrap:balance}
+.bigq p{margin:0 auto;max-width:420px;font-size:17px;background:rgba(243,235,221,.85);border-radius:10px;padding:6px 10px}
+
+.dig{position:absolute;left:50%;bottom:72px;transform:translateX(-50%);width:min(100%,620px);aspect-ratio:4/3;z-index:1;touch-action:none}
+.dig.on{cursor:crosshair}
+.dig svg.rock{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.spot{position:absolute;width:72px;height:72px;margin:-36px 0 0 -36px;border-radius:50%;border:0;background:transparent;padding:0}
+.spot:focus-visible{outline:3px solid #1E3E5C;outline-offset:2px}
+.puff{position:absolute;width:30px;height:30px;margin:-15px 0 0 -15px;border-radius:50%;background:radial-gradient(rgba(214,190,150,.95),rgba(214,190,150,0) 70%);pointer-events:none;animation:puff .7s ease-out forwards}
+@keyframes puff{from{transform:scale(.4);opacity:1}to{transform:scale(1.8) translateY(-14px);opacity:0}}
+.dighud{position:relative;z-index:2;margin:16px auto 0;max-width:420px;text-align:center}
+.dighud .ins{display:inline-block;background:rgba(251,244,230,.95);border:1.5px solid rgba(31,42,54,.4);border-radius:10px;padding:8px 14px;font-size:16px}
+.counter{margin-top:10px;display:flex;justify-content:center;gap:8px}
+.counter span{width:40px;height:40px;border-radius:50%;border:2px dashed #5E656C;display:flex;align-items:center;justify-content:center;font-weight:700;background:rgba(247,250,251,.7)}
+.counter span.f{border:2px solid var(--ink);background:var(--ocre)}
+
+.chip{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;padding:3px 9px;border-radius:10px;line-height:1.3;white-space:nowrap}
+.chip.real{background:#1F2A36;color:#F7FAFB}
+.chip.sim{background:#D6E5EF;color:#173350;border:1.5px solid #1E3E5C}
+.chip.art{background:#FBF4E6;color:#6B430D;border:1.5px dashed #8A5A14}
+.chip.prov{background:transparent;color:#3B4651;border:1px solid rgba(31,42,54,.4)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+
+.page{background:var(--paper);border:1.5px solid rgba(31,42,54,.35);border-radius:8px 16px 10px 14px;padding:16px;box-shadow:3px 5px 0 rgba(31,42,54,.12);position:relative}
+.page h2{margin:0 0 6px;font-family:'Fraunces',Georgia,serif;font-size:26px;line-height:1.1}
+.page h3{margin:0;font-family:'Fraunces',Georgia,serif;font-size:18px}
+.page p{margin:6px 0}
+.small{font-size:14px;color:#3B4651}
+
+.cards{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;padding:4px 2px 12px;margin:12px -2px 0}
+.ecard{flex:0 0 78%;scroll-snap-align:center;background:#FBF4E6;border:1.5px solid var(--ink);border-radius:6px 14px 8px 12px;padding:12px;display:flex;flex-direction:column;gap:8px}
+.ecard .art{height:110px;border-radius:8px;background:#E4D2B0;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.ecard .art svg{width:120px;height:100px}
+.ecard h3{font-size:17px}
+.opts{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.opt{text-align:left;min-height:52px;padding:10px 14px;border:1.5px solid rgba(31,42,54,.5);border-radius:6px 14px 8px 12px;background:#FBF4E6;font-size:16px}
+.opt:hover{background:#fff}
+.opt.sel{border:2.5px solid #1E3E5C;background:#E4EEF4}
+.fb{margin-top:10px;padding:10px 12px;border-left:0;background:#E4EEF4;border-radius:10px;font-size:15px}
+
+.recon{position:relative;margin-top:12px;border:1.5px solid var(--ink);border-radius:8px;overflow:hidden;background:#EBD6B4}
+.recon svg{display:block;width:100%;height:auto}
+.stamp{position:absolute;right:8px;top:8px}
+.pin{position:absolute;width:30px;height:30px;margin:-15px 0 0 -15px;border-radius:50%;background:#A4471F;color:#F7FAFB;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid #F7FAFB;box-shadow:0 0 0 2px #1F2A36;font-size:14px}
+.layers{display:grid;grid-template-columns:repeat(1,minmax(0,1fr));gap:10px;margin-top:12px}
+.lyr{border-radius:8px 14px 10px 12px;padding:12px;background:#FBF4E6}
+.lyr.ev{border:2px solid #A4471F}
+.lyr.in{border:2px solid #1E3E5C}
+.lyr.ar{border:2px dashed #8A5A14}
+.lyr .lh{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.lyr .lh b{font-family:'Fraunces',Georgia,serif;font-size:17px}
+.lyr p{margin:0;font-size:15px}
+.ico{width:22px;height:22px;flex:none}
+
+.done5{text-align:center;max-width:460px;margin:20px auto 0}
+.seal{width:120px;height:120px;margin:0 auto 6px}
+
+/* modal card */
+.modal{position:absolute;inset:0;z-index:20;display:flex;align-items:flex-end;justify-content:center}
+.modal .scrim{z-index:0}
+.mcard{position:relative;z-index:1;width:100%;max-width:520px;max-height:90%;overflow:auto;background:var(--paper);border:2px solid var(--ink);border-radius:22px 22px 0 0;padding:16px 18px 20px;animation:up .35s cubic-bezier(.2,.8,.3,1) both}
+.mcard .art{height:150px;border-radius:10px;background:#E4D2B0;display:flex;align-items:center;justify-content:center;margin:8px 0 10px;position:relative}
+.mcard .art svg{width:170px;height:140px}
+.mcard h2{margin:0;font-family:'Fraunces',Georgia,serif;font-size:24px;line-height:1.1}
+.blk{margin-top:10px;padding:10px 12px;border-radius:10px;background:#FBF4E6;border:1px solid rgba(31,42,54,.25)}
+.blk .chips{margin-bottom:6px}
+.blk p{margin:0;font-size:15px}
+
+/* knowledge panel */
+.kp{position:absolute;left:0;right:0;bottom:0;z-index:10;background:#FBF4E6;border-top:2px solid var(--ink);border-radius:20px 20px 0 0;box-shadow:0 -10px 30px rgba(31,42,54,.2);max-height:62%;display:flex;flex-direction:column;animation:up .3s cubic-bezier(.2,.8,.3,1) both}
+.kp .kh{display:flex;align-items:center;justify-content:space-between;padding:10px 16px 6px}
+.kp .kh b{font-family:'Fraunces',Georgia,serif;font-size:18px}
+.tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;padding:0 16px}
+.tab{min-height:44px;border:1.5px solid rgba(31,42,54,.45);border-radius:10px;background:transparent;font-weight:700;font-size:15px;line-height:1.1;padding:4px}
+.tab small{display:block;font-weight:400;font-size:11px;color:#3B4651}
+.tab[aria-pressed="true"]{background:var(--ink);color:#F7FAFB;border-color:var(--ink)}
+.tab[aria-pressed="true"] small{color:#D9E3E8}
+.kb{padding:12px 16px 20px;overflow:auto}
+.kb p{margin:6px 0 0}
+
+@media (min-width:820px){
+  .brand h1{font-size:32px}
+  .brand p{font-size:22px}
+  .top{padding:22px 28px 40px}
+  .bottom{padding:24px 28px 24px}
+  .sheet{left:auto;right:24px;bottom:24px;width:400px;border:2px solid var(--ink);border-radius:18px}
+  .hint{top:120px}
+  .toast{top:120px}
+  .etop{padding:16px 28px 26px}
+  .ebody{top:132px;bottom:92px}
+  .cards{overflow:visible;display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
+  .ecard{flex:none}
+  .layers{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .kp{left:auto;right:24px;bottom:24px;width:420px;border:2px solid var(--ink);border-radius:18px}
+  .mcard{border-radius:18px;margin-bottom:24px}
+  .bigq h2{font-size:46px}
+  .dig{bottom:84px}
+}
+@media (prefers-reduced-motion: reduce){
+  .mk.ta .pulse,.cloud{animation:none}
+  .pl{transition:none}
+  .sheet,.kp,.mcard,.toast{animation:fadein .2s ease both}
+  .stage.ret{animation:fadein .4s ease both}
+}
+</style>
+</helmet>
+
+<div class="app" style="--paper: #F3EBDD; --ink: #1F2A36; --deep: #1E3E5C; --ocre: {{accent}};">
+
+<svg width="0" height="0" style="position: absolute" aria-hidden="true" focusable="false">
+<defs>
+<filter id="wc" x="-10%" y="-10%" width="120%" height="120%">
+<feTurbulence type="fractalNoise" baseFrequency="0.018" numOctaves="3" seed="4" result="n"></feTurbulence>
+<feDisplacementMap in="SourceGraphic" in2="n" scale="16" xChannelSelector="R" yChannelSelector="G"></feDisplacementMap>
+</filter>
+<filter id="wcs" x="-10%" y="-10%" width="120%" height="120%">
+<feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="2" seed="9" result="n"></feTurbulence>
+<feDisplacementMap in="SourceGraphic" in2="n" scale="7" xChannelSelector="R" yChannelSelector="G" result="d"></feDisplacementMap>
+<feGaussianBlur in="d" stdDeviation="0.7"></feGaussianBlur>
+</filter>
+<filter id="ink" x="-5%" y="-5%" width="110%" height="110%">
+<feTurbulence type="turbulence" baseFrequency="0.06" numOctaves="2" seed="2" result="n"></feTurbulence>
+<feDisplacementMap in="SourceGraphic" in2="n" scale="2.6" xChannelSelector="R" yChannelSelector="G"></feDisplacementMap>
+</filter>
+<filter id="bleed" x="-20%" y="-20%" width="140%" height="140%">
+<feTurbulence type="fractalNoise" baseFrequency="0.05" numOctaves="3" seed="12" result="n"></feTurbulence>
+<feDisplacementMap in="SourceGraphic" in2="n" scale="10" xChannelSelector="R" yChannelSelector="G" result="d"></feDisplacementMap>
+<feGaussianBlur in="d" stdDeviation="3"></feGaussianBlur>
+</filter>
+<filter id="paperf">
+<feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="3" seed="5" result="n"></feTurbulence>
+<feColorMatrix in="n" type="matrix" values="0 0 0 0 0.45  0 0 0 0 0.36  0 0 0 0 0.24  0 0 0 -1.1 0.62"></feColorMatrix>
+</filter>
+<filter id="fibers">
+<feTurbulence type="fractalNoise" baseFrequency="0.012 0.09" numOctaves="2" seed="8" result="n"></feTurbulence>
+<feColorMatrix in="n" type="matrix" values="0 0 0 0 0.5  0 0 0 0 0.42  0 0 0 0 0.3  0 0 0 -2 1.05"></feColorMatrix>
+</filter>
+<radialGradient id="ocean" cx="500" cy="500" r="560" gradientUnits="userSpaceOnUse">
+<stop offset="0" stop-color="#5B8AAE"></stop>
+<stop offset="0.5" stop-color="#3F6F94"></stop>
+<stop offset="0.82" stop-color="#28507A"></stop>
+<stop offset="1" stop-color="#1E3E5C"></stop>
+</radialGradient>
+<radialGradient id="ice" cx="520" cy="480" r="360" gradientUnits="userSpaceOnUse">
+<stop offset="0" stop-color="#FFFFFF"></stop>
+<stop offset="0.6" stop-color="#F2F7FA"></stop>
+<stop offset="1" stop-color="#C9DCE8"></stop>
+</radialGradient>
+<linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+<stop offset="0" stop-color="#B9D0DF"></stop>
+<stop offset="0.6" stop-color="#E3ECF1"></stop>
+<stop offset="1" stop-color="#F3EBDD"></stop>
+</linearGradient>
+<linearGradient id="sea" x1="0" y1="0" x2="0" y2="1">
+<stop offset="0" stop-color="#2C557A"></stop>
+<stop offset="1" stop-color="#4A7899"></stop>
+</linearGradient>
+<linearGradient id="rockg" x1="0" y1="0" x2="0" y2="1">
+<stop offset="0" stop-color="#D2B488"></stop>
+<stop offset="0.5" stop-color="#B48D5D"></stop>
+<stop offset="1" stop-color="#8B6640"></stop>
+</linearGradient>
+<linearGradient id="warm" x1="0" y1="0" x2="0" y2="1">
+<stop offset="0" stop-color="#F4DDB3"></stop>
+<stop offset="1" stop-color="#E7C493"></stop>
+</linearGradient>
+<clipPath id="rockclip">
+<path d="M0,300 L0,140 C30,120 60,112 92,118 C128,98 170,92 205,106 C240,90 286,86 320,102 C350,94 380,100 400,112 L400,300 Z"></path>
+</clipPath>
+</defs>
+</svg>
+
+<sc-if value="{{isMap}}" hint-placeholder-val="{{ true }}">
+<div class="stagewrap">
+<div class="{{stageCls}}">
+<div class="vp" ref="{{vpRef}}" tabindex="0" role="application" aria-label="Mapa de la Antártida. Arrastrá para mover, usá las flechas para desplazarte y las teclas más y menos para acercar." onPointerDown="{{onDown}}" onPointerMove="{{onMove}}" onPointerUp="{{onUp}}" onPointerCancel="{{onUp}}" onPointerLeave="{{onUp}}" onWheel="{{onWheel}}" onKeyDown="{{onVpKey}}">
+
+<div class="layer" style="width: {{layerSize}}; height: {{layerSize}}; transform: {{layerTf}}; transition: {{layerTr}};">
+<svg viewBox="0 0 1000 1000" aria-hidden="true" focusable="false">
+<circle cx="500" cy="500" r="600" fill="#2B5276" opacity="0.18" filter="url(#bleed)"></circle>
+<circle cx="500" cy="505" r="548" fill="url(#ocean)" filter="url(#wc)" opacity="0.94"></circle>
+<circle cx="490" cy="490" r="470" fill="#6C98B9" opacity="0.22" filter="url(#bleed)"></circle>
+<g fill="none" stroke="#DCE7EE" stroke-width="1.1" opacity="0.5" filter="url(#ink)">
+<circle cx="500" cy="500" r="426" stroke-dasharray="4 7"></circle>
+<circle cx="500" cy="500" r="280" stroke-dasharray="4 7"></circle>
+<circle cx="500" cy="500" r="139" stroke-dasharray="4 7"></circle>
+<path d="M500,500 L500,-40 M500,500 L1040,500 M500,500 L500,1040 M500,500 L-40,500 M500,500 L120,120 M500,500 L880,120 M500,500 L880,880 M500,500 L120,880"></path>
+</g>
+<g font-family="Caveat, cursive" font-size="17" fill="#E6EEF3" opacity="0.85">
+<text x="508" y="70">0° Greenwich</text>
+<text x="74" y="78" transform="rotate(-45 74 78)">60° S</text>
+</g>
+<path d="M500,58 L500,22 M492,34 L500,20 L508,34" stroke="#F7FAFB" stroke-width="2.2" fill="none" stroke-linecap="round" filter="url(#ink)"></path>
+
+<path d="M502,214 L553,231 L601,239 L643,249 L688,271 L740,289 L777,334 L785,379 L763,408 L787,426 L818,476 L834,525 L823,586 L799,636 L774,695 L738,738 L678,757 L624,767 L583,756 L539,759 L547,714 L546,676 L530,674 L504,667 L469,657 L439,659 L424,668 L402,663 L371,664 L337,644 L308,616 L291,575 L264,536 L251,497 L265,470 L264,439 L244,421 L227,386 L198,364 L185,341 L179,323 L188,294 L200,311 L205,334 L235,360 L257,372 L278,383 L308,403 L334,400 L363,399 L389,378 L396,359 L409,337 L407,305 L436,273 L453,246 L477,222 Z" fill="#A9C6DA" filter="url(#bleed)" opacity="0.9"></path>
+<path d="M499,218 L549,226 L597,234 L642,250 L690,269 L743,291 L780,340 L784,383 L770,415 L792,427 L827,469 L834,528 L824,585 L800,642 L768,689 L739,737 L683,759 L623,768 L581,759 L544,754 L546,717 L547,682 L528,669 L500,667 L473,658 L446,653 L423,666 L402,667 L364,659 L335,640 L306,612 L295,576 L266,541 L259,503 L267,468 L256,441 L240,418 L223,386 L201,368 L186,344 L176,316 L181,296 L196,306 L209,335 L227,356 L254,374 L284,381 L309,399 L328,403 L367,392 L384,380 L399,364 L404,332 L408,301 L429,272 L458,246 L481,228 Z" fill="url(#ice)" filter="url(#wcs)"></path>
+<g fill="none" stroke="#9FBDD1" stroke-width="2" stroke-linecap="round" opacity="0.7" filter="url(#ink)">
+<path d="M560,300 C620,330 680,380 720,450"></path>
+<path d="M600,560 C640,600 690,640 730,700"></path>
+<path d="M330,470 C360,520 380,560 420,600"></path>
+<path d="M440,300 C470,330 520,350 580,360"></path>
+<path d="M610,470 C650,500 690,520 760,530"></path>
+</g>
+<path d="M499,218 L549,226 L597,234 L642,250 L690,269 L743,291 L780,340 L784,383 L770,415 L792,427 L827,469 L834,528 L824,585 L800,642 L768,689 L739,737 L683,759 L623,768 L581,759 L544,754 L546,717 L547,682 L528,669 L500,667 L473,658 L446,653 L423,666 L402,667 L364,659 L335,640 L306,612 L295,576 L266,541 L259,503 L267,468 L256,441 L240,418 L223,386 L201,368 L186,344 L176,316 L181,296 L196,306 L209,335 L227,356 L254,374 L284,381 L309,399 L328,403 L367,392 L384,380 L399,364 L404,332 L408,301 L429,272 L458,246 L481,228 Z" fill="none" stroke="#1F2A36" stroke-width="1.8" stroke-linejoin="round" filter="url(#ink)"></path>
+<g stroke="#1F2A36" stroke-width="1.3" fill="#F7FAFB" filter="url(#ink)">
+<ellipse cx="203" cy="304" rx="6" ry="4"></ellipse>
+<ellipse cx="203" cy="208" rx="9" ry="4"></ellipse>
+<ellipse cx="219" cy="203" rx="5" ry="3"></ellipse>
+</g>
+<path d="M-16,352 L-4,317 L-3,301 L9,304 L25,302 L40,288 L46,286 L41,302 L39,318 L32,335 L13,347 L-13,358 Z" fill="#D9C49C" stroke="#1F2A36" stroke-width="1.5" filter="url(#wcs)"></path>
+<path d="M36,318 C80,350 140,348 190,306" fill="none" stroke="#F7FAFB" stroke-width="5" stroke-linecap="round" opacity="0.5"></path>
+<path d="M36,318 C80,350 140,348 190,306" fill="none" stroke="#A4471F" stroke-width="2.4" stroke-dasharray="2 9" stroke-linecap="round"></path>
+<g font-family="Caveat, cursive" fill="#F7FAFB">
+<text x="62" y="384" font-size="22" transform="rotate(-12 62 384)">Pasaje de Drake</text>
+<text x="330" y="282" font-size="20" transform="rotate(10 330 282)">Mar de Weddell</text>
+<text x="470" y="830" font-size="22">Mar de Ross</text>
+<text x="190" y="640" font-size="19" transform="rotate(48 190 640)">Mar de Amundsen</text>
+<text x="760" y="160" font-size="24" opacity="0.9">Océano Austral</text>
+</g>
+<g font-family="Fraunces, Georgia, serif" font-style="italic" fill="#3B5A73" opacity="0.75">
+<text x="590" y="440" font-size="22">Antártida Oriental</text>
+<text x="330" y="520" font-size="18">Antártida</text>
+<text x="330" y="540" font-size="18">Occidental</text>
+</g>
+<text x="-6" y="378" font-family="Caveat, cursive" font-size="18" fill="#F7FAFB">Ushuaia</text>
+</svg>
+</div>
+
+<div class="{{ovCls}}">
+<sc-for list="{{markers}}" as="m" hint-placeholder-count="10">
+<button type="button" class="{{m.cls}}" style="left: {{m.left}}; top: {{m.top}};" onClick="{{m.open}}" aria-label="{{m.aria}}">
+<span class="dot">
+<sc-if value="{{m.isCluster}}" hint-placeholder-val="{{ false }}">{{m.count}}</sc-if>
+<sc-if value="{{m.pulse}}" hint-placeholder-val="{{ false }}"><span class="pulse"></span></sc-if>
+<sc-if value="{{m.check}}" hint-placeholder-val="{{ false }}"><svg viewBox="0 0 14 14" aria-hidden="true"><path d="M2.5,7.5 L5.8,10.5 L11.5,3.5" fill="none" stroke="#1F2A36" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg></sc-if>
+</span>
+<sc-if value="{{m.showLabel}}" hint-placeholder-val="{{ false }}"><span class="mlabel"><strong>{{m.title}}</strong><span>{{m.sub}}</span></span></sc-if>
+</button>
+</sc-for>
+</div>
+</div>
+
+<svg class="grain" aria-hidden="true" focusable="false"><rect width="100%" height="100%" filter="url(#paperf)"></rect></svg>
+
+<header class="top">
+<div class="brand">
+<h1>Antártida por descubrir</h1>
+<p>cuaderno de campo · desde Ushuaia</p>
+</div>
+<div class="reg" role="status" aria-label="Registro de exploración: {{regText}} expediciones disponibles">
+<small>Registro de exploración</small>
+<b>{{regText}} expediciones</b>
+<div class="bar"><i style="width: {{regFill}};"></i></div>
+</div>
+</header>
+
+<sc-if value="{{showHint}}" hint-placeholder-val="{{ true }}"><div class="hint">arrastrá para mover · pellizcá para acercar</div></sc-if>
+<sc-if value="{{hasToast}}" hint-placeholder-val="{{ false }}"><div class="toast" role="status">{{toast}}</div></sc-if>
+
+<div class="bottom">
+<div class="leftcol">
+<div class="legend">
+<button type="button" class="lt" onClick="{{toggleLegend}}" aria-expanded="{{legendExp}}">
+<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h9" stroke="#1F2A36" stroke-width="2" fill="none" stroke-linecap="round"></path></svg>
+Leyenda
+</button>
+<sc-if value="{{legendOpen}}" hint-placeholder-val="{{ true }}">
+<ul>
+<li><span class="sw"><span class="a"></span></span><span><b>Expedición disponible</b></span></li>
+<li><span class="sw"><span class="b"></span></span><span>Ampliación prevista</span></li>
+<li><span class="sw"><span class="c"></span></span><span>Próximamente</span></li>
+</ul>
+</sc-if>
+</div>
+<button type="button" class="btn" onClick="{{openList}}">
+<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h12M8 12h12M8 18h12" stroke="#1F2A36" stroke-width="2" fill="none" stroke-linecap="round"></path><circle cx="4" cy="6" r="1.5" fill="#1F2A36"></circle><circle cx="4" cy="12" r="1.5" fill="#1F2A36"></circle><circle cx="4" cy="18" r="1.5" fill="#1F2A36"></circle></svg>
+Ver como lista
+</button>
+</div>
+<div class="zoom">
+<button type="button" class="iconbtn" onClick="{{zoomIn}}" aria-label="Acercar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="#1F2A36" stroke-width="2.4" stroke-linecap="round"></path></svg></button>
+<button type="button" class="iconbtn" onClick="{{zoomOut}}" aria-label="Alejar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14" stroke="#1F2A36" stroke-width="2.4" stroke-linecap="round"></path></svg></button>
+<button type="button" class="iconbtn" onClick="{{resetView}}" aria-label="Ver todo el continente"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7.5" stroke="#1F2A36" stroke-width="2" fill="none"></circle><path d="M12 2v4M12 18v4M2 12h4M18 12h4" stroke="#1F2A36" stroke-width="2" stroke-linecap="round"></path></svg></button>
+</div>
+</div>
+
+<sc-if value="{{sheetOpen}}" hint-placeholder-val="{{ false }}">
+<div class="scrim" onClick="{{closeSheet}}"></div>
+<section class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title" ref="{{sheetRef}}" onKeyDown="{{onSheetKey}}">
+<div class="grab"></div>
+<div class="row" style="justify-content: space-between; align-items: center;">
+<span class="{{sheetTagCls}}">{{sheetTag}}</span>
+<button type="button" class="iconbtn" onClick="{{closeSheet}}" aria-label="Cerrar ficha"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="#1F2A36" stroke-width="2.4" stroke-linecap="round"></path></svg></button>
+</div>
+<h2 id="sheet-title">{{sheetTitle}}</h2>
+<p class="place">{{sheetPlace}}</p>
+<div class="q">
+<p>{{sheetQ}}</p>
+<small>[Pregunta provisional] · [Contenido provisional]</small>
+</div>
+<p class="anno">Esta expedición todavía no está disponible. Se suma en una próxima etapa.</p>
+<div class="row" style="margin-top: 12px;">
+<button type="button" class="btn" onClick="{{closeSheet}}">Volver al mapa</button>
+</div>
+</section>
+</sc-if>
+
+<sc-if value="{{listOpen}}" hint-placeholder-val="{{ false }}">
+<div class="listview" role="dialog" aria-modal="true" aria-labelledby="list-title" ref="{{listRef}}" onKeyDown="{{onListKey}}">
+<div class="inner">
+<div class="listhead">
+<h2 id="list-title">Todos los puntos</h2>
+<button type="button" class="btn" onClick="{{closeList}}">Ver mapa</button>
+</div>
+<section aria-labelledby="g-a">
+<h3 id="g-a"><span class="tag ta">Disponible</span> Expediciones</h3>
+<p class="gdesc">Se pueden recorrer ahora.</p>
+<ul>
+<sc-for list="{{groupA}}" as="it" hint-placeholder-count="1">
+<li><button type="button" class="li" onClick="{{it.open}}"><span class="t"><strong>{{it.title}}</strong><span class="p">{{it.place}}</span></span><span class="go">{{it.go}}</span></button></li>
+</sc-for>
+</ul>
+</section>
+<section aria-labelledby="g-b">
+<h3 id="g-b"><span class="tag tb">Ampliación prevista</span></h3>
+<p class="gdesc">Planificadas para la próxima etapa.</p>
+<ul>
+<sc-for list="{{groupB}}" as="it" hint-placeholder-count="4">
+<li><button type="button" class="li" onClick="{{it.open}}"><span class="t"><strong>{{it.title}}</strong><span class="p">{{it.place}}</span></span><span class="go">Ver ficha</span></button></li>
+</sc-for>
+</ul>
+</section>
+<section aria-labelledby="g-c">
+<h3 id="g-c"><span class="tag tc">Próximamente</span></h3>
+<p class="gdesc">Ideas por explorar más adelante.</p>
+<ul>
+<sc-for list="{{groupC}}" as="it" hint-placeholder-count="7">
+<li><button type="button" class="li" onClick="{{it.open}}"><span class="t"><strong>{{it.title}}</strong><span class="p">{{it.place}}</span></span><span class="go">Ver ficha</span></button></li>
+</sc-for>
+</ul>
+</section>
+</div>
+</div>
+</sc-if>
+
+</div>
+<div class="{{veilCls}}"></div>
+</div>
+</sc-if>
+
+<sc-if value="{{isExp}}" hint-placeholder-val="{{ false }}">
+<section class="exp" aria-label="Expedición Fósiles en Isla Marambio">
+<div class="scene" onPointerMove="{{onScene}}" aria-hidden="true">
+<div class="pl" style="transform: {{parSky}};">
+<svg viewBox="0 0 400 700" preserveAspectRatio="xMidYMid slice">
+<rect width="400" height="700" fill="url(#sky)"></rect>
+<g class="cloud" filter="url(#bleed)" fill="#F7FAFB" opacity="0.85">
+<ellipse cx="90" cy="150" rx="80" ry="22"></ellipse>
+<ellipse cx="300" cy="110" rx="100" ry="26"></ellipse>
+<ellipse cx="230" cy="210" rx="70" ry="16"></ellipse>
+</g>
+</svg>
+</div>
+<div class="pl" style="transform: {{parSea}};">
+<svg viewBox="0 0 400 700" preserveAspectRatio="xMidYMid slice">
+<path d="M-20,330 L60,318 L110,322 L150,310 L200,316 L260,306 L320,314 L420,308 L420,345 L-20,345 Z" fill="#E9F1F6" stroke="#1F2A36" stroke-width="1" filter="url(#wcs)"></path>
+<rect x="-20" y="340" width="440" height="400" fill="url(#sea)" filter="url(#wcs)"></rect>
+<g stroke="#9FC0D6" stroke-width="1.4" fill="none" opacity="0.7" stroke-linecap="round" filter="url(#ink)">
+<path d="M20,370 L80,368 M140,380 L210,378 M260,366 L330,368 M40,410 L120,408 M220,420 L300,418 M330,400 L380,402"></path>
+</g>
+<g fill="#F7FAFB" stroke="#1F2A36" stroke-width="0.9" filter="url(#wcs)">
+<path d="M60,392 L90,388 L102,396 L70,400 Z"></path>
+<path d="M290,384 L330,380 L340,388 L300,392 Z"></path>
+</g>
+</svg>
+</div>
+<div class="pl" style="transform: {{parRock}};">
+<svg viewBox="0 0 400 700" preserveAspectRatio="xMidYMax slice">
+<path d="M-20,720 L-20,520 C40,500 90,505 130,512 C200,498 260,500 330,508 C370,502 400,506 430,512 L430,720 Z" fill="#9C7A50" filter="url(#wc)" opacity="0.95"></path>
+<path d="M-20,720 L-20,600 C80,590 200,598 430,592 L430,720 Z" fill="#7B5B3A" filter="url(#wc)" opacity="0.9"></path>
+</svg>
+</div>
+<svg class="grain" aria-hidden="true" focusable="false"><rect width="100%" height="100%" filter="url(#fibers)" opacity="0.6"></rect></svg>
+</div>
+
+<sc-if value="{{showRock}}" hint-placeholder-val="{{ true }}">
+<div class="{{digCls}}" ref="{{rockRef}}" onPointerDown="{{onRockDown}}" onPointerMove="{{onRockMove}}" onPointerUp="{{onRockUp}}" onPointerCancel="{{onRockUp}}" onPointerLeave="{{onRockUp}}" style="transform: translateX(-50%) {{parDig}};">
+<svg class="rock" viewBox="0 0 400 300" role="img" aria-label="Afloramiento rocoso con capas de sedimento">
+<path d="M0,300 L0,140 C30,120 60,112 92,118 C128,98 170,92 205,106 C240,90 286,86 320,102 C350,94 380,100 400,112 L400,300 Z" fill="url(#rockg)" filter="url(#wcs)"></path>
+<g clip-path="url(#rockclip)">
+<path d="M0,165 C80,155 160,170 240,158 C300,150 360,160 400,154 L400,175 C340,182 280,172 220,180 C140,190 70,178 0,186 Z" fill="#A4471F" opacity="0.35" filter="url(#wcs)"></path>
+<path d="M0,238 C90,230 170,246 260,236 C320,230 370,240 400,234 L400,252 C330,258 260,250 190,258 C120,264 60,252 0,258 Z" fill="#7A5634" opacity="0.4" filter="url(#wcs)"></path>
+<g fill="none" stroke="#1F2A36" stroke-width="0.9" opacity="0.45" filter="url(#ink)">
+<path d="M0,150 C90,140 180,156 260,144 C320,138 370,146 400,142"></path>
+<path d="M0,205 C100,196 180,212 270,202 C330,196 370,204 400,200"></path>
+<path d="M0,272 C90,266 200,280 290,270 C340,266 380,272 400,270"></path>
+<path d="M150,120 L146,140 L152,152 M268,110 L262,128 M40,200 L48,214 L44,226 M352,190 L346,206"></path>
+</g>
+</g>
+<path d="M0,140 C30,120 60,112 92,118 C128,98 170,92 205,106 C240,90 286,86 320,102 C350,94 380,100 400,112" fill="none" stroke="#1F2A36" stroke-width="1.8" stroke-linecap="round" filter="url(#ink)"></path>
+
+<g filter="url(#ink)" fill="none" stroke="#3E2A17" stroke-linecap="round">
+<path d="M92,182 c3,0 5,3 3,6 c-3,4 -10,3 -11,-2 c-2,-7 5,-12 11,-11 c9,1 14,10 11,18 c-4,10 -18,12 -25,5 c-9,-9 -7,-24 5,-29 c12,-6 27,0 31,13" stroke-width="2.2"></path>
+<path d="M100,172 l5,-5 M108,180 l7,-2 M106,192 l6,3 M94,198 l1,7 M80,192 l-6,4 M76,178 l-7,-2 M84,166 l-3,-6" stroke-width="1.3"></path>
+</g>
+<g filter="url(#ink)" stroke="#3E2A17" stroke-linecap="round">
+<path d="M184,232 C198,212 226,206 246,220 C230,240 202,246 184,232 Z" fill="#7C6A3E" fill-opacity="0.35" stroke-width="2"></path>
+<path d="M184,232 L246,220 M200,229 L206,216 M214,226 L222,212 M228,224 L236,212 M200,229 L208,238 M214,226 L222,238 M228,224 L235,233" fill="none" stroke-width="1.2"></path>
+</g>
+<g filter="url(#ink)" stroke="#3E2A17" stroke-width="2" fill="#EADBC0">
+<path d="M296,166 c-6,-6 -4,-14 3,-14 c4,-6 12,-4 12,2 l20,8 c4,-6 12,-4 12,3 c6,4 3,13 -4,13 c-3,6 -11,5 -12,-1 l-20,-8 c-3,5 -11,3 -11,-3 z"></path>
+<path d="M312,160 l16,6" stroke-width="1" fill="none"></path>
+</g>
+
+<g filter="url(#wc)" fill="#B89466">
+<ellipse cx="92" cy="184" rx="40" ry="30" opacity="{{c0}}"></ellipse>
+<ellipse cx="214" cy="226" rx="46" ry="28" opacity="{{c1}}"></ellipse>
+<ellipse cx="318" cy="168" rx="40" ry="26" opacity="{{c2}}"></ellipse>
+</g>
+<g fill="#8F6C45" opacity="0.5">
+<circle cx="78" cy="176" r="2" opacity="{{c0}}"></circle><circle cx="104" cy="194" r="1.6" opacity="{{c0}}"></circle>
+<circle cx="200" cy="220" r="2" opacity="{{c1}}"></circle><circle cx="230" cy="232" r="1.6" opacity="{{c1}}"></circle>
+<circle cx="306" cy="164" r="1.8" opacity="{{c2}}"></circle><circle cx="330" cy="172" r="1.5" opacity="{{c2}}"></circle>
+</g>
+<g fill="none" stroke="#1F2A36" stroke-width="1.4" stroke-dasharray="3 5" filter="url(#ink)">
+<ellipse cx="92" cy="184" rx="44" ry="34" opacity="{{h0}}"></ellipse>
+<ellipse cx="214" cy="226" rx="50" ry="32" opacity="{{h1}}"></ellipse>
+<ellipse cx="318" cy="168" rx="44" ry="30" opacity="{{h2}}"></ellipse>
+</g>
+<g fill="none" stroke="{{accent}}" stroke-width="3" filter="url(#ink)">
+<ellipse cx="92" cy="184" rx="44" ry="34" opacity="{{f0}}"></ellipse>
+<ellipse cx="214" cy="226" rx="50" ry="32" opacity="{{f1}}"></ellipse>
+<ellipse cx="318" cy="168" rx="44" ry="30" opacity="{{f2}}"></ellipse>
+</g>
+<g font-family="Caveat, cursive" font-size="16" fill="#1F2A36">
+<text x="58" y="234" opacity="{{f0}}">A · espiral</text>
+<text x="190" y="274" opacity="{{f1}}">B · hoja</text>
+<text x="292" y="214" opacity="{{f2}}">C · hueso</text>
+</g>
+</svg>
+<sc-for list="{{puffs}}" as="p" hint-placeholder-count="0">
+<span class="puff" style="left: {{p.left}}; top: {{p.top}};"></span>
+</sc-for>
+<sc-if value="{{isStep2}}" hint-placeholder-val="{{ false }}">
+<sc-for list="{{spots}}" as="s" hint-placeholder-count="3">
+<button type="button" class="spot" style="left: {{s.left}}; top: {{s.top}};" aria-label="{{s.aria}}" onClick="{{s.key}}"></button>
+</sc-for>
+</sc-if>
+</div>
+</sc-if>
+
+<header class="etop">
+<div class="r1">
+<button type="button" class="pill" onClick="{{leaveExp}}" aria-label="Volver al mapa">
+<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" stroke="currentColor" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+Mapa
+</button>
+<div class="ttl"><b>Fósiles</b><span>Isla Marambio</span></div>
+<button type="button" class="pill" onClick="{{togglePanel}}" aria-expanded="{{panelExp}}" aria-controls="kpanel">Saber más</button>
+</div>
+<div class="steps" aria-hidden="true">
+<sc-for list="{{stepBars}}" as="b" hint-placeholder-count="5"><i class="{{b.cls}}"></i></sc-for>
+</div>
+<div class="steplbl" aria-live="polite">Paso {{step}} de 5 · {{stepName}}</div>
+</header>
+
+<div class="ebody">
+<div class="wrap">
+
+<sc-if value="{{isStep1}}" hint-placeholder-val="{{ true }}">
+<div class="bigq">
+<div class="kick">Pregunta inicial</div>
+<h2>¿Cómo era la Antártida antes del hielo?</h2>
+<p>Las rocas de esta isla guardan pistas. Tu tarea: encontrarlas y ver qué cuentan. <span class="small">[Contenido provisional]</span></p>
+</div>
+</sc-if>
+
+<sc-if value="{{isStep2}}" hint-placeholder-val="{{ false }}">
+<div class="dighud">
+<div class="ins">Tocá o arrastrá sobre la roca para limpiar el sedimento.</div>
+<div class="counter" aria-live="polite" aria-label="Hallazgos: {{foundCount}} de 3">
+<sc-for list="{{counter}}" as="c" hint-placeholder-count="3"><span class="{{c.cls}}">{{c.n}}</span></sc-for>
+</div>
+<div class="chips" style="justify-content: center; margin-top: 8px;"><span class="chip sim">Simulación educativa</span></div>
+</div>
+</sc-if>
+
+<sc-if value="{{isStep3}}" hint-placeholder-val="{{ false }}">
+<div class="page">
+<div class="chips"><span class="chip sim">Simulación educativa</span><span class="chip prov">[Contenido provisional]</span></div>
+<h2 style="margin-top: 8px;">Comparar evidencias</h2>
+<p class="small">Mirá las tres juntas. Deslizá para ver todas.</p>
+<div class="cards">
+<sc-for list="{{evidence}}" as="e" hint-placeholder-count="3">
+<article class="ecard">
+<div class="art">
+<sc-if value="{{e.isShell}}" hint-placeholder-val="{{ false }}"><svg viewBox="40 140 100 90" aria-hidden="true"><g filter="url(#ink)" fill="none" stroke="#3E2A17" stroke-linecap="round"><path d="M92,182 c3,0 5,3 3,6 c-3,4 -10,3 -11,-2 c-2,-7 5,-12 11,-11 c9,1 14,10 11,18 c-4,10 -18,12 -25,5 c-9,-9 -7,-24 5,-29 c12,-6 27,0 31,13" stroke-width="2.4"></path></g></svg></sc-if>
+<sc-if value="{{e.isLeaf}}" hint-placeholder-val="{{ false }}"><svg viewBox="170 190 90 60" aria-hidden="true"><g filter="url(#ink)" stroke="#3E2A17" stroke-linecap="round"><path d="M184,232 C198,212 226,206 246,220 C230,240 202,246 184,232 Z" fill="#7C6A3E" fill-opacity="0.35" stroke-width="2"></path><path d="M184,232 L246,220 M200,229 L206,216 M214,226 L222,212 M228,224 L236,212 M200,229 L208,238 M214,226 L222,238" fill="none" stroke-width="1.2"></path></g></svg></sc-if>
+<sc-if value="{{e.isBone}}" hint-placeholder-val="{{ false }}"><svg viewBox="285 140 70 50" aria-hidden="true"><g filter="url(#ink)" stroke="#3E2A17" stroke-width="2" fill="#EADBC0"><path d="M296,166 c-6,-6 -4,-14 3,-14 c4,-6 12,-4 12,2 l20,8 c4,-6 12,-4 12,3 c6,4 3,13 -4,13 c-3,6 -11,5 -12,-1 l-20,-8 c-3,5 -11,3 -11,-3 z"></path></g></svg></sc-if>
+</div>
+<h3>{{e.name}}</h3>
+<p class="small" style="margin: 0;">{{e.obs}}</p>
+<div class="chips"><span class="chip real">Dato real · a completar</span></div>
+<p class="small" style="margin: 0;">[Contenido provisional] · [Fuente a definir]</p>
+</article>
+</sc-for>
+</div>
+<h3 style="margin-top: 6px;">¿Qué pueden tener en común estos tres restos?</h3>
+<div class="opts" role="group" aria-label="Elegí una hipótesis">
+<sc-for list="{{options}}" as="o" hint-placeholder-count="3">
+<button type="button" class="{{o.cls}}" aria-pressed="{{o.pressed}}" onClick="{{o.pick}}">{{o.text}}</button>
+</sc-for>
+</div>
+<sc-if value="{{answered}}" hint-placeholder-val="{{ false }}"><div class="fb" role="status">{{feedback}} <span class="small">[Contenido provisional]</span></div></sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{isStep4}}" hint-placeholder-val="{{ false }}">
+<div class="page">
+<h2>Conclusión</h2>
+<p class="small">Así podría haber sido este lugar. Cada parte tiene una etiqueta para saber de dónde sale.</p>
+<div class="recon">
+<svg viewBox="0 0 400 240" role="img" aria-label="Reconstrucción artística: costa templada con bosque, playa y mar poco profundo">
+<rect width="400" height="240" fill="url(#warm)"></rect>
+<g filter="url(#bleed)" fill="#FBF0DC" opacity="0.8"><ellipse cx="90" cy="40" rx="70" ry="14"></ellipse><ellipse cx="300" cy="56" rx="80" ry="12"></ellipse></g>
+<path d="M0,120 C60,110 120,118 180,112 C260,104 330,110 400,104 L400,240 L0,240 Z" fill="#7F8E66" filter="url(#wcs)"></path>
+<g filter="url(#wcs)">
+<path d="M210,118 L224,62 L238,118 Z M240,116 L256,48 L272,116 Z M276,114 L290,70 L304,114 Z M308,112 L324,54 L340,112 Z M344,110 L358,74 L372,110 Z M372,108 L388,60 L402,108 Z" fill="#4D5C3F"></path>
+<path d="M150,120 L162,80 L174,120 Z M180,118 L192,72 L206,118 Z" fill="#5E6E4A"></path>
+</g>
+<path d="M0,160 C80,150 160,170 240,160 C300,154 350,164 400,158 L400,240 L0,240 Z" fill="#D9BF8E" filter="url(#wcs)"></path>
+<path d="M0,186 C70,178 140,194 220,186 C290,180 340,192 400,186 L400,240 L0,240 Z" fill="#6F96AF" filter="url(#wcs)"></path>
+<path d="M0,212 C80,206 180,220 400,210 L400,240 L0,240 Z" fill="#4A7899" filter="url(#wcs)"></path>
+<g fill="none" stroke="#1F2A36" stroke-width="1" opacity="0.6" filter="url(#ink)">
+<path d="M0,120 C60,110 120,118 180,112 C260,104 330,110 400,104"></path>
+<path d="M0,186 C70,178 140,194 220,186 C290,180 340,192 400,186"></path>
+</g>
+<g stroke="#5E6E4A" stroke-width="1.6" fill="none" stroke-linecap="round" filter="url(#ink)">
+<path d="M60,150 C62,136 70,128 80,124 M60,150 C58,138 50,130 42,128 M100,148 C104,136 112,130 120,128"></path>
+</g>
+</svg>
+<span class="stamp chip art">Reconstrucción artística</span>
+<span class="pin" style="left: 24%; top: 84%;" aria-hidden="true">A</span>
+<span class="pin" style="left: 64%; top: 34%;" aria-hidden="true">B</span>
+<span class="pin" style="left: 48%; top: 70%;" aria-hidden="true">C</span>
+</div>
+<div class="layers">
+<div class="lyr ev">
+<div class="lh"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5" stroke="#A4471F" stroke-width="2.2" fill="none"></circle><path d="M16 16l4.5 4.5" stroke="#A4471F" stroke-width="2.4" stroke-linecap="round"></path></svg><b>Evidencia</b></div>
+<p>Lo que se encontró: los restos A (espiral), B (hoja) y C (hueso). Están marcados con su letra en la imagen.</p>
+<div class="chips" style="margin-top: 6px;"><span class="chip real">Dato real · a completar</span></div>
+</div>
+<div class="lyr in">
+<div class="lh"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z" stroke="#1E3E5C" stroke-width="2" fill="none" stroke-linejoin="round"></path></svg><b>Interpretación</b></div>
+<p>[Contenido provisional] Si aparecen juntos restos de mar y de plantas, la zona pudo tener costa, vegetación y un clima sin hielo permanente.</p>
+</div>
+<div class="lyr ar">
+<div class="lh"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20c2-1 3-3 3-5l9-9 3 3-9 9c-2 0-4 1-5 2z" stroke="#8A5A14" stroke-width="2" fill="none" stroke-linejoin="round"></path></svg><b>Reconstrucción artística</b></div>
+<p>La ilustración es una forma de imaginar el lugar. Colores, plantas y paisaje son una propuesta, no una foto del pasado.</p>
+</div>
+</div>
+<p class="small" style="margin-top: 10px;">Fuentes: [Fuente a definir]</p>
+</div>
+</sc-if>
+
+<sc-if value="{{isStep5}}" hint-placeholder-val="{{ false }}">
+<div class="page done5">
+<svg class="seal" viewBox="0 0 120 120" aria-hidden="true">
+<circle cx="60" cy="60" r="50" fill="{{accent}}" opacity="0.85" filter="url(#wcs)"></circle>
+<circle cx="60" cy="60" r="50" fill="none" stroke="#1F2A36" stroke-width="2" filter="url(#ink)"></circle>
+<circle cx="60" cy="60" r="41" fill="none" stroke="#1F2A36" stroke-width="1" stroke-dasharray="3 4"></circle>
+<path d="M40,62 L54,76 L82,44" fill="none" stroke="#1F2A36" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" filter="url(#ink)"></path>
+</svg>
+<div class="anno">expedición registrada</div>
+<h2>Fósiles · Isla Marambio</h2>
+<p>Encontraste 3 restos, los comparaste y viste una reconstrucción posible del ambiente antes del hielo.</p>
+<p class="small">Al volver, el punto queda marcado como explorado y tu registro pasa a 1/1.</p>
+</div>
+</sc-if>
+
+</div>
+</div>
+
+<div class="ebar">
+<sc-if value="{{showBack}}" hint-placeholder-val="{{ false }}"><button type="button" class="btn ghost" onClick="{{prevStep}}">Atrás</button></sc-if>
+<button type="button" class="btn primary" onClick="{{primary}}" disabled="{{primaryDisabled}}">{{primaryLabel}}</button>
+</div>
+
+<sc-if value="{{panelOpen}}" hint-placeholder-val="{{ false }}">
+<aside class="kp" id="kpanel" aria-label="Saber más" ref="{{panelRef}}" onKeyDown="{{onPanelKey}}">
+<div class="kh">
+<b>Saber más · {{stepName}}</b>
+<button type="button" class="iconbtn" onClick="{{togglePanel}}" aria-label="Cerrar panel"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="#1F2A36" stroke-width="2.4" stroke-linecap="round"></path></svg></button>
+</div>
+<div class="tabs" role="group" aria-label="Nivel de detalle">
+<sc-for list="{{levels}}" as="l" hint-placeholder-count="3">
+<button type="button" class="tab" aria-pressed="{{l.pressed}}" onClick="{{l.pick}}">{{l.label}}<small>{{l.sub}}</small></button>
+</sc-for>
+</div>
+<div class="kb" aria-live="polite">
+<div class="chips"><span class="{{kChipCls}}">{{kChip}}</span><span class="chip prov">[Contenido provisional]</span></div>
+<p>{{kBody}}</p>
+<sc-if value="{{kDeep}}" hint-placeholder-val="{{ false }}">
+<p class="small"><b>Referencias de etiquetas:</b></p>
+<div class="chips" style="margin-top: 4px;"><span class="chip real">Dato real</span><span class="chip sim">Simulación educativa</span><span class="chip art">Reconstrucción artística</span></div>
+<p class="small">Fuentes: [Fuente a definir]</p>
+</sc-if>
+</div>
+</aside>
+</sc-if>
+
+<sc-if value="{{cardOpen}}" hint-placeholder-val="{{ false }}">
+<div class="modal">
+<div class="scrim" onClick="{{closeCard}}"></div>
+<section class="mcard" role="dialog" aria-modal="true" aria-labelledby="card-title" ref="{{cardRef}}" onKeyDown="{{onCardKey}}">
+<div class="row" style="justify-content: space-between; align-items: center;">
+<span class="anno">hallazgo {{foundCount}} de 3</span>
+<span class="chip sim">Simulación educativa</span>
+</div>
+<div class="art">
+<sc-if value="{{cIsShell}}" hint-placeholder-val="{{ false }}"><svg viewBox="40 140 100 90" aria-hidden="true"><g filter="url(#ink)" fill="none" stroke="#3E2A17" stroke-linecap="round"><path d="M92,182 c3,0 5,3 3,6 c-3,4 -10,3 -11,-2 c-2,-7 5,-12 11,-11 c9,1 14,10 11,18 c-4,10 -18,12 -25,5 c-9,-9 -7,-24 5,-29 c12,-6 27,0 31,13" stroke-width="2.4"></path><path d="M100,172 l5,-5 M108,180 l7,-2 M106,192 l6,3 M94,198 l1,7 M80,192 l-6,4 M76,178 l-7,-2 M84,166 l-3,-6" stroke-width="1.3"></path></g></svg></sc-if>
+<sc-if value="{{cIsLeaf}}" hint-placeholder-val="{{ false }}"><svg viewBox="170 190 90 60" aria-hidden="true"><g filter="url(#ink)" stroke="#3E2A17" stroke-linecap="round"><path d="M184,232 C198,212 226,206 246,220 C230,240 202,246 184,232 Z" fill="#7C6A3E" fill-opacity="0.35" stroke-width="2"></path><path d="M184,232 L246,220 M200,229 L206,216 M214,226 L222,212 M228,224 L236,212 M200,229 L208,238 M214,226 L222,238 M228,224 L235,233" fill="none" stroke-width="1.2"></path></g></svg></sc-if>
+<sc-if value="{{cIsBone}}" hint-placeholder-val="{{ false }}"><svg viewBox="285 140 70 50" aria-hidden="true"><g filter="url(#ink)" stroke="#3E2A17" stroke-width="2" fill="#EADBC0"><path d="M296,166 c-6,-6 -4,-14 3,-14 c4,-6 12,-4 12,2 l20,8 c4,-6 12,-4 12,3 c6,4 3,13 -4,13 c-3,6 -11,5 -12,-1 l-20,-8 c-3,5 -11,3 -11,-3 z"></path><path d="M312,160 l16,6" stroke-width="1" fill="none"></path></g></svg></sc-if>
+</div>
+<h2 id="card-title">{{cName}}</h2>
+<div class="blk">
+<div class="chips"><span class="chip sim">Lo que observás</span></div>
+<p>{{cObs}}</p>
+</div>
+<div class="blk">
+<div class="chips"><span class="chip real">Dato real · a completar</span></div>
+<p>[Contenido provisional] Qué es este resto, qué edad tiene y en qué capa de roca se encontró se completa cuando se elija el hallazgo real.</p>
+<p class="small" style="margin-top: 4px;">Fuente: [Fuente a definir]</p>
+</div>
+<div class="row" style="margin-top: 14px;">
+<button type="button" class="btn primary" style="flex: 1;" onClick="{{cardAction}}">{{cardBtn}}</button>
+</div>
+</section>
+</div>
+</sc-if>
+
+</section>
+</sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#C0862F","options":["#C0862F","#A4471F","#B8792A"]},"$preview":{"width":390,"height":844}}'>
+const PTS = [
+  { id: 'fosiles', tier: 'A', title: 'Fósiles', place: 'Isla Marambio', x: 196, y: 300, q: '¿Cómo era la Antártida antes del hielo?' },
+  { id: 'oceano', tier: 'B', title: 'Océano', place: 'Mar de Weddell', x: 322, y: 322, q: '¿Qué pasa debajo del hielo marino del Mar de Weddell?' },
+  { id: 'poncho', tier: 'B', title: 'Poncho', place: 'Península Antártica · ubicación a definir', x: 196, y: 352, q: '¿Qué historia puede contar un poncho en la Antártida?' },
+  { id: 'campana', tier: 'B', title: 'La campaña desde Ushuaia', place: 'Ushuaia', x: 31, y: 314, q: '¿Cómo se prepara una campaña antártica desde Ushuaia?' },
+  { id: 'orcadas', tier: 'B', title: 'Estación Orcadas', place: 'Islas Orcadas del Sur', x: 208, y: 205, q: '¿Cómo es pasar un invierno entero en Orcadas?' },
+  { id: 'polo', tier: 'C', title: 'El Polo Sur', place: 'Centro del continente', x: 500, y: 500, q: '¿Qué hay en el punto más austral del planeta?' },
+  { id: 'testigos', tier: 'C', title: 'Testigos de hielo', place: 'Domo C', x: 674, y: 614, q: '¿Cómo puede el hielo guardar aire de otras épocas?' },
+  { id: 'vostok', tier: 'C', title: 'Un lago bajo el hielo', place: 'Lago Vostok', x: 667, y: 548, q: '¿Puede haber agua líquida debajo de kilómetros de hielo?' },
+  { id: 'erebus', tier: 'C', title: 'Volcán en el hielo', place: 'Monte Erebus, Isla de Ross', x: 539, y: 670, q: '¿Cómo conviven un volcán activo y el hielo?' },
+  { id: 'thwaites', tier: 'C', title: 'Glaciares que cambian', place: 'Glaciar Thwaites, Mar de Amundsen', x: 301, y: 557, q: '¿Por qué la ciencia sigue tan de cerca a este glaciar?' },
+  { id: 'belgrano', tier: 'C', title: 'Base Belgrano II', place: 'Sur del Mar de Weddell', x: 404, y: 361, q: '¿Cómo se trabaja tan cerca del Polo?' },
+  { id: 'emperador', tier: 'C', title: 'Colonias de pingüino emperador', place: 'Costa de Tierra de la Reina Maud', x: 593, y: 245, q: '¿Cómo pasan el invierno polar los pingüinos emperador?' }
+];
+const TIER = { A: 'Expedición disponible', B: 'Ampliación prevista', C: 'Próximamente' };
+const STEP_NAMES = ['Pregunta', 'Excavación', 'Comparar', 'Conclusión', 'Regreso'];
+const SPOTS = [{ x: 0.23, y: 0.613 }, { x: 0.535, y: 0.753 }, { x: 0.795, y: 0.56 }];
+const EV = [
+  { name: 'Resto A · forma en espiral', obs: 'Una forma enrollada sobre sí misma, con costillas finas que salen del centro.', kind: 'shell' },
+  { name: 'Resto B · marca de hoja', obs: 'Una marca plana con nervaduras, como si la roca hubiera guardado un molde.', kind: 'leaf' },
+  { name: 'Resto C · fragmento de hueso', obs: 'Un trozo liso por fuera y con poros por dentro, más duro que la roca que lo rodea.', kind: 'bone' }
+];
+const OPTS = [
+  { text: 'Vivieron en un ambiente sin hielo, más templado que el actual.', fb: 'Es la hipótesis que vamos a mirar en la reconstrucción. Igual, hacen falta más datos para confirmarla.' },
+  { text: 'Llegaron a la isla arrastrados por el hielo desde otro lugar.', fb: 'Es una buena duda: la ciencia la descarta o la confirma mirando en qué capa estaba cada resto.' },
+  { text: 'Con tres restos todavía no alcanza para decir nada.', fb: 'Prudente. Tres pistas no cierran el caso, pero sí permiten proponer una idea para poner a prueba.' }
+];
+const LEVELS = [{ label: 'Explorar', sub: 'lo esencial' }, { label: 'Descubrir', sub: 'ampliado' }, { label: 'Profundizar', sub: 'datos y fuentes' }];
+const KNOW = [
+  ['Hoy la Antártida está cubierta casi por completo de hielo. Pero las rocas guardan pistas de cómo era antes. En esta expedición vas a buscarlas.',
+   'Un fósil es un resto o una marca de un ser vivo que quedó guardado en la roca. Leer rocas es como leer un diario muy viejo: cada capa cuenta un momento distinto.',
+   'Datos del sitio, edad de las rocas y equipos que trabajaron en la isla: [Fuente a definir].'],
+  ['Limpiá la roca con cuidado. Cada resto aparece cuando sacás todo el sedimento que lo cubre.',
+   'En una excavación de verdad se trabaja con pinceles, herramientas chicas y mucha paciencia. Cada pieza se registra antes de moverla.',
+   'Esta excavación es una simulación educativa: las posiciones y formas de los restos son ilustrativas. Protocolo de campo: [Fuente a definir].'],
+  ['Una sola pista no alcanza. Comparar varias ayuda a armar una idea más firme.',
+   'Para relacionar restos, la ciencia se pregunta qué tienen en común, en qué capa estaban y si pudieron vivir en el mismo lugar y época.',
+   'Criterios de comparación y bibliografía: [Fuente a definir].'],
+  ['La ilustración junta lo que encontraste en una escena posible. No es una foto del pasado.',
+   'Separar evidencia, interpretación y reconstrucción artística sirve para saber qué es seguro, qué es una idea basada en pruebas y qué es imaginación guiada.',
+   'Asesoría científica de la reconstrucción: [Fuente a definir]. Ilustración: [Autoría a definir].'],
+  ['Completaste la expedición. Al volver, el punto queda marcado en tu registro.',
+   'Las próximas expediciones (océano, estaciones, hielo) se suman en futuras ampliaciones del mapa.',
+   'Créditos, licencias y datos abiertos usados: [Fuente a definir].']
+];
+
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = {
+      screen: 'map', phase: 'idle', anim: '', k: 1, px: 0, py: 0, vw: 390, vh: 844,
+      sheet: null, list: false, legend: true, explored: false, toast: '', touched: false,
+      step: 1, prog: [0, 0, 0], card: -1, answer: -1, panel: false, level: 0, puffs: [], nx: 0, ny: 0
+    };
+    this.ptrs = new Map();
+    this.dragged = false;
+    this.puffId = 0;
+    this.lastBrush = [0, 0, 0];
+    this.lastPuff = 0;
+    this.vpRef = (el) => { this.vpEl = el; if (el) this.measure(); };
+    this.rockRef = (el) => { this.rockEl = el; };
+    this.sheetRef = (el) => { this.sheetEl = el; };
+    this.listRef = (el) => { this.listEl = el; };
+    this.cardRef = (el) => { this.cardEl = el; };
+    this.panelRef = (el) => { this.panelEl = el; };
+  }
+
+  componentDidMount() {
+    try { this.reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { this.reduced = false; }
+    this.onResize = () => this.measure();
+    window.addEventListener('resize', this.onResize);
+    this.measure();
+    this.tm = setTimeout(() => this.measure(), 80);
+  }
+
+  componentWillUnmount() {
+    window.removeEventListener('resize', this.onResize);
+    [this.tm, this.t1, this.t2, this.t3, this.t4].forEach((t) => clearTimeout(t));
+  }
+
+  componentDidUpdate(prev, prevState) {
+    const s = this.state;
+    const focusIn = (el) => { if (el) { const b = el.querySelector('button'); if (b) b.focus(); } };
+    if (s.sheet && s.sheet !== prevState.sheet) focusIn(this.sheetEl);
+    if (s.list && !prevState.list) focusIn(this.listEl);
+    if (s.card >= 0 && prevState.card < 0) focusIn(this.cardEl);
+    if (s.panel && !prevState.panel && this.panelEl) { const b = this.panelEl.querySelector('.tab'); if (b) b.focus(); }
+    if (s.screen === 'map' && prevState.screen !== 'map') this.measure();
+  }
+
+  measure() {
+    if (!this.vpEl) return;
+    const r = this.vpEl.getBoundingClientRect();
+    if (r.width > 0 && (Math.abs(r.width - this.state.vw) > 1 || Math.abs(r.height - this.state.vh) > 1)) {
+      this.setState({ vw: r.width, vh: r.height });
+    }
+  }
+
+  geom(st) {
+    const s = st || this.state;
+    const S = Math.max(240, Math.min(s.vw * 0.94, s.vh * 0.86));
+    return { S, ox: (s.vw - S) / 2 + S * 0.025, oy: (s.vh - S) / 2 + 6 };
+  }
+
+  clamp(k, px, py) {
+    const { S, ox, oy } = this.geom();
+    const { vw, vh } = this.state;
+    const W = S * k;
+    const minX = vw * 0.5 - ox - W * 0.92, maxX = vw * 0.5 - ox - W * 0.08;
+    const minY = vh * 0.5 - oy - W * 0.92, maxY = vh * 0.5 - oy - W * 0.08;
+    return { k, px: Math.min(maxX, Math.max(minX, px)), py: Math.min(maxY, Math.max(minY, py)) };
+  }
+
+  zoomAround(base, cx, cy, nk) {
+    const { S, ox, oy } = this.geom();
+    const k2 = Math.min(5, Math.max(1, nk));
+    const u = (cx - ox - base.px) / (S * base.k);
+    const v = (cy - oy - base.py) / (S * base.k);
+    return this.clamp(k2, cx - ox - u * S * k2, cy - oy - v * S * k2);
+  }
+
+  animate(next) {
+    clearTimeout(this.t2);
+    this.setState({ ...next, anim: 'zoom', touched: true });
+    this.t2 = setTimeout(() => this.setState({ anim: '' }), 470);
+  }
+
+  zoomCenter(f) {
+    const { vw, vh, k, px, py } = this.state;
+    this.animate(this.zoomAround({ k, px, py }, vw / 2, vh / 2, k * f));
+  }
+
+  focusWorld(wx, wy, nk) {
+    const { S, ox, oy } = this.geom();
+    const { vw, vh } = this.state;
+    const k2 = Math.min(5, Math.max(1, nk));
+    this.animate(this.clamp(k2, vw / 2 - ox - (wx / 1000) * S * k2, vh * 0.52 - oy - (wy / 1000) * S * k2));
+  }
+
+  rel(e) {
+    const r = this.vpEl ? this.vpEl.getBoundingClientRect() : { left: 0, top: 0 };
+    return { x: e.clientX - r.left, y: e.clientY - r.top };
+  }
+
+  onDown(e) {
+    if (this.state.phase !== 'idle') return;
+    const p = this.rel(e);
+    this.ptrs.set(e.pointerId, p);
+    if (this.ptrs.size === 1) {
+      this.dragged = false;
+      this.panStart = { x: p.x, y: p.y, px: this.state.px, py: this.state.py };
+    } else if (this.ptrs.size === 2) {
+      const [a, b] = [...this.ptrs.values()];
+      this.pinch = { d: Math.hypot(a.x - b.x, a.y - b.y), k: this.state.k, px: this.state.px, py: this.state.py };
+      this.dragged = true;
+    }
+  }
+
+  onMove(e) {
+    if (!this.ptrs.has(e.pointerId)) return;
+    const p = this.rel(e);
+    this.ptrs.set(e.pointerId, p);
+    if (this.ptrs.size >= 2 && this.pinch) {
+      const [a, b] = [...this.ptrs.values()];
+      const d = Math.hypot(a.x - b.x, a.y - b.y);
+      const next = this.zoomAround(this.pinch, (a.x + b.x) / 2, (a.y + b.y) / 2, this.pinch.k * (d / Math.max(1, this.pinch.d)));
+      this.setState({ ...next, anim: '', touched: true });
+      return;
+    }
+    if (this.panStart) {
+      const dx = p.x - this.panStart.x, dy = p.y - this.panStart.y;
+      if (!this.dragged && Math.hypot(dx, dy) > 6) this.dragged = true;
+      if (this.dragged) {
+        const next = this.clamp(this.state.k, this.panStart.px + dx, this.panStart.py + dy);
+        this.setState({ ...next, anim: '', touched: true });
+      }
+    }
+  }
+
+  onUp(e) {
+    this.ptrs.delete(e.pointerId);
+    if (this.ptrs.size < 2) this.pinch = null;
+    if (this.ptrs.size === 1) {
+      const [p] = [...this.ptrs.values()];
+      this.panStart = { x: p.x, y: p.y, px: this.state.px, py: this.state.py };
+    }
+    if (this.ptrs.size === 0) this.panStart = null;
+  }
+
+  onWheel(e) {
+    if (this.state.phase !== 'idle') return;
+    const p = this.rel(e);
+    const { k, px, py } = this.state;
+    const f = e.deltaY < 0 ? 1.18 : 1 / 1.18;
+    this.setState({ ...this.zoomAround({ k, px, py }, p.x, p.y, k * f), anim: '', touched: true });
+  }
+
+  onVpKey(e) {
+    if (e.target !== this.vpEl) return;
+    const { k, px, py } = this.state;
+    const step = 60;
+    const map = { ArrowLeft: [step, 0], ArrowRight: [-step, 0], ArrowUp: [0, step], ArrowDown: [0, -step] };
+    if (map[e.key]) { e.preventDefault(); this.animate(this.clamp(k, px + map[e.key][0], py + map[e.key][1])); }
+    else if (e.key === '+' || e.key === '=') { e.preventDefault(); this.zoomCenter(1.5); }
+    else if (e.key === '-' || e.key === '_') { e.preventDefault(); this.zoomCenter(1 / 1.5); }
+  }
+
+  startExpedition() {
+    if (this.state.phase !== 'idle') return;
+    this.setState({ sheet: null, list: false, toast: '' });
+    if (this.reduced) {
+      this.setState({ phase: 'fade' });
+      this.t1 = setTimeout(() => this.enterExp(), 550);
+      return;
+    }
+    const p = PTS[0];
+    const { S, ox, oy } = this.geom();
+    const { vw, vh } = this.state;
+    const nk = 3.4;
+    this.setState({ phase: 'dive', anim: 'dive', k: nk, px: vw / 2 - ox - (p.x / 1000) * S * nk, py: vh * 0.58 - oy - (p.y / 1000) * S * nk });
+    this.t1 = setTimeout(() => this.enterExp(), 1500);
+  }
+
+  enterExp() {
+    this.ptrs.clear();
+    this.panStart = null;
+    this.setState({ screen: 'exp', phase: 'idle', anim: '', k: 1, px: 0, py: 0, step: 1, prog: [0, 0, 0], card: -1, answer: -1, panel: false, level: 0, puffs: [] });
+  }
+
+  backToMap(done) {
+    clearTimeout(this.t3);
+    clearTimeout(this.t4);
+    const explored = this.state.explored || done;
+    this.setState({ screen: 'map', phase: 'ret', anim: '', k: 1, px: 0, py: 0, explored, panel: false, card: -1, toast: done ? 'Fósiles quedó explorado. Registro de exploración: 1/1' : '' });
+    this.t3 = setTimeout(() => this.setState({ phase: 'idle' }), 720);
+    if (done) this.t4 = setTimeout(() => this.setState({ toast: '' }), 4200);
+  }
+
+  openPoint(p) {
+    if (this.dragged) return;
+    if (p.tier === 'A') this.startExpedition();
+    else this.setState({ sheet: p.id, touched: true });
+  }
+
+  brushAt(e) {
+    if (this.state.step !== 2 || this.state.card >= 0 || !this.rockEl) return;
+    const r = this.rockEl.getBoundingClientRect();
+    const x = e.clientX - r.left, y = e.clientY - r.top;
+    const now = Date.now();
+    let puffs = this.state.puffs;
+    if (now - this.lastPuff > 70) {
+      this.lastPuff = now;
+      puffs = puffs.concat([{ id: ++this.puffId, left: x + 'px', top: y + 'px' }]).slice(-8);
+    }
+    const rad = Math.max(34, r.width * 0.12);
+    let hit = -1;
+    SPOTS.forEach((s, i) => {
+      if (Math.hypot(x - s.x * r.width, y - s.y * r.height) < rad && this.state.prog[i] < 4 && now - this.lastBrush[i] > 120) hit = i;
+    });
+    if (hit >= 0) { this.lastBrush[hit] = now; this.brush(hit, puffs); }
+    else if (puffs !== this.state.puffs) this.setState({ puffs });
+  }
+
+  brush(i, puffs) {
+    const prog = this.state.prog.slice();
+    if (prog[i] >= 4) return;
+    prog[i] += 1;
+    const next = { prog };
+    if (puffs) next.puffs = puffs;
+    if (prog[i] >= 4) { next.card = i; this.brushing = false; }
+    this.setState(next);
+  }
+
+  renderVals() {
+    const st = this.state;
+    const accent = this.props.accent ?? '#C0862F';
+    const { S, ox, oy } = this.geom();
+    const sc = (S * st.k) / 1000;
+    const toScreen = (x, y) => ({ left: (ox + st.px + x * sc) + 'px', top: (oy + st.py + y * sc) + 'px' });
+
+    const used = PTS.map(() => false);
+    const markers = [];
+    const thr = 46;
+    const labelsOn = S * st.k > 640;
+    PTS.forEach((p, i) => {
+      if (used[i]) return;
+      used[i] = true;
+      const grp = [p];
+      PTS.forEach((q, j) => {
+        if (!used[j] && Math.hypot(p.x - q.x, p.y - q.y) * sc < thr) { used[j] = true; grp.push(q); }
+      });
+      if (grp.length > 1) {
+        const cx = grp.reduce((a, g) => a + g.x, 0) / grp.length;
+        const cy = grp.reduce((a, g) => a + g.y, 0) / grp.length;
+        const hasA = grp.some((g) => g.tier === 'A');
+        let maxD = 0;
+        grp.forEach((g) => { maxD = Math.max(maxD, Math.hypot(g.x - cx, g.y - cy)); });
+        const needK = (thr * 1.25 * 1000) / (S * Math.max(4, maxD * 2));
+        markers.push({
+          ...toScreen(cx, cy), isCluster: true, count: grp.length, pulse: false, check: false, showLabel: false, title: '', sub: '',
+          cls: 'mk cluster' + (hasA ? ' has-a' : ''),
+          aria: 'Grupo de ' + grp.length + ' puntos: ' + grp.map((g) => g.title).join(', ') + '. Tocá para acercar.',
+          open: () => { if (!this.dragged) this.focusWorld(cx, cy, Math.max(st.k * 1.8, needK)); }
+        });
+      } else {
+        const isA = p.tier === 'A';
+        const done = isA && st.explored;
+        markers.push({
+          ...toScreen(p.x, p.y), isCluster: false, count: 0,
+          pulse: isA && !done, check: done,
+          showLabel: isA || labelsOn,
+          title: p.title,
+          sub: isA ? (done ? 'Explorado · ' + p.place : p.place) : TIER[p.tier],
+          cls: 'mk t' + p.tier.toLowerCase() + (done ? ' done' : '') + (p.x > 640 ? ' lbl-left' : ''),
+          aria: p.title + ', ' + p.place + '. ' + (isA ? (done ? 'Expedición explorada. Volver a recorrerla.' : 'Expedición disponible. Empezar.') : TIER[p.tier] + '. Ver ficha.'),
+          open: () => this.openPoint(p)
+        });
+      }
+    });
+
+    const sp = PTS.find((p) => p.id === st.sheet);
+    const listItem = (p) => ({ title: p.title, place: p.place, go: st.explored ? 'Explorado · volver a entrar' : 'Empezar expedición', open: () => (p.tier === 'A' ? this.startExpedition() : this.setState({ list: false, sheet: p.id })) });
+
+    const step = st.step;
+    const found = st.prog.filter((v) => v >= 4).length;
+    const cover = (i) => String(Math.max(0, 1 - st.prog[i] / 4));
+    const hint = (i) => (step === 2 && st.prog[i] < 4 ? '0.75' : '0');
+    const fnd = (i) => (st.prog[i] >= 4 ? '1' : '0');
+    const nx = this.reduced ? 0 : st.nx, ny = this.reduced ? 0 : st.ny;
+
+    const primaryMap = {
+      1: { label: 'Empezar a excavar', dis: false, fn: () => this.setState({ step: 2 }) },
+      2: { label: found < 3 ? 'Encontrá los 3 restos (' + found + '/3)' : 'Comparar evidencias', dis: found < 3, fn: () => this.setState({ step: 3 }) },
+      3: { label: st.answer < 0 ? 'Elegí una hipótesis' : 'Ver la reconstrucción', dis: st.answer < 0, fn: () => this.setState({ step: 4 }) },
+      4: { label: 'Terminar expedición', dis: false, fn: () => this.setState({ step: 5 }) },
+      5: { label: 'Volver al mapa', dis: false, fn: () => this.backToMap(true) }
+    };
+    const pm = primaryMap[step];
+    const card = st.card >= 0 ? EV[st.card] : null;
+    const kChips = [{ cls: 'chip sim', t: 'Lo esencial' }, { cls: 'chip sim', t: 'Explicación ampliada' }, { cls: 'chip real', t: 'Dato real · a completar' }];
+
+    return {
+      accent,
+      isMap: st.screen === 'map',
+      isExp: st.screen === 'exp',
+      stageCls: 'stage' + (st.phase === 'dive' ? ' dive' : st.phase === 'fade' ? ' fade' : st.phase === 'ret' ? ' ret' : ''),
+      veilCls: 'veil' + (st.phase === 'dive' ? ' on' : ''),
+      vpRef: this.vpRef, sheetRef: this.sheetRef, listRef: this.listRef, cardRef: this.cardRef, panelRef: this.panelRef, rockRef: this.rockRef,
+      layerSize: S + 'px',
+      layerTf: 'translate(' + (ox + st.px) + 'px, ' + (oy + st.py) + 'px) scale(' + st.k + ')',
+      layerTr: st.anim === 'dive' ? 'transform 1.5s cubic-bezier(.55,0,.3,1)' : st.anim === 'zoom' ? 'transform .45s cubic-bezier(.3,.6,.3,1)' : 'none',
+      ovCls: 'ov' + (st.anim === 'zoom' ? ' zooming' : '') + (st.phase === 'dive' ? ' hide' : ''),
+      markers,
+      onDown: (e) => this.onDown(e),
+      onMove: (e) => this.onMove(e),
+      onUp: (e) => this.onUp(e),
+      onWheel: (e) => this.onWheel(e),
+      onVpKey: (e) => this.onVpKey(e),
+      zoomIn: () => this.zoomCenter(1.6),
+      zoomOut: () => this.zoomCenter(1 / 1.6),
+      resetView: () => this.animate({ k: 1, px: 0, py: 0 }),
+      regText: st.explored ? '1/1' : '0/1',
+      regFill: st.explored ? '100%' : '0%',
+      showHint: !st.touched && st.phase === 'idle',
+      hasToast: !!st.toast,
+      toast: st.toast,
+      legendOpen: st.legend,
+      legendExp: st.legend ? 'true' : 'false',
+      toggleLegend: () => this.setState({ legend: !st.legend }),
+      openList: () => this.setState({ list: true, sheet: null }),
+      closeList: () => this.setState({ list: false }),
+      onListKey: (e) => { if (e.key === 'Escape') this.setState({ list: false }); },
+      groupA: PTS.filter((p) => p.tier === 'A').map(listItem),
+      groupB: PTS.filter((p) => p.tier === 'B').map(listItem),
+      groupC: PTS.filter((p) => p.tier === 'C').map(listItem),
+      sheetOpen: !!sp,
+      sheetTitle: sp ? sp.title : '',
+      sheetPlace: sp ? sp.place : '',
+      sheetQ: sp ? sp.q : '',
+      sheetTag: sp ? TIER[sp.tier] : '',
+      sheetTagCls: sp ? 'tag t' + sp.tier.toLowerCase() : 'tag',
+      closeSheet: () => this.setState({ sheet: null }),
+      onSheetKey: (e) => { if (e.key === 'Escape') this.setState({ sheet: null }); },
+
+      onScene: (e) => {
+        if (this.reduced) return;
+        const r = e.currentTarget.getBoundingClientRect();
+        this.setState({ nx: ((e.clientX - r.left) / r.width - 0.5) * 2, ny: ((e.clientY - r.top) / r.height - 0.5) * 2 });
+      },
+      parSky: 'translate3d(' + (-nx * 4) + 'px, ' + (-ny * 3) + 'px, 0)',
+      parSea: 'translate3d(' + (-nx * 9) + 'px, ' + (-ny * 5) + 'px, 0)',
+      parRock: 'translate3d(' + (-nx * 15) + 'px, ' + (-ny * 7) + 'px, 0)',
+      parDig: 'translate(' + (-nx * 15) + 'px, ' + (-ny * 7) + 'px)',
+      showRock: step <= 2,
+      digCls: 'dig' + (step === 2 ? ' on' : ''),
+      onRockDown: (e) => { if (step !== 2) return; this.brushing = true; this.brushAt(e); },
+      onRockMove: (e) => { if (this.brushing) this.brushAt(e); },
+      onRockUp: () => { this.brushing = false; },
+      c0: cover(0), c1: cover(1), c2: cover(2),
+      h0: hint(0), h1: hint(1), h2: hint(2),
+      f0: fnd(0), f1: fnd(1), f2: fnd(2),
+      puffs: st.puffs,
+      spots: SPOTS.map((s, i) => ({
+        left: (s.x * 100) + '%', top: (s.y * 100) + '%',
+        aria: 'Zona de excavación ' + (i + 1) + (st.prog[i] >= 4 ? ': resto encontrado' : ': limpiar sedimento, ' + st.prog[i] + ' de 4 pasadas'),
+        key: (e) => { if (e.detail === 0) this.brush(i); }
+      })),
+      counter: [0, 1, 2].map((i) => ({ n: st.prog[i] >= 4 ? 'ABC'[i] : '?', cls: st.prog[i] >= 4 ? 'f' : '' })),
+      foundCount: found,
+
+      step,
+      stepName: STEP_NAMES[step - 1],
+      stepBars: [1, 2, 3, 4, 5].map((n) => ({ cls: n < step ? 'done' : n === step ? 'cur' : '' })),
+      isStep1: step === 1, isStep2: step === 2, isStep3: step === 3, isStep4: step === 4, isStep5: step === 5,
+      leaveExp: () => this.backToMap(false),
+      showBack: step >= 2 && step <= 4,
+      prevStep: () => this.setState({ step: Math.max(1, step - 1), card: -1 }),
+      primary: () => pm.fn(),
+      primaryLabel: pm.label,
+      primaryDisabled: pm.dis,
+
+      evidence: EV.map((e) => ({ ...e, isShell: e.kind === 'shell', isLeaf: e.kind === 'leaf', isBone: e.kind === 'bone' })),
+      options: OPTS.map((o, i) => ({ text: o.text, cls: 'opt' + (st.answer === i ? ' sel' : ''), pressed: st.answer === i ? 'true' : 'false', pick: () => this.setState({ answer: i }) })),
+      answered: st.answer >= 0,
+      feedback: st.answer >= 0 ? OPTS[st.answer].fb : '',
+
+      cardOpen: !!card,
+      cName: card ? card.name : '',
+      cObs: card ? card.obs : '',
+      cIsShell: !!card && card.kind === 'shell',
+      cIsLeaf: !!card && card.kind === 'leaf',
+      cIsBone: !!card && card.kind === 'bone',
+      cardBtn: found >= 3 ? 'Comparar evidencias' : 'Seguir excavando',
+      cardAction: () => this.setState(found >= 3 ? { card: -1, step: 3 } : { card: -1 }),
+      closeCard: () => this.setState({ card: -1 }),
+      onCardKey: (e) => { if (e.key === 'Escape') this.setState({ card: -1 }); },
+
+      panelOpen: st.panel,
+      panelExp: st.panel ? 'true' : 'false',
+      togglePanel: () => this.setState({ panel: !st.panel }),
+      onPanelKey: (e) => { if (e.key === 'Escape') this.setState({ panel: false }); },
+      levels: LEVELS.map((l, i) => ({ ...l, pressed: st.level === i ? 'true' : 'false', pick: () => this.setState({ level: i }) })),
+      kBody: KNOW[step - 1][st.level],
+      kChip: kChips[st.level].t,
+      kChipCls: kChips[st.level].cls,
+      kDeep: st.level === 2
+    };
+  }
+}
+</script>
+</body>
+</html>

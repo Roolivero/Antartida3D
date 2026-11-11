@@ -1,0 +1,93 @@
+{
+  "date": "2026-11-11T05:57:45.079Z",
+  "machine": "AMD Ryzen 5 7600 6-Core Processor × 12",
+  "chromium": "Chromium 156.0.8078.47 Arch Linux",
+  "results": [
+    {
+      "app": "dibujado",
+      "buildMs": 603,
+      "jsTotal": {
+        "raw": 1300472,
+        "gzip": 358246,
+        "brotli": 298042
+      },
+      "jsInitial": {
+        "raw": 247974,
+        "gzip": 77763,
+        "brotli": 67101
+      },
+      "css": {
+        "raw": 20849,
+        "gzip": 4934,
+        "brotli": 4391
+      },
+      "requests": 16,
+      "lighthouse": {
+        "performance": 96,
+        "accessibility": 100,
+        "lcp": 1414,
+        "tbt": 216,
+        "cls": 0.001
+      },
+      "lighthouseRuns": [
+        {
+          "performance": 96,
+          "accessibility": 100,
+          "lcp": 1414,
+          "tbt": 219,
+          "cls": 0.001
+        },
+        {
+          "performance": 96,
+          "accessibility": 100,
+          "lcp": 1413,
+          "tbt": 216,
+          "cls": 0.001
+        },
+        {
+          "performance": 96,
+          "accessibility": 100,
+          "lcp": 1414,
+          "tbt": 214,
+          "cls": 0.001
+        }
+      ],
+      "interaction": {
+        "pan": {
+          "longTasks": 0,
+          "longTaskMs": 0,
+          "longFrames": 5,
+          "frames": 93,
+          "p95Frame": 50
+        },
+        "pinch": {
+          "longTasks": 0,
+          "longTaskMs": 0,
+          "longFrames": 0,
+          "frames": 102,
+          "p95Frame": 33
+        },
+        "dive": {
+          "longTasks": 3,
+          "longTaskMs": 703,
+          "longFrames": 2,
+          "frames": 119,
+          "p95Frame": 33
+        }
+      },
+      "zoomGpu": {
+        "renderer": "ANGLE (NVIDIA Corporation, NVIDIA GeForce RTX 3070/PCIe/SSE2, OpenGL ES 3.2)",
+        "buttons": {
+          "gpuMs": 9,
+          "maxTaskMs": 3,
+          "longTasks": 0
+        },
+        "wheel": {
+          "gpuMs": 152,
+          "maxTaskMs": 3,
+          "longTasks": 0
+        }
+      }
+    }
+  ]
+}
