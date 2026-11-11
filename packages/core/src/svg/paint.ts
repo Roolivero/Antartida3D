@@ -1,4 +1,5 @@
 import { ANTARCTICA_PATH, ICE_SHELF_SEAM, ICE_SHELVES_PATH, SOUTH_AMERICA_PATH } from '../coastline.ts';
+import { MAP_RASTER_PAD, MAP_RASTER_SPAN } from './map.ts';
 
 /**
  * Watercolor layers of the map (everything that uses the painted SVG filters), copied from the
@@ -37,5 +38,16 @@ export const MAP_PAINT_SVG = `<circle cx="500" cy="500" r="600" fill="#2B5276" o
 ${GLACIER_STROKES}
 <path d="${SOUTH_AMERICA_PATH}" fill="#D9C49C" filter="url(#wcs)"></path>`;
 
-/** Watercolor for the 3D terrain: same as the 2D one, without the decorative glacier strokes. */
-export const MAP_PAINT_SVG_3D = MAP_PAINT_SVG.replace(GLACIER_STROKES, '');
+/**
+ * Watercolor for the 3D terrain: uses --ice (#F7FAFB) as the sea background instead of the painted
+ * ocean disc (since 3D water is rendered by the ocean shader) and omits decorative glacier strokes,
+ * preventing blue ocean bleed on Bedmap3 shelf cells that extend beyond the vector coastline.
+ */
+export const MAP_PAINT_SVG_3D = `<rect x="${-MAP_RASTER_PAD}" y="${-MAP_RASTER_PAD}" width="${MAP_RASTER_SPAN}" height="${MAP_RASTER_SPAN}" fill="#F7FAFB"></rect>
+<defs><path id="land" d="${ANTARCTICA_PATH}"></path><path id="shelves" d="${ICE_SHELVES_PATH}"></path></defs>
+<g filter="url(#wcs)">
+<use href="#shelves" fill="#E4EEF4"></use>
+<path d="${ICE_SHELF_SEAM}" stroke="#E4EEF4" stroke-width="7"></path>
+<use href="#land" fill="url(#ice)"></use>
+</g>
+<path d="${SOUTH_AMERICA_PATH}" fill="#D9C49C" filter="url(#wcs)"></path>`;

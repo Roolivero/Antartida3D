@@ -15,3 +15,4 @@ export * from './coastline.ts';
 export * from './relief.ts';
 export * from './terrain.ts';
 export * from './camera.ts';
+export * from './ocean.ts';

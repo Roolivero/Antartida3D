@@ -13,6 +13,7 @@
     "preview": "pnpm --filter @antartida/dibujado preview",
     "test": "pnpm -r --if-present test",
     "typecheck": "pnpm -r --if-present typecheck",
+    "bathymetry": "pnpm --filter @antartida/core bathymetry",
     "terrain": "pnpm --filter @antartida/core terrain",
     "e2e": "pnpm --filter @antartida/dibujado e2e",
     "coastline": "pnpm --filter @antartida/core coastline",

@@ -136,8 +136,191 @@ try {
     await page.close();
   }
 
+  // Helper for capturing specific ocean scenarios in 3D
+  const captureOceanScenario = async (
+    name: string,
+    width: number,
+    height: number,
+    setupCamera: (page: any) => Promise<void>
+  ) => {
+    console.log(`Capturing ocean scenario: ${name} (${width}x${height})...`);
+    const page = await browser.newPage({ viewport: { width, height } });
+    await page.goto('http://localhost:5103/', { waitUntil: 'networkidle' });
+    await page.waitForTimeout(1500);
+    const btn3D = page.getByRole('button', { name: 'Relieve 3D' });
+    await btn3D.click();
+    await page.waitForSelector('canvas');
+    await page.waitForTimeout(2000);
+
+    await setupCamera(page);
+    await page.waitForTimeout(1500);
+
+    const filename = `${name}.jpg`;
+    await page.screenshot({ path: join(outDir, filename), quality: 85, type: 'jpeg' });
+    console.log(`Saved ${filename}`);
+    await page.close();
+  };
+
+  // 1. Cenital (0° tilt) in 1440x900 and 390x844
+  const setupCenital = async (page: any) => {
+    await page.evaluate(() => {
+      const cc = (window as any).__cameraControls;
+      const inv = (window as any).__invalidate;
+      if (!cc) throw new Error('No CameraControls found');
+      cc.setLookAt(0, 1500, 0.001, 0, 0, 0, false);
+      inv?.();
+    });
+  };
+  await captureOceanScenario('oceano-cenital-1440', 1440, 900, setupCenital);
+  await captureOceanScenario('oceano-cenital-390', 390, 844, setupCenital);
+
+  // 2. 38° tilt (standard overview tilt) in 1440x900 and 390x844
+  const setupTilt38 = async (page: any) => {
+    await page.evaluate(() => {
+      const cc = (window as any).__cameraControls;
+      const inv = (window as any).__invalidate;
+      if (!cc) throw new Error('No CameraControls found');
+      const pitchRad = (38 * Math.PI) / 180;
+      const dist = 1400;
+      const target = { x: 0, y: 0, z: 0 };
+      cc.setLookAt(
+        target.x,
+        target.y + dist * Math.sin(pitchRad),
+        target.z + dist * Math.cos(pitchRad),
+        target.x,
+        target.y,
+        target.z,
+        false
+      );
+      inv?.();
+    });
+  };
+  await captureOceanScenario('oceano-38deg-1440', 1440, 900, setupTilt38);
+  await captureOceanScenario('oceano-38deg-390', 390, 844, setupTilt38);
+
+  // 3. 60° tilt (max polar angle) in 1440x900 and 390x844
+  const setupTilt60 = async (page: any) => {
+    await page.evaluate(() => {
+      const cc = (window as any).__cameraControls;
+      const inv = (window as any).__invalidate;
+      if (!cc) throw new Error('No CameraControls found');
+      // maxPolarAngle = 60 deg, looking towards north (azimuth 0)
+      const pitchRad = (30 * Math.PI) / 180; // 30 deg above horizon = 60 deg polar
+      const dist = 1500;
+      const target = { x: 0, y: 0, z: 0 };
+      cc.setLookAt(
+        target.x,
+        target.y + dist * Math.sin(pitchRad),
+        target.z + dist * Math.cos(pitchRad),
+        target.x,
+        target.y,
+        target.z,
+        false
+      );
+      inv?.();
+    });
+  };
+  await captureOceanScenario('oceano-60deg-1440', 1440, 900, setupTilt60);
+  await captureOceanScenario('oceano-60deg-390', 390, 844, setupTilt60);
+
+  // 4. Maximum distance zoom out in 1440x900 and 390x844
+  const setupMaxDistance = async (page: any) => {
+    await page.evaluate(() => {
+      const cc = (window as any).__cameraControls;
+      const inv = (window as any).__invalidate;
+      if (!cc) throw new Error('No CameraControls found');
+      const pitchRad = (45 * Math.PI) / 180;
+      const dist = 3200; // near maxDistance = 3500
+      const target = { x: 0, y: 0, z: 0 };
+      cc.setLookAt(
+        target.x,
+        target.y + dist * Math.sin(pitchRad),
+        target.z + dist * Math.cos(pitchRad),
+        target.x,
+        target.y,
+        target.z,
+        false
+      );
+      inv?.();
+    });
+  };
+  await captureOceanScenario('oceano-maxdist-1440', 1440, 900, setupMaxDistance);
+  await captureOceanScenario('oceano-maxdist-390', 390, 844, setupMaxDistance);
+
+  // 5. Close-up view of Antarctic Peninsula coast (~dist 300)
+  const setupPeninsulaCoast = async (page: any) => {
+    await page.evaluate(() => {
+      const cc = (window as any).__cameraControls;
+      const inv = (window as any).__invalidate;
+      if (!cc) throw new Error('No CameraControls found');
+      // Look at northern Antarctic Peninsula / Larsen shelf edge
+      const target = { x: -300, y: 0, z: -180 };
+      const pitchRad = (40 * Math.PI) / 180;
+      const dist = 300;
+      cc.setLookAt(
+        target.x,
+        target.y + dist * Math.sin(pitchRad),
+        target.z + dist * Math.cos(pitchRad),
+        target.x,
+        target.y,
+        target.z,
+        false
+      );
+      inv?.();
+    });
+  };
+  await captureOceanScenario('oceano-costa-peninsula', 1440, 900, setupPeninsulaCoast);
+
+  // 6. Close-up view of Ross Ice Shelf edge (~dist 300)
+  const setupRossCoast = async (page: any) => {
+    await page.evaluate(() => {
+      const cc = (window as any).__cameraControls;
+      const inv = (window as any).__invalidate;
+      if (!cc) throw new Error('No CameraControls found');
+      // Look at Ross Ice Shelf barrier edge
+      const target = { x: 0, y: 0, z: 170 };
+      const pitchRad = (40 * Math.PI) / 180;
+      const dist = 300;
+      cc.setLookAt(
+        target.x,
+        target.y + dist * Math.sin(pitchRad),
+        target.z + dist * Math.cos(pitchRad),
+        target.x,
+        target.y,
+        target.z,
+        false
+      );
+      inv?.();
+    });
+  };
+  await captureOceanScenario('oceano-costa-ross', 1440, 900, setupRossCoast);
+
+  // 7. Very close-up view of Antarctic Peninsula coast (~dist 150, 45° tilt) for foam, isobaths and ink waves
+  const setupPeninsulaDetail = async (page: any) => {
+    await page.evaluate(() => {
+      const cc = (window as any).__cameraControls;
+      const inv = (window as any).__invalidate;
+      if (!cc) throw new Error('No CameraControls found');
+      cc.minDistance = 100;
+      const target = { x: -310, y: 0, z: -200 };
+      const pitchRad = (45 * Math.PI) / 180;
+      const dist = 150;
+      cc.setLookAt(
+        target.x,
+        target.y + dist * Math.sin(pitchRad),
+        target.z + dist * Math.cos(pitchRad),
+        target.x,
+        target.y,
+        target.z,
+        false
+      );
+      inv?.();
+    });
+  };
+  await captureOceanScenario('oceano-detalle', 1440, 900, setupPeninsulaDetail);
+
   await browser.close();
-  console.log('All 5 captures taken successfully!');
+  console.log('All captures taken successfully!');
 } finally {
   stopServer();
 }

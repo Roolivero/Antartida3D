@@ -320,29 +320,6 @@ function buildMeshBuffer(errorMeters: number, maxTriangles: number, levelName: s
 buildMeshBuffer(25, 400000, 'hi');
 buildMeshBuffer(70, 120000, 'lo');
 
-// Standalone elevation grid (1025x1025, uint16)
-{
-  const ELEV_GRID_SIZE = 1025;
-  const elevationGrid = new Uint16Array(ELEV_GRID_SIZE * ELEV_GRID_SIZE);
-  for (let r = 0; r < ELEV_GRID_SIZE; r++) {
-    const srcR = r * 2;
-    const dstRow = r * ELEV_GRID_SIZE;
-    const srcRow = srcR * MARTINI_SIZE;
-    for (let c = 0; c < ELEV_GRID_SIZE; c++) {
-      const srcC = c * 2;
-      const h = Math.round(martiniElevations[srcRow + srcC]);
-      elevationGrid[dstRow + c] = Math.min(65535, Math.max(0, h));
-    }
-  }
-  const elevGridHeader = Buffer.alloc(4);
-  elevGridHeader.writeUInt32LE(ELEV_GRID_SIZE, 0);
-  writeFileSync(
-    join(outDir, 'terrain-elevation-grid.bin'),
-    Buffer.concat([elevGridHeader, Buffer.from(elevationGrid.buffer, elevationGrid.byteOffset, elevationGrid.byteLength)])
-  );
-  console.log(`terrain-elevation-grid.bin written (${ELEV_GRID_SIZE}x${ELEV_GRID_SIZE})`);
-}
-
 // Step 11: Normal and Height Relief WebP textures
 
 async function buildReliefTexture(size: number) {

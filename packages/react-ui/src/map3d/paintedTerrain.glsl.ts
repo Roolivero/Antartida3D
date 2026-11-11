@@ -1,3 +1,5 @@
+import { fogParsChunk, periodicLineChunk } from './fog.glsl.ts';
+
 export const paintedTerrainVertexShader = /* glsl */ `
 uniform vec4 uBounds; // minX, maxX, minY, maxY
 uniform float uVerticalExaggeration;
@@ -46,6 +48,8 @@ uniform sampler2D uPaperTex;
 uniform vec3 uSunDir;
 uniform float uContour;
 
+${fogParsChunk}
+
 varying vec2 vMapUV;
 varying vec2 vTerrainUV;
 varying float vHeight;
@@ -56,14 +60,15 @@ varying vec3 vWorldPos;
 const vec3 DEEP = vec3(0.118, 0.243, 0.361);
 const vec3 PENCIL = vec3(0.369, 0.396, 0.424);
 
-// Antialiased line mask for a periodic coordinate: 1 on the line, 0 between lines.
-float periodicLine(float coord, float halfWidthPx) {
-  float w = fwidth(coord);
-  float d = abs(fract(coord + 0.5) - 0.5) / max(w, 1e-5);
-  return 1.0 - smoothstep(halfWidthPx - 0.5, halfWidthPx + 0.5, d);
-}
+${periodicLineChunk}
 
 void main() {
+  // Discard border triangles with interpolated ocean mask and sea level height (~0)
+  // so the ocean underneath renders cleanly without watercolor border artifacts.
+  if (vMask < 0.5 && vHeight < 5.0) {
+    discard;
+  }
+
   // 1. Base color: the same baked watercolor as the 2D map.
   vec3 col = texture2D(uPaintTex, vMapUV).rgb;
   if (vMask > 3.5) {
@@ -132,9 +137,9 @@ void main() {
     col += vec3(1.0, 0.98, 0.94) * spec * 0.14 * shadow * (vMask > 2.5 ? 1.6 : 1.0);
   }
 
-  // 6. Aerial perspective: far ice fades into a pale haze, so distance reads as depth.
-  float haze = smoothstep(1.5, 3.2, camDist / max(cameraPosition.y, 1.0)) * 0.35;
-  col = mix(col, vec3(0.9, 0.93, 0.95), haze);
+  // 6. Exponential fog towards paper color (matching ocean shader)
+  float fog = computeFogFactor(vWorldPos);
+  col = mix(col, uFogColor, fog);
 
   // 7. Paper grain, fixed to the screen like the 2D grain overlay.
   vec3 paper = texture2D(uPaperTex, gl_FragCoord.xy / 512.0).rgb;

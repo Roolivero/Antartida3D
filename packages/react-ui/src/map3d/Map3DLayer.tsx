@@ -7,6 +7,7 @@ import {
   homePose3D,
   DIVE_3D,
   toWorld,
+  project,
   heightAt,
   worldHeight,
   type Geometry,
@@ -17,10 +18,66 @@ import {
 import { MarkerButton } from '../map/Markers.tsx';
 import { useReducedMotion } from '../hooks.ts';
 import type { Anim, Phase } from '../map/MapView.tsx';
-import { OceanBlock } from './OceanBlock.tsx';
+import { Ocean } from './Ocean.tsx';
 import { Terrain } from './Terrain.tsx';
 import { InkLines } from './InkLines.tsx';
+import { Graticule3D } from './Graticule3D.tsx';
 import { InkEffect } from './InkEffect.ts';
+import { SeaTimeContext, useAnimationClock } from './useAnimationClock.ts';
+
+function SceneContent({
+  wide,
+  lowQuality,
+  phase,
+  reduced,
+  size,
+  geo,
+  view,
+  markers,
+  overlayRef,
+  enablePost,
+}: {
+  wide: boolean;
+  lowQuality: boolean;
+  phase: Phase;
+  reduced: boolean;
+  size: Size;
+  geo: Geometry;
+  view: View;
+  markers: Marker[];
+  overlayRef: RefObject<HTMLDivElement | null>;
+  enablePost: boolean;
+}) {
+  const seaTime = useAnimationClock({ lowQuality });
+
+  // Expose render frame count for tests
+  useFrame(() => {
+    if (typeof window !== 'undefined') {
+      const win = window as unknown as { __frames?: number };
+      win.__frames = (win.__frames ?? 0) + 1;
+    }
+  });
+
+  return (
+    <SeaTimeContext.Provider value={seaTime}>
+      <Ocean wide={wide} timeUniform={seaTime} />
+      <Terrain wide={wide} />
+      <Graticule3D />
+      <InkLines />
+      {enablePost && (
+        <EffectComposer multisampling={0}>
+          <InkEffect />
+        </EffectComposer>
+      )}
+      <ControlsBridge phase={phase} reduced={reduced} size={size} geo={geo} view={view} />
+      <ProjectMarkers
+        markers={markers}
+        overlayRef={overlayRef}
+        phase={phase}
+      />
+    </SeaTimeContext.Provider>
+  );
+}
 
 export interface Map3DLayerProps {
   size: Size;
@@ -63,8 +120,8 @@ function ControlsBridge({
     cc.maxPolarAngle = (60 * Math.PI) / 180;
     cc.smoothTime = 0.25;
 
-    // Boundary box enclosing continent
-    const bbox = new Box3(new Vector3(-450, -50, -450), new Vector3(450, 1500, 450));
+    // Boundary box enclosing continent and surrounding ocean navigation area
+    const bbox = new Box3(new Vector3(-800, -50, -800), new Vector3(800, 2500, 800));
     cc.setBoundary(bbox);
 
     if (phase === 'dive') {
@@ -119,8 +176,8 @@ function ControlsBridge({
       ref={controlsRef}
       makeDefault
       dollyToCursor
-      minDistance={200}
-      maxDistance={2500}
+      minDistance={120}
+      maxDistance={3500}
     />
   );
 }
@@ -141,6 +198,7 @@ function ProjectMarkers({
     const el = overlayRef.current;
     if (!el || phase === 'dive') return;
 
+    // 1. Position expedition & fossil markers
     for (const m of markers) {
       const btn = el.querySelector<HTMLElement>(`[data-key="${m.key}"]`);
       if (!btn) continue;
@@ -162,6 +220,30 @@ function ProjectMarkers({
       const sy = ((-p.y + 1) * size.height) / 2;
       btn.style.transform = `translate3d(${sx.toFixed(1)}px, ${sy.toFixed(1)}px, 0px) translate(-50%, -50%)`;
     }
+
+    // 2. Position graticule labels: "0° Greenwich" and "60° S" calculated with project(lon, lat)
+    const updateGraticuleLabel = (selector: string, mapCoord: { x: number; y: number }) => {
+      const label = el.querySelector<HTMLElement>(selector);
+      if (!label) return;
+      const wPos = toWorld(mapCoord.x, mapCoord.y, 0.2);
+      const p = new Vector3(wPos.x, wPos.y, wPos.z);
+      p.project(camera);
+
+      const visible = p.z < 1.0 && p.x >= -1.1 && p.x <= 1.1 && p.y >= -1.1 && p.y <= 1.1;
+      if (!visible) {
+        label.style.display = 'none';
+        return;
+      }
+
+      label.style.display = '';
+      const sx = ((p.x + 1) * size.width) / 2;
+      const sy = ((-p.y + 1) * size.height) / 2;
+      label.style.transform = `translate3d(${sx.toFixed(1)}px, ${sy.toFixed(1)}px, 0px) translate(-50%, -50%)`;
+    };
+
+    // Greenwich: lon 0, lat ~ -57; 60° S: on circle of -60° lat on a meridian free of markers (lon 45)
+    updateGraticuleLabel('[data-graticule="greenwich"]', project(0, -57));
+    updateGraticuleLabel('[data-graticule="60s"]', project(45, -60));
   });
 
   return null;
@@ -179,6 +261,7 @@ export function Map3DLayer({
   const overlayRef = useRef<HTMLDivElement>(null);
   const [dpr, setDpr] = useState(1.5);
   const [enablePost, setEnablePost] = useState(true);
+  const [lowQuality, setLowQuality] = useState(false);
 
   const homeStart = homePose3D(size.vw / size.vh);
 
@@ -202,38 +285,39 @@ export function Map3DLayer({
         camera={{
           fov: 40,
           near: 10,
-          far: 10000,
+          far: 20000,
           position: [homeStart.pos.x, homeStart.pos.y, homeStart.pos.z],
         }}
         aria-hidden="true"
       >
         <PerformanceMonitor
           onIncline={() => {
+            setLowQuality(false);
             if (!enablePost) setEnablePost(true);
             else if (dpr < 1.5) setDpr(1.5);
           }}
           onDecline={() => {
+            setLowQuality(true);
             if (dpr > 1) setDpr(1);
             else if (enablePost) setEnablePost(false);
           }}
           onFallback={() => {
+            setLowQuality(true);
             setDpr(1);
             setEnablePost(false);
           }}
         />
-        <OceanBlock wide={size.vw > 820} />
-        <Terrain wide={size.vw > 820} />
-        <InkLines />
-        {enablePost && (
-          <EffectComposer multisampling={0}>
-            <InkEffect />
-          </EffectComposer>
-        )}
-        <ControlsBridge phase={phase} reduced={reduced} size={size} geo={geo} view={view} />
-        <ProjectMarkers
+        <SceneContent
+          wide={size.vw > 820}
+          lowQuality={lowQuality}
+          phase={phase}
+          reduced={reduced}
+          size={size}
+          geo={geo}
+          view={view}
           markers={markers}
           overlayRef={overlayRef}
-          phase={phase}
+          enablePost={enablePost}
         />
       </Canvas>
       <div
@@ -241,26 +325,67 @@ export function Map3DLayer({
         ref={overlayRef}
         style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}
       >
-        {phase !== 'dive' &&
-          markers.map((m) => {
-            const zIndex = m.kind === 'cluster' ? 3 : m.kind === 'point' && m.point.tier === 'A' ? 2 : 1;
-            return (
-              <div
-                key={m.key}
-                data-key={m.key}
-                style={{
-                  position: 'absolute',
-                  left: 0,
-                  top: 0,
-                  pointerEvents: 'auto',
-                  willChange: 'transform',
-                  zIndex,
-                }}
-              >
-                <MarkerButton m={m} style={{ left: 0, top: 0 }} onPick={onPick} />
-              </div>
-            );
-          })}
+        {phase !== 'dive' && (
+          <>
+            <span
+              data-graticule="greenwich"
+              className="hand"
+              style={{
+                position: 'absolute',
+                left: 0,
+                top: 0,
+                color: 'var(--ice, #F7FAFB)',
+                fontSize: 17,
+                opacity: 0.85,
+                textShadow: '0 1px 2px rgba(31,42,54,0.6)',
+                whiteSpace: 'nowrap',
+                pointerEvents: 'none',
+                willChange: 'transform',
+                userSelect: 'none',
+              }}
+            >
+              0° Greenwich
+            </span>
+            <span
+              data-graticule="60s"
+              className="hand"
+              style={{
+                position: 'absolute',
+                left: 0,
+                top: 0,
+                color: 'var(--ice, #F7FAFB)',
+                fontSize: 17,
+                opacity: 0.85,
+                textShadow: '0 1px 2px rgba(31,42,54,0.6)',
+                whiteSpace: 'nowrap',
+                pointerEvents: 'none',
+                willChange: 'transform',
+                userSelect: 'none',
+              }}
+            >
+              60° S
+            </span>
+            {markers.map((m) => {
+              const zIndex = m.kind === 'cluster' ? 3 : m.kind === 'point' && m.point.tier === 'A' ? 2 : 1;
+              return (
+                <div
+                  key={m.key}
+                  data-key={m.key}
+                  style={{
+                    position: 'absolute',
+                    left: 0,
+                    top: 0,
+                    pointerEvents: 'auto',
+                    willChange: 'transform',
+                    zIndex,
+                  }}
+                >
+                  <MarkerButton m={m} style={{ left: 0, top: 0 }} onPick={onPick} />
+                </div>
+              );
+            })}
+          </>
+        )}
       </div>
     </>
   );

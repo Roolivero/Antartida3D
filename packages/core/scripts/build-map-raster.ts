@@ -39,6 +39,9 @@ async function bake(paint: string, size: number, name: string) {
   console.log(`${name}: ${(buf.length / 1024).toFixed(0)} kB`);
 }
 
-for (const size of SIZES) await bake(MAP_PAINT_SVG, size, `map-paint-${size}.webp`);
+const only3D = process.argv.includes('--only-3d') || process.env.ONLY_3D === '1';
+if (!only3D) {
+  for (const size of SIZES) await bake(MAP_PAINT_SVG, size, `map-paint-${size}.webp`);
+}
 for (const size of SIZES_3D) await bake(MAP_PAINT_SVG_3D, size, `map-paint-3d-${size}.webp`);
 await browser.close();
