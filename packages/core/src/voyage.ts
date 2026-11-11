@@ -1,4 +1,4 @@
-import { MILESTONES, TRANSPORTS, type Milestone, type TransportId, type TransportKind } from './content/ushuaia.ts';
+import { MILESTONES, SIGHTINGS, TRANSPORTS, type Milestone, type Sighting, type TransportId, type TransportKind } from './content/ushuaia.ts';
 import { FLIGHT_GROUND_M } from './flight-ground.ts';
 import { FLIGHT_GROUND_STEP, flightAt } from './flight-path.ts';
 import { fuegiaWorldHeight } from './fuegia.ts';
@@ -136,6 +136,51 @@ const STOPS: Record<TransportKind, VoyageStop[]> = { ship: buildStops('ship'), p
 /** Milestones a transport passes, in trip order, with the fraction where each one opens. */
 export function voyageStops(kind: TransportKind): readonly VoyageStop[] {
   return STOPS[kind];
+}
+
+/** Trip fraction during which a sighting can be spotted (about 3.5 s of steady advance at normal speed). */
+export const SIGHTING_WINDOW = 0.07;
+export const SIGHTING_WINDOW_BRIEF = 0.03;
+
+export interface SightingSpot {
+  sighting: Sighting;
+  /** The animal is in view while the trip fraction is between these. Measured in progress, not time: pausing does not lose it. */
+  from: number;
+  to: number;
+  /** Where it is drawn, in map space. */
+  x: number;
+  y: number;
+}
+
+/** Sightings of the sea trip with their windows and places, in trip order. A plane sees none. */
+const SPOTS: SightingSpot[] = SIGHTINGS.map((sighting) => {
+  const target = project(sighting.anchor[0], sighting.anchor[1]);
+  let at = 0;
+  let best = Infinity;
+  for (let i = 0; i <= STOP_SAMPLES; i++) {
+    const p = routeAt(i / STOP_SAMPLES);
+    const d = Math.hypot(p.x - target.x, p.y - target.y);
+    if (d < best) [best, at] = [d, i / STOP_SAMPLES];
+  }
+  const p = routeAt(at);
+  const heading = voyageHeading('ship', at);
+  const half = (sighting.brief ? SIGHTING_WINDOW_BRIEF : SIGHTING_WINDOW) / 2;
+  return {
+    sighting,
+    from: Math.max(0.004, at - half),
+    to: Math.min(0.996, at + half),
+    x: p.x - Math.sin(heading) * sighting.offset,
+    y: p.y + Math.cos(heading) * sighting.offset,
+  };
+});
+
+export function voyageSightings(kind: TransportKind): readonly SightingSpot[] {
+  return kind === 'ship' ? SPOTS : [];
+}
+
+/** Sightings in view at fraction `t`, spotted or not. */
+export function sightingsInView(kind: TransportKind, t: number): SightingSpot[] {
+  return voyageSightings(kind).filter((s) => t >= s.from && t <= s.to);
 }
 
 /** Seconds the whole trip takes while the user keeps advancing. Not a real duration. */

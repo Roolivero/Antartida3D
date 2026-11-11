@@ -29,6 +29,24 @@
 .vhold{position:relative;touch-action:none;user-select:none;-webkit-user-select:none}
 /* Gear badge on the corner: it must not change the button size, or the row reflows under the pointer. */
 .vgear{position:absolute;top:-12px;right:-8px;padding:2px 8px;border-radius:12px;border:2px solid var(--ink);background:var(--ocre);color:var(--ink);font-size:13px;line-height:1.2;pointer-events:none}
+/* Animals to spot: buttons laid over the map by the 3D scene. */
+.vspot{width:48px;height:48px;padding:9px;border-radius:50%;border:2px solid var(--ink);background:var(--paper);color:var(--deep);box-shadow:2px 3px 0 rgba(31,42,54,.25);pointer-events:auto;cursor:pointer;animation:vspot 1.6s ease-in-out infinite alternate}
+.vspot svg{display:block;width:100%;height:100%}
+/* Already spotted: grey and still, but it stays on the map and opens its card again. */
+.vspot.seen{background:color-mix(in srgb,var(--pencil) 30%,var(--paper));border-color:var(--pencil);color:var(--pencil);box-shadow:none;animation:none}
+.vspot:hover,.vspot:focus-visible{background:var(--ocre)}
+@keyframes vspot{from{transform:translate3d(0,0,0)}to{transform:translate3d(0,-6px,0)}}
+.vsighting{display:flex;align-items:center;gap:10px}
+.vsighting svg{width:34px;height:34px;flex:none;color:var(--deep)}
+.vlatin{margin:0;font-style:italic;color:var(--pencil)}
+.vnotebook{margin:10px 0;padding:10px 12px;border:1.5px dashed var(--pencil);border-radius:8px 14px 10px 12px}
+.vnotebook p{margin:0 0 8px}
+.vnotebook ul{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:6px}
+.vnote{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:4px 10px;border-radius:18px;border:1.5px solid var(--ink);background:var(--ice);font-size:13px;font-weight:700;color:var(--ink)}
+.vnote svg{width:18px;height:18px;color:var(--deep)}
+.vnote.missed{border-style:dashed;border-color:var(--pencil);background:transparent;color:var(--pencil);font-weight:400}
+.vnote.missed svg{color:var(--pencil);opacity:.6}
+@media (prefers-reduced-motion:reduce){.vspot{animation:none}}
 /* Wide screens: every panel of the trip sits on the same corner, beside the zoom buttons, so the pointer does not cross the map. */
 @media (min-width:821px){
   .vbar,.sheet.voyage{left:auto;right:88px;bottom:24px;width:440px}

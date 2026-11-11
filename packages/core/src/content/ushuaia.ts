@@ -25,6 +25,8 @@ export const VOYAGE_SOURCES = {
   U2: { org: 'Caselli y Agusto (FCEN-UBA)', title: 'Artículo sobre Isla Decepción, Revista de la Asociación Geológica Argentina 59(3), 2004', url: 'https://revista.geologica.org.ar/raga/article/download/1456/1438/5026' },
   U3: { org: 'Morgavi, Cohen y Vereda (UNTDF y CONICET)', title: '«Competitividad de Ushuaia como puerta de entrada…», Aportes y Transferencias 18(1), 2020', url: 'https://eco.mdp.edu.ar/revistas/index.php/aportes/article/download/291/265/638' },
   U4: { org: 'Vereda, Jensen (UNTDF) y Fontana (IAA)', title: '«La evolución del turismo antártico y su relación con las políticas públicas nacionales y provinciales», Registros 15(2), 2019', url: 'https://revistasfaud.mdp.edu.ar/registros/article/download/329/217/2090' },
+  U7: { org: 'Boy, C. C. (FCEN-UBA)', title: 'Crecimiento en el delfín austral, tesis de licenciatura, 1999', url: 'https://bibliotecadigital.exactas.uba.ar/download/seminario/seminario_nBIO000645_Boy.pdf' },
+  U8: { org: 'Juáres, M. A. (FCNyM-UNLP; dirigida por N. Coria, IAA)', title: 'Tesis doctoral sobre Punta Stranger, isla 25 de Mayo, 2013', url: 'https://api.naturalis.fcnym.unlp.edu.ar/server/api/core/bitstreams/f2325bfb-7b91-4f81-b3a3-dfc682923ed5/content' },
   O2: { org: 'Armada Argentina', title: 'Bases antárticas permanentes', url: 'https://www.argentina.gob.ar/armada/antartida/bases-permanentes' },
   O5: { org: 'Armada Argentina', title: 'Ficha del rompehielos ARA «Almirante Irízar» (Q-5)', url: 'https://www.argentina.gob.ar/armada/superficie/unidades/rompehielos/rompehielos-ara-almirante-irizar-q-5' },
   O6: { org: 'Armada Argentina', title: 'Ficha del aviso ARA «Puerto Argentino» (A-21)', url: 'https://www.argentina.gob.ar/armada/superficie/unidades/avisos/aviso-ara-puerto-argentino-21' },
@@ -34,14 +36,22 @@ export const VOYAGE_SOURCES = {
   O13: { org: 'Cancillería (Embajada en Uruguay)', title: '«45 años del primer aterrizaje de un Hércules C-130 en Marambio»', url: 'https://eurug.cancilleria.gob.ar/es/content/45-a%C3%B1os-del-primer-aterrizaje-de-un-h%C3%A9rcules-c-130-en-marambio' },
   O14: { org: 'Fuerza Aérea Argentina', title: 'Escuadrón I C-130 Hércules (2023)', url: 'https://www.argentina.gob.ar/noticias/escuadron-i-c-130-hercules-un-pilar-fundamental-para-la-aviacion-militar-argentina' },
   O16: { org: 'Gobierno nacional', title: '«Finalizó la tercera etapa de la Campaña Antártica de Verano» (10-04-2025)', url: 'https://www.argentina.gob.ar/noticias/finalizo-la-tercera-etapa-de-la-campana-antartica-de-verano' },
+  O20: { org: 'CADIC-CONICET (Ushuaia)', title: 'Mes de la biodiversidad 2021 (fauna del Beagle)', url: 'https://cadic.conicet.gov.ar/mesdelabiodiversidad-2021/' },
   O22: { org: 'Armada Argentina', title: '«Inició la última etapa de la Campaña Antártica de Verano 2025-26» (11-03-2026)', url: 'https://www.argentina.gob.ar/noticias/inicio-la-ultima-etapa-de-la-campana-antartica-de-verano-2025-26' },
   O24: { org: 'Armada Argentina', title: '«El rompehielos ARA Almirante Irízar completó las operaciones en la Base Antártica Conjunta [Marambio]» (30-12-2025)', url: 'https://www.argentina.gob.ar/noticias/el-rompehielos-ara-almirante-irizar-completo-las-operaciones-en-la-base-antartica-conjunta' },
+  O30: { org: 'Rosciano, Svagelj y Raya Rey (CADIC y CENPAT-CONICET)', title: 'Revista de Biología Marina y Oceanografía 48(1), 2013 (cormorán imperial en el Beagle)', url: 'https://www.redalyc.org/pdf/479/47926382012.pdf' },
+  O31: { org: 'Meza y Ochoa (IMARPE, Perú)', title: 'Boletín del Instituto del Mar del Perú 36(1), 2021: aves en Bransfield e isla Elefante, campaña ANTAR XXVI', url: 'https://revistas.imarpe.gob.pe/index.php/boletin/article/download/319/304/595' },
+  O32: { org: 'Aguilar-Arakaki y Ochoa-Madrid (IMARPE, Perú)', title: 'Boletín del Instituto del Mar del Perú 37(1), 2022: cetáceos de la campaña ANTAR XXVI', url: 'https://revistas.imarpe.gob.pe/index.php/boletin/article/download/361/354/660' },
   I1: { org: 'Secretaría del Tratado Antártico', title: 'Tratado Antártico (1959), art. VI', url: 'https://documents.ats.aq/keydocs/vol_1/vol1_2_AT_Antarctic_Treaty_e.pdf' },
   I5: { org: 'NASA Earth Observatory', title: '«Cape Horn: A Mariner\'s Nightmare» (24-12-2017)', url: 'https://science.nasa.gov/earth/earth-observatory/cape-horn-a-mariners-nightmare-91472/' },
   I6: { org: 'Eos / AGU', title: '«Notorious ocean current is far stronger than previously thought» (27-12-2016)', url: 'https://eos.org/research-spotlights/notorious-ocean-current-is-far-stronger-than-previously-thought' },
   I7: { org: 'NSIDC', title: 'Antarctic polar front', url: 'https://nsidc.org/learn/cryosphere-glossary/antarctic-polar-front' },
   I8: { org: 'NOAA Institutional Repository', title: 'Freeman y Lovenduski, ESSD 8, 2016', url: 'https://repository.library.noaa.gov/view/noaa/24331' },
   I9: { org: 'Plan de gestión ZAEA n.º 4 (ATCM XXVIII, 2005)', title: 'Isla Decepción', url: 'https://www.deceptionisland.aq/documents/asma.pdf' },
+  I11: { org: 'ACAP', title: 'Species assessment: Wandering Albatross (2009)', url: 'https://www.acap.aq/acap-species/304-wandering-albatross/file' },
+  I12: { org: 'ACAP', title: 'Species assessment: Southern Giant Petrel (2010)', url: 'https://www.acap.aq/acap-species/288-southern-giant-petrel/file' },
+  I14: { org: 'Ministerio del Medio Ambiente de Chile', title: 'Ficha RCE 13 de Lagenorhynchus cruciger', url: 'https://clasificacionespecies.mma.gob.cl/wp-content/uploads/2019/10/Lagenorhynchus_cruciger_FIN_13RCE.pdf' },
+  I16: { org: 'Australian Antarctic Division', title: 'Fichas de especie: focas y pingüinos antárticos', url: 'https://www.antarctica.gov.au/about-antarctica/animals/' },
 } as const satisfies Record<string, VoyageSource>;
 
 export type VoyageSourceCode = keyof typeof VOYAGE_SOURCES;
@@ -229,6 +239,63 @@ export const VOYAGE_TOURISM_NOTE: VoyageFact = {
   kind: 'real',
   sources: ['U3'],
 };
+
+export type SightingIcon = 'bird' | 'penguin' | 'whale' | 'dolphin' | 'seal';
+
+/** An animal the traveller may spot from a ship. Only species with an open, read source. */
+export interface Sighting {
+  id: string;
+  name: string;
+  latin: string;
+  icon: SightingIcon;
+  /** Point of the sea route the animal shows up near, as [lon, lat]. */
+  anchor: readonly [lon: number, lat: number];
+  /** Map units to the side of the route (positive: starboard). Small inside the Beagle Channel. */
+  offset: number;
+  /** The Beagle Channel is a short stretch of the trip: its animals stay in view for less of it. */
+  brief?: boolean;
+  fact: VoyageFact;
+}
+
+/**
+ * In trip order: more of them the farther south. ILLUSTRATIVE positions: no source says where an
+ * animal is at a given moment; the zone is the one the source names or a latitude range.
+ */
+export const SIGHTINGS: readonly Sighting[] = [
+  // Beagle Channel
+  { id: 'cormoran', name: 'Cormorán imperial', latin: 'Leucocarbo atriceps', icon: 'bird', anchor: [-68, -54.89], offset: -0.2, brief: true,
+    fact: { text: 'Es el ave marina más abundante del canal. En el verano 2008-09 anidaba en 5 islas del sector argentino, con 7.703 nidos activos.', kind: 'real', sources: ['O20', 'O30'] } },
+  { id: 'lobos', name: 'Lobos marinos', latin: 'dos especies', icon: 'seal', anchor: [-67.66, -54.905], offset: 0.2, brief: true,
+    fact: { text: 'Dos especies viven en las islas del canal: el lobo marino sudamericano todo el año y el de dos pelos entre febrero y agosto.', kind: 'real', sources: ['O20'] } },
+  { id: 'delfin-austral', name: 'Delfín austral', latin: 'Lagenorhynchus australis', icon: 'dolphin', anchor: [-66.78, -55.03], offset: -0.22, brief: true,
+    fact: { text: 'Es un delfín costero del archipiélago fueguino: llega hasta el Cabo de Hornos. Se lo ve en los bosques de macroalgas o cerca de ellos.', kind: 'real', sources: ['U7'] } },
+  // Drake Passage
+  { id: 'albatros', name: 'Albatros errante', latin: 'Diomedea exulans', icon: 'bird', anchor: [-66.45, -57.3], offset: 4,
+    fact: { text: 'Los que crían en Georgias del Sur se mueven desde el sur de Brasil hasta la Península Antártica. Para alimentarse se alejan hasta 4.000 km de su colonia.', kind: 'real', sources: ['I11'] } },
+  { id: 'petrel-gigante', name: 'Petrel gigante del sur', latin: 'Macronectes giganteus', icon: 'bird', anchor: [-66.33, -58.6], offset: -4.5,
+    fact: { text: 'Es carroñero: en lo que regurgitan sus pichones aparecen sobre todo restos de pingüino y también carne de foca.', kind: 'real', sources: ['I12'] } },
+  { id: 'delfin-cruzado', name: 'Delfín cruzado', latin: 'Lagenorhynchus cruciger', icon: 'dolphin', anchor: [-63.4, -60.75], offset: 4,
+    fact: { text: 'Vive en mar abierto alrededor de toda la Antártida, de los 45° a cerca de los 68° de latitud sur. Nada en la proa de los barcos dando saltos.', kind: 'real', sources: ['I14'] } },
+  // South Shetlands and Bransfield Strait
+  { id: 'barbijo', name: 'Pingüino barbijo', latin: 'Pygoscelis antarcticus', icon: 'penguin', anchor: [-59.33, -62.32], offset: -3,
+    fact: { text: 'Anida en la Península y en islas al sur de la Convergencia Antártica.', kind: 'real', sources: ['U8', 'O31'] } },
+  { id: 'jorobada', name: 'Ballena jorobada', latin: 'Megaptera novaeangliae', icon: 'whale', anchor: [-58.6, -62.75], offset: 4,
+    fact: { text: 'Fue el cetáceo más abundante de la campaña científica peruana ANTAR XXVI (verano 2018-19): 207 individuos, sobre todo en el Estrecho de Bransfield.', kind: 'real', sources: ['O32'] } },
+  { id: 'petrel-damero', name: 'Petrel damero', latin: 'Daption capense', icon: 'bird', anchor: [-57.6, -63.05], offset: -3.5,
+    fact: { text: 'Fue el ave más abundante de la campaña ANTAR XXVI (verano 2018-19) en Bransfield e isla Elefante: 809 individuos.', kind: 'real', sources: ['O31'] } },
+  // Peninsula coast and northern Weddell Sea
+  { id: 'adelia', name: 'Pingüino de Adelia', latin: 'Pygoscelis adeliae', icon: 'penguin', anchor: [-56.72, -63.3], offset: 2.5,
+    fact: { text: 'Arma el nido con piedritas y nada a entre 4 y 8 km/h.', kind: 'real', sources: ['I16'] } },
+  { id: 'leopardo', name: 'Foca leopardo', latin: 'Hydrurga leptonyx', icon: 'seal', anchor: [-56.38, -63.57], offset: 3,
+    fact: { text: 'Caza pingüinos y los sacude para sacarles la piel. Las hembras superan los 3,5 m y los 500 kg.', kind: 'real', sources: ['I16'] } },
+  { id: 'cangrejera', name: 'Foca cangrejera', latin: 'Lobodon carcinophagus', icon: 'seal', anchor: [-56.4, -63.85], offset: 3,
+    fact: { text: 'No come cangrejos sino krill, que filtra con dientes especiales. Con unos 15 millones, es la foca más abundante.', kind: 'real', sources: ['I16'] } },
+  { id: 'weddell', name: 'Foca de Weddell', latin: 'Leptonychotes weddellii', icon: 'seal', anchor: [-56.4, -64.1], offset: 3,
+    fact: { text: 'Es el mamífero que vive permanentemente más al sur. Bucea hasta 720 m y 45 minutos, y abre agujeros en el hielo con los dientes.', kind: 'real', sources: ['I16'] } },
+];
+
+/** Shown with the sightings: where an animal appears on the map is not data. */
+export const SIGHTINGS_NOTE = 'Avistajes ilustrativos: la posición de cada animal en el mapa no es un dato.';
 
 /** Shown while travelling: the drawn path is not the real track of any ship or plane. */
 export const VOYAGE_ROUTE_NOTE = 'Ruta ilustrativa: no es la derrota real. Vehículo con tamaño exagerado.';

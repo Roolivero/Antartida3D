@@ -6,6 +6,8 @@ import {
   FUEGIA_LAND_MASK,
   GEAR_TAP_MS,
   MILESTONES,
+  SIGHTINGS,
+  SIGHTING_WINDOW_BRIEF,
   TRANSPORTS,
   VOYAGE_GEARS,
   VOYAGE_SECONDS,
@@ -19,6 +21,7 @@ import {
   fuegiaWorldHeight,
   heightAt,
   nextGear,
+  sightingsInView,
   parseTerrainMesh,
   project,
   skipToNextStop,
@@ -28,6 +31,7 @@ import {
   voyageAt,
   voyageHeading,
   voyageLength,
+  voyageSightings,
   voyageStops,
   worldHeight,
   type VoyageFact,
@@ -39,6 +43,7 @@ const facts: VoyageFact[] = [
   VOYAGE_TOURISM_NOTE,
   ...TRANSPORTS.flatMap((v) => v.facts),
   ...MILESTONES.flatMap((m) => [m.essential, ...m.more]),
+  ...SIGHTINGS.map((s) => s.fact),
 ];
 
 describe('voyage content', () => {
@@ -204,6 +209,51 @@ describe('flight altitude', () => {
     for (let i = 130; i < 250; i++) {
       expect(flightClearance((i + 1) / 1000, terrain), `t=${i / 1000}`).toBeGreaterThanOrEqual(flightClearance(i / 1000, terrain));
     }
+  });
+});
+
+describe('sightings', () => {
+  const spots = voyageSightings('ship');
+
+  it('gives every animal a sourced fact', () => {
+    for (const s of SIGHTINGS) {
+      expect(s.fact.kind).toBe('real');
+      expect(s.fact.sources.length, s.name).toBeGreaterThan(0);
+    }
+  });
+
+  it('shows them in trip order, with a window inside the trip', () => {
+    for (let i = 0; i < spots.length; i++) {
+      expect(spots[i].from).toBeGreaterThan(0);
+      expect(spots[i].to).toBeLessThan(1);
+      expect(spots[i].to - spots[i].from).toBeGreaterThan(SIGHTING_WINDOW_BRIEF * 0.6);
+      if (i > 0) expect(spots[i].from).toBeGreaterThan(spots[i - 1].from);
+    }
+  });
+
+  it('has more of them the farther south', () => {
+    const south = spots.filter((s) => unproject(s.x, s.y).lat < -60).length;
+    expect(south).toBeGreaterThan(spots.length - south);
+  });
+
+  it('draws each one near its anchor on the route', () => {
+    for (const s of spots) {
+      const anchor = project(s.sighting.anchor[0], s.sighting.anchor[1]);
+      expect(Math.hypot(s.x - anchor.x, s.y - anchor.y), s.sighting.name).toBeLessThan(Math.abs(s.sighting.offset) + 4);
+    }
+  });
+
+  it('keeps one in view through its window and not after it', () => {
+    const first = spots[0];
+    const mid = (first.from + first.to) / 2;
+    expect(sightingsInView('ship', mid).map((s) => s.sighting.id)).toContain(first.sighting.id);
+    expect(sightingsInView('ship', first.from - 0.001).map((s) => s.sighting.id)).not.toContain(first.sighting.id);
+    expect(sightingsInView('ship', first.to + 0.001).map((s) => s.sighting.id)).not.toContain(first.sighting.id);
+  });
+
+  it('has none from the plane', () => {
+    expect(voyageSightings('plane')).toEqual([]);
+    expect(sightingsInView('plane', 0.5)).toEqual([]);
   });
 });
 

@@ -9,6 +9,10 @@ import {
  */
 export interface VoyageBus {
   state: VoyageState | null;
+  /** Ids of the animals already spotted on this trip. */
+  seen: readonly string[];
+  /** The user touched an animal on the map. */
+  spot: (id: string) => void;
   listeners: Set<() => void>;
 }
 
@@ -26,15 +30,23 @@ export interface VoyageController {
   hold: (on: boolean) => void;
   skip: () => void;
   closeCard: () => void;
+  /** Animals spotted on this trip, and the one whose card is open. */
+  seen: readonly string[];
+  sighting: string | null;
+  openSighting: (id: string) => void;
+  closeSighting: () => void;
   reset: () => void;
 }
 
 export function useVoyage(): VoyageController {
   const [state, setState] = useState<VoyageState | null>(null);
-  const bus = useRef<VoyageBus>({ state: null, listeners: new Set() }).current;
+  const bus = useRef<VoyageBus>({ state: null, seen: [], spot: () => {}, listeners: new Set() }).current;
   const frame = useRef(0);
   const [gear, setGear] = useState(0);
   const press = useRef({ gear: 0, at: -Infinity });
+
+  const [seen, setSeen] = useState<readonly string[]>([]);
+  const [sighting, setSighting] = useState<string | null>(null);
 
   const notify = () => bus.listeners.forEach((fn) => fn());
   const commit = (next: VoyageState | null) => {
@@ -52,11 +64,35 @@ export function useVoyage(): VoyageController {
 
   useEffect(() => stop, []);
 
+  const openSighting = (id: string) => {
+    stop();
+    setState(bus.state);
+    if (!bus.seen.includes(id)) {
+      bus.seen = [...bus.seen, id];
+      setSeen(bus.seen);
+    }
+    setSighting(id);
+    notify();
+  };
+  bus.spot = openSighting;
+  const clearSightings = () => {
+    bus.seen = [];
+    setSeen([]);
+    setSighting(null);
+  };
+
   return {
     state,
     bus,
     gear,
-    start: (transport) => commit(startVoyage(transport)),
+    seen,
+    sighting,
+    openSighting,
+    closeSighting: () => setSighting(null),
+    start: (transport) => {
+      clearSightings();
+      commit(startVoyage(transport));
+    },
     hold: (on) => {
       const d = drive.current;
       if (!on) {
@@ -94,6 +130,7 @@ export function useVoyage(): VoyageController {
     closeCard: () => bus.state && commit(closeVoyageCard(bus.state)),
     reset: () => {
       stop();
+      clearSightings();
       if (bus.state) commit(null);
     },
   };

@@ -1,6 +1,6 @@
 # Diseño — Expedición #4: Desde Ushuaia («El cruce»)
 
-Estado: **diseño acordado con el equipo; primera parte implementada** (elección de transporte, viaje sobre el mapa 3D con ritmo del usuario, hitos con fuentes, vehículos voxel). Falta: avistajes de fauna, icono del vehículo en el mapa 2D, sugerencia de la siguiente expedición y prueba en teléfonos reales. El contenido y las fuentes están en [desde-ushuaia.md](./desde-ushuaia.md) y [desde-ushuaia-fuentes.md](./desde-ushuaia-fuentes.md).
+Estado: **diseño acordado con el equipo; primera parte implementada** (elección de transporte, viaje sobre el mapa 3D con ritmo del usuario, hitos con fuentes, vehículos voxel, avistajes de fauna con ficha y cuaderno). Falta: icono del vehículo en el mapa 2D, sugerencia de la siguiente expedición y prueba en teléfonos reales. El contenido y las fuentes están en [desde-ushuaia.md](./desde-ushuaia.md) y [desde-ushuaia-fuentes.md](./desde-ushuaia-fuentes.md).
 
 ## Idea
 
@@ -25,6 +25,7 @@ El turismo se menciona como una línea de contexto: no es un transporte jugable 
 
 - Durante el viaje aparecen animales cerca del vehículo. Se pueden tocar un rato para abrir una ficha con nombre, un dato curioso y su fuente.
 - **La ventana se mide en avance del viaje, no en segundos:** si el usuario pausa, el animal espera. Es justo para cualquier edad y accesible. Si pasa de largo, el animal se aleja.
+- Un animal ya visto no desaparece: queda en gris en el mapa y se puede volver a abrir. Los animales siguen visibles mientras hay una tarjeta de hito abierta. Desde el avión no hay avistajes.
 - Más fauna cuanto más al sur. El cuaderno cuenta los avistajes («4 de 9»); los perdidos quedan como siluetas «sin ver», lo que invita a repetir el viaje con otro medio.
 - Los animales son botones HTML proyectados sobre el canvas, como los marcadores actuales (`ProjectMarkers`): accesibles por teclado, con `aria-label`, sin raycasting. El cuaderno incluye la lista de avistajes alcanzable con Tab.
 - Solo hay especies con ficha y fuente verificada. Las posiciones son **ilustrativas** y se rotula en pantalla.

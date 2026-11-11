@@ -1,20 +1,23 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import { BufferGeometry, Group, Line, LineDashedMaterial, Vector3 } from 'three';
 import { useFrame, useThree } from '@react-three/fiber';
-import type { CameraControls } from '@react-three/drei';
+import { Html, type CameraControls } from '@react-three/drei';
 import {
   TRANSPORTS,
   VOYAGE_POINT,
   flightClearance,
   heightAt,
+  sightingsInView,
   toWorld,
   voyageAt,
   voyageHeading,
   voyageLength,
+  voyageSightings,
   type TransportId,
   type TransportKind,
 } from '@antartida/core';
 import { buildVehicleGeometry, vehicleMaterial } from './vehicles.ts';
+import { SightingIcon } from './SightingIcon.tsx';
 import { buildTrailGeometry, trailMaterial, updateTrail } from './trail.ts';
 import type { VoyageBus } from './useVoyage.ts';
 
@@ -56,16 +59,26 @@ const MAX_PITCH = 0.4;
 const routeMaterial = new LineDashedMaterial({ color: 0x1f2a36, dashSize: 0.8, gapSize: 0.6, transparent: true, opacity: 0.75 });
 
 /** The vehicle travelling on the live map, its path and the camera, which stays centered on it. */
-export function Voyage3D({ bus, reduced }: { bus: VoyageBus; reduced: boolean }) {
+export function Voyage3D({ bus, reduced, overlay }: {
+  bus: VoyageBus;
+  reduced: boolean;
+  /** Element over the canvas where the animals go: they are real buttons, reachable by keyboard. */
+  overlay: RefObject<HTMLElement | null>;
+}) {
   const invalidate = useThree((s) => s.invalidate);
   const controls = useThree((s) => s.controls) as unknown as CameraControls | null;
   const group = useRef<Group>(null);
   const [transport, setTransport] = useState<TransportId | null>(bus.state?.transport ?? null);
   const drawn = useRef({ t: -1, transport: null as TransportId | null });
+  // Ids of the animals in view and of the ones already spotted, joined: React re-renders only when they change.
+  const [inView, setInView] = useState('|');
 
   useEffect(() => {
     const onChange = () => {
       setTransport(bus.state?.transport ?? null);
+      const s = bus.state;
+      // They stay on the map while a milestone card is open.
+      setInView(`${s ? sightingsInView(s.kind, s.t).map((v) => v.sighting.id).join(',') : ''}|${bus.seen.join(',')}`);
       invalidate();
     };
     bus.listeners.add(onChange);
@@ -137,9 +150,24 @@ export function Voyage3D({ bus, reduced }: { bus: VoyageBus; reduced: boolean })
     drawn.current = { t: s.t, transport: s.transport };
   });
 
-  if (!geometry || !route) return null;
+  if (!geometry || !route || !kind) return null;
+  const [ids, seen] = inView.split('|').map((list) => list.split(','));
   return (
     <>
+      {voyageSightings(kind).filter((v) => ids.includes(v.sighting.id)).map((v) => (
+        <Html key={v.sighting.id} position={[v.x - 500, 0.3, v.y - 500]} center portal={overlay as RefObject<HTMLElement>} zIndexRange={[4, 4]}>
+          <button
+            type="button"
+            className={'vspot' + (seen.includes(v.sighting.id) ? ' seen' : '')}
+            onClick={() => bus.spot(v.sighting.id)}
+            aria-label={seen.includes(v.sighting.id)
+              ? `${v.sighting.name}, ya visto. Tocá para volver a ver su ficha.`
+              : `Avistaje: ${v.sighting.name}. Tocá para ver su ficha.`}
+          >
+            <SightingIcon icon={v.sighting.icon} />
+          </button>
+        </Html>
+      ))}
       <primitive object={route} />
       {trail && <mesh geometry={trail} material={trailMaterial} frustumCulled={false} />}
       <group ref={group}>

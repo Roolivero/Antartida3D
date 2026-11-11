@@ -80,7 +80,7 @@ function SceneContent({
       <Fuegia wide={wide} />
       <Graticule3D />
       <InkLines />
-      {voyage && <Voyage3D bus={voyage} reduced={reduced} />}
+      {voyage && <Voyage3D bus={voyage} reduced={reduced} overlay={overlayRef} />}
       {enablePost && (
         <EffectComposer multisampling={0}>
           <InkEffect />
