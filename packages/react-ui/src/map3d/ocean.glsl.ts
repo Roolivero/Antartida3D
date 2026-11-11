@@ -47,6 +47,7 @@ uniform float uInkWavesStrength;   // 6. Nautical chart "~" ink wave marks in op
 uniform float uIsobarsStrength;    // 7. Pencil isobaths every 500 m and 2000 m when zoomed in
 uniform float uFoamStrength;       // 8. Animated coastal & ice-shelf barrier surf foam
 uniform float uPaperGrainStrength; // 9. Screen-space paper grain overlay
+uniform vec4 uWhaleRipples[8];     // Up to 8 whale emergence positions (xy = worldXZ, z = speed, w = phase)
 
 ${fogParsChunk}
 ${periodicLineChunk}
@@ -235,6 +236,37 @@ void main() {
         // Dark --ink stroke with a subtle pale highlight along the upper crest
         vec3 markCol = mix(INK * 0.75, mix(GLACIER, ICE, 0.72), step(sp.y, tildeY) * 0.50);
         waterCol = mix(waterCol, markCol, stroke * inkWaveZoomFade * timeVis * openWater * uInkWavesStrength);
+      }
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // 6b. Concentric nautical ink ripples where whales emerge (up to 8 active whales)
+  // ---------------------------------------------------------------------------
+  if (camDist < 1650.0) {
+    for (int i = 0; i < 8; i++) {
+      vec4 wr = uWhaleRipples[i];
+      if (wr.z > 0.0) {
+        vec2 dVec = vWorldPos.xz - wr.xy;
+        if (abs(dVec.x) < 15.0 && abs(dVec.y) < 15.0) {
+          float rDist = length(dVec);
+          float cPhase = fract(uTime * wr.z + wr.w);
+          // Synchronized with whaleCycleState(cPhase).rippleAlpha in packages/core/src/sea.ts
+          if (rDist < 15.0 && cPhase > 0.06 && cPhase < 0.90) {
+            float uRipple = clamp((cPhase - 0.06) / 0.84, 0.0, 1.0);
+            float env = sin(uRipple * 3.14159265);
+            float distFade = (1.0 - smoothstep(4.5, 14.5, rDist)) * smoothstep(1.8, 4.2, rDist);
+            float ringCoord = rDist * 0.34 - (cPhase - 0.06) * 2.4;
+            float ang = atan(dVec.y, dVec.x);
+            float wiggled = fract(ringCoord + sin(ang * 5.0 + float(i) * 1.9) * 0.06);
+            float inkRing = smoothstep(0.08, 0.16, wiggled) * (1.0 - smoothstep(0.16, 0.28, wiggled));
+            float foamRing = smoothstep(0.24, 0.34, wiggled) * (1.0 - smoothstep(0.34, 0.48, wiggled));
+            float dashMask = smoothstep(-0.20, 0.25, sin(ang * 6.0 + rDist * 0.5));
+            float vis = env * distFade * dashMask;
+            waterCol = mix(waterCol, mix(PAPER_SRGB, ICE, 0.65), foamRing * vis * 0.55);
+            waterCol = mix(waterCol, INK, inkRing * vis * 0.72);
+          }
+        }
       }
     }
   }

@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <!-- Nautical ink & watercolor illustration: Small Antarctic Tabular Iceberg with calved bench & notch -->
+  <g filter="url(#wcs)">
+    <!-- Darker submerged ice skirt below the waterline (--deep + --glacier) -->
+    <path d="M26,166 L54,174 L86,176 L112,170 L138,178 L174,177 L194,172 L216,174 L232,166 L226,181 L204,188 L170,191 L134,192 L108,185 L80,190 L46,186 L24,176 Z" fill="#1E3E5C"/>
+    <path d="M26,166 L54,174 L86,176 L112,170 L138,178 L174,177 L194,172 L216,174 L232,166 L226,181 L204,188 L170,191 L134,192 L108,185 L80,190 L46,186 L24,176 Z" fill="#7FA8C4" opacity="0.34"/>
+    <path d="M30,170 L84,178 L138,180 L192,175 L226,170 L222,177 L186,184 L134,186 L80,184 L28,176 Z" fill="#1F2A36" opacity="0.45"/>
+
+    <!-- Lateral cliff walls in shaded celeste (--glacier) -->
+    <path d="M24,138 L52,148 L86,150 L112,139 L136,151 L174,149 L188,140 L188,148 L214,152 L232,144 L232,166 L216,174 L194,172 L174,177 L138,178 L112,170 L86,176 L54,174 L26,166 Z" fill="#7FA8C4"/>
+    <!-- Sunlit left-facing cliff facets (pale celeste: --ice over --glacier) -->
+    <path d="M24,138 L52,148 L86,150 L86,176 L54,174 L26,166 Z" fill="#F7FAFB" opacity="0.60"/>
+    <path d="M112,139 L136,151 L174,149 L174,177 L138,178 L112,170 Z" fill="#F7FAFB" opacity="0.50"/>
+    <!-- Shaded recessed notch and right calved bench wall -->
+    <path d="M86,150 L112,139 L112,170 L86,176 Z" fill="#1E3E5C" opacity="0.36"/>
+    <path d="M174,149 L188,140 L194,172 L174,177 Z" fill="#1E3E5C" opacity="0.34"/>
+    <path d="M214,152 L232,144 L232,166 L216,174 Z" fill="#1E3E5C" opacity="0.32"/>
+
+    <!-- Low stepped calved ice shelf on the right (--ice + subtle --glacier tint) -->
+    <path d="M188,134 L212,136 L232,144 L214,152 L182,148 Z" fill="#F7FAFB"/>
+    <path d="M188,134 L212,136 L232,144 L214,152 L182,148 Z" fill="#7FA8C4" opacity="0.22"/>
+
+    <!-- Flat snow-white tabular top surface (--ice) with irregular notched perimeter -->
+    <path d="M24,138 L48,127 L78,129 L104,121 L148,122 L188,130 L174,149 L136,151 L112,139 L86,150 L52,148 Z" fill="#F7FAFB"/>
+    <path d="M48,128 L78,130 L104,123 L146,124 L184,131 L168,137 L132,135 L92,134 L54,136 Z" fill="#7FA8C4" opacity="0.20"/>
+  </g>
+
+  <g filter="url(#ink)">
+    <!-- Irregular horizontal snow / firn strata on lateral faces (no vertical window grid) -->
+    <path d="M27,149 C44,155 66,158 85,159 M88,158 C96,154 104,151 111,148 M114,149 C128,157 150,160 173,158 M190,157 C202,159 210,160 215,160 M217,159 C223,157 227,155 231,153" fill="none" stroke="#1E3E5C" stroke-width="2" stroke-linecap="round" opacity="0.64"/>
+    <path d="M28,158 C46,164 68,167 85,167 M88,166 C97,163 104,160 111,157 M114,159 C130,167 152,169 173,167 M192,165 C202,166 210,167 215,167" fill="none" stroke="#1E3E5C" stroke-width="1.8" stroke-linecap="round" opacity="0.56"/>
+    <path d="M32,153 C50,159 68,161 83,162 M118,154 C134,161 154,163 170,162" fill="none" stroke="#F7FAFB" stroke-width="1.8" stroke-linecap="round" opacity="0.78"/>
+
+    <!-- Narrow V-shaped ice fracture notch on the left plateau rim -->
+    <path d="M66,144 L70,149 L68,164 L65,149 Z" fill="#1E3E5C"/>
+
+    <!-- Corner folds only at the main central notch and calved terrace step -->
+    <path d="M86,150 L86,175 M112,139 L112,169 M174,149 L174,176" fill="none" stroke="#1F2A36" stroke-width="2.1" stroke-linecap="round" opacity="0.75"/>
+
+    <!-- Crisp ink outline of the irregular flat plateau, terrace step, and outer cliffs -->
+    <path d="M24,138 L48,127 L78,129 L104,121 L148,122 L188,130 L188,134 L212,136 L232,144 L232,166 L216,174 L194,172 L174,177 L138,178 L112,170 L86,176 L54,174 L26,166 Z" fill="none" stroke="#1F2A36" stroke-width="3.4" stroke-linejoin="round"/>
+    <path d="M24,138 L52,148 L86,150 L112,139 L136,151 L174,149 L188,130 M182,148 L214,152 L232,144" fill="none" stroke="#1F2A36" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <!-- Waterline surf foam collar -->
+    <path d="M20,166 C44,175 68,178 88,177 C96,176 104,172 112,171 C128,179 156,181 178,178 C188,176 196,173 216,175 C224,174 230,170 236,166" fill="none" stroke="#F7FAFB" stroke-width="4" stroke-linecap="round"/>
+    <path d="M24,170 C48,178 72,180 96,176 M116,176 C140,183 166,183 190,178 M204,177 C218,179 228,175 234,170" fill="none" stroke="#1F2A36" stroke-width="2.1" stroke-linecap="round"/>
+
+    <!-- Submerged skirt bottom ripple -->
+    <path d="M28,182 C54,191 82,192 108,187 C134,194 172,194 206,188 C218,186 226,183 230,179" fill="none" stroke="#7FA8C4" stroke-width="2.1" stroke-linecap="round" stroke-dasharray="12 8" opacity="0.85"/>
+  </g>
+</svg>

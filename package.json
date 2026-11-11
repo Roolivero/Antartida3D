@@ -14,6 +14,7 @@
     "test": "pnpm -r --if-present test",
     "typecheck": "pnpm -r --if-present typecheck",
     "bathymetry": "pnpm --filter @antartida/core bathymetry",
+    "sea-atlas": "pnpm --filter @antartida/core sea-atlas",
     "terrain": "pnpm --filter @antartida/core terrain",
     "e2e": "pnpm --filter @antartida/dibujado e2e",
     "coastline": "pnpm --filter @antartida/core coastline",

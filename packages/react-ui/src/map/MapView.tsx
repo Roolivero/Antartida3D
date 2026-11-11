@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEve
 import {
   DRAG_THRESHOLD, EXPEDITION_POINT, HOME, KEY_PAN, MIN_K, PTS, ZOOM_MS,
   buildMarkers, diveView, geometry, isWheelNotch, keyView, panBy, wheelFactor, zoomAround, zoomCenter,
-  type MapPoint, type Marker, type Size, type View,
+  type MapPoint, type Marker, type SeaPoint, type Size, type View,
 } from '@antartida/core';
 import { useTimers } from '../hooks.ts';
 import { Icon } from '../ui.tsx';
@@ -84,7 +84,7 @@ export function MapView({
   const [view, setView] = useState<View>(HOME);
   const [anim, setAnim] = useState<Anim>('');
   const [touched, setTouched] = useState(false);
-  const [sheet, setSheet] = useState<MapPoint | null>(null);
+  const [sheet, setSheet] = useState<MapPoint | SeaPoint | null>(null);
   const [list, setList] = useState(false);
   const later = useTimers();
 
@@ -252,8 +252,8 @@ export function MapView({
     }
   };
 
-  const openPoint = (p: MapPoint) => {
-    if (p.tier === 'A') onStart();
+  const openPoint = (p: MapPoint | SeaPoint) => {
+    if ('tier' in p && p.tier === 'A') onStart();
     else {
       setSheet(p);
       setTouched(true);

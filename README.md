@@ -78,6 +78,24 @@ pnpm bench           # benchmark de rendimiento
 - **Relieve de Tierra del Fuego, Patagonia sur y Malvinas, IBCSO v2 (apps/dibujado):** Dorschel, B. et al. (2022), *The International Bathymetric Chart of the Southern Ocean Version 2 (IBCSO v2)*, SCAR / Alfred Wegener Institute, publicado en PANGAEA. Grilla de 500 m al sur de 50° S, licencia [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Detalle en [`docs/datos-relieve.md`](docs/datos-relieve.md).
   - Dataset DOI: [https://doi.org/10.1594/PANGAEA.937574](https://doi.org/10.1594/PANGAEA.937574).
   - Fecha de consulta: 11 de noviembre de 2026.
+- **Batimetría IBCSO v2 (apps/dibujado):** Scientific Committee on Antarctic Research (SCAR) / Alfred-Wegener-Institut. Grilla batimétrica de 500 m al sur de 50° S en EPSG:9354, licencia [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+  - Organismo: SCAR / Alfred Wegener Institute (PANGAEA).
+  - Dataset DOI: [https://doi.org/10.1594/PANGAEA.937574](https://doi.org/10.1594/PANGAEA.937574).
+  - Publicación científica: Dorschel, B. et al. (2022), *The International Bathymetric Chart of the Southern Ocean Version 2*, Scientific Data 9:275, [https://doi.org/10.1038/s41597-022-01366-7](https://doi.org/10.1038/s41597-022-01366-7).
+  - Fecha de consulta: 11 de noviembre de 2026.
+- **Distribución de fauna marina y aves antárticas (apps/dibujado):**
+  - Publicación científica: Clarke, A. et al. (2026), *A Twenty-Six Year Record of Marine Mammals and Birds in Marguerite Bay, Antarctic Peninsula*, Ecology and Evolution 16(3): e73317, [https://doi.org/10.1002/ece3.73317](https://doi.org/10.1002/ece3.73317). Licencia [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+  - Población y distribución de pingüino emperador: Fretwell, P.T. et al. (2012), *An Emperor Penguin Population Estimate: The First Global, Synoptic Survey of a Species from Space*, PLOS ONE 7(4): e33751, [https://doi.org/10.1371/journal.pone.0033751](https://doi.org/10.1371/journal.pone.0033751). Licencia [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+  - Especies marinas: NOAA Fisheries (National Oceanic and Atmospheric Administration), [https://www.fisheries.noaa.gov/species/](https://www.fisheries.noaa.gov/species/). Dominio público / agencia gubernamental de EE. UU.
+  - Fecha de consulta: 11 de noviembre de 2026.
+- **Rompehielos ARA Almirante Irízar y logística antártica (apps/dibujado):**
+  - Organismo: Armada Argentina — Campaña Antártica de Verano (CAV).
+  - Fuentes oficiales: [https://www.argentina.gob.ar/armada/antartida/campana-antartica](https://www.argentina.gob.ar/armada/antartida/campana-antartica) y [https://www.argentina.gob.ar/armada/antartida/fauna-y-flora](https://www.argentina.gob.ar/armada/antartida/fauna-y-flora).
+  - Fecha de consulta: 11 de noviembre de 2026.
+- **Témpanos tabulares y barreras de hielo (apps/dibujado):**
+  - Publicación científica: Marsh, O.J. et al. (2025), *Ocean tides trigger ice shelf rift growth and calving*, Nature Communications 16: 6697, [https://doi.org/10.1038/s41467-025-61796-w](https://doi.org/10.1038/s41467-025-61796-w). Licencia [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+  - National Snow and Ice Data Center (NSIDC), [https://nsidc.org/learn/parts-cryosphere/ice-shelves](https://nsidc.org/learn/parts-cryosphere/ice-shelves).
+  - Fecha de consulta: 11 de noviembre de 2026.
 - **Librerías 3D (apps/dibujado y react-ui):** Three.js (licencia MIT), React Three Fiber (licencia MIT), @react-three/drei (licencia MIT), @react-three/postprocessing (licencia MIT).
 - **Costa y barreras de hielo:** [Natural Earth](https://www.naturalearthdata.com/) (`ne_50m_land`, `ne_50m_antarctic_ice_shelves_polys`), dominio público. [Términos de uso](https://www.naturalearthdata.com/about/terms-of-use/).
 - **Base Orcadas (apps/atlas):** coordenadas de [Armada Argentina · bases permanentes](https://www.argentina.gob.ar/armada/antartida/bases-permanentes) e historia y ubicación de [Cancillería Argentina](https://cancilleria.gob.ar/es/iniciativas/dna/antartida-argentina/bases/orcadas).

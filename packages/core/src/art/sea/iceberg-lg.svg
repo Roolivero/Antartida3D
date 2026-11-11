@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <!-- Nautical ink & watercolor illustration: Large Antarctic Tabular Iceberg (low, wide, notched plateau) -->
+  <g filter="url(#wcs)">
+    <!-- Darker submerged ice foot / skirt below the waterline (--deep + --glacier) -->
+    <path d="M16,168 L42,175 L76,177 L98,172 L120,180 L156,181 L182,178 L198,171 L222,174 L242,165 L236,182 L212,190 L176,193 L148,195 L114,194 L92,188 L68,192 L34,187 L14,178 Z" fill="#1E3E5C"/>
+    <path d="M16,168 L42,175 L76,177 L98,172 L120,180 L156,181 L182,178 L198,171 L222,174 L242,165 L236,182 L212,190 L176,193 L148,195 L114,194 L92,188 L68,192 L34,187 L14,178 Z" fill="#7FA8C4" opacity="0.34"/>
+    <path d="M22,172 L76,179 L120,182 L180,180 L234,169 L230,178 L178,187 L118,188 L72,185 L20,178 Z" fill="#1F2A36" opacity="0.45"/>
+
+    <!-- Lateral cliff faces: base in --glacier, lighter ice-blue on sunlit left facets, deeper shade in notches -->
+    <path d="M14,136 L42,145 L76,147 L98,137 L118,149 L156,150 L180,147 L198,136 L220,143 L242,133 L242,165 L222,174 L198,171 L182,178 L156,181 L120,180 L98,172 L76,177 L42,175 L16,168 Z" fill="#7FA8C4"/>
+    <!-- Sunlit left-facing cliff walls (pale celeste: --ice over --glacier) -->
+    <path d="M14,136 L42,145 L76,147 L76,177 L42,175 L16,168 Z" fill="#F7FAFB" opacity="0.62"/>
+    <path d="M98,137 L118,149 L156,150 L156,181 L120,180 L98,172 Z" fill="#F7FAFB" opacity="0.52"/>
+    <path d="M198,136 L220,143 L222,174 L198,171 Z" fill="#F7FAFB" opacity="0.42"/>
+    <!-- Deep shadow inside recessed calving notches and right-facing cliff walls -->
+    <path d="M76,147 L98,137 L98,172 L76,177 Z" fill="#1E3E5C" opacity="0.36"/>
+    <path d="M180,147 L198,136 L198,171 L182,178 Z" fill="#1E3E5C" opacity="0.38"/>
+    <path d="M220,143 L242,133 L242,165 L222,174 Z" fill="#1E3E5C" opacity="0.32"/>
+
+    <!-- Flat snow-white tabular top surface (--ice) with irregular notched contour -->
+    <path d="M14,136 L34,124 L62,126 L84,116 L130,114 L152,120 L182,115 L216,121 L242,133 L220,143 L198,136 L180,147 L156,150 L118,149 L98,137 L76,147 L42,145 Z" fill="#F7FAFB"/>
+    <!-- Subtle pale glacier snow-drift bevel along far edge of flat plateau -->
+    <path d="M36,125 L62,127 L86,118 L130,116 L152,122 L182,117 L214,122 L236,133 L216,138 L188,131 L148,133 L96,129 L48,134 Z" fill="#7FA8C4" opacity="0.22"/>
+  </g>
+
+  <g filter="url(#ink)">
+    <!-- Irregular horizontal firn / snow strata across the lateral cliff faces (no regular vertical lines) -->
+    <path d="M17,146 C32,150 54,154 75,155 M77,154 C85,151 91,148 97,146 M99,147 C114,156 136,159 155,159 M157,159 C168,158 175,157 180,156 M182,155 C188,152 193,149 197,146 M199,147 C208,150 214,152 220,153 M222,152 C229,149 236,146 241,143" fill="none" stroke="#1E3E5C" stroke-width="2" stroke-linecap="round" opacity="0.65"/>
+    <path d="M18,156 C35,161 56,164 75,165 M78,164 C86,161 92,158 97,156 M100,158 C116,166 138,169 155,169 M158,168 C167,168 175,167 181,166 M183,165 C189,162 193,159 197,156 M200,157 C208,160 215,162 221,163 M223,162 C230,159 236,156 240,153" fill="none" stroke="#1E3E5C" stroke-width="1.9" stroke-linecap="round" opacity="0.58"/>
+    <path d="M22,151 C40,156 58,158 73,159 M104,152 C122,161 142,163 176,161 M202,152 C210,155 216,156 220,157" fill="none" stroke="#F7FAFB" stroke-width="1.8" stroke-linecap="round" opacity="0.78"/>
+
+    <!-- Single V-shaped surface ice rift / crevasse wedging down from the front plateau rim -->
+    <path d="M136,144 L141,150 L138,168 L135,150 Z" fill="#1E3E5C"/>
+    <path d="M132,140 L136,144 L138,168" fill="none" stroke="#1F2A36" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <!-- Only the major calving notch corner folds (angled/irregular, not a grid) -->
+    <path d="M76,147 L76,176 M98,137 L98,171 M180,147 L182,177 M198,136 L198,170" fill="none" stroke="#1F2A36" stroke-width="2.1" stroke-linecap="round" opacity="0.75"/>
+
+    <!-- Crisp ink contour of the flat notched plateau rim and outer cliff silhouette -->
+    <path d="M14,136 L34,124 L62,126 L84,116 L130,114 L152,120 L182,115 L216,121 L242,133 L242,165 L222,174 L198,171 L182,178 L156,181 L120,180 L98,172 L76,177 L42,175 L16,168 Z" fill="none" stroke="#1F2A36" stroke-width="3.4" stroke-linejoin="round"/>
+    <path d="M14,136 L42,145 L76,147 L98,137 L118,149 L156,150 L180,147 L198,136 L220,143 L242,133" fill="none" stroke="#1F2A36" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <!-- Waterline surf foam collar separating the cliff from the darker underwater skirt -->
+    <path d="M12,168 C34,176 58,179 78,178 C86,177 92,174 98,173 C112,180 144,183 182,179 C190,178 194,173 200,172 C214,176 230,173 244,165" fill="none" stroke="#F7FAFB" stroke-width="4.2" stroke-linecap="round"/>
+    <path d="M16,172 C42,180 68,182 94,177 M104,178 C132,185 162,185 186,181 M204,176 C220,179 232,176 242,170" fill="none" stroke="#1F2A36" stroke-width="2.2" stroke-linecap="round"/>
+
+    <!-- Subtle outline & ripple along the base of the submerged skirt -->
+    <path d="M18,184 C44,193 74,195 94,190 C118,197 162,198 196,192 C216,190 230,186 238,180" fill="none" stroke="#7FA8C4" stroke-width="2.2" stroke-linecap="round" stroke-dasharray="14 8" opacity="0.85"/>
+  </g>
+</svg>

@@ -46,6 +46,18 @@ GPU: ANGLE (NVIDIA Corporation, NVIDIA GeForce RTX 3070/PCIe/SSE2, OpenGL ES 3.2
 |---|---|---|
 | dibujado | 9 ms · máx 3 ms · 0 | 152 ms · máx 3 ms · 0 |
 
+## Océano 3D con animación y fauna (11 de noviembre de 2026)
+
+Escenario medido con `scripts/bench/src/gpu.ts`: 10 s quieto en vista general inclinada a 38° con animación continua de oleaje y fauna marina (16 instancias en escritorio, 8 en móvil), más una rotación orbital de 30° y un acercamiento con zoom.
+
+| Vista y DPR | Tareas largas hilo principal (>50 ms) | GPU total (ms) | Cuadros | GPU por cuadro (ms) | Tarea GPU más larga | Tareas GPU > 16 ms | Llamadas de dibujo (`window.__gl`) |
+|---|---|---|---|---|---|---|---|
+| 1440×900, dpr 1 (escritorio) | 0 | 306 ms | 425 | 0.72 ms | 3 ms | 0 | 1 (7 en pase de escena) |
+| 390×844, dpr 2 (móvil) | 0 | 353 ms | 424 | 0.83 ms | 3 ms | 0 | 1 (7 en pase de escena) |
+
+- **Criterio de escritorio:** 0 tareas largas en hilo principal (cumplido: 0), GPU < 8 ms por cuadro (cumplido: 0.72 ms), llamadas de dibujo nuevas ≤ 5 (cumplido: 2 llamadas nuevas en escena —superficie de agua y malla instanciada de fauna—; 1 llamada en el pase final del compositor).
+- **Móvil (390 px, dpr 2):** 0 tareas largas registradas; GPU promedio 0.83 ms por cuadro, tarea máxima 3 ms.
+
 ## Capturas
 
 En `docs/rendimiento/capturas/<app>/`: `mapa`, `ficha`, `lista`, `excavacion` y `conclusion`, a 390 y 1440 px.

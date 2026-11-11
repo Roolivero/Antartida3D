@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <!-- Nautical ink & watercolor illustration: Humpback whale bushy vapor spout & blowhole -->
+  <!-- Bushy V-shaped watercolor mist plumes -->
+  <g filter="url(#bleed)">
+    <ellipse cx="102" cy="64" rx="28" ry="24" fill="#F7FAFB" opacity="0.88"/>
+    <ellipse cx="154" cy="64" rx="28" ry="24" fill="#F7FAFB" opacity="0.88"/>
+    <ellipse cx="128" cy="52" rx="26" ry="22" fill="#F7FAFB" opacity="0.92"/>
+    <path d="M120,178 C112,140 92,104 78,72 C98,54 118,52 128,62 C138,52 158,54 178,72 C164,104 144,140 136,178 Z" fill="#F7FAFB" opacity="0.88"/>
+  </g>
+  <g filter="url(#wcs)">
+    <path d="M123,174 C116,142 100,110 88,80 C98,66 116,64 128,74 C140,64 158,66 168,80 C156,110 140,142 133,174 Z" fill="#F3EBDD" opacity="0.82"/>
+    <ellipse cx="128" cy="194" rx="82" ry="18" fill="#F7FAFB" opacity="0.92"/>
+  </g>
+  <!-- Crisp ink mist strokes, droplets & surfacing whale head -->
+  <g filter="url(#ink)">
+    <!-- Surfacing head / blowhole ridge at base -->
+    <path d="M52,194 C68,170 98,160 128,160 C158,160 188,170 204,194 Z" fill="#1F2A36" stroke="#1F2A36" stroke-width="4" stroke-linejoin="round"/>
+    <path d="M70,184 C90,168 110,165 128,165 C146,165 166,168 186,184" fill="none" stroke="#7FA8C4" stroke-width="3.6" stroke-linecap="round"/>
+    <!-- Feathery rising vapor plumes in ink and glacier blue -->
+    <path d="M122,160 C116,130 98,100 82,72 M114,56 C102,42 82,46 74,62" fill="none" stroke="#1F2A36" stroke-width="2.6" stroke-linecap="round" stroke-dasharray="8 6"/>
+    <path d="M134,160 C140,130 158,100 174,72 M142,56 C154,42 174,46 182,62" fill="none" stroke="#1F2A36" stroke-width="2.6" stroke-linecap="round" stroke-dasharray="8 6"/>
+    <path d="M128,158 L128,46 M120,148 C114,116 102,88 92,62 M136,148 C142,116 154,88 164,62" fill="none" stroke="#7FA8C4" stroke-width="2.8" stroke-linecap="round" stroke-dasharray="10 5"/>
+    <!-- Spray droplets around crown -->
+    <circle cx="62" cy="58" r="3.5" fill="#F7FAFB" stroke="#1F2A36" stroke-width="1.8"/>
+    <circle cx="54" cy="78" r="2.8" fill="#F7FAFB" stroke="#1F2A36" stroke-width="1.6"/>
+    <circle cx="194" cy="58" r="3.5" fill="#F7FAFB" stroke="#1F2A36" stroke-width="1.8"/>
+    <circle cx="202" cy="78" r="2.8" fill="#F7FAFB" stroke="#1F2A36" stroke-width="1.6"/>
+    <circle cx="128" cy="26" r="3.2" fill="#F7FAFB" stroke="#1F2A36" stroke-width="1.8"/>
+    <circle cx="104" cy="30" r="2.6" fill="#F7FAFB" stroke="#1F2A36" stroke-width="1.6"/>
+    <circle cx="152" cy="30" r="2.6" fill="#F7FAFB" stroke="#1F2A36" stroke-width="1.6"/>
+    <!-- Waterline foam & ripple -->
+    <path d="M38,194 C72,184 102,182 128,182 C154,182 184,184 218,194" fill="none" stroke="#1F2A36" stroke-width="3.4" stroke-linecap="round"/>
+    <path d="M46,202 C82,195 110,194 128,194 C146,194 174,195 210,202" fill="none" stroke="#F7FAFB" stroke-width="3.8" stroke-linecap="round"/>
+  </g>
+</svg>
