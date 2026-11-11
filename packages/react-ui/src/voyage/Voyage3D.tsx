@@ -19,7 +19,7 @@ import {
   type TransportId,
   type TransportKind,
 } from '@antartida/core';
-import { buildPinDotGeometry, buildPinGeometry, pinMaterial } from './pins.ts';
+import { buildPinGeometry, pinMaterial } from './pins.ts';
 import { buildVehicleGeometry, vehicleMaterial } from './vehicles.ts';
 import { Fact } from './Fact.tsx';
 import { SightingIcon } from './SightingIcon.tsx';
@@ -30,8 +30,8 @@ import { NARROW_PX, type VoyageBus } from './useVoyage.ts';
 const SIZE_PER_DISTANCE = 0.075;
 const MIN_SIZE = 0.5;
 /** Height of a milestone pin as a fraction of its distance to the camera. */
-const PIN_PER_DISTANCE = 0.075;
-const MIN_PIN = 0.35;
+const PIN_PER_DISTANCE = 0.042;
+const MIN_PIN = 0.2;
 const ROUTE_SAMPLES = 240;
 /** Fraction of the screen height the picture moves up on a phone. */
 const PANEL_SHIFT = 0.14;
@@ -136,11 +136,8 @@ export function Voyage3D({ bus, reduced, overlay }: {
   // One pin per milestone ahead of the departure, so the user sees them coming.
   const pins = useMemo(() => (kind ? voyageStops(kind).slice(1).map((stop) => voyageAt(kind, stop.t)) : []), [kind]);
   const pinGroups = useRef<(Group | null)[]>([]);
-  const pinGeometry = useMemo(() => ({ pin: buildPinGeometry(), dot: buildPinDotGeometry() }), []);
-  useEffect(() => () => {
-    pinGeometry.pin.dispose();
-    pinGeometry.dot.dispose();
-  }, [pinGeometry]);
+  const pinGeometry = useMemo(buildPinGeometry, []);
+  useEffect(() => () => Object.values(pinGeometry).forEach((g) => g.dispose()), [pinGeometry]);
 
   const takeoff = useMemo(() => toWorld(VOYAGE_POINT.x, VOYAGE_POINT.y), []);
 
@@ -236,8 +233,9 @@ export function Voyage3D({ bus, reduced, overlay }: {
       <primitive object={route} />
       {pins.map((_, i) => (
         <group key={i} ref={(g) => void (pinGroups.current[i] = g)}>
-          <mesh geometry={pinGeometry.pin} material={pinMaterial.ahead} renderOrder={1001} />
-          <mesh geometry={pinGeometry.dot} material={pinMaterial.dot} renderOrder={1000} />
+          <mesh geometry={pinGeometry.fill} material={pinMaterial.ahead} renderOrder={1001} />
+          <mesh geometry={pinGeometry.line} material={pinMaterial.line} renderOrder={1000} />
+          <mesh geometry={pinGeometry.dot} material={pinMaterial.dot} renderOrder={1002} />
         </group>
       ))}
       {trail && <mesh ref={trailMesh} geometry={trail} material={trailMaterial} frustumCulled={false} />}
