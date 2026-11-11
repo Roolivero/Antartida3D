@@ -18,3 +18,4 @@
 - `10-git-and-commits.md`: Ramas vinculadas a issues y commits descriptivos.
 - `13-honesty-and-verification.md`: Veracidad, verificación con comandos reales y transparencia.
 - `14-ambiguous-requests.md`: Criterio ante solicitudes ambiguas.
+- `15-bugs-and-issues.md`: Registrar bugs como issues y buscar duplicados entre ramas antes de arreglar.
