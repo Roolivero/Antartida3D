@@ -1,6 +1,8 @@
 /* Trip from Ushuaia (issue #4): panel laid over the live map. */
 .sheet.voyage{z-index:6}
 .sheet.voyage p{margin:8px 0}
+/* The actions stay in view at the bottom of the sheet however long its content is. */
+.vactions{position:sticky;bottom:-24px;margin:12px 0 -24px;padding:8px 0 24px;background:var(--paper)}
 .vstep{display:block;font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--pencil)}
 .vpick{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
 .vopt{flex:1 1 104px;min-height:48px;padding:8px 10px;text-align:left;border:2px solid var(--ink);border-radius:8px 14px 10px 12px;background:var(--ice)}
@@ -23,9 +25,12 @@
 .vprog{height:8px;border-radius:4px;background:var(--glacier);overflow:hidden}
 .vprog i{display:block;height:100%;background:var(--ocre);transform-origin:left center;transform:scaleX(0)}
 .vnext{margin:8px 0}
+.vbar .row{margin-top:8px}
 .vhold{position:relative;touch-action:none;user-select:none;-webkit-user-select:none}
 /* Gear badge on the corner: it must not change the button size, or the row reflows under the pointer. */
 .vgear{position:absolute;top:-12px;right:-8px;padding:2px 8px;border-radius:12px;border:2px solid var(--ink);background:var(--ocre);color:var(--ink);font-size:13px;line-height:1.2;pointer-events:none}
+/* Wide screens: every panel of the trip sits on the same corner, so the pointer does not cross the map. */
 @media (min-width:821px){
-  .vbar{right:auto;width:440px;left:24px;bottom:24px}
+  .vbar,.sheet.voyage{left:24px;right:auto;bottom:24px;width:440px}
+  .vbar{padding:12px 20px 24px}
 }

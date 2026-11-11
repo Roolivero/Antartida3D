@@ -122,7 +122,7 @@ function Picker({ onStart, onExit, onSource, preview, reduced }: {
         {transport.facts.map((f) => <Fact key={f.text} fact={f} onSource={onSource} />)}
         <Fact fact={VOYAGE_TOURISM_NOTE} onSource={onSource} />
       </ul>
-      <div className="row" style={{ marginTop: 12 }}>
+      <div className="row vactions">
         <button type="button" className="btn primary" onClick={() => onStart(picked)}>
           {transport.kind === 'plane' ? 'Despegar' : 'Zarpar'}
         </button>
@@ -156,7 +156,7 @@ function MilestoneCard({ voyage, onExit, onSource }: { voyage: VoyageController;
         {more && milestone.more.map((f) => <Fact key={f.text} fact={f} onSource={onSource} />)}
       </ul>
       {last && <p className="anno">Si te quedó curiosidad por otro medio, volvé a hacer la expedición.</p>}
-      <div className="row" style={{ marginTop: 12 }}>
+      <div className="row vactions">
         <button type="button" className="btn primary" onClick={next}>{last ? 'Terminar el viaje' : 'Continuar'}</button>
         <button type="button" className="btn ghost" aria-expanded={more} onClick={() => setMore((m) => !m)}>
           {more ? 'Ver menos' : 'Saber más'}
@@ -191,6 +191,13 @@ function TravelBar({ voyage, animated, onExit }: { voyage: VoyageController; ani
     <div className="vbar" role="group" aria-label="Controles del viaje">
       <div className="vprog" aria-hidden="true"><i ref={bar} /></div>
       <p className="vnext">Próximo hito: <strong>{next.title}</strong></p>
+      {animated && <p className="vsmall">¿Apuro? Tocá dos o tres veces seguidas y mantené: va más rápido.</p>}
+      <p className="vsmall">{VOYAGE_ROUTE_NOTE}</p>
+      <div className="row">
+        {animated && <button type="button" className="btn ghost" onClick={voyage.recenter}>Centrar</button>}
+        <button type="button" className="btn ghost" onClick={onExit}>Salir del viaje</button>
+      </div>
+      {/* Last row, at the same corner as the "Continuar" button of the milestone card: the pointer stays put. */}
       <div className="row">
         {animated && (
           <button
@@ -210,11 +217,7 @@ function TravelBar({ voyage, animated, onExit }: { voyage: VoyageController; ani
           </button>
         )}
         <button type="button" className={'btn' + (animated ? '' : ' primary')} onClick={voyage.skip}>Ir al próximo hito</button>
-        {animated && <button type="button" className="btn ghost" onClick={voyage.recenter}>Centrar</button>}
-        <button type="button" className="btn ghost" onClick={onExit}>Salir del viaje</button>
       </div>
-      {animated && <p className="vsmall">¿Apuro? Tocá dos o tres veces seguidas y mantené: va más rápido.</p>}
-      <p className="vsmall">{VOYAGE_ROUTE_NOTE}</p>
     </div>
   );
 }
