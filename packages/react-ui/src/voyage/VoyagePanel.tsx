@@ -18,6 +18,7 @@ import {
   type VoyageSourceCode,
 } from '@antartida/core';
 import { useFocusReturn } from '../hooks.ts';
+import { Icon } from '../ui.tsx';
 import { Fact, type OpenSources } from './Fact.tsx';
 import { SightingIcon } from './SightingIcon.tsx';
 import type { VoyageController } from './useVoyage.ts';
@@ -75,6 +76,9 @@ function Picker({ onStart, onExit, onSource, preview, reduced }: {
   useFocusReturn(true, ref, '[aria-pressed="true"]');
   const transport = TRANSPORTS.find((v) => v.id === picked)!;
   return (
+    <>
+    {/* Touching the map outside the sheet closes it, like the sheet of a point. */}
+    <div className="scrim vscrim" onClick={onExit} />
     <section
       className="sheet voyage"
       role="dialog"
@@ -83,7 +87,10 @@ function Picker({ onStart, onExit, onSource, preview, reduced }: {
       ref={ref}
       onKeyDown={(e) => e.key === 'Escape' && onExit()}
     >
-      <h2 id="voyage-title">Desde Ushuaia</h2>
+      <div className="row vhead">
+        <h2 id="voyage-title">Desde Ushuaia</h2>
+        <button type="button" className="iconbtn" onClick={onExit} aria-label="Cerrar y volver al mapa">{Icon.close}</button>
+      </div>
       <p className="place">Elegí cómo cruzar a la Antártida. Son los medios que usa la ciencia argentina.</p>
       <div className="vpick" role="group" aria-label="Medio de transporte">
         {TRANSPORTS.map((v) => (
@@ -110,6 +117,7 @@ function Picker({ onStart, onExit, onSource, preview, reduced }: {
         <button type="button" className="btn" onClick={onExit}>Volver al mapa</button>
       </div>
     </section>
+    </>
   );
 }
 

@@ -1,5 +1,9 @@
 /* Trip from Ushuaia (issue #4): panel laid over the live map. */
 .sheet.voyage{z-index:6}
+.vscrim{z-index:6}
+.vhead{justify-content:space-between;align-items:center;flex-wrap:nowrap}
+.vhead h2{margin:0}
+.vhead .iconbtn{flex:none}
 .sheet.voyage p{margin:8px 0}
 /* The actions stay in view at the bottom of the sheet however long its content is. */
 .vactions{position:sticky;bottom:-24px;margin:12px 0 -24px;padding:8px 0 24px;background:var(--paper)}
