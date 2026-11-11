@@ -75,7 +75,7 @@ pnpm bench           # benchmark de rendimiento
   - Publicación científica: Pritchard et al. 2025, *Sci Data* 12:414, [https://doi.org/10.1038/s41597-025-04672-y](https://doi.org/10.1038/s41597-025-04672-y).
   - Repositorio RAMADDA: [http://ramadda.data.bas.ac.uk/repository/entry/show?entryid=2d0e4791-8e20-46a3-80e4-f5f6716025d2](http://ramadda.data.bas.ac.uk/repository/entry/show?entryid=2d0e4791-8e20-46a3-80e4-f5f6716025d2).
   - Fecha de consulta: 11 de noviembre de 2026.
-- **Relieve de Tierra del Fuego y Patagonia sur, IBCSO v2 (apps/dibujado):** Dorschel, B. et al. (2022), *The International Bathymetric Chart of the Southern Ocean Version 2 (IBCSO v2)*, SCAR / Alfred Wegener Institute, publicado en PANGAEA. Grilla de 500 m al sur de 50° S, licencia [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Detalle en [`docs/datos-relieve.md`](docs/datos-relieve.md).
+- **Relieve de Tierra del Fuego, Patagonia sur y Malvinas, IBCSO v2 (apps/dibujado):** Dorschel, B. et al. (2022), *The International Bathymetric Chart of the Southern Ocean Version 2 (IBCSO v2)*, SCAR / Alfred Wegener Institute, publicado en PANGAEA. Grilla de 500 m al sur de 50° S, licencia [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Detalle en [`docs/datos-relieve.md`](docs/datos-relieve.md).
   - Dataset DOI: [https://doi.org/10.1594/PANGAEA.937574](https://doi.org/10.1594/PANGAEA.937574).
   - Fecha de consulta: 11 de noviembre de 2026.
 - **Librerías 3D (apps/dibujado y react-ui):** Three.js (licencia MIT), React Three Fiber (licencia MIT), @react-three/drei (licencia MIT), @react-three/postprocessing (licencia MIT).

@@ -52,7 +52,7 @@ const width = img.getWidth();
 const height = img.getHeight();
 const noData = img.getGDALNoData();
 
-const GRID = 2049; // Martini needs 2^n + 1; one cell is about 510 m at 55° S
+const GRID = 4097; // Martini needs 2^n + 1; one cell is about 350 m at 55° S
 const spanX = FUEGIA_BOX.maxX - FUEGIA_BOX.minX;
 const spanY = FUEGIA_BOX.maxY - FUEGIA_BOX.minY;
 

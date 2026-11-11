@@ -1,11 +1,11 @@
 import { METERS_PER_MAP_UNIT } from './relief.ts';
 
 /**
- * Tierra del Fuego and southern Patagonia in map space: the land the Antarctic terrain (Bedmap3,
- * south of 60° S) does not cover. Built from IBCSO v2 by scripts/build-fuegia.ts.
+ * Tierra del Fuego, southern Patagonia and the Malvinas in map space: the land the Antarctic
+ * terrain (Bedmap3, south of 60° S) does not cover. Built from IBCSO v2 by scripts/build-fuegia.ts.
  * No asset imports here, so the build script (Node) can use it too; the loader is in fuegia-mesh.ts.
  */
-export const FUEGIA_BOX = { minX: -84, maxX: 60, minY: 246, maxY: 390 };
+export const FUEGIA_BOX = { minX: -96, maxX: 100, minY: 194, maxY: 390 };
 
 /** IBCSO v2 ends at 50° S; the relief sinks to sea level over the last FUEGIA_EDGE_FADE_DEG degrees. */
 export const FUEGIA_DATA_LIMIT_LAT = -50.05;

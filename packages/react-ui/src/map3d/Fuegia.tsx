@@ -35,7 +35,7 @@ import { fuegiaFragmentShader, fuegiaVertexShader } from './fuegia.glsl.ts';
 /** Map-space distance from the pole of a parallel (the projection is polar, so it is a circle). */
 const radiusOfLatitude = (lat: number) => 500 - project(0, lat).y;
 
-/** Relief of Tierra del Fuego and southern Patagonia with its near-shore water, fetched once the camera gets near it. */
+/** Relief of Tierra del Fuego, southern Patagonia and the Malvinas with its near-shore water, fetched once the camera gets near it. */
 export function Fuegia({ wide }: { wide: boolean }) {
   const [near, setNear] = useState(false);
   const [meshData, setMeshData] = useState<TerrainMesh | null>(null);

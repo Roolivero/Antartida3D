@@ -22,9 +22,9 @@ void main() {
 `;
 
 /**
- * Painted land for Tierra del Fuego and southern Patagonia. Unlike the Antarctic terrain there are
+ * Painted land for Tierra del Fuego, southern Patagonia and the Malvinas. Unlike the Antarctic terrain there are
  * no baked textures: shading uses the mesh normals and the color is a tint by altitude
- * (lowland, rock, high snow), not land cover. The water close to the shore is painted here too,
+ * (grass, forest, rock, snow), not land cover. The water close to the shore is painted here too,
  * by depth, and fades into the ocean plane.
  */
 export const fuegiaFragmentShader = /* glsl */ `
@@ -46,9 +46,10 @@ varying float vShore;
 varying vec3 vNormal;
 varying vec3 vWorldPos;
 
-// Palette from tokens.css and the 2D watercolor: South America wash, --deep, --pencil, --ink, --ice.
-const vec3 LOWLAND = vec3(0.851, 0.769, 0.612);
-const vec3 ROCK = vec3(0.62, 0.52, 0.42);
+// Natural tints by altitude and slope (not land cover): coastal grass, forest, bare rock, snow.
+const vec3 GRASS = vec3(0.62, 0.64, 0.40);
+const vec3 FOREST = vec3(0.30, 0.43, 0.27);
+const vec3 ROCK = vec3(0.50, 0.46, 0.42);
 const vec3 SNOW = vec3(0.969, 0.980, 0.984);
 const vec3 DEEP = vec3(0.118, 0.243, 0.361);
 const vec3 PENCIL = vec3(0.369, 0.396, 0.424);
@@ -73,11 +74,14 @@ void main() {
     col = mix(col, ABYSS, 1.0 - exp(-max(depth - 280.0, 0.0) * uAbsorb * 0.34));
     alpha *= 1.0 - smoothstep(1.0 - uWaterFade, 1.0, vShore);
   } else {
-    col = mix(LOWLAND, ROCK, smoothstep(250.0, 900.0, vHeight));
-    col = mix(col, SNOW, smoothstep(1000.0, 1500.0, vHeight));
+    vec3 normal = normalize(vNormal);
+    // Forest up to the tree line (about 600 m here), rock above it and on steep faces, snow on top.
+    col = mix(GRASS, FOREST, smoothstep(30.0, 180.0, vHeight));
+    float bare = max(smoothstep(450.0, 750.0, vHeight), smoothstep(0.45, 0.75, 1.0 - normal.y) * smoothstep(150.0, 400.0, vHeight));
+    col = mix(col, ROCK, bare);
+    col = mix(col, SNOW, smoothstep(900.0, 1300.0, vHeight));
 
     // Same raking NW sun and soft fills as the Antarctic terrain, relative to flat ground.
-    vec3 normal = normalize(vNormal);
     vec3 fillW = normalize(vec3(-0.82, 0.57, 0.0));
     vec3 fillN = normalize(vec3(0.0, 0.57, -0.82));
     float lit = 0.7 * max(dot(normal, uSunDir), 0.0) + 0.15 * max(dot(normal, fillW), 0.0) + 0.15 * max(dot(normal, fillN), 0.0);

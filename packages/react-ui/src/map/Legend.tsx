@@ -17,7 +17,7 @@ export function Legend({ open, onToggle, mode = '2d' }: { open: boolean; onToggl
           )}
           {mode === '3d' && (
             <li className="leg-note" style={{ fontStyle: 'italic', fontSize: '0.82em', opacity: 0.9 }}>
-              Tierra del Fuego y Patagonia sur · IBCSO v2 (SCAR) · exageración vertical ×{FUEGIA_VERTICAL_EXAGGERATION} · color según altura
+              Tierra del Fuego, Patagonia sur y Malvinas · IBCSO v2 (SCAR) · exageración vertical ×{FUEGIA_VERTICAL_EXAGGERATION} · color según altura
             </li>
           )}
           <li><span className="sw"><span className="a" /></span><span><b>Expedición disponible</b></span></li>

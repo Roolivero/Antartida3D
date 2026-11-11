@@ -35,6 +35,11 @@ function near(mesh: TerrainMesh, lon: number, lat: number, radius: number): numb
 }
 
 describe('fuegia region', () => {
+  it('covers the Malvinas', () => {
+    const corners = [project(-61.4, -51.7), project(-57.7, -51.7), project(-59.5, -51.0), project(-59.5, -52.5)];
+    for (const c of corners) expect(inFuegia(c.x, c.y)).toBe(true);
+  });
+
   it('covers Tierra del Fuego and Cape Horn but not Antarctica', () => {
     const ushuaia = project(-68.3, -54.81);
     const capeHorn = project(-67.29, -55.98);
@@ -59,6 +64,13 @@ describe('fuegia region', () => {
 
 describe.each(['hi', 'lo'] as const)('fuegia mesh (%s)', (level) => {
   const mesh = load(level);
+
+  it('has land on both main islands of the Malvinas', () => {
+    for (const [lon, lat] of [[-58.8, -51.7], [-60.0, -51.7]]) {
+      const land = near(mesh, lon, lat, 2).filter((i) => mesh.masks[i] === FUEGIA_LAND_MASK);
+      expect(land.length).toBeGreaterThan(0);
+    }
+  });
 
   it('is a valid mesh over the region box', () => {
     expect(mesh.minX).toBe(FUEGIA_BOX.minX);
