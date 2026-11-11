@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
-import { BufferGeometry, Group, Line, LineDashedMaterial, Vector3 } from 'three';
+import { BufferGeometry, Group, Line, LineDashedMaterial, Mesh, Vector3 } from 'three';
 import { useFrame, useThree } from '@react-three/fiber';
 import { Html, type CameraControls } from '@react-three/drei';
 import {
@@ -14,9 +14,12 @@ import {
   voyageHeading,
   voyageLength,
   voyageSightings,
+  voyageStops,
+  worldHeight,
   type TransportId,
   type TransportKind,
 } from '@antartida/core';
+import { buildPinDotGeometry, buildPinGeometry, pinMaterial } from './pins.ts';
 import { buildVehicleGeometry, vehicleMaterial } from './vehicles.ts';
 import { Fact } from './Fact.tsx';
 import { SightingIcon } from './SightingIcon.tsx';
@@ -26,6 +29,9 @@ import { NARROW_PX, type VoyageBus } from './useVoyage.ts';
 /** Vehicle length as a fraction of the camera distance: a 120 m ship is invisible on a 4000 km map. */
 const SIZE_PER_DISTANCE = 0.075;
 const MIN_SIZE = 0.5;
+/** Height of a milestone pin as a fraction of its distance to the camera. */
+const PIN_PER_DISTANCE = 0.075;
+const MIN_PIN = 0.35;
 const ROUTE_SAMPLES = 240;
 /** Fraction of the screen height the picture moves up on a phone. */
 const PANEL_SHIFT = 0.14;
@@ -74,6 +80,7 @@ export function Voyage3D({ bus, reduced, overlay }: {
   const viewport = useThree((s) => s.size);
   const controls = useThree((s) => s.controls) as unknown as CameraControls | null;
   const group = useRef<Group>(null);
+  const trailMesh = useRef<Mesh>(null);
   const [transport, setTransport] = useState<TransportId | null>(bus.state?.transport ?? null);
   const drawn = useRef({ t: -1, transport: null as TransportId | null });
   // Ids of the animals in view and of the ones already spotted, joined: React re-renders only when they change.
@@ -126,6 +133,15 @@ export function Voyage3D({ bus, reduced, overlay }: {
   const trail = useMemo(() => (kind ? buildTrailGeometry(kind) : null), [kind]);
   useEffect(() => () => trail?.dispose(), [trail]);
 
+  // One pin per milestone ahead of the departure, so the user sees them coming.
+  const pins = useMemo(() => (kind ? voyageStops(kind).slice(1).map((stop) => voyageAt(kind, stop.t)) : []), [kind]);
+  const pinGroups = useRef<(Group | null)[]>([]);
+  const pinGeometry = useMemo(() => ({ pin: buildPinGeometry(), dot: buildPinDotGeometry() }), []);
+  useEffect(() => () => {
+    pinGeometry.pin.dispose();
+    pinGeometry.dot.dispose();
+  }, [pinGeometry]);
+
   const takeoff = useMemo(() => toWorld(VOYAGE_POINT.x, VOYAGE_POINT.y), []);
 
   useFrame(({ camera }) => {
@@ -135,14 +151,14 @@ export function Voyage3D({ bus, reduced, overlay }: {
     const p = voyageAt(s.kind, s.t);
     const size = Math.max(MIN_SIZE, camera.position.distanceTo(g.position) * SIZE_PER_DISTANCE);
     const height = heightOf(s.kind, s.t, size);
-    const heading = voyageHeading(s.kind, s.t);
+    const heading = voyageHeading(s.kind, s.t) + (bus.back ? Math.PI : 0);
     const length = voyageLength(s.kind);
 
     // Nose up while climbing, down while descending; a ship stays level.
     let pitch = 0;
     if (s.kind === 'plane') {
       const rise = heightOf('plane', s.t + PITCH_SPAN, size) - heightOf('plane', s.t - PITCH_SPAN, size);
-      pitch = Math.min(MAX_PITCH, Math.max(-MAX_PITCH, Math.atan2(rise, 2 * PITCH_SPAN * length)));
+      pitch = Math.min(MAX_PITCH, Math.max(-MAX_PITCH, Math.atan2(rise, 2 * PITCH_SPAN * length))) * (bus.back ? -1 : 1);
     }
     // A gentle sway, so the vehicle is alive even when the trip is paused.
     const time = reduced ? 0 : performance.now() / 1000;
@@ -154,7 +170,18 @@ export function Voyage3D({ bus, reduced, overlay }: {
     g.rotation.set(sway.roll, -heading, pitch + sway.pitch, 'YZX');
     g.scale.setScalar(size);
 
-    if (trail) {
+    pins.forEach((at, i) => {
+      const pin = pinGroups.current[i];
+      if (!pin) return;
+      // The point touches the ground (Marambio) or the water; the relief may load after the trip starts.
+      pin.position.set(at.x - 500, Math.max(0, worldHeight(heightAt(at.x, at.y))), at.y - 500);
+      pin.scale.setScalar(Math.max(MIN_PIN, camera.position.distanceTo(pin.position) * PIN_PER_DISTANCE));
+      pin.quaternion.copy(camera.quaternion); // always facing the camera
+      (pin.children[0] as Mesh).material = i + 1 < s.reached ? pinMaterial.reached : pinMaterial.ahead;
+    });
+
+    if (trailMesh.current) trailMesh.current.visible = !bus.back;
+    if (trail && !bus.back) {
       updateTrail(trail, s.kind, size, (lengthsBehind) => {
         const t = Math.max(0, s.t - (lengthsBehind * size) / length);
         const q = voyageAt(s.kind, t);
@@ -207,7 +234,13 @@ export function Voyage3D({ bus, reduced, overlay }: {
         </Html>
       ))}
       <primitive object={route} />
-      {trail && <mesh geometry={trail} material={trailMaterial} frustumCulled={false} />}
+      {pins.map((_, i) => (
+        <group key={i} ref={(g) => void (pinGroups.current[i] = g)}>
+          <mesh geometry={pinGeometry.pin} material={pinMaterial.ahead} renderOrder={1001} />
+          <mesh geometry={pinGeometry.dot} material={pinMaterial.dot} renderOrder={1000} />
+        </group>
+      ))}
+      {trail && <mesh ref={trailMesh} geometry={trail} material={trailMaterial} frustumCulled={false} />}
       <group ref={group}>
         <mesh geometry={geometry} material={vehicleMaterial} />
       </group>

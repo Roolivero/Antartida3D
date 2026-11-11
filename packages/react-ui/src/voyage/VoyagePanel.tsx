@@ -210,11 +210,13 @@ function TravelBar({ voyage, animated, onExit }: { voyage: VoyageController; ani
   const state = voyage.state!;
   const bar = useRef<HTMLElement>(null);
   const { bus } = voyage;
+  const [atStart, setAtStart] = useState(state.t <= 0);
 
   // The progress bar follows the trip frame by frame without re-rendering React.
   useEffect(() => {
     const paint = () => {
       if (bar.current && bus.state) bar.current.style.transform = `scaleX(${bus.state.t})`;
+      if (bus.state) setAtStart(bus.state.t <= 0); // re-renders only when it changes
     };
     paint();
     bus.listeners.add(paint);
@@ -222,10 +224,24 @@ function TravelBar({ voyage, animated, onExit }: { voyage: VoyageController; ani
   }, [bus]);
 
   const next = voyageStops(state.kind)[state.reached].milestone;
-  const holdKey = (on: boolean) => (e: KeyboardEvent) => {
-    if (e.key !== ' ' && e.key !== 'Enter') return;
-    e.preventDefault();
-    if (!e.repeat) voyage.hold(on);
+  /** Handlers of a press-and-hold button that moves the trip forward or back. */
+  const holdProps = (back: boolean) => {
+    const key = (on: boolean) => (e: KeyboardEvent) => {
+      if (e.key !== ' ' && e.key !== 'Enter') return;
+      e.preventDefault();
+      if (!e.repeat) voyage.hold(on, back);
+    };
+    const release = () => voyage.hold(false, back);
+    return {
+      onPointerDown: () => voyage.hold(true, back),
+      onPointerUp: release,
+      onPointerLeave: release,
+      onPointerCancel: release,
+      onKeyDown: key(true),
+      onKeyUp: key(false),
+      onBlur: release,
+      onContextMenu: (e: { preventDefault: () => void }) => e.preventDefault(),
+    };
   };
   return (
     <div className="vbar" role="group" aria-label="Controles del viaje">
@@ -244,23 +260,30 @@ function TravelBar({ voyage, animated, onExit }: { voyage: VoyageController; ani
         {animated && (
           <button
             type="button"
+            className="btn vback"
+            {...holdProps(true)}
+            disabled={atStart}
+            aria-label="Mantené para retroceder"
+            title="Mantené para retroceder, por si te perdiste algo"
+          >
+            ◀
+          </button>
+        )}
+        {animated && (
+          <button
+            type="button"
             className="btn primary vhold"
-            onPointerDown={() => voyage.hold(true)}
-            onPointerUp={() => voyage.hold(false)}
-            onPointerLeave={() => voyage.hold(false)}
-            onPointerCancel={() => voyage.hold(false)}
-            onKeyDown={holdKey(true)}
-            onKeyUp={holdKey(false)}
-            onBlur={() => voyage.hold(false)}
-            onContextMenu={(e) => e.preventDefault()}
+            {...holdProps(false)}
+            aria-label="Mantené para avanzar"
             title="Tocá dos o tres veces seguidas y mantené para ir más rápido"
           >
-            Mantené para avanzar
+            <span className="vwide">Mantené para avanzar</span>
+            <span className="vnarrow">Avanzar ▶</span>
             {voyage.gear > 0 && <span className="vgear">×{String(VOYAGE_GEARS[voyage.gear]).replace('.', ',')}</span>}
           </button>
         )}
         <button type="button" className={'btn' + (animated ? '' : ' primary')} onClick={voyage.skip}>Próximo hito</button>
-        <button type="button" className="btn ghost" onClick={onExit} aria-label="Salir del viaje">Salir</button>
+        <button type="button" className="btn ghost vexit" onClick={onExit} aria-label="Salir del viaje" title="Salir del viaje">✕</button>
       </div>
     </div>
   );

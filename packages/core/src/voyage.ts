@@ -229,6 +229,15 @@ export function advanceVoyage(s: VoyageState, seconds: number): VoyageState {
   return { ...s, t: next.t, reached: s.reached + 1, card: s.reached };
 }
 
+/**
+ * Goes back along the trip by `seconds` of the user holding "go back", to look again at something
+ * missed. Milestones already opened stay opened: going forward again does not repeat their cards.
+ */
+export function retreatVoyage(s: VoyageState, seconds: number): VoyageState {
+  if (s.card >= 0 || s.t <= 0 || seconds <= 0) return s;
+  return { ...s, t: Math.max(0, s.t - seconds / VOYAGE_SECONDS[s.kind]) };
+}
+
 /** Jumps to the next milestone: the step-by-step trip for reduced motion and the 2D map. */
 export function skipToNextStop(s: VoyageState): VoyageState {
   if (s.card >= 0 || voyageArrived(s)) return s;

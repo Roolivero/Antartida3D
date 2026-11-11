@@ -30,7 +30,9 @@
 /* A compact single row: on a phone the panel must leave the map and the vehicle in view. */
 .vbar .row{margin-top:8px;flex-wrap:nowrap;gap:8px}
 .vbar .btn{padding:0 12px;white-space:nowrap}
-.vbar .vhold{flex:1;white-space:normal;line-height:1.1;text-align:center}
+.vbar .vhold{flex:1;white-space:nowrap}
+.vbar .vback,.vbar .vexit{flex:none;width:48px;padding:0;touch-action:none;user-select:none;-webkit-user-select:none}
+.vwide{display:none}
 .vhold{position:relative;touch-action:none;user-select:none;-webkit-user-select:none}
 /* Gear badge on the corner: it must not change the button size, or the row reflows under the pointer. */
 .vgear{position:absolute;top:-12px;right:-8px;padding:2px 8px;border-radius:12px;border:2px solid var(--ink);background:var(--ocre);color:var(--ink);font-size:13px;line-height:1.2;pointer-events:none}
@@ -59,8 +61,9 @@
 @media (prefers-reduced-motion:reduce){.vspot{animation:none}}
 /* Wide screens: every panel of the trip sits on the same corner, beside the zoom buttons, so the pointer does not cross the map. */
 @media (min-width:821px){
-  .vbar,.sheet.voyage{left:auto;right:88px;bottom:24px;width:470px}
-  .vbar .vhold{white-space:nowrap}
+  .vbar,.sheet.voyage{left:auto;right:88px;bottom:24px;width:480px}
+  .vwide{display:inline}
+  .vnarrow{display:none}
   .vbar{padding:12px 20px 24px}
 }
 /* Phones: the zoom buttons give way to the trip panel; pinching still zooms. */

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import {
-  VOYAGE_GEARS, advanceVoyage, closeVoyageCard, nextGear, skipToNextStop, startVoyage, type TransportId, type VoyageSourceCode, type VoyageState,
+  VOYAGE_GEARS, advanceVoyage, retreatVoyage, closeVoyageCard, nextGear, skipToNextStop, startVoyage, voyageArrived, type TransportId, type VoyageSourceCode, type VoyageState,
 } from '@antartida/core';
 
 /**
@@ -15,6 +15,8 @@ export interface VoyageBus {
   spot: (id: string, beside: boolean) => void;
   /** The animal whose card is open next to it on the map, or null. */
   beside: string | null;
+  /** The vehicle is going back, or stopped after going back: it is drawn turned round. */
+  back: boolean;
   closeSighting: () => void;
   openSource: (code: VoyageSourceCode) => void;
   listeners: Set<() => void>;
@@ -33,8 +35,8 @@ export interface VoyageController {
   start: (transport: TransportId) => void;
   /** Index into VOYAGE_GEARS: quick repeated presses of "advance" go faster. */
   gear: number;
-  /** Advance while true: the user sets the pace. */
-  hold: (on: boolean) => void;
+  /** Move while true, forward or back along the trip: the user sets the pace. */
+  hold: (on: boolean, back?: boolean) => void;
   skip: () => void;
   closeCard: () => void;
   /** Animals spotted on this trip, and the one whose card is open. */
@@ -49,7 +51,7 @@ export interface VoyageController {
 
 export function useVoyage(): VoyageController {
   const [state, setState] = useState<VoyageState | null>(null);
-  const bus = useRef<VoyageBus>({ state: null, seen: [], spot: () => {}, beside: null, closeSighting: () => {}, openSource: () => {}, listeners: new Set() }).current;
+  const bus = useRef<VoyageBus>({ state: null, seen: [], spot: () => {}, beside: null, back: false, closeSighting: () => {}, openSource: () => {}, listeners: new Set() }).current;
   const frame = useRef(0);
   const [gear, setGear] = useState(0);
   const press = useRef({ gear: 0, at: -Infinity });
@@ -63,7 +65,7 @@ export function useVoyage(): VoyageController {
     setState(next);
     notify();
   };
-  const drive = useRef({ pressed: false, power: 0, speed: 1 });
+  const drive = useRef({ pressed: false, power: 0, speed: 1, back: false });
   const stop = () => {
     cancelAnimationFrame(frame.current);
     frame.current = 0;
@@ -106,13 +108,15 @@ export function useVoyage(): VoyageController {
     openSighting,
     closeSighting: bus.closeSighting,
     start: (transport) => {
+      bus.back = false;
       clearSightings();
       commit(startVoyage(transport));
     },
-    hold: (on) => {
+    hold: (on, back = false) => {
       const d = drive.current;
       if (!on) {
-        d.pressed = false; // the loop below coasts to a stop
+        // Only the button being held lets go: pressing one takes the focus from the other.
+        if (d.back === back) d.pressed = false; // the loop below coasts to a stop
         return;
       }
       if (d.pressed || !bus.state) return;
@@ -120,19 +124,24 @@ export function useVoyage(): VoyageController {
       press.current = { gear: nextGear(press.current.gear, last - press.current.at), at: last };
       setGear(press.current.gear);
       d.pressed = true;
+      if (d.back !== back) d.power = 0; // turning round: no coasting the other way
+      d.back = back;
+      bus.back = back;
       d.speed = VOYAGE_GEARS[press.current.gear];
       if (frame.current) return; // still coasting from the previous press
       const tick = (now: number) => {
         const before = bus.state;
         if (!before) return stop();
-        const dt = Math.min(0.1, (now - last) / 1000);
+        // A frame can carry a timestamp older than the press that started the loop.
+        const dt = Math.min(0.1, Math.max(0, (now - last) / 1000));
         last = now;
         // Ease in and out instead of starting and stopping dead.
         d.power += ((d.pressed ? 1 : 0) - d.power) * (1 - Math.exp(-dt / EASE_SECONDS));
-        const next = advanceVoyage(before, dt * d.speed * d.power);
+        const next = (d.back ? retreatVoyage : advanceVoyage)(before, dt * d.speed * d.power);
         bus.state = next;
         notify();
-        if (next.card !== before.card || next === before || (!d.pressed && d.power < 0.03)) {
+        const atEnd = d.back ? next.t <= 0 : voyageArrived(next);
+        if (next.card !== before.card || atEnd || (!d.pressed && d.power < 0.03)) {
           stop();
           setState(next);
         } else frame.current = requestAnimationFrame(tick);

@@ -21,6 +21,7 @@ import {
   fuegiaWorldHeight,
   heightAt,
   nextGear,
+  retreatVoyage,
   sightingsInView,
   parseTerrainMesh,
   project,
@@ -289,6 +290,28 @@ describe('voyage state', () => {
     }
     expect(voyageArrived(s)).toBe(true);
     expect(advanceVoyage(s, 10)).toBe(s);
+  });
+
+  it('goes back without reopening the milestones already seen', () => {
+    let s = closeVoyageCard(advanceVoyage(closeVoyageCard(startVoyage('irizar')), 1000));
+    const reached = s.reached;
+    const at = s.t;
+    s = retreatVoyage(s, 1);
+    expect(s.t).toBeCloseTo(at - 1 / VOYAGE_SECONDS.ship);
+    expect(s.reached).toBe(reached);
+    expect(s.card).toBe(-1);
+    // Forward again: straight past the milestone it came back from, up to the next one.
+    s = advanceVoyage(s, 1000);
+    expect(s.card).toBe(reached);
+    expect(s.t).toBe(voyageStops('ship')[reached].t);
+  });
+
+  it('does not go back past Ushuaia nor while a card is open', () => {
+    const open = startVoyage('irizar');
+    expect(retreatVoyage(open, 5)).toBe(open);
+    const start = closeVoyageCard(open);
+    expect(retreatVoyage(start, 5)).toBe(start);
+    expect(retreatVoyage(advanceVoyage(start, 1), 1000).t).toBe(0);
   });
 
   it('can be travelled step by step', () => {
