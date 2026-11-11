@@ -372,7 +372,7 @@ export function MapView({
         )}
         {voyaging && onEndVoyage && (
           <Suspense fallback={null}>
-            <VoyagePanel voyage={voyage} animated={is3D && !reduced} onExit={onEndVoyage} />
+            <VoyagePanel voyage={voyage} animated={is3D && !reduced} webgl={is3D} reduced={reduced} onExit={onEndVoyage} />
           </Suspense>
         )}
         {sheet && <PointSheet point={sheet} onClose={() => setSheet(null)} fallbackFocus={() => vpRef.current} />}

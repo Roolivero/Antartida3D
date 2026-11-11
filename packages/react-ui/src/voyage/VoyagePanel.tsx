@@ -1,8 +1,7 @@
-import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import {
   TRANSPORTS,
   VOYAGE_GEARS,
-  VOYAGE_KIND_LABEL,
   VOYAGE_ROUTE_NOTE,
   VOYAGE_SOURCES,
   VOYAGE_SOURCES_CONSULTED,
@@ -12,15 +11,14 @@ import {
   voyageSourceNumber,
   voyageStops,
   type TransportId,
-  type VoyageDataKind,
   type VoyageFact,
   type VoyageSourceCode,
 } from '@antartida/core';
 import { useFocusReturn } from '../hooks.ts';
-import { Chip, type ChipKind } from '../ui.tsx';
 import type { VoyageController } from './useVoyage.ts';
 
-const CHIP: Record<VoyageDataKind, ChipKind> = { real: 'real', estimate: 'sim', illustrative: 'art' };
+// Its own chunk: it needs WebGL, which the 2D fallback of the trip does not.
+const VehiclePreview = lazy(() => import('./VehiclePreview.tsx').then((m) => ({ default: m.VehiclePreview })));
 
 /** Opens the sources page at one source. */
 type OpenSources = (code: VoyageSourceCode) => void;
@@ -28,7 +26,6 @@ type OpenSources = (code: VoyageSourceCode) => void;
 function Fact({ fact, onSource }: { fact: VoyageFact; onSource: OpenSources }) {
   return (
     <li className="vfact">
-      <Chip kind={CHIP[fact.kind]}>{VOYAGE_KIND_LABEL[fact.kind]}</Chip>
       <span>
         {fact.text}
         {fact.sources.map((code) => (
@@ -84,7 +81,14 @@ function SourcesPage({ focus, onClose }: { focus: VoyageSourceCode; onClose: () 
   );
 }
 
-function Picker({ onStart, onExit, onSource }: { onStart: (id: TransportId) => void; onExit: () => void; onSource: OpenSources }) {
+function Picker({ onStart, onExit, onSource, preview, reduced }: {
+  onStart: (id: TransportId) => void;
+  onExit: () => void;
+  onSource: OpenSources;
+  /** Show the turning 3D model of the picked vehicle (needs WebGL). */
+  preview: boolean;
+  reduced: boolean;
+}) {
   const ref = useRef<HTMLElement>(null);
   const [picked, setPicked] = useState<TransportId>(TRANSPORTS[0].id);
   useFocusReturn(true, ref, '[aria-pressed="true"]');
@@ -108,6 +112,11 @@ function Picker({ onStart, onExit, onSource }: { onStart: (id: TransportId) => v
           </button>
         ))}
       </div>
+      {preview && (
+        <Suspense fallback={<div className="vpreview" />}>
+          <VehiclePreview id={picked} reduced={reduced} />
+        </Suspense>
+      )}
       <p>{transport.pitch}</p>
       <ul className="vfacts">
         {transport.facts.map((f) => <Fact key={f.text} fact={f} onSource={onSource} />)}
@@ -215,16 +224,19 @@ function TravelBar({ voyage, animated, onExit }: { voyage: VoyageController; ani
  * read each milestone. `animated` is false on the 2D map and under reduced motion: the trip then
  * advances milestone by milestone.
  */
-export function VoyagePanel({ voyage, animated, onExit }: {
+export function VoyagePanel({ voyage, animated, webgl, reduced, onExit }: {
   voyage: VoyageController;
   animated: boolean;
+  /** The 3D map is on, so WebGL works: the picker can show the vehicle model. */
+  webgl: boolean;
+  reduced: boolean;
   onExit: (done: boolean) => void;
 }) {
   const { state } = voyage;
   // The source the sources page is open at, or null while it is closed.
   const [sources, setSources] = useState<VoyageSourceCode | null>(null);
   const stage = !state
-    ? <Picker onStart={voyage.start} onExit={() => onExit(false)} onSource={setSources} />
+    ? <Picker onStart={voyage.start} onExit={() => onExit(false)} onSource={setSources} preview={webgl} reduced={reduced} />
     : state.card >= 0
       ? <MilestoneCard key={state.card} voyage={voyage} onExit={onExit} onSource={setSources} />
       : <TravelBar voyage={voyage} animated={animated} onExit={() => onExit(false)} />;

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { BufferGeometry, Group, Line, LineDashedMaterial, MeshBasicMaterial, Vector3 } from 'three';
+import { BufferGeometry, Group, Line, LineDashedMaterial, Vector3 } from 'three';
 import { useFrame, useThree } from '@react-three/fiber';
 import type { CameraControls } from '@react-three/drei';
 import {
@@ -14,7 +14,7 @@ import {
   type TransportId,
   type TransportKind,
 } from '@antartida/core';
-import { buildVehicleGeometry } from './vehicles.ts';
+import { buildVehicleGeometry, vehicleMaterial } from './vehicles.ts';
 import { buildTrailGeometry, trailMaterial, updateTrail } from './trail.ts';
 import type { VoyageBus } from './useVoyage.ts';
 
@@ -53,7 +53,6 @@ function heightOf(kind: TransportKind, t: number, size: number): number {
 const PITCH_SPAN = 0.004;
 const MAX_PITCH = 0.4;
 
-const material = new MeshBasicMaterial({ vertexColors: true });
 const routeMaterial = new LineDashedMaterial({ color: 0x1f2a36, dashSize: 0.8, gapSize: 0.6, transparent: true, opacity: 0.75 });
 
 /** The vehicle travelling on the live map, its path and the camera that follows it. */
@@ -153,7 +152,7 @@ export function Voyage3D({ bus, reduced }: { bus: VoyageBus; reduced: boolean })
       <primitive object={route} />
       {trail && <mesh geometry={trail} material={trailMaterial} frustumCulled={false} />}
       <group ref={group}>
-        <mesh geometry={geometry} material={material} />
+        <mesh geometry={geometry} material={vehicleMaterial} />
       </group>
     </>
   );

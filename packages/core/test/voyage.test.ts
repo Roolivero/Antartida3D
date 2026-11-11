@@ -47,6 +47,14 @@ describe('voyage content', () => {
     }
   });
 
+  it('words what is not a sourced fact so the reader can tell', () => {
+    for (const fact of facts) {
+      if (fact.kind === 'estimate') expect(fact.text).toMatch(/^Aproximadamente .*\(cálculo propio\)\.$/);
+      if (fact.kind === 'illustrative') expect(fact.text).toMatch(/ilustrativ/);
+      if (fact.kind !== 'real') expect(fact.sources).toEqual([]);
+    }
+  });
+
   it('gives every source an organisation, a title and an https URL', () => {
     for (const source of Object.values(VOYAGE_SOURCES)) {
       expect(source.org).not.toBe('');

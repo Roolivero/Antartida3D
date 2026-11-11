@@ -1,4 +1,4 @@
-import { BufferAttribute, BufferGeometry, Color } from 'three';
+import { BufferAttribute, BufferGeometry, Color, MeshBasicMaterial } from 'three';
 import type { TransportId } from '@antartida/core';
 
 /** [centerX, centerY, centerZ, sizeX, sizeY, sizeZ, color]. The bow or nose points to +x, y is up. */
@@ -62,6 +62,9 @@ const MODELS: Record<TransportId, readonly Box[]> = {
     [0.16, 0.045, -0.4, 0.006, 0.11, 0.11, BLACK],
   ],
 };
+
+/** Flat colors with the shading baked into the vertices: no lights needed. */
+export const vehicleMaterial = new MeshBasicMaterial({ vertexColors: true });
 
 /** Face corners of a unit cube (as -1/1 signs) with a flat brightness per face: no lights needed. */
 const FACES: readonly { corners: readonly (readonly [number, number, number])[]; shade: number }[] = [

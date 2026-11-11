@@ -4,14 +4,12 @@
  * source codes point to docs/expediciones/desde-ushuaia-fuentes.md.
  */
 
-/** What a statement is, shown as a chip in the interface. */
+/**
+ * What a statement is. The interface tells them apart without labels: a real fact cites its source
+ * by number, an estimate starts with «Aproximadamente» and says it is our own calculation, and an
+ * illustrative note says so in its own words.
+ */
 export type VoyageDataKind = 'real' | 'estimate' | 'illustrative';
-
-export const VOYAGE_KIND_LABEL: Record<VoyageDataKind, string> = {
-  real: 'Dato real',
-  estimate: 'Estimación',
-  illustrative: 'Ilustrativo',
-};
 
 export interface VoyageSource {
   org: string;
@@ -83,7 +81,7 @@ export const TRANSPORTS: readonly Transport[] = [
       { text: 'Es «el buque insignia del Comando Conjunto Antártico». Mide 121,3 m de largo y navega a 14 nudos.', kind: 'real', sources: ['O5'] },
       { text: 'En marzo de 2026 salió de Ushuaia con 65 toneladas de carga y 260 tambores y tubos de combustible, gas y aceites para las bases.', kind: 'real', sources: ['O22'] },
       { text: 'Lleva dos helicópteros Sea King. En Marambio, que está sobre una meseta, la carga pasa del buque a la base en helicóptero.', kind: 'real', sources: ['O16', 'O24'] },
-      { text: 'A 14 nudos, los 1.000 km hasta la Península llevan unas 39 horas (cálculo propio).', kind: 'estimate', sources: [] },
+      { text: 'Aproximadamente 39 horas lleva recorrer los 1.000 km hasta la Península a 14 nudos (cálculo propio).', kind: 'estimate', sources: [] },
     ],
   },
   {
@@ -96,7 +94,7 @@ export const TRANSPORTS: readonly Transport[] = [
       { text: 'Los C-130 cubren el cruce entre «Río Gallegos o Ushuaia» y la Base Marambio.', kind: 'real', sources: ['O10'] },
       { text: 'Desde Río Gallegos el vuelo dura unas tres horas y media.', kind: 'real', sources: ['O14'] },
       { text: 'El primer C-130 aterrizó en Marambio el 11 de abril de 1970.', kind: 'real', sources: ['O13'] },
-      { text: 'De Ushuaia a Marambio hay unos 1.230 km en línea recta (cálculo propio).', kind: 'estimate', sources: [] },
+      { text: 'Aproximadamente 1.230 km separan Ushuaia de Marambio en línea recta (cálculo propio).', kind: 'estimate', sources: [] },
     ],
   },
   {

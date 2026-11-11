@@ -8,8 +8,9 @@
 .vopt strong{display:block;font-size:15px;line-height:1.15}
 .vopt[aria-pressed="true"]{background:var(--deep);border-color:var(--deep);color:var(--ice)}
 .vopt[aria-pressed="true"] small{color:var(--ice)}
+.vpreview{height:120px;margin:4px 0;border-radius:10px 16px 12px 14px;background:linear-gradient(var(--ice),var(--glacier))}
 .vfacts{list-style:none;margin:8px 0;padding:0;display:flex;flex-direction:column;gap:10px}
-.vfact{display:flex;flex-direction:column;align-items:flex-start;gap:4px;line-height:1.35}
+.vfact{line-height:1.35}
 .vref{position:relative;top:-.4em;margin-left:3px;padding:2px 3px;border:0;background:none;color:var(--deep);font-weight:700;font-size:12px;line-height:1;text-decoration:underline;cursor:pointer}
 .listview.vsources{z-index:8}
 .vsrclist{margin:12px 0 0;padding-left:28px;display:flex;flex-direction:column;gap:12px}
