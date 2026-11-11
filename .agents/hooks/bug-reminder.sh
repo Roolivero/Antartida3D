@@ -8,8 +8,9 @@ in=$(cat)
 cmd=$(jq -r '.tool_input.command // ""' <<<"$in" 2>/dev/null) || exit 0
 
 case "$cmd" in *bug-issue-check*) exit 0 ;; esac
-grep -Eq 'pnpm( .*)? (test|typecheck|build|e2e|test:ui|bench)( |$)|vitest|playwright' <<<"$cmd" || exit 0
+# A verification command in command position: `pnpm [flags] <script>` or a direct vitest/playwright/tsc run.
+grep -Eq '(^|[;&|(] *)pnpm( [^;&|]*)? (test|typecheck|build|e2e|test:ui|bench)([^[:alnum:]:_-]|$)|(^|[;&|(] *|npx |pnpm exec )(vitest|playwright|tsc)([^[:alnum:]._-]|$)' <<<"$cmd" || exit 0
 
-msg="Falló un comando de verificación. Si el fallo es un bug de la aplicación que no es parte de tu issue en curso, antes de arreglarlo busca si ya está registrado: .agents/scripts/bug-issue-check.sh \"<palabras clave>\" (regla .agents/rules/core/15-bugs-and-issues.md). Si ya existe y está resuelto, haz git fetch y git rebase origin/main en vez de arreglarlo de nuevo. Si no existe, créalo asignado a quien te usa."
+msg="Falló un comando de verificación. Si el fallo es un bug de la aplicación que no es parte de tu issue en curso, antes de arreglarlo busca si ya está registrado: .agents/scripts/bug-issue-check.sh <palabra> [<palabra>] (regla .agents/rules/core/15-bugs-and-issues.md). Si ya existe y está resuelto, haz git fetch y git rebase origin/main en vez de arreglarlo de nuevo. Si no existe, créalo asignado a quien te usa."
 jq -nc --arg m "$msg" '{hookSpecificOutput:{hookEventName:"PostToolUseFailure",additionalContext:$m}}'
 exit 0

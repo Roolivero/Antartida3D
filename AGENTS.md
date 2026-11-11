@@ -73,7 +73,7 @@ Un issue asignado sin actividad por más de 24 h se puede reclamar, previo aviso
 ## Reglas para agentes de IA
 
 - Antes de cualquier cambio, confirmar el issue en curso y que esté asignado a la persona que te está usando. Si no hay issue asignado, detenerte y pedirlo.
-- No reclamar, reasignar ni cerrar issues por cuenta propia. Única excepción: un bug nuevo hallado en la aplicación. Antes se busca si ya está registrado (`.agents/scripts/bug-issue-check.sh`); si no existe, se crea el issue asignado solo a la persona que usa al agente (regla `15-bugs-and-issues.md`).
+- No reclamar, reasignar ni cerrar issues por cuenta propia. Única excepción: un bug nuevo hallado en la aplicación. Antes se busca si ya está registrado (`.agents/scripts/bug-issue-check.sh`); si no existe, se crea el issue asignado solo a la persona que usa al agente (regla `15-bugs-and-issues.md`). Ese issue de bug no cuenta como «issue en curso» hasta que se empieza a trabajar, y se libera si no se va a arreglar pronto.
 - Trabajar solo en la rama del issue. Nunca commitear en `main`.
 - No modificar archivos fuera del alcance del issue sin avisar a la persona.
 - Todo uso de IA se declara en el README (lo exigen las bases).
