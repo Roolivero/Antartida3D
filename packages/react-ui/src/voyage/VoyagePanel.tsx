@@ -11,42 +11,17 @@ import {
   VOYAGE_TOURISM_NOTE,
   voyageArrived,
   voyageSightings,
-  voyageSourceNumber,
   voyageStops,
   type TransportId,
-  type VoyageFact,
   type VoyageSourceCode,
 } from '@antartida/core';
 import { useFocusReturn } from '../hooks.ts';
+import { Fact, type OpenSources } from './Fact.tsx';
 import { SightingIcon } from './SightingIcon.tsx';
 import type { VoyageController } from './useVoyage.ts';
 
 // Its own chunk: it needs WebGL, which the 2D fallback of the trip does not.
 const VehiclePreview = lazy(() => import('./VehiclePreview.tsx').then((m) => ({ default: m.VehiclePreview })));
-
-/** Opens the sources page at one source. */
-type OpenSources = (code: VoyageSourceCode) => void;
-
-function Fact({ fact, onSource }: { fact: VoyageFact; onSource: OpenSources }) {
-  return (
-    <li className="vfact">
-      <span>
-        {fact.text}
-        {fact.sources.map((code) => (
-          <button
-            key={code}
-            type="button"
-            className="vref"
-            onClick={() => onSource(code)}
-            aria-label={`Fuente ${voyageSourceNumber(code)}: ${VOYAGE_SOURCES[code].org}`}
-          >
-            [{voyageSourceNumber(code)}]
-          </button>
-        ))}
-      </span>
-    </li>
-  );
-}
 
 /** Separate page with every source of the expedition, numbered as the facts cite them. */
 function SourcesPage({ focus, onClose }: { focus: VoyageSourceCode; onClose: () => void }) {
@@ -307,7 +282,10 @@ export function VoyagePanel({ voyage, animated, webgl, reduced, onExit }: {
   const { state } = voyage;
   // The source the sources page is open at, or null while it is closed.
   const [sources, setSources] = useState<VoyageSourceCode | null>(null);
-  const stage = voyage.sighting
+  // The 3D scene opens a source from the card it shows next to an animal.
+  voyage.bus.openSource = setSources;
+  // On a wide screen an animal touched on the map opens beside it, and the trip controls stay put.
+  const stage = voyage.sighting && !voyage.popover
     ? <SightingCard voyage={voyage} onSource={setSources} />
     : !state
       ? <Picker onStart={voyage.start} onExit={() => onExit(false)} onSource={setSources} preview={webgl} reduced={reduced} />

@@ -41,6 +41,11 @@
 .vspot.seen{background:color-mix(in srgb,var(--pencil) 30%,var(--paper));border-color:var(--pencil);color:var(--pencil);box-shadow:none;animation:none}
 .vspot:hover,.vspot:focus-visible{background:var(--ocre)}
 @keyframes vspot{from{transform:translate3d(0,0,0)}to{transform:translate3d(0,-6px,0)}}
+/* Card of an animal, opened from its circle on wide screens: the trip controls stay where they are. */
+.vpop{position:absolute;left:34px;bottom:34px;width:300px;padding:12px 14px;background:var(--paper);border:2px solid var(--ink);border-radius:10px 16px 12px 14px;box-shadow:2px 3px 0 rgba(31,42,54,.25);pointer-events:auto;text-align:left;animation:fadein .2s ease both}
+.vpop h3{margin:0 28px 0 0;font-family:'Fraunces',Georgia,serif;font-size:20px;line-height:1.1}
+.vpop .vfacts{margin:6px 0}
+.vpopclose{position:absolute;top:4px;right:4px;width:32px;height:32px;border:0;background:none;font-size:22px;line-height:1;color:var(--ink);cursor:pointer}
 .vsighting{display:flex;align-items:center;gap:10px}
 .vsighting svg{width:34px;height:34px;flex:none;color:var(--deep)}
 .vlatin{margin:0;font-style:italic;color:var(--pencil)}
@@ -54,7 +59,8 @@
 @media (prefers-reduced-motion:reduce){.vspot{animation:none}}
 /* Wide screens: every panel of the trip sits on the same corner, beside the zoom buttons, so the pointer does not cross the map. */
 @media (min-width:821px){
-  .vbar,.sheet.voyage{left:auto;right:88px;bottom:24px;width:440px}
+  .vbar,.sheet.voyage{left:auto;right:88px;bottom:24px;width:470px}
+  .vbar .vhold{white-space:nowrap}
   .vbar{padding:12px 20px 24px}
 }
 /* Phones: the zoom buttons give way to the trip panel; pinching still zooms. */

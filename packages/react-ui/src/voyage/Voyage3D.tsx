@@ -3,6 +3,7 @@ import { BufferGeometry, Group, Line, LineDashedMaterial, Vector3 } from 'three'
 import { useFrame, useThree } from '@react-three/fiber';
 import { Html, type CameraControls } from '@react-three/drei';
 import {
+  SIGHTINGS_NOTE,
   TRANSPORTS,
   VOYAGE_POINT,
   flightClearance,
@@ -17,16 +18,15 @@ import {
   type TransportKind,
 } from '@antartida/core';
 import { buildVehicleGeometry, vehicleMaterial } from './vehicles.ts';
+import { Fact } from './Fact.tsx';
 import { SightingIcon } from './SightingIcon.tsx';
 import { buildTrailGeometry, trailMaterial, updateTrail } from './trail.ts';
-import type { VoyageBus } from './useVoyage.ts';
+import { NARROW_PX, type VoyageBus } from './useVoyage.ts';
 
 /** Vehicle length as a fraction of the camera distance: a 120 m ship is invisible on a 4000 km map. */
 const SIZE_PER_DISTANCE = 0.075;
 const MIN_SIZE = 0.5;
 const ROUTE_SAMPLES = 240;
-/** Same breakpoint as the styles: below it the trip panel spans the bottom of the screen. */
-const NARROW_PX = 820;
 /** Fraction of the screen height the picture moves up on a phone. */
 const PANEL_SHIFT = 0.14;
 /** Camera offset from the vehicle at departure: close and low, to see the Beagle Channel. */
@@ -77,14 +77,17 @@ export function Voyage3D({ bus, reduced, overlay }: {
   const [transport, setTransport] = useState<TransportId | null>(bus.state?.transport ?? null);
   const drawn = useRef({ t: -1, transport: null as TransportId | null });
   // Ids of the animals in view and of the ones already spotted, joined: React re-renders only when they change.
-  const [inView, setInView] = useState('|');
+  const [inView, setInView] = useState('||');
 
   useEffect(() => {
     const onChange = () => {
       setTransport(bus.state?.transport ?? null);
       const s = bus.state;
       // They stay on the map while a milestone card is open.
-      setInView(`${s ? sightingsInView(s.kind, s.t).map((v) => v.sighting.id).join(',') : ''}|${bus.seen.join(',')}`);
+      const visible = s ? sightingsInView(s.kind, s.t).map((v) => v.sighting.id) : [];
+      // A card open beside an animal goes away with it.
+      if (bus.beside && !visible.includes(bus.beside)) return bus.closeSighting();
+      setInView(`${visible.join(',')}|${bus.seen.join(',')}|${bus.beside ?? ''}`);
       invalidate();
     };
     bus.listeners.add(onChange);
@@ -170,21 +173,37 @@ export function Voyage3D({ bus, reduced, overlay }: {
   });
 
   if (!geometry || !route || !kind) return null;
-  const [ids, seen] = inView.split('|').map((list) => list.split(','));
+  const [ids, seen, [open]] = inView.split('|').map((list) => list.split(','));
+  const wide = viewport.width > NARROW_PX;
   return (
     <>
       {voyageSightings(kind).filter((v) => ids.includes(v.sighting.id)).map((v) => (
-        <Html key={v.sighting.id} position={[v.x - 500, 0.3, v.y - 500]} center portal={overlay as RefObject<HTMLElement>} zIndexRange={[4, 4]}>
+        <Html key={v.sighting.id} position={[v.x - 500, 0.3, v.y - 500]} center portal={overlay as RefObject<HTMLElement>} zIndexRange={v.sighting.id === open ? [6, 6] : [4, 4]}>
           <button
             type="button"
             className={'vspot' + (seen.includes(v.sighting.id) ? ' seen' : '')}
-            onClick={() => bus.spot(v.sighting.id)}
+            onClick={() => (v.sighting.id === open ? bus.closeSighting() : bus.spot(v.sighting.id, wide))}
+            aria-expanded={wide ? v.sighting.id === open : undefined}
             aria-label={seen.includes(v.sighting.id)
               ? `${v.sighting.name}, ya visto. Tocá para volver a ver su ficha.`
               : `Avistaje: ${v.sighting.name}. Tocá para ver su ficha.`}
           >
             <SightingIcon icon={v.sighting.icon} />
           </button>
+          {v.sighting.id === open && (
+            <section
+              className="vpop"
+              role="dialog"
+              aria-label={v.sighting.name}
+              onKeyDown={(e) => e.key === 'Escape' && bus.closeSighting()}
+            >
+              <button type="button" className="vpopclose" onClick={bus.closeSighting} aria-label="Cerrar ficha">×</button>
+              <h3>{v.sighting.name}</h3>
+              <p className="vlatin">{v.sighting.latin}</p>
+              <ul className="vfacts"><Fact fact={v.sighting.fact} onSource={bus.openSource} /></ul>
+              <p className="vsmall">{SIGHTINGS_NOTE}</p>
+            </section>
+          )}
         </Html>
       ))}
       <primitive object={route} />
