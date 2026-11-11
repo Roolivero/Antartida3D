@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import { advanceVoyage, closeVoyageCard, skipToNextStop, startVoyage, type TransportId, type VoyageState } from '@antartida/core';
+import {
+  VOYAGE_GEARS, advanceVoyage, closeVoyageCard, nextGear, skipToNextStop, startVoyage, type TransportId, type VoyageState,
+} from '@antartida/core';
 
 /**
  * Trip state shared with the 3D scene without re-rendering React on every frame: the scene reads
@@ -17,6 +19,8 @@ export interface VoyageController {
   state: VoyageState | null;
   bus: VoyageBus;
   start: (transport: TransportId) => void;
+  /** Index into VOYAGE_GEARS: quick repeated presses of "advance" go faster. */
+  gear: number;
   /** Advance while true: the user sets the pace. */
   hold: (on: boolean) => void;
   skip: () => void;
@@ -29,6 +33,8 @@ export function useVoyage(): VoyageController {
   const [state, setState] = useState<VoyageState | null>(null);
   const bus = useRef<VoyageBus>({ state: null, follow: true, listeners: new Set() }).current;
   const frame = useRef(0);
+  const [gear, setGear] = useState(0);
+  const press = useRef({ gear: 0, at: -Infinity });
 
   const notify = () => bus.listeners.forEach((fn) => fn());
   const commit = (next: VoyageState | null) => {
@@ -46,6 +52,7 @@ export function useVoyage(): VoyageController {
   return {
     state,
     bus,
+    gear,
     start: (transport) => {
       bus.follow = true;
       commit(startVoyage(transport));
@@ -60,10 +67,13 @@ export function useVoyage(): VoyageController {
       }
       if (frame.current || !bus.state) return;
       let last = performance.now();
+      press.current = { gear: nextGear(press.current.gear, last - press.current.at), at: last };
+      setGear(press.current.gear);
+      const speed = VOYAGE_GEARS[press.current.gear];
       const tick = (now: number) => {
         const before = bus.state;
         if (!before) return stop();
-        const next = advanceVoyage(before, Math.min(0.1, (now - last) / 1000));
+        const next = advanceVoyage(before, Math.min(0.1, (now - last) / 1000) * speed);
         last = now;
         bus.state = next;
         notify();

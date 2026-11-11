@@ -5,11 +5,10 @@ import type { CameraControls } from '@react-three/drei';
 import {
   TRANSPORTS,
   VOYAGE_POINT,
-  heightAt,
+  flightClearance,
   toWorld,
   voyageAt,
   voyageHeading,
-  worldHeight,
   type TransportId,
 } from '@antartida/core';
 import { buildVehicleGeometry } from './vehicles.ts';
@@ -68,11 +67,6 @@ export function Voyage3D({ bus, reduced }: { bus: VoyageBus; reduced: boolean })
   }, [kind]);
   useEffect(() => () => route?.geometry.dispose(), [route]);
 
-  // A plane lands on the Marambio plateau; ships stay on the water.
-  const landing = useMemo(() => {
-    const end = voyageAt('plane', 1);
-    return worldHeight(heightAt(end.x, end.y));
-  }, []);
   const takeoff = useMemo(() => toWorld(VOYAGE_POINT.x, VOYAGE_POINT.y), []);
 
   useFrame(({ camera }) => {
@@ -81,8 +75,10 @@ export function Voyage3D({ bus, reduced }: { bus: VoyageBus; reduced: boolean })
     if (!s || !g) return;
     const p = voyageAt(s.kind, s.t);
     const size = Math.max(MIN_SIZE, camera.position.distanceTo(g.position) * SIZE_PER_DISTANCE);
-    // Flight profile: climb, cruise higher the farther the camera is (to stay readable), descend.
-    const height = s.kind === 'plane' ? Math.sin(Math.PI * s.t) ** 0.6 * size * 0.9 + s.t * landing + size * 0.07 : -size * 0.02;
+    // Flight: over the relief under the path, and higher the farther the camera is, to stay readable.
+    const height = s.kind === 'plane'
+      ? Math.max(flightClearance(s.t), Math.sin(Math.PI * s.t) ** 0.6 * size * 0.9) + size * 0.07
+      : -size * 0.02;
     g.position.set(p.x - 500, height, p.y - 500);
     g.rotation.y = -voyageHeading(s.kind, s.t);
     g.scale.setScalar(size);
@@ -91,7 +87,7 @@ export function Voyage3D({ bus, reduced }: { bus: VoyageBus; reduced: boolean })
     if (controls && moved && bus.follow) {
       if (s.t === 0) {
         void controls.setLookAt(takeoff.x + DEPARTURE_OFFSET.x, DEPARTURE_OFFSET.y, takeoff.z + DEPARTURE_OFFSET.z, takeoff.x, 0, takeoff.z, !reduced);
-      } else void controls.moveTo(g.position.x, 0, g.position.z, !reduced);
+      } else void controls.moveTo(g.position.x, Math.max(0, height), g.position.z, !reduced);
     }
     drawn.current = { t: s.t, transport: s.transport };
   });

@@ -1,6 +1,9 @@
 import { MILESTONES, TRANSPORTS, type Milestone, type TransportId, type TransportKind } from './content/ushuaia.ts';
+import { fuegiaWorldHeight, inFuegia } from './fuegia.ts';
 import { project, unproject } from './projection.ts';
+import { worldHeight } from './relief.ts';
 import { ROUTE_WAYPOINTS, routeAt } from './route.ts';
+import { heightAt, type TerrainMesh } from './terrain.ts';
 
 type Point = { x: number; y: number };
 
@@ -27,6 +30,43 @@ function flightAt(t: number): Point {
 }
 
 const clamp01 = (t: number) => Math.min(1, Math.max(0, t));
+const smooth01 = (v: number) => {
+  const c = clamp01(v);
+  return c * c * (3 - 2 * c);
+};
+
+/** Above every summit of the Tierra del Fuego relief (highest IBCSO land cell there: 2622 m). */
+const FUEGIA_SUMMIT = fuegiaWorldHeight(2700);
+/** The plane stays this many world units above the relief under its path. */
+const FLIGHT_MARGIN = 1.5;
+/** Trip fraction looked at ahead and behind (about 15 km), and over which it climbs and descends. */
+const FLIGHT_WINDOW = 0.012;
+/** Map units looked at to each side of the path: the drawn plane is much wider than a real one. */
+const FLIGHT_SIDES = [-2.5, -1.25, 0, 1.25, 2.5];
+
+/**
+ * World height the plane must fly at, at fraction `t`, to pass over the relief instead of through
+ * it: the highest ground under and beside the path nearby plus a margin. It starts on the ground in Ushuaia
+ * and ends on the Marambio plateau. ILLUSTRATIVE: not a real flight profile.
+ */
+export function flightClearance(t: number, mesh?: TerrainMesh): number {
+  const at = clamp01(t);
+  let ground = 0;
+  for (let k = -4; k <= 4; k++) {
+    const u = clamp01(at + (k * FLIGHT_WINDOW) / 4);
+    const p = flightAt(u);
+    const heading = voyageHeading('plane', u);
+    for (const side of FLIGHT_SIDES) {
+      const x = p.x - Math.sin(heading) * side;
+      const y = p.y + Math.cos(heading) * side;
+      ground = Math.max(ground, inFuegia(x, y) ? FUEGIA_SUMMIT : worldHeight(heightAt(x, y, mesh)));
+    }
+  }
+  const end = flightAt(1);
+  const runway = at < 0.5 ? 0 : worldHeight(heightAt(end.x, end.y, mesh));
+  const airborne = Math.min(smooth01(at / FLIGHT_WINDOW), smooth01((1 - at) / FLIGHT_WINDOW));
+  return runway + (ground + FLIGHT_MARGIN - runway) * airborne;
+}
 
 /** Position in map space at fraction `t` of the trip (0 = Ushuaia, 1 = Marambio). */
 export function voyageAt(kind: TransportKind, t: number): Point {
@@ -75,6 +115,18 @@ export function voyageStops(kind: TransportKind): readonly VoyageStop[] {
 
 /** Seconds the whole trip takes while the user keeps advancing. Not a real duration. */
 export const VOYAGE_SECONDS: Record<TransportKind, number> = { ship: 48, plane: 30 };
+
+/**
+ * Speed multipliers of "advance". Pressing again right after the previous press shifts up one
+ * gear, for whoever is in a hurry; a slower press goes back to the first.
+ */
+export const VOYAGE_GEARS = [1, 2, 3.5] as const;
+export const GEAR_TAP_MS = 450;
+
+/** Gear (index into VOYAGE_GEARS) for a press that comes `msSincePress` after the previous one. */
+export function nextGear(gear: number, msSincePress: number): number {
+  return msSincePress <= GEAR_TAP_MS ? Math.min(VOYAGE_GEARS.length - 1, gear + 1) : 0;
+}
 
 export interface VoyageState {
   transport: TransportId;

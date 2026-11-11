@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import {
   TRANSPORTS,
+  VOYAGE_GEARS,
   VOYAGE_KIND_LABEL,
   VOYAGE_ROUTE_NOTE,
   VOYAGE_SOURCES,
@@ -22,7 +23,7 @@ import type { VoyageController } from './useVoyage.ts';
 const CHIP: Record<VoyageDataKind, ChipKind> = { real: 'real', estimate: 'sim', illustrative: 'art' };
 
 /** Opens the sources page at one source. */
-type OpenSources = (code: VoyageSourceCode | null) => void;
+type OpenSources = (code: VoyageSourceCode) => void;
 
 function Fact({ fact, onSource }: { fact: VoyageFact; onSource: OpenSources }) {
   return (
@@ -46,14 +47,10 @@ function Fact({ fact, onSource }: { fact: VoyageFact; onSource: OpenSources }) {
   );
 }
 
-const SourcesButton = ({ onSource }: { onSource: OpenSources }) => (
-  <button type="button" className="btn ghost" onClick={() => onSource(null)}>Fuentes</button>
-);
-
 /** Separate page with every source of the expedition, numbered as the facts cite them. */
-function SourcesPage({ focus, onClose }: { focus: VoyageSourceCode | null; onClose: () => void }) {
+function SourcesPage({ focus, onClose }: { focus: VoyageSourceCode; onClose: () => void }) {
   const ref = useRef<HTMLDivElement>(null);
-  useFocusReturn(true, ref, focus ? `[data-source="${focus}"] a` : 'button');
+  useFocusReturn(true, ref, `[data-source="${focus}"] a`);
   return (
     <div
       className="listview vsources"
@@ -121,7 +118,6 @@ function Picker({ onStart, onExit, onSource }: { onStart: (id: TransportId) => v
           {transport.kind === 'plane' ? 'Despegar' : 'Zarpar'}
         </button>
         <button type="button" className="btn" onClick={onExit}>Volver al mapa</button>
-        <SourcesButton onSource={onSource} />
       </div>
     </section>
   );
@@ -156,7 +152,6 @@ function MilestoneCard({ voyage, onExit, onSource }: { voyage: VoyageController;
         <button type="button" className="btn ghost" aria-expanded={more} onClick={() => setMore((m) => !m)}>
           {more ? 'Ver menos' : 'Saber más'}
         </button>
-        <SourcesButton onSource={onSource} />
       </div>
     </section>
   );
@@ -181,7 +176,7 @@ function TravelBar({ voyage, animated, onExit }: { voyage: VoyageController; ani
   const holdKey = (on: boolean) => (e: KeyboardEvent) => {
     if (e.key !== ' ' && e.key !== 'Enter') return;
     e.preventDefault();
-    voyage.hold(on);
+    if (!e.repeat) voyage.hold(on);
   };
   return (
     <div className="vbar" role="group" aria-label="Controles del viaje">
@@ -201,13 +196,14 @@ function TravelBar({ voyage, animated, onExit }: { voyage: VoyageController; ani
             onBlur={() => voyage.hold(false)}
             onContextMenu={(e) => e.preventDefault()}
           >
-            Mantené para avanzar
+            Mantené para avanzar{voyage.gear > 0 && ` · ×${String(VOYAGE_GEARS[voyage.gear]).replace('.', ',')}`}
           </button>
         )}
         <button type="button" className={'btn' + (animated ? '' : ' primary')} onClick={voyage.skip}>Ir al próximo hito</button>
         {animated && <button type="button" className="btn ghost" onClick={voyage.recenter}>Centrar</button>}
         <button type="button" className="btn ghost" onClick={onExit}>Salir del viaje</button>
       </div>
+      {animated && <p className="vsmall">¿Apuro? Tocá dos o tres veces seguidas y mantené: va más rápido.</p>}
       <p className="vsmall">{VOYAGE_ROUTE_NOTE}</p>
     </div>
   );
@@ -224,8 +220,8 @@ export function VoyagePanel({ voyage, animated, onExit }: {
   onExit: (done: boolean) => void;
 }) {
   const { state } = voyage;
-  // undefined: closed; null: open at the top; a code: open at that source.
-  const [sources, setSources] = useState<VoyageSourceCode | null | undefined>(undefined);
+  // The source the sources page is open at, or null while it is closed.
+  const [sources, setSources] = useState<VoyageSourceCode | null>(null);
   const stage = !state
     ? <Picker onStart={voyage.start} onExit={() => onExit(false)} onSource={setSources} />
     : state.card >= 0
@@ -234,7 +230,7 @@ export function VoyagePanel({ voyage, animated, onExit }: {
   return (
     <>
       {stage}
-      {sources !== undefined && <SourcesPage focus={sources} onClose={() => setSources(undefined)} />}
+      {sources && <SourcesPage focus={sources} onClose={() => setSources(null)} />}
     </>
   );
 }

@@ -1,7 +1,11 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
+  GEAR_TAP_MS,
   MILESTONES,
   TRANSPORTS,
+  VOYAGE_GEARS,
   VOYAGE_SECONDS,
   VOYAGE_SOURCES,
   VOYAGE_SOURCE_CODES,
@@ -9,6 +13,11 @@ import {
   VOYAGE_TOURISM_NOTE,
   advanceVoyage,
   closeVoyageCard,
+  flightClearance,
+  heightAt,
+  inFuegia,
+  nextGear,
+  parseTerrainMesh,
   project,
   skipToNextStop,
   startVoyage,
@@ -17,6 +26,7 @@ import {
   voyageAt,
   voyageHeading,
   voyageStops,
+  worldHeight,
   type VoyageFact,
 } from '../src/index.ts';
 
@@ -106,6 +116,65 @@ describe('voyage path', () => {
       return total;
     };
     expect(length('plane')).toBeLessThan(length('ship'));
+  });
+});
+
+describe('flight altitude', () => {
+  const buf = readFileSync(join(import.meta.dirname, '../src/assets/terrain-mesh-hi.bin'));
+  const terrain = parseTerrainMesh(buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength));
+  const ground = (t: number) => {
+    const p = voyageAt('plane', t);
+    return worldHeight(heightAt(p.x, p.y, terrain));
+  };
+
+  it('takes off from the ground and lands on the Marambio plateau', () => {
+    expect(flightClearance(0, terrain)).toBe(0);
+    expect(flightClearance(1, terrain)).toBeCloseTo(ground(1));
+    expect(ground(1)).toBeGreaterThan(0);
+  });
+
+  it('flies over the Antarctic relief under its path, never through it', () => {
+    let highest = 0;
+    for (let i = 0; i < 2000; i++) {
+      const t = i / 2000;
+      highest = Math.max(highest, ground(t));
+      expect(flightClearance(t, terrain), `t=${t}`).toBeGreaterThanOrEqual(ground(t));
+    }
+    expect(highest).toBeGreaterThan(1); // the path does cross relief
+  });
+
+  it('also clears the relief beside its path, where the wings of the drawn plane reach', () => {
+    for (let i = 0; i < 1000; i++) {
+      const t = i / 1000;
+      const p = voyageAt('plane', t);
+      const heading = voyageHeading('plane', t);
+      for (const side of [-2.5, 2.5]) {
+        const beside = worldHeight(heightAt(p.x - Math.sin(heading) * side, p.y + Math.cos(heading) * side, terrain));
+        if (t < 0.98) expect(flightClearance(t, terrain), `t=${t}`).toBeGreaterThanOrEqual(beside);
+      }
+    }
+  });
+
+  it('flies over every summit of Tierra del Fuego', () => {
+    // The highest land cell of the regional relief is 2622 m, drawn at x10.
+    const summit = (2622 * 10) / 8000;
+    for (let i = 30; i < 2000; i++) {
+      const p = voyageAt('plane', i / 2000);
+      if (inFuegia(p.x, p.y)) expect(flightClearance(i / 2000, terrain)).toBeGreaterThan(summit);
+    }
+  });
+});
+
+describe('advance gears', () => {
+  it('shifts up on a quick second press and tops out', () => {
+    expect(nextGear(0, GEAR_TAP_MS)).toBe(1);
+    expect(nextGear(1, 100)).toBe(2);
+    expect(nextGear(VOYAGE_GEARS.length - 1, 100)).toBe(VOYAGE_GEARS.length - 1);
+  });
+
+  it('goes back to the first gear after a pause', () => {
+    expect(nextGear(2, GEAR_TAP_MS + 1)).toBe(0);
+    expect(VOYAGE_GEARS[0]).toBe(1);
   });
 });
 
