@@ -136,6 +136,8 @@ Animales que pueden aparecer durante el viaje, por zona (ver [diseño](./desde-u
 | Foca de Weddell | Bahía Esperanza | 217 muestras de heces recolectadas allí en los veranos de 2003 a 2005; come sobre todo plateado antártico | `[O38]` |
 | Foca cangrejera | Isla Marambio | Relevamientos aéreos de 2015 a 2017 en el estrecho Bouchard; 96 ejemplares momificados en la isla | `[O37]` |
 
+**Las fichas hablan del animal, no del registro.** Los conteos y campañas de la tabla de arriba respaldan la zona, pero no se muestran en la ficha: ahí va un dato sobre el animal (qué come, cómo caza, cómo es). Por eso `[I19]`, `[I21]`, `[O32]` y `[O37]` están en el catálogo de fuentes pero no en la página de fuentes de la aplicación. Datos de ficha sumados el 11-11-2026: orca y petrel damero, de las fichas de especie de la Australian Antarctic Division `[I16]`; ballena jorobada, de `[O29]` y `[I15]`.
+
 El punto exacto, el momento y los movimientos siguen siendo ilustrativos; la interfaz lo dice una vez, antes de empezar el viaje. La foca leopardo se movió de la costa de la Península a las Shetland porque solo ahí tiene registro (los estudios argentinos sobre ella son de la costa de Danco, fuera de la ruta).
 
 **Fuentes universitarias:** no se encontró ninguna publicación de la UNTDF sobre la fauna de la ruta (su repositorio no está indexado en línea). Hay trabajos de CADIC-CONICET (Ushuaia), tesis de la UNLP y de la UBA. Alguien del equipo puede buscar a mano en el repositorio de la UNTDF.
