@@ -1,9 +1,10 @@
 import { ANTARCTICA_PATH, ICE_SHELF_SEAM, ICE_SHELVES_PATH, SOUTH_AMERICA_PATH } from '../coastline.ts';
+import { ROUTE_PATH } from '../route.ts';
 
 /**
  * Crisp vector layer drawn over the baked watercolor: coastline outlines, the Ushuaia route and
  * labels. No SVG filters here, so re-rasterizing it at any zoom stays cheap.
- * Only the coastline source and a few label positions differ from the prototype (see docs/DECISIONES.md).
+ * Only the coastline source, the route (route.ts) and a few label positions differ from the prototype (see docs/decisiones.md).
  */
 export const MAP_INK = `<g fill="none" stroke-linejoin="round">
 <path d="${ICE_SHELVES_PATH}" stroke="#1F2A36" stroke-width="1" opacity="0.55"></path>
@@ -11,8 +12,8 @@ export const MAP_INK = `<g fill="none" stroke-linejoin="round">
 <path d="${ANTARCTICA_PATH}" stroke="#1F2A36" stroke-width="1.6"></path>
 <path d="${SOUTH_AMERICA_PATH}" stroke="#1F2A36" stroke-width="1.5"></path>
 </g>
-<path d="M36,318 C80,350 140,348 190,306" fill="none" stroke="#F7FAFB" stroke-width="5" stroke-linecap="round" opacity="0.5"></path>
-<path d="M36,318 C80,350 140,348 190,306" fill="none" stroke="#A4471F" stroke-width="2.4" stroke-dasharray="2 9" stroke-linecap="round"></path>
+<path d="${ROUTE_PATH}" fill="none" stroke="#F7FAFB" stroke-width="5" stroke-linecap="round" opacity="0.5"></path>
+<path d="${ROUTE_PATH}" fill="none" stroke="#A4471F" stroke-width="2.4" stroke-dasharray="2 9" stroke-linecap="round"></path>
 <g font-family="Caveat, cursive" fill="#F7FAFB">
 <text x="50" y="404" font-size="22" transform="rotate(-12 50 404)">Pasaje de Drake</text>
 <text x="252" y="258" font-size="20" transform="rotate(10 252 258)">Mar de Weddell</text>
