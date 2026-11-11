@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useRef, type RefObject } from 'react';
-import { Vector3, type Camera, type Group, type Mesh, type Object3D } from 'three';
+import { Vector3, type Camera, type Group, type Object3D } from 'three';
 import { useFrame } from '@react-three/fiber';
 import { Html } from '@react-three/drei';
 import { heightAt, sightingNote, worldHeight, type SightingSpot } from '@antartida/core';
 import { Fact } from './Fact.tsx';
 import { SightingIcon } from './SightingIcon.tsx';
-import { buildSightingGeometry, moveSighting } from './sightingModels.ts';
+import { WING_ROOT, buildSightingGeometry, moveSighting } from './sightingModels.ts';
 import type { VoyageBus } from './useVoyage.ts';
 import { vehicleMaterial } from './vehicles.ts';
 
@@ -51,9 +51,12 @@ export function Sighting3D({ spot, turn, seen, open, wide, bus, reduced, overlay
 }) {
   const { sighting } = spot;
   const group = useRef<Group>(null);
-  const model = useRef<Mesh>(null);
+  const model = useRef<Group>(null);
   const geometry = useMemo(() => buildSightingGeometry(sighting), [sighting]);
-  useEffect(() => () => geometry?.dispose(), [geometry]);
+  useEffect(() => () => {
+    geometry?.body.dispose();
+    geometry?.wings?.forEach((g) => g.dispose());
+  }, [geometry]);
 
   useFrame(({ camera }) => {
     const g = group.current;
@@ -66,7 +69,14 @@ export function Sighting3D({ spot, turn, seen, open, wide, bus, reduced, overlay
 
   return (
     <group ref={group} rotation-y={turn}>
-      {geometry && <mesh ref={model} geometry={geometry} material={vehicleMaterial} />}
+      {geometry && (
+        <group ref={model}>
+          <mesh geometry={geometry.body} material={vehicleMaterial} />
+          {geometry.wings?.map((wing, i) => (
+            <mesh key={i} geometry={wing} material={vehicleMaterial} position={[WING_ROOT[0], WING_ROOT[1], WING_ROOT[2] * (i ? -1 : 1)]} />
+          ))}
+        </group>
+      )}
       <Html
         position={[0, RING_HEIGHT, 0]}
         center
