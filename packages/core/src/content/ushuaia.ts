@@ -262,6 +262,8 @@ export interface Sighting {
    * instead of beside the route. `latin` then says where it is.
    */
   place?: readonly [lon: number, lat: number];
+  /** The source of the fact names this stretch of the trip as a place where the animal lives or was counted. */
+  zoneSourced?: true;
   fact: VoyageFact;
 }
 
@@ -271,15 +273,15 @@ export interface Sighting {
  */
 export const SIGHTINGS: readonly Sighting[] = [
   // Beagle Channel
-  { id: 'cormoran', name: 'Cormorán imperial', latin: 'Leucocarbo atriceps', icon: 'bird', anchor: [-68, -54.89], offset: -0.2, brief: true,
+  { id: 'cormoran', name: 'Cormorán imperial', latin: 'Leucocarbo atriceps', icon: 'bird', anchor: [-68, -54.89], offset: -0.2, brief: true, zoneSourced: true,
     fact: { text: 'Es el ave marina más abundante del canal. En el verano 2008-09 anidaba en 5 islas del sector argentino, con 7.703 nidos activos.', kind: 'real', sources: ['O20', 'O30'] } },
   { id: 'eclaireurs', name: 'Faro Les Éclaireurs', latin: 'Canal Beagle', icon: 'lighthouse', anchor: [-67.88, -54.89], offset: 0, brief: true, place: [-68.083, -54.871],
     fact: { text: 'Es una torre de piedra de 11 m, pintada de rojo y blanco. Entró en servicio el 23 de diciembre de 1920. El nombre de los islotes, «los exploradores», se lo puso el capitán francés Louis Ferdinand Martial.', kind: 'real', sources: ['O35'] } },
-  { id: 'lobos', name: 'Lobos marinos', latin: 'dos especies', icon: 'seal', anchor: [-67.66, -54.905], offset: 0.2, brief: true,
+  { id: 'lobos', name: 'Lobos marinos', latin: 'dos especies', icon: 'seal', anchor: [-67.66, -54.905], offset: 0.2, brief: true, zoneSourced: true,
     fact: { text: 'Dos especies viven en las islas del canal: el lobo marino sudamericano todo el año y el de dos pelos entre febrero y agosto.', kind: 'real', sources: ['O20'] } },
   { id: 'martillo', name: 'Pingüinera de Isla Martillo', latin: 'Canal Beagle · pingüino de Magallanes', icon: 'penguin', anchor: [-67.38, -54.92], offset: 0, brief: true, place: [-67.383, -54.905],
     fact: { text: 'Es la colonia de pingüinos de Magallanes más cercana a Ushuaia, a unos 40 km al este. Investigadores del CADIC-CONICET vieron que aprovechan las corrientes de marea para ir y volver de los sitios donde comen.', kind: 'real', sources: ['O33'] } },
-  { id: 'delfin-austral', name: 'Delfín austral', latin: 'Lagenorhynchus australis', icon: 'dolphin', anchor: [-66.78, -55.03], offset: -0.22, brief: true,
+  { id: 'delfin-austral', name: 'Delfín austral', latin: 'Lagenorhynchus australis', icon: 'dolphin', anchor: [-66.78, -55.03], offset: -0.22, brief: true, zoneSourced: true,
     fact: { text: 'Es un delfín costero del archipiélago fueguino: llega hasta el Cabo de Hornos. Se lo ve en los bosques de macroalgas o cerca de ellos.', kind: 'real', sources: ['U7'] } },
   { id: 'san-juan', name: 'Faro San Juan de Salvamento', latin: 'Isla de los Estados · lejos de esta ruta, al este', icon: 'lighthouse', anchor: [-66.4, -55.2], offset: 0, place: [-63.82, -54.73],
     fact: { text: 'Fue bautizado «Faro del Fin del Mundo». Lo puso en servicio el 25 de mayo de 1884 la División Expedicionaria al Atlántico Sur, al mando del comodoro Augusto Lasserre. Es Monumento Histórico Nacional.', kind: 'real', sources: ['O34'] } },
@@ -293,9 +295,9 @@ export const SIGHTINGS: readonly Sighting[] = [
   // South Shetlands and Bransfield Strait
   { id: 'barbijo', name: 'Pingüino barbijo', latin: 'Pygoscelis antarcticus', icon: 'penguin', anchor: [-59.33, -62.32], offset: -3,
     fact: { text: 'Anida en la Península y en islas al sur de la Convergencia Antártica.', kind: 'real', sources: ['U8', 'O31'] } },
-  { id: 'jorobada', name: 'Ballena jorobada', latin: 'Megaptera novaeangliae', icon: 'whale', anchor: [-58.6, -62.75], offset: 4,
+  { id: 'jorobada', name: 'Ballena jorobada', latin: 'Megaptera novaeangliae', icon: 'whale', anchor: [-58.6, -62.75], offset: 4, zoneSourced: true,
     fact: { text: 'Fue el cetáceo más abundante de la campaña científica peruana ANTAR XXVI (verano 2018-19): 207 individuos, sobre todo en el Estrecho de Bransfield.', kind: 'real', sources: ['O32'] } },
-  { id: 'petrel-damero', name: 'Petrel damero', latin: 'Daption capense', icon: 'bird', anchor: [-57.6, -63.05], offset: -3.5,
+  { id: 'petrel-damero', name: 'Petrel damero', latin: 'Daption capense', icon: 'bird', anchor: [-57.6, -63.05], offset: -3.5, zoneSourced: true,
     fact: { text: 'Fue el ave más abundante de la campaña ANTAR XXVI (verano 2018-19) en Bransfield e isla Elefante: 809 individuos.', kind: 'real', sources: ['O31'] } },
   // Peninsula coast and northern Weddell Sea
   { id: 'adelia', name: 'Pingüino de Adelia', latin: 'Pygoscelis adeliae', icon: 'penguin', anchor: [-56.72, -63.3], offset: 2.5,
@@ -309,10 +311,11 @@ export const SIGHTINGS: readonly Sighting[] = [
 ];
 
 /** Shown with the sightings: where an animal appears on the map is not data. */
-const SIGHTINGS_NOTE = 'Avistajes ilustrativos: la posición de cada animal en el mapa no es un dato.';
+const ZONE_SOURCED_NOTE = 'Su fuente lo ubica en esta zona del viaje. El punto exacto en el mapa es ilustrativo.';
+const ZONE_ILLUSTRATIVE_NOTE = 'Su fuente describe a la especie en general, no este tramo del viaje. Zona y punto en el mapa son ilustrativos.';
 const PLACES_NOTE = 'Posición aproximada en el mapa.';
 /** What the card of a sighting says about where it is drawn. */
-export const sightingNote = (s: Sighting) => (s.place ? PLACES_NOTE : SIGHTINGS_NOTE);
+export const sightingNote = (s: Sighting) => (s.place ? PLACES_NOTE : s.zoneSourced ? ZONE_SOURCED_NOTE : ZONE_ILLUSTRATIVE_NOTE);
 export const FAUNA_COUNT = SIGHTINGS.filter((s) => !s.place).length;
 export const PLACES_COUNT = SIGHTINGS.length - FAUNA_COUNT;
 

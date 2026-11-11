@@ -13,7 +13,7 @@ import { vehicleMaterial } from './vehicles.ts';
 const SIZE_PER_DISTANCE = 0.062;
 const MIN_SIZE = 0.3;
 /** A place grows while its card is open, to show its model. */
-const OPEN_PLACE_SCALE = 2.4;
+const OPEN_PLACE_SCALE = 1.5;
 /** Height of the center of the button over the base of the model, in model units. */
 const RING_HEIGHT = 0.4;
 

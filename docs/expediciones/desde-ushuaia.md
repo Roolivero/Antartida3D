@@ -120,6 +120,8 @@ La ruta aérea Ushuaia → Marambio es una **ortodrómica calculada** (la derrot
 
 Animales que pueden aparecer durante el viaje, por zona (ver [diseño](./desde-ushuaia-diseno.md)). Solo entran especies con fuente abierta y leída. Las **posiciones y los movimientos son ilustrativos**: ninguna fuente respalda dónde está cada animal en un momento dado, ni cómo se mueve en pantalla (planeo, nado a saltos). **La asignación a cada zona también es ilustrativa** salvo donde la fuente nombra el lugar: las fuentes de las zonas B y D dan rangos de latitud o son fichas circumpolares, y no mencionan el Drake ni la Península. No se publican categorías de la UICN hasta verificarlas.
 
+**En la ficha de cada animal se dice cuál es el caso.** Con zona respaldada por su fuente: cormorán imperial, lobos marinos y delfín austral (Beagle), ballena jorobada y petrel damero (Bransfield). Sin zona respaldada todavía: albatros errante, petrel gigante, delfín cruzado, pingüino barbijo, pingüino de Adelia y focas leopardo, cangrejera y de Weddell. Pendiente: buscar para cada uno una fuente que lo ubique en su tramo, o moverlo.
+
 **Fuentes universitarias:** no se encontró ninguna publicación de la UNTDF sobre la fauna de la ruta (su repositorio no está indexado en línea). Hay trabajos de CADIC-CONICET (Ushuaia), tesis de la UNLP y de la UBA. Alguien del equipo puede buscar a mano en el repositorio de la UNTDF.
 
 ### A. Canal Beagle (unos 54,8° S)
