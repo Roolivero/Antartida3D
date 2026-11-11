@@ -39,21 +39,18 @@ const smooth01 = (v: number) => {
 const FUEGIA_SUMMIT = fuegiaWorldHeight(2700);
 /** The plane stays this many world units above the relief under its path. */
 const FLIGHT_MARGIN = 1.5;
-/** Trip fraction looked at ahead and behind (about 15 km), and over which it climbs and descends. */
+/** Trip fraction over which the plane leaves the ground and comes back to it (about 15 km). */
 const FLIGHT_WINDOW = 0.012;
+/** Trip fraction of relief looked at ahead and behind (about 37 km): the wider, the gentler the climbs. */
+const FLIGHT_LOOK = 0.03;
 /** Map units looked at to each side of the path: the drawn plane is much wider than a real one. */
 const FLIGHT_SIDES = [-2.5, -1.25, 0, 1.25, 2.5];
 
-/**
- * World height the plane must fly at, at fraction `t`, to pass over the relief instead of through
- * it: the highest ground under and beside the path nearby plus a margin. It starts on the ground in Ushuaia
- * and ends on the Marambio plateau. ILLUSTRATIVE: not a real flight profile.
- */
-export function flightClearance(t: number, mesh?: TerrainMesh): number {
-  const at = clamp01(t);
+/** Highest ground under and beside the flight path within FLIGHT_LOOK of `at`, in world units. */
+function groundEnvelope(at: number, mesh?: TerrainMesh): number {
   let ground = 0;
   for (let k = -4; k <= 4; k++) {
-    const u = clamp01(at + (k * FLIGHT_WINDOW) / 4);
+    const u = clamp01(at + (k * FLIGHT_LOOK) / 4);
     const p = flightAt(u);
     const heading = voyageHeading('plane', u);
     for (const side of FLIGHT_SIDES) {
@@ -62,6 +59,20 @@ export function flightClearance(t: number, mesh?: TerrainMesh): number {
       ground = Math.max(ground, inFuegia(x, y) ? FUEGIA_SUMMIT : worldHeight(heightAt(x, y, mesh)));
     }
   }
+  return ground;
+}
+
+/**
+ * World height the plane must fly at, at fraction `t`, to pass over the relief instead of through
+ * it: the highest ground under and beside the path nearby plus a margin. The envelope is averaged
+ * over a span no wider than its own window, so the plane climbs and descends in a smooth line and
+ * still never goes below the ground under it. It starts on the ground in Ushuaia and ends on the
+ * Marambio plateau. ILLUSTRATIVE: not a real flight profile.
+ */
+export function flightClearance(t: number, mesh?: TerrainMesh): number {
+  const at = clamp01(t);
+  let ground = 0;
+  for (let k = -3; k <= 3; k++) ground += groundEnvelope(clamp01(at + (k * FLIGHT_LOOK) / 3), mesh) / 7;
   const end = flightAt(1);
   const runway = at < 0.5 ? 0 : worldHeight(heightAt(end.x, end.y, mesh));
   const airborne = Math.min(smooth01(at / FLIGHT_WINDOW), smooth01((1 - at) / FLIGHT_WINDOW));
@@ -72,6 +83,21 @@ export function flightClearance(t: number, mesh?: TerrainMesh): number {
 export function voyageAt(kind: TransportKind, t: number): Point {
   return kind === 'plane' ? flightAt(clamp01(t)) : routeAt(t);
 }
+
+const PATH_SAMPLES = 400;
+const pathLength = (kind: TransportKind) => {
+  let total = 0;
+  for (let i = 1; i <= PATH_SAMPLES; i++) {
+    const a = voyageAt(kind, (i - 1) / PATH_SAMPLES);
+    const b = voyageAt(kind, i / PATH_SAMPLES);
+    total += Math.hypot(b.x - a.x, b.y - a.y);
+  }
+  return total;
+};
+const LENGTHS: Record<TransportKind, number> = { ship: pathLength('ship'), plane: pathLength('plane') };
+
+/** Length of the whole trip in map units. */
+export const voyageLength = (kind: TransportKind) => LENGTHS[kind];
 
 /** Direction of travel at `t` in map space, as an angle from +x towards +y (radians). */
 export function voyageHeading(kind: TransportKind, t: number): number {

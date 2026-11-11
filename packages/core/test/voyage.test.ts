@@ -25,6 +25,7 @@ import {
   voyageArrived,
   voyageAt,
   voyageHeading,
+  voyageLength,
   voyageStops,
   worldHeight,
   type VoyageFact,
@@ -116,6 +117,8 @@ describe('voyage path', () => {
       return total;
     };
     expect(length('plane')).toBeLessThan(length('ship'));
+    expect(voyageLength('ship')).toBeCloseTo(length('ship'), 0);
+    expect(voyageLength('plane')).toBeCloseTo(length('plane'), 0);
   });
 });
 
@@ -141,6 +144,13 @@ describe('flight altitude', () => {
       expect(flightClearance(t, terrain), `t=${t}`).toBeGreaterThanOrEqual(ground(t));
     }
     expect(highest).toBeGreaterThan(1); // the path does cross relief
+  });
+
+  it('climbs and descends without steps', () => {
+    // Largest change of height between samples 1/2000 of the trip apart (about 0.6 km), in world units.
+    let jump = 0;
+    for (let i = 1; i <= 2000; i++) jump = Math.max(jump, Math.abs(flightClearance(i / 2000, terrain) - flightClearance((i - 1) / 2000, terrain)));
+    expect(jump).toBeLessThan(1);
   });
 
   it('also clears the relief beside its path, where the wings of the drawn plane reach', () => {

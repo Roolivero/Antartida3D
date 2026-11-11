@@ -14,6 +14,9 @@ export interface VoyageBus {
   listeners: Set<() => void>;
 }
 
+/** Seconds the vehicle takes to pick up speed and to coast to a stop. */
+const EASE_SECONDS = 0.3;
+
 export interface VoyageController {
   /** Updated at milestones and when the user lets go, not on every frame. */
   state: VoyageState | null;
@@ -42,9 +45,12 @@ export function useVoyage(): VoyageController {
     setState(next);
     notify();
   };
+  const drive = useRef({ pressed: false, power: 0, speed: 1 });
   const stop = () => {
     cancelAnimationFrame(frame.current);
     frame.current = 0;
+    drive.current.pressed = false;
+    drive.current.power = 0;
   };
 
   useEffect(() => stop, []);
@@ -58,26 +64,29 @@ export function useVoyage(): VoyageController {
       commit(startVoyage(transport));
     },
     hold: (on) => {
+      const d = drive.current;
       if (!on) {
-        if (frame.current) {
-          stop();
-          setState(bus.state);
-        }
+        d.pressed = false; // the loop below coasts to a stop
         return;
       }
-      if (frame.current || !bus.state) return;
+      if (d.pressed || !bus.state) return;
       let last = performance.now();
       press.current = { gear: nextGear(press.current.gear, last - press.current.at), at: last };
       setGear(press.current.gear);
-      const speed = VOYAGE_GEARS[press.current.gear];
+      d.pressed = true;
+      d.speed = VOYAGE_GEARS[press.current.gear];
+      if (frame.current) return; // still coasting from the previous press
       const tick = (now: number) => {
         const before = bus.state;
         if (!before) return stop();
-        const next = advanceVoyage(before, Math.min(0.1, (now - last) / 1000) * speed);
+        const dt = Math.min(0.1, (now - last) / 1000);
         last = now;
+        // Ease in and out instead of starting and stopping dead.
+        d.power += ((d.pressed ? 1 : 0) - d.power) * (1 - Math.exp(-dt / EASE_SECONDS));
+        const next = advanceVoyage(before, dt * d.speed * d.power);
         bus.state = next;
         notify();
-        if (next.card !== before.card || next === before) {
+        if (next.card !== before.card || next === before || (!d.pressed && d.power < 0.03)) {
           stop();
           setState(next);
         } else frame.current = requestAnimationFrame(tick);
