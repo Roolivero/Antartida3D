@@ -9,8 +9,12 @@ export function MarkerButton({ m, style, onPick }: { m: Marker; style: CSSProper
         {m.kind === 'cluster' && m.count}
         {m.kind === 'point' && m.pulse && <span className="pulse" />}
         {m.kind === 'point' && m.check && Icon.check}
+        {m.kind === 'sea' && Icon.sea}
       </span>
       {m.kind === 'point' && m.label && (
+        <span className="mlabel"><strong>{m.label.title}</strong><span>{m.label.sub}</span></span>
+      )}
+      {m.kind === 'sea' && m.label && (
         <span className="mlabel"><strong>{m.label.title}</strong><span>{m.label.sub}</span></span>
       )}
     </button>

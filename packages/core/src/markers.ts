@@ -1,4 +1,5 @@
 import { PTS, TIER, type MapPoint } from './content/points.ts';
+import type { SeaPoint } from './content/sea.ts';
 import { centroid, clusterPoints, separationZoom } from './clustering.ts';
 import { placeLabels, type LabelSide } from './labels.ts';
 import { focusWorld, geometry, toScreen, type Size, type View } from './viewport.ts';
@@ -26,6 +27,12 @@ export interface PointMarker extends MarkerBase {
   label: { title: string; sub: string; side: LabelSide } | null;
 }
 
+export interface SeaMarker extends MarkerBase {
+  kind: 'sea';
+  point: SeaPoint;
+  label: { title: string; sub: string; side: LabelSide } | null;
+}
+
 export interface ClusterMarker extends MarkerBase {
   kind: 'cluster';
   count: number;
@@ -33,7 +40,7 @@ export interface ClusterMarker extends MarkerBase {
   target: View;
 }
 
-export type Marker = PointMarker | ClusterMarker;
+export type Marker = PointMarker | SeaMarker | ClusterMarker;
 
 export type ScreenProjector = (x: number, y: number) => { left: number; top: number; visible?: boolean };
 

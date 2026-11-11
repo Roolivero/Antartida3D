@@ -16,6 +16,7 @@
     "terrain": "tsx scripts/build-terrain.ts",
     "bathymetry": "tsx scripts/build-bathymetry.ts",
     "fuegia": "tsx scripts/build-fuegia.ts",
+    "sea-atlas": "tsx scripts/build-sea-atlas.ts",
     "test": "vitest run",
     "typecheck": "tsc -p .",
     "map-raster": "tsx scripts/build-map-raster.ts"

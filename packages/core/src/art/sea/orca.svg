@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <!-- Nautical ink & watercolor illustration: Orca (killer whale) with tall dorsal fin & white markings -->
+  <g filter="url(#wcs)">
+    <ellipse cx="128" cy="182" rx="92" ry="18" fill="#7FA8C4" opacity="0.48"/>
+    <path d="M28,180 C62,166 102,164 142,165 C180,166 208,170 230,180 C206,192 166,196 126,196 C84,196 50,190 28,180 Z" fill="#F7FAFB" opacity="0.92"/>
+  </g>
+  <g filter="url(#ink)">
+    <!-- Sleek black body & towering triangular dorsal fin -->
+    <path d="M32,178 C38,150 62,126 94,118 C110,114 122,114 128,114 C132,82 140,48 152,36 C158,32 162,40 160,56 C158,76 156,98 158,118 C184,124 208,144 222,176 C192,168 154,165 118,166 C80,167 52,172 32,178 Z" fill="#1F2A36" stroke="#1F2A36" stroke-width="4" stroke-linejoin="round"/>
+    <!-- Characteristic bright white oval eye patch -->
+    <ellipse cx="76" cy="138" rx="15" ry="7.5" transform="rotate(-14 76 138)" fill="#F7FAFB" stroke="#1F2A36" stroke-width="2"/>
+    <!-- White chin & lower flank patch sweeping up -->
+    <path d="M36,176 C48,160 68,154 92,156 C112,158 128,154 144,144 C156,136 168,140 176,154 C182,162 186,166 192,169 C156,165 116,165 78,168 C58,170 44,173 36,176 Z" fill="#F7FAFB" stroke="#1F2A36" stroke-width="2.2"/>
+    <!-- Pale glacier-grey saddle patch behind dorsal fin -->
+    <path d="M158,120 C168,118 182,124 192,136 C182,142 168,140 156,132 C154,127 155,123 158,120 Z" fill="#7FA8C4" opacity="0.9"/>
+    <!-- Highlight along dorsal fin leading edge & rostrum -->
+    <path d="M131,110 C135,82 142,54 151,41" fill="none" stroke="#F7FAFB" stroke-width="2.6" stroke-linecap="round" opacity="0.8"/>
+    <path d="M52,144 C66,130 88,122 114,119" fill="none" stroke="#7FA8C4" stroke-width="2.4" stroke-linecap="round" opacity="0.75"/>
+    <!-- Waterline foam & ink ripples -->
+    <path d="M22,180 C56,169 96,166 136,167 C174,168 206,172 234,180" fill="none" stroke="#1F2A36" stroke-width="3.6" stroke-linecap="round"/>
+    <path d="M38,189 C76,181 118,180 160,181 C188,182 210,185 224,190" fill="none" stroke="#F7FAFB" stroke-width="3.6" stroke-linecap="round"/>
+    <path d="M20,198 C68,208 124,209 180,204 C206,202 224,199 238,194" fill="none" stroke="#1F2A36" stroke-width="2.4" stroke-linecap="round" stroke-dasharray="14 8"/>
+  </g>
+</svg>

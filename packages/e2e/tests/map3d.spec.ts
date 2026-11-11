@@ -190,4 +190,32 @@ test.describe('3D relief view', () => {
     await page.evaluate(() => void (window as any).__cameraControls.moveTo(0, 0, 0, false));
     await settle('cc.minDistance === 60 && cc.distance >= 59.9');
   });
+
+  test('with PointSheet open, elementFromPoint at sheet center returns an element inside the sheet', async ({ page }) => {
+    await page.goto('/');
+    const toggle = page.getByRole('group', { name: 'Modo de vista' });
+    await toggle.getByRole('button', { name: 'Relieve 3D' }).click();
+    await page.waitForSelector('canvas');
+    await page.waitForTimeout(1000);
+
+    // Open PointSheet for a sea marker
+    const seaMarker = page.locator('.ov [data-key^="sea-"] button').first();
+    await expect(seaMarker).toBeVisible();
+    await seaMarker.click();
+    const sheet = page.locator('.sheet[role="dialog"]');
+    await expect(sheet).toBeVisible();
+
+    // Verify center of sheet points to a node inside the sheet
+    const hitInside = await page.evaluate(() => {
+      const el = document.querySelector('.sheet[role="dialog"]');
+      if (!el) return false;
+      const rect = el.getBoundingClientRect();
+      const cx = rect.left + rect.width / 2;
+      const cy = rect.top + rect.height / 2;
+      const hit = document.elementFromPoint(cx, cy);
+      return el.contains(hit);
+    });
+
+    expect(hitInside).toBe(true);
+  });
 });

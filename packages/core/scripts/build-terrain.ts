@@ -16,7 +16,7 @@ import { chromium } from '@playwright/test';
 import { project, unproject } from '../src/projection.ts';
 import { ANTARCTICA_PATH } from '../src/coastline.ts';
 import { SVG_DEFS } from '../src/svg/filters.ts';
-import { METERS_PER_MAP_UNIT, SUN, VERTICAL_EXAGGERATION } from '../src/relief.ts';
+import { clampTerrainSpikes, METERS_PER_MAP_UNIT, SUN, VERTICAL_EXAGGERATION } from '../src/relief.ts';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const outDir = join(here, '../src/assets');
@@ -156,6 +156,74 @@ for (let r = 0; r < GRID_SIZE; r++) {
 }
 console.timeEnd('gridSample');
 
+console.time('despike');
+const clampedSpikes = clampTerrainSpikes(elevations, GRID_SIZE, 35, {
+  masks,
+  radii: [6, 4, 2, 1],
+  passes: 4,
+  smoothPasses: 2,
+});
+maxElevation = 0;
+for (let i = 0; i < elevations.length; i++) {
+  if (elevations[i] > maxElevation) maxElevation = elevations[i];
+}
+console.timeEnd('despike');
+console.log(`Clamped ${clampedSpikes} spike cells on ${GRID_SIZE}x${GRID_SIZE} grid`);
+
+// Compute 2-pass Chamfer signed distance field (in map units) to Bedmap3 coastline (masks > 0 vs 0)
+console.time('coastSdf');
+const distCells = new Float32Array(GRID_SIZE * GRID_SIZE).fill(1e6);
+for (let r = 0; r < GRID_SIZE; r++) {
+  const row = r * GRID_SIZE;
+  for (let c = 0; c < GRID_SIZE; c++) {
+    const idx = row + c;
+    const land = masks[idx] > 0;
+    const diffL = c > 0 && (masks[idx - 1] > 0) !== land;
+    const diffR = c + 1 < GRID_SIZE && (masks[idx + 1] > 0) !== land;
+    const diffU = r > 0 && (masks[idx - GRID_SIZE] > 0) !== land;
+    const diffD = r + 1 < GRID_SIZE && (masks[idx + GRID_SIZE] > 0) !== land;
+    if (diffL || diffR || diffU || diffD) {
+      distCells[idx] = 0.5;
+    }
+  }
+}
+const DIAG = Math.SQRT2;
+for (let r = 0; r < GRID_SIZE; r++) {
+  const row = r * GRID_SIZE;
+  for (let c = 0; c < GRID_SIZE; c++) {
+    const idx = row + c;
+    let d = distCells[idx];
+    if (c > 0) d = Math.min(d, distCells[idx - 1] + 1);
+    if (r > 0) {
+      d = Math.min(d, distCells[idx - GRID_SIZE] + 1);
+      if (c > 0) d = Math.min(d, distCells[idx - GRID_SIZE - 1] + DIAG);
+      if (c + 1 < GRID_SIZE) d = Math.min(d, distCells[idx - GRID_SIZE + 1] + DIAG);
+    }
+    distCells[idx] = d;
+  }
+}
+for (let r = GRID_SIZE - 1; r >= 0; r--) {
+  const row = r * GRID_SIZE;
+  for (let c = GRID_SIZE - 1; c >= 0; c--) {
+    const idx = row + c;
+    let d = distCells[idx];
+    if (c + 1 < GRID_SIZE) d = Math.min(d, distCells[idx + 1] + 1);
+    if (r + 1 < GRID_SIZE) {
+      d = Math.min(d, distCells[idx + GRID_SIZE] + 1);
+      if (c + 1 < GRID_SIZE) d = Math.min(d, distCells[idx + GRID_SIZE + 1] + DIAG);
+      if (c > 0) d = Math.min(d, distCells[idx + GRID_SIZE - 1] + DIAG);
+    }
+    distCells[idx] = d;
+  }
+}
+const cellMapUnits = spanX / (GRID_SIZE - 1);
+const coastSdfGrid = new Float32Array(GRID_SIZE * GRID_SIZE);
+for (let i = 0; i < coastSdfGrid.length; i++) {
+  const sign = masks[i] > 0 ? 1 : -1;
+  coastSdfGrid[i] = sign * distCells[i] * cellMapUnits;
+}
+console.timeEnd('coastSdf');
+
 // Sample Pole and Dome A directly for logging
 const poleMap = project(0, -90);
 const poleC = Math.round(((poleMap.x - TERRAIN_BOX.minX) / spanX) * (GRID_SIZE - 1));
@@ -176,6 +244,10 @@ console.log('Generating Martini RTIN meshes (2049x2049)...');
 const MARTINI_SIZE = 2049;
 const martiniElevations = new Float32Array(MARTINI_SIZE * MARTINI_SIZE);
 const martiniMasks = new Uint8Array(MARTINI_SIZE * MARTINI_SIZE);
+const martiniInput = new Float32Array(MARTINI_SIZE * MARTINI_SIZE);
+// Negative ocean sentinel forces Martini RTIN to subdivide triangles crossing the Bedmap3 coastline
+// (especially low ~38 m floating ice shelves like Ross and Ronne where 38 m vs 0 m had <25 m midpoint error).
+const OCEAN_SENTINEL_M = -250;
 
 for (let r = 0; r < MARTINI_SIZE; r++) {
   const srcR = r * 2;
@@ -183,13 +255,16 @@ for (let r = 0; r < MARTINI_SIZE; r++) {
   const dstRow = r * MARTINI_SIZE;
   for (let c = 0; c < MARTINI_SIZE; c++) {
     const srcC = c * 2;
-    martiniElevations[dstRow + c] = elevations[srcRow + srcC];
-    martiniMasks[dstRow + c] = masks[srcRow + srcC];
+    const h = elevations[srcRow + srcC];
+    const m = masks[srcRow + srcC];
+    martiniElevations[dstRow + c] = h;
+    martiniMasks[dstRow + c] = m;
+    martiniInput[dstRow + c] = m === 0 ? OCEAN_SENTINEL_M : h;
   }
 }
 
 const martini = new Martini(MARTINI_SIZE);
-const tile = martini.createTile(martiniElevations);
+const tile = martini.createTile(martiniInput);
 
 function buildMeshBuffer(errorMeters: number, maxTriangles: number, levelName: string) {
   let err = errorMeters;
@@ -368,9 +443,9 @@ async function buildReliefTexture(size: number) {
       const gVal = Math.round(((ny / len) * 0.5 + 0.5) * 255);
       const bVal = Math.round(((nz / len) * 0.5 + 0.5) * 255);
 
-      const curH = elevations[gridR * GRID_SIZE + gridC];
-      // Height in 8 bits: 0..4200m -> 0..255
-      const aVal = Math.min(255, Math.max(0, Math.round((curH / 4200) * 255)));
+      const sdfMap = coastSdfGrid[gridR * GRID_SIZE + gridC];
+      // Signed distance to Bedmap3 coastline in map units: 0 at -1.0, 32 at 0.0 (coastline), 255 at +6.97
+      const aVal = Math.min(255, Math.max(0, Math.round(32 + sdfMap * 32)));
 
       const px = rowOffset + c * 4;
       rgba[px] = rVal;

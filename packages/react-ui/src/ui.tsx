@@ -63,4 +63,10 @@ export const Icon = {
       <path d="M2.5,7.5 L5.8,10.5 L11.5,3.5" fill="none" stroke="#1F2A36" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   ),
+  sea: (
+    <svg viewBox="0 0 14 14" aria-hidden="true">
+      <path d="M1.5 5.5 C3.2 4.2 4.8 6.8 6.5 5.5 C8.2 4.2 9.8 6.8 12.5 5.5" fill="none" stroke="#1E3E5C" strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M2.5 8.8 C4 7.8 5.4 9.8 7 8.8 C8.6 7.8 10 9.8 11.5 8.8" fill="none" stroke="#1E3E5C" strokeWidth="1.6" strokeLinecap="round" />
+    </svg>
+  ),
 };

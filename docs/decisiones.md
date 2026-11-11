@@ -113,6 +113,20 @@ Costos:
 - **Tinta:** Contornos de costa y barreras de hielo generados con `Line` sobre `heightAt + ε` con micro-jitter determinista.
 - **Rendimiento medido (GPU real NVIDIA RTX 3070):** 0 tareas > 16 ms durante órbita y zoom con botones (9 ms de GPU) y rueda (152 ms de GPU, tarea máxima 3 ms).
 
+### Océano 3D, fauna, batimetría y mejoras visuales (F5 a F8)
+
+- **Costa 3D desde Bedmap3 (F8):** Se retiraron del 3D los vectores `ANTARCTICA_PATH` e `ICE_SHELVES_PATH` de Natural Earth. Como no coincidían con la elevación de Bedmap3, se cortaban en guiones discontinuos y cruzaban por dentro las barreras flotantes de Ross y Ronne. La costa 3D se extrae de la máscara de Bedmap3 (`masks > 0`) en el shader de terreno, logrando un trazo continuo y fiel al relieve real.
+- **Recorte de agujas en montañas (F8):** La exageración vertical ×50 transformaba vértices individuales aislados en espinas en la Península y cordilleras. La función `clampTerrainSpikes` en `packages/core/src/relief.ts` y `build-terrain.ts` limita el desnivel a 35 m por celda contra la mediana vecina (radios 6, 4, 2 y 1), eliminando agujas artificiales sin reducir la altura de mesetas ni macizos montañosos.
+- **Aspecto del hielo glaciar (F8):** Paleta blanca fría y azulada en lugar del tono crema del papel sobre el manto de hielo, tinte azul profundo en depresiones y sombras (emulando la absorción óptica de luz en hielo denso), paredes verticales de hielo azul con estratos en las barreras flotantes, textura suave de sastrugi visible con zoom cercano y brillo Fresnel sobre el hielo liso.
+- **Batimetría real con IBCSO v2 (S3):** Grilla batimétrica de 500 m en proyección polar estereográfica EPSG:9354 al sur de 50° S. Al norte de 50° S, extensión y gradiente de 2° hacia la cuenca abisal de −4000 m. Texturas `ocean-bathy-2048.webp` y `1024.webp` (profundidad, normales de fondo y distancia a costa) y grilla compacta `ocean-depth-grid.bin` para consultas instantáneas en CPU.
+- **Superficie marina y animación eficiente (S4 y S5):** Malla en `y = 0` con shader dibujado que combina acuarela, sombras submarinas, orilla con rompiente suave y dos capas de oleaje sutil (`ocean-waves-a/b-256.webp`). Reloj único de animación (`__seaTime`) a 30 fps con `invalidate()`; se detiene automáticamente en vista 2D, con la pestaña oculta (`document.hidden`) o con `prefers-reduced-motion: reduce`.
+- **Fauna marina y témpanos representativos (S6):**
+  - Se redujo a 16 instancias en escritorio y 8 en celulares (en vez de las 40 planteadas inicialmente en el borrador) a pedido de Lk el 11 nov, despejando la lectura cartográfica y asegurando rendimiento holgado en GPU.
+  - Distribución determinista basada en zonas de presencia real documentadas en literatura científica marina, con validación batimétrica (`depthAt < -20 m`) y separación mínima estricta de >= 40 px en pantalla respecto de cualquier marcador `PTS` y sus etiquetas en `homePose3D` (1440 y 390 px).
+  - Renderizado en una única llamada de dibujo (`InstancedMesh`) con atlas de texturas (`sea-atlas.webp`) y animación de vaivén y respiración en vertex shader sin costo de CPU.
+- **Rompehielos ARA Almirante Irízar (S8):** Navega con trayecto de ida y vuelta con maniobra y estadía de amarre en puerto entre Ushuaia y Base Marambio (en vez de un bucle circular cerrado instantáneo), representando la Campaña Antártica de Verano.
+- **Marcadores del mar (S7 y S9):** Muestran solo el icono circular en reposo para no saturar el mapa con texto; el nombre y lugar emergen en hover o foco de teclado con Tab. Al activarse abren la ficha temática con fuentes oficiales verificadas. Se apilan en z-index por debajo de paneles, controles y leyenda.
+
 
 ## Benchmark
 

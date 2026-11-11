@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <!-- Nautical ink & watercolor illustration: Antarctic Minke whale (sleek body, pointed snout, falcate fin) -->
+  <g filter="url(#wcs)">
+    <ellipse cx="128" cy="172" rx="96" ry="18" fill="#7FA8C4" opacity="0.46"/>
+    <path d="M22,172 C56,158 98,156 142,157 C182,158 214,162 236,172 C212,183 170,187 126,187 C82,187 44,181 22,172 Z" fill="#F7FAFB" opacity="0.92"/>
+  </g>
+  <g filter="url(#ink)">
+    <!-- Streamlined fusiform body with sharp V-shaped rostrum & sickle dorsal fin two-thirds back -->
+    <path d="M24,166 C38,148 64,132 98,124 C130,117 158,118 176,122 C182,106 192,92 202,90 C206,90 204,102 196,116 C200,122 214,136 228,166 C196,160 156,157 116,158 C76,159 44,162 24,166 Z" fill="#1F2A36" stroke="#1F2A36" stroke-width="3.8" stroke-linejoin="round"/>
+    <!-- Pale flank chevron & light underside characteristic of minke whales -->
+    <path d="M34,164 C52,154 78,148 106,148 C114,136 124,128 136,130 C130,138 126,146 128,154 C150,152 174,154 198,160 C162,157 118,157 76,160 C56,161 42,163 34,164 Z" fill="#7FA8C4" opacity="0.88"/>
+    <path d="M40,164 C60,156 88,153 118,154 C146,155 172,157 192,161" fill="none" stroke="#F7FAFB" stroke-width="4" stroke-linecap="round" opacity="0.9"/>
+    <!-- Rostrum median ridge & wet dorsal highlight -->
+    <path d="M36,156 C58,140 86,130 118,125 C144,121 164,122 178,125" fill="none" stroke="#F7FAFB" stroke-width="2.6" stroke-linecap="round" opacity="0.82"/>
+    <!-- Pectoral flipper silhouette below waterline with bright white band -->
+    <path d="M88,164 C96,178 108,190 122,192 C126,192 124,182 114,170 C106,164 96,162 88,164 Z" fill="#1F2A36" stroke="#1F2A36" stroke-width="2.5"/>
+    <path d="M98,172 L114,176 L118,182 L102,179 Z" fill="#F7FAFB"/>
+    <!-- Waterline foam & ripples -->
+    <path d="M18,170 C54,160 96,158 138,159 C178,160 210,163 238,171" fill="none" stroke="#1F2A36" stroke-width="3.4" stroke-linecap="round"/>
+    <path d="M32,180 C68,173 108,172 152,173 C184,174 208,177 226,182" fill="none" stroke="#F7FAFB" stroke-width="3.4" stroke-linecap="round"/>
+  </g>
+</svg>
