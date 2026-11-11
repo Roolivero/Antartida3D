@@ -48,6 +48,10 @@ export const VOYAGE_SOURCES = {
 
 export type VoyageSourceCode = keyof typeof VOYAGE_SOURCES;
 
+/** Sources in the order of the sources page; a fact cites them by their number there. */
+export const VOYAGE_SOURCE_CODES = Object.keys(VOYAGE_SOURCES) as VoyageSourceCode[];
+export const voyageSourceNumber = (code: VoyageSourceCode) => VOYAGE_SOURCE_CODES.indexOf(code) + 1;
+
 /** One statement with what it is and where it comes from. Estimates explain their own calculation. */
 export interface VoyageFact {
   text: string;

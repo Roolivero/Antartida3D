@@ -5,12 +5,15 @@ import {
   VOYAGE_ROUTE_NOTE,
   VOYAGE_SOURCES,
   VOYAGE_SOURCES_CONSULTED,
+  VOYAGE_SOURCE_CODES,
   VOYAGE_TOURISM_NOTE,
   voyageArrived,
+  voyageSourceNumber,
   voyageStops,
   type TransportId,
   type VoyageDataKind,
   type VoyageFact,
+  type VoyageSourceCode,
 } from '@antartida/core';
 import { useFocusReturn } from '../hooks.ts';
 import { Chip, type ChipKind } from '../ui.tsx';
@@ -18,23 +21,73 @@ import type { VoyageController } from './useVoyage.ts';
 
 const CHIP: Record<VoyageDataKind, ChipKind> = { real: 'real', estimate: 'sim', illustrative: 'art' };
 
-function Fact({ fact }: { fact: VoyageFact }) {
+/** Opens the sources page at one source. */
+type OpenSources = (code: VoyageSourceCode | null) => void;
+
+function Fact({ fact, onSource }: { fact: VoyageFact; onSource: OpenSources }) {
   return (
     <li className="vfact">
       <Chip kind={CHIP[fact.kind]}>{VOYAGE_KIND_LABEL[fact.kind]}</Chip>
-      <span>{fact.text}</span>
-      {fact.sources.map((code) => (
-        <a key={code} className="vsrc" href={VOYAGE_SOURCES[code].url} target="_blank" rel="noopener noreferrer">
-          Fuente: {VOYAGE_SOURCES[code].org}. {VOYAGE_SOURCES[code].title}
-        </a>
-      ))}
+      <span>
+        {fact.text}
+        {fact.sources.map((code) => (
+          <button
+            key={code}
+            type="button"
+            className="vref"
+            onClick={() => onSource(code)}
+            aria-label={`Fuente ${voyageSourceNumber(code)}: ${VOYAGE_SOURCES[code].org}`}
+          >
+            [{voyageSourceNumber(code)}]
+          </button>
+        ))}
+      </span>
     </li>
   );
 }
 
-const Consulted = () => <p className="vsmall">Fuentes consultadas el {VOYAGE_SOURCES_CONSULTED}.</p>;
+const SourcesButton = ({ onSource }: { onSource: OpenSources }) => (
+  <button type="button" className="btn ghost" onClick={() => onSource(null)}>Fuentes</button>
+);
 
-function Picker({ onStart, onExit }: { onStart: (id: TransportId) => void; onExit: () => void }) {
+/** Separate page with every source of the expedition, numbered as the facts cite them. */
+function SourcesPage({ focus, onClose }: { focus: VoyageSourceCode | null; onClose: () => void }) {
+  const ref = useRef<HTMLDivElement>(null);
+  useFocusReturn(true, ref, focus ? `[data-source="${focus}"] a` : 'button');
+  return (
+    <div
+      className="listview vsources"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="sources-title"
+      ref={ref}
+      onKeyDown={(e) => {
+        if (e.key !== 'Escape') return;
+        e.stopPropagation();
+        onClose();
+      }}
+    >
+      <div className="inner">
+        <div className="listhead">
+          <h2 id="sources-title">Fuentes</h2>
+          <button type="button" className="btn" onClick={onClose}>Volver al viaje</button>
+        </div>
+        <p className="gdesc">Cada dato del viaje lleva un número entre corchetes. Acá está de dónde sale. Consultadas el {VOYAGE_SOURCES_CONSULTED}.</p>
+        <ol className="vsrclist">
+          {VOYAGE_SOURCE_CODES.map((code) => (
+            <li key={code} data-source={code} className={code === focus ? 'on' : undefined}>
+              <strong>{VOYAGE_SOURCES[code].org}</strong>
+              <span>{VOYAGE_SOURCES[code].title}</span>
+              <a href={VOYAGE_SOURCES[code].url} target="_blank" rel="noopener noreferrer">Abrir la fuente</a>
+            </li>
+          ))}
+        </ol>
+      </div>
+    </div>
+  );
+}
+
+function Picker({ onStart, onExit, onSource }: { onStart: (id: TransportId) => void; onExit: () => void; onSource: OpenSources }) {
   const ref = useRef<HTMLElement>(null);
   const [picked, setPicked] = useState<TransportId>(TRANSPORTS[0].id);
   useFocusReturn(true, ref, '[aria-pressed="true"]');
@@ -59,20 +112,22 @@ function Picker({ onStart, onExit }: { onStart: (id: TransportId) => void; onExi
         ))}
       </div>
       <p>{transport.pitch}</p>
-      <ul className="vfacts">{transport.facts.map((f) => <Fact key={f.text} fact={f} />)}</ul>
-      <ul className="vfacts"><Fact fact={VOYAGE_TOURISM_NOTE} /></ul>
-      <Consulted />
+      <ul className="vfacts">
+        {transport.facts.map((f) => <Fact key={f.text} fact={f} onSource={onSource} />)}
+        <Fact fact={VOYAGE_TOURISM_NOTE} onSource={onSource} />
+      </ul>
       <div className="row" style={{ marginTop: 12 }}>
         <button type="button" className="btn primary" onClick={() => onStart(picked)}>
           {transport.kind === 'plane' ? 'Despegar' : 'Zarpar'}
         </button>
         <button type="button" className="btn" onClick={onExit}>Volver al mapa</button>
+        <SourcesButton onSource={onSource} />
       </div>
     </section>
   );
 }
 
-function MilestoneCard({ voyage, onExit }: { voyage: VoyageController; onExit: (done: boolean) => void }) {
+function MilestoneCard({ voyage, onExit, onSource }: { voyage: VoyageController; onExit: (done: boolean) => void; onSource: OpenSources }) {
   const state = voyage.state!;
   const ref = useRef<HTMLElement>(null);
   const [more, setMore] = useState(false);
@@ -91,19 +146,17 @@ function MilestoneCard({ voyage, onExit }: { voyage: VoyageController; onExit: (
     >
       <small className="vstep">Hito {state.card + 1} de {voyageStops(state.kind).length}</small>
       <h2 id="voyage-title">{milestone.title}</h2>
-      <ul className="vfacts"><Fact fact={milestone.essential} /></ul>
-      <button type="button" className="btn ghost" aria-expanded={more} onClick={() => setMore((m) => !m)}>
-        {more ? 'Ver menos' : 'Saber más'}
-      </button>
-      {more && (
-        <>
-          <ul className="vfacts">{milestone.more.map((f) => <Fact key={f.text} fact={f} />)}</ul>
-          <Consulted />
-        </>
-      )}
+      <ul className="vfacts">
+        <Fact fact={milestone.essential} onSource={onSource} />
+        {more && milestone.more.map((f) => <Fact key={f.text} fact={f} onSource={onSource} />)}
+      </ul>
       {last && <p className="anno">Si te quedó curiosidad por otro medio, volvé a hacer la expedición.</p>}
       <div className="row" style={{ marginTop: 12 }}>
         <button type="button" className="btn primary" onClick={next}>{last ? 'Terminar el viaje' : 'Continuar'}</button>
+        <button type="button" className="btn ghost" aria-expanded={more} onClick={() => setMore((m) => !m)}>
+          {more ? 'Ver menos' : 'Saber más'}
+        </button>
+        <SourcesButton onSource={onSource} />
       </div>
     </section>
   );
@@ -171,7 +224,17 @@ export function VoyagePanel({ voyage, animated, onExit }: {
   onExit: (done: boolean) => void;
 }) {
   const { state } = voyage;
-  if (!state) return <Picker onStart={voyage.start} onExit={() => onExit(false)} />;
-  if (state.card >= 0) return <MilestoneCard key={state.card} voyage={voyage} onExit={onExit} />;
-  return <TravelBar voyage={voyage} animated={animated} onExit={() => onExit(false)} />;
+  // undefined: closed; null: open at the top; a code: open at that source.
+  const [sources, setSources] = useState<VoyageSourceCode | null | undefined>(undefined);
+  const stage = !state
+    ? <Picker onStart={voyage.start} onExit={() => onExit(false)} onSource={setSources} />
+    : state.card >= 0
+      ? <MilestoneCard key={state.card} voyage={voyage} onExit={onExit} onSource={setSources} />
+      : <TravelBar voyage={voyage} animated={animated} onExit={() => onExit(false)} />;
+  return (
+    <>
+      {stage}
+      {sources !== undefined && <SourcesPage focus={sources} onClose={() => setSources(undefined)} />}
+    </>
+  );
 }

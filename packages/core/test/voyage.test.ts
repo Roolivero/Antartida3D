@@ -4,6 +4,8 @@ import {
   TRANSPORTS,
   VOYAGE_SECONDS,
   VOYAGE_SOURCES,
+  VOYAGE_SOURCE_CODES,
+  voyageSourceNumber,
   VOYAGE_TOURISM_NOTE,
   advanceVoyage,
   closeVoyageCard,
@@ -40,6 +42,17 @@ describe('voyage content', () => {
       expect(source.title).not.toBe('');
       expect(source.url).toMatch(/^https:\/\//);
     }
+  });
+
+  it('numbers the sources from 1, each with its own number', () => {
+    const numbers = VOYAGE_SOURCE_CODES.map(voyageSourceNumber);
+    expect(numbers).toEqual(numbers.map((_, i) => i + 1));
+    expect(numbers).toHaveLength(Object.keys(VOYAGE_SOURCES).length);
+  });
+
+  it('lists no source that the content does not cite', () => {
+    const cited = new Set(facts.flatMap((f) => f.sources));
+    expect(VOYAGE_SOURCE_CODES.filter((code) => !cited.has(code))).toEqual([]);
   });
 
   it('offers only the Argentine scientific transports', () => {
