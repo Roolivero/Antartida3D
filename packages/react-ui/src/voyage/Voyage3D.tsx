@@ -55,7 +55,7 @@ const MAX_PITCH = 0.4;
 
 const routeMaterial = new LineDashedMaterial({ color: 0x1f2a36, dashSize: 0.8, gapSize: 0.6, transparent: true, opacity: 0.75 });
 
-/** The vehicle travelling on the live map, its path and the camera that follows it. */
+/** The vehicle travelling on the live map, its path and the camera, which stays centered on it. */
 export function Voyage3D({ bus, reduced }: { bus: VoyageBus; reduced: boolean }) {
   const invalidate = useThree((s) => s.invalidate);
   const controls = useThree((s) => s.controls) as unknown as CameraControls | null;
@@ -71,16 +71,6 @@ export function Voyage3D({ bus, reduced }: { bus: VoyageBus; reduced: boolean })
     bus.listeners.add(onChange);
     return () => void bus.listeners.delete(onChange);
   }, [bus, invalidate]);
-
-  // Dragging the map lets go of the vehicle; the panel's "Centrar" button takes it back.
-  useEffect(() => {
-    if (!controls) return;
-    const release = () => {
-      bus.follow = false;
-    };
-    controls.addEventListener('controlstart', release);
-    return () => controls.removeEventListener('controlstart', release);
-  }, [bus, controls]);
 
   const kind = transport ? TRANSPORTS.find((v) => v.id === transport)!.kind : null;
   const geometry = useMemo(() => (transport ? buildVehicleGeometry(transport) : null), [transport]);
@@ -137,11 +127,12 @@ export function Voyage3D({ bus, reduced }: { bus: VoyageBus; reduced: boolean })
       });
     }
 
-    const moved = drawn.current.t !== s.t || drawn.current.transport !== s.transport;
-    if (controls && moved && bus.follow) {
-      if (s.t === 0) {
+    // The camera always stays on the vehicle: the user can orbit and zoom around it, not pan away.
+    if (controls) {
+      const departing = s.t === 0 && (drawn.current.t !== 0 || drawn.current.transport !== s.transport);
+      if (departing) {
         void controls.setLookAt(takeoff.x + DEPARTURE_OFFSET.x, DEPARTURE_OFFSET.y, takeoff.z + DEPARTURE_OFFSET.z, takeoff.x, 0, takeoff.z, !reduced);
-      } else void controls.moveTo(g.position.x, Math.max(0, height), g.position.z, !reduced);
+      } else if (s.t > 0) void controls.moveTo(g.position.x, Math.max(0, height), g.position.z, false);
     }
     drawn.current = { t: s.t, transport: s.transport };
   });

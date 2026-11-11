@@ -9,8 +9,6 @@ import {
  */
 export interface VoyageBus {
   state: VoyageState | null;
-  /** The camera follows the vehicle until the user moves the map. */
-  follow: boolean;
   listeners: Set<() => void>;
 }
 
@@ -28,13 +26,12 @@ export interface VoyageController {
   hold: (on: boolean) => void;
   skip: () => void;
   closeCard: () => void;
-  recenter: () => void;
   reset: () => void;
 }
 
 export function useVoyage(): VoyageController {
   const [state, setState] = useState<VoyageState | null>(null);
-  const bus = useRef<VoyageBus>({ state: null, follow: true, listeners: new Set() }).current;
+  const bus = useRef<VoyageBus>({ state: null, listeners: new Set() }).current;
   const frame = useRef(0);
   const [gear, setGear] = useState(0);
   const press = useRef({ gear: 0, at: -Infinity });
@@ -59,10 +56,7 @@ export function useVoyage(): VoyageController {
     state,
     bus,
     gear,
-    start: (transport) => {
-      bus.follow = true;
-      commit(startVoyage(transport));
-    },
+    start: (transport) => commit(startVoyage(transport)),
     hold: (on) => {
       const d = drive.current;
       if (!on) {
@@ -98,10 +92,6 @@ export function useVoyage(): VoyageController {
       if (bus.state) commit(skipToNextStop(bus.state));
     },
     closeCard: () => bus.state && commit(closeVoyageCard(bus.state)),
-    recenter: () => {
-      bus.follow = true;
-      notify();
-    },
     reset: () => {
       stop();
       if (bus.state) commit(null);

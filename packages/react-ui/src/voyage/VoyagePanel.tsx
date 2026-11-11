@@ -194,7 +194,6 @@ function TravelBar({ voyage, animated, onExit }: { voyage: VoyageController; ani
       {animated && <p className="vsmall">¿Apuro? Tocá dos o tres veces seguidas y mantené: va más rápido.</p>}
       <p className="vsmall">{VOYAGE_ROUTE_NOTE}</p>
       <div className="row">
-        {animated && <button type="button" className="btn ghost" onClick={voyage.recenter}>Centrar</button>}
         <button type="button" className="btn ghost" onClick={onExit}>Salir del viaje</button>
       </div>
       {/* Last row, at the same corner as the "Continuar" button of the milestone card: the pointer stays put. */}
