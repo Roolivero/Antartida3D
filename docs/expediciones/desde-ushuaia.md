@@ -125,9 +125,9 @@ Animales que pueden aparecer durante el viaje, por zona (ver [diseño](./desde-u
 | Animal | Tramo | Qué dice la fuente | Fuente |
 | :--- | :--- | :--- | :--- |
 | Cormorán imperial, lobos marinos, delfín austral | Canal Beagle | Ver tabla A | `[O20]` `[O30]` `[U7]` |
-| Albatros errante | Pasaje de Drake | Conteos desde barco el 19-20 de marzo de 1998 y 2000: de 0,14 a 0,52 aves por hora según la franja de latitud | `[I19]` |
-| Petrel gigante del sur | Pasaje de Drake | Mismos conteos: de 1,40 a 4,70 aves por hora | `[I19]` |
-| Delfín cruzado | Sur del Drake | Relevamientos de 2003 a 2011: avistajes en aguas profundas al norte de las Shetland del Sur, grupos de 2 a 6 | `[I20]` |
+| Albatros errante | Pasaje de Drake | Conteos desde barco el 19-20 de marzo de 1998 y 2000: de 0,14 a 0,52 aves por hora según la franja de latitud | `[I22]` |
+| Petrel gigante del sur | Pasaje de Drake | Mismos conteos: de 1,40 a 4,70 aves por hora | `[I22]` |
+| Delfín cruzado | Sur del Drake | Relevamientos de 2003 a 2011: avistajes en aguas profundas al norte de las Shetland del Sur, grupos de 2 a 6 | `[I23]` |
 | Foca leopardo | Shetland del Sur | Censo semanal de focas en el cabo Shirreff (isla Livingston) en la mayoría de los veranos desde 1997 | `[I21]` |
 | Pingüino barbijo | Shetland y Bransfield | ANTAR XXVI: 472 individuos (16,70 %); los pingüinos tuvieron mayor presencia en el Estrecho de Bransfield | `[O31]` |
 | Ballena jorobada, petrel damero | Bransfield | Ver tabla C | `[O32]` `[O31]` |
@@ -136,7 +136,7 @@ Animales que pueden aparecer durante el viaje, por zona (ver [diseño](./desde-u
 | Foca de Weddell | Bahía Esperanza | 217 muestras de heces recolectadas allí en los veranos de 2003 a 2005; come sobre todo plateado antártico | `[O38]` |
 | Foca cangrejera | Isla Marambio | Relevamientos aéreos de 2015 a 2017 en el estrecho Bouchard; 96 ejemplares momificados en la isla | `[O37]` |
 
-**Las fichas hablan del animal, no del registro.** Los conteos y campañas de la tabla de arriba respaldan la zona, pero no se muestran en la ficha: ahí va un dato sobre el animal (qué come, cómo caza, cómo es). Por eso `[I19]`, `[I21]`, `[O32]` y `[O37]` están en el catálogo de fuentes pero no en la página de fuentes de la aplicación. Datos de ficha sumados el 11-11-2026: orca y petrel damero, de las fichas de especie de la Australian Antarctic Division `[I16]`; ballena jorobada, de `[O29]` y `[I15]`.
+**Las fichas hablan del animal, no del registro.** Los conteos y campañas de la tabla de arriba respaldan la zona, pero no se muestran en la ficha: ahí va un dato sobre el animal (qué come, cómo caza, cómo es). Por eso `[I22]`, `[I21]`, `[O31]`, `[O32]`, `[O37]` y `[U8]` están en el catálogo de fuentes pero no en la página de fuentes de la aplicación. Datos de ficha sumados el 11-11-2026: orca, petrel damero y pingüino barbijo, de las fichas de especie de la Australian Antarctic Division `[I16]`; ballena jorobada, de `[O29]` y `[I15]`.
 
 El punto exacto, el momento y los movimientos siguen siendo ilustrativos; la interfaz lo dice una vez, antes de empezar el viaje. La foca leopardo se movió de la costa de la Península a las Shetland porque solo ahí tiene registro (los estudios argentinos sobre ella son de la costa de Danco, fuera de la ruta).
 
@@ -196,8 +196,8 @@ Lugares que se pueden abrir durante el viaje en barco, igual que los avistajes d
 | Lugar | Dato | Fuente |
 | :--- | :--- | :--- |
 | Faro Les Éclaireurs (canal Beagle) | Torre de piedra de 11 m, pintada de rojo y blanco. Entró en servicio el 23 de diciembre de 1920. El nombre de los islotes, «los exploradores», se lo puso el capitán francés Louis Ferdinand Martial. | `[O35]` |
-| Pingüinera de Isla Martillo (canal Beagle) | Colonia de pingüinos de Magallanes más cercana a Ushuaia, a unos 40 km al este. Investigadores del CADIC-CONICET vieron que aprovechan las corrientes de marea para ir y volver de los sitios donde comen. | `[O33]` |
-| Faro San Juan de Salvamento (Isla de los Estados) | Bautizado «Faro del Fin del Mundo». Lo puso en servicio el 25 de mayo de 1884 la División Expedicionaria al Atlántico Sur, al mando del comodoro Augusto Lasserre. Es Monumento Histórico Nacional. Queda lejos de la ruta: en pantalla se sostiene en el borde, en su dirección. | `[O34]` |
+| Pingüinera de Isla Martillo (canal Beagle) | Colonia de pingüinos de Magallanes más cercana a Ushuaia, a unos 40 km al este. Investigadores del CADIC-CONICET vieron que aprovechan las corrientes de marea para ir y volver de los sitios donde comen. | `[O39]` |
+| Faro San Juan de Salvamento (Isla de los Estados) | Bautizado «Faro del Fin del Mundo». Lo puso en servicio el 25 de mayo de 1884 la División Expedicionaria al Atlántico Sur, al mando del comodoro Augusto Lasserre. Es Monumento Histórico Nacional. Queda lejos de la ruta: en pantalla se sostiene en el borde, en su dirección. | `[O40]` |
 
 No se publica (las fuentes leídas no lo dicen): la relación del faro San Juan de Salvamento con la novela de Julio Verne, el año en que dejó de funcionar, y los pingüinos papúa de Isla Martillo.
 
