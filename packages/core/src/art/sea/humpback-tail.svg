@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <!-- Nautical ink & watercolor illustration: Humpback whale diving tail fluke -->
+  <!-- Water splash & foam ring at base -->
+  <g filter="url(#wcs)">
+    <ellipse cx="128" cy="196" rx="76" ry="20" fill="#7FA8C4" opacity="0.5"/>
+    <path d="M48,194 C72,178 102,174 128,174 C154,174 184,178 208,194 C188,208 158,214 128,214 C98,214 68,208 48,194 Z" fill="#F7FAFB" opacity="0.95"/>
+    <!-- Splash droplets & foam plumes -->
+    <path d="M76,188 C68,170 78,158 92,168 C100,154 114,152 120,166 L136,166 C142,152 156,154 164,168 C178,158 188,170 180,188 Z" fill="#F3EBDD" opacity="0.88"/>
+  </g>
+  <!-- Tall butterfly tail fluke & peduncle -->
+  <g filter="url(#ink)">
+    <!-- Fluke silhouette with scalloped trailing (top) edge and central V-notch -->
+    <path d="M108,190 C110,162 113,134 114,112 C88,104 54,88 32,62 C26,55 30,46 40,48 C62,52 84,60 104,70 C114,75 122,80 128,89 C134,80 142,75 152,70 C172,60 194,52 216,48 C226,46 230,55 224,62 C202,88 168,104 142,112 C143,134 146,162 148,190 Z" fill="#1F2A36" stroke="#1F2A36" stroke-width="4.2" stroke-linejoin="round"/>
+    <!-- Characteristic white/glacier underside markings of Humpback fluke -->
+    <path d="M44,56 C64,62 84,70 102,80 C92,88 72,84 52,70 C46,65 42,60 44,56 Z" fill="#F7FAFB" opacity="0.92"/>
+    <path d="M212,56 C192,62 172,70 154,80 C164,88 184,84 204,70 C210,65 214,60 212,56 Z" fill="#F7FAFB" opacity="0.92"/>
+    <!-- Glacier highlight along peduncle and fluke lobes -->
+    <path d="M68,84 C88,94 106,100 120,106 L121,176 L129,176 L129,104 C114,96 90,86 68,84 Z" fill="#7FA8C4" opacity="0.72"/>
+    <path d="M188,84 C168,94 150,100 136,106 L134,168" fill="none" stroke="#7FA8C4" stroke-width="3.2" stroke-linecap="round" opacity="0.75"/>
+    <!-- Scallop notches in pale ink highlight along top edge -->
+    <path d="M36,50 C52,54 68,59 84,65 M94,69 C106,74 118,80 128,89 C138,80 150,74 162,69 M172,65 C188,59 204,54 220,50" fill="none" stroke="#F3EBDD" stroke-width="2.5" stroke-linecap="round" opacity="0.85"/>
+    <!-- Falling water streaks from fluke tips -->
+    <path d="M42,74 L42,114 M58,86 L58,122 M198,86 L198,122 M214,74 L214,114" fill="none" stroke="#F7FAFB" stroke-width="2.4" stroke-linecap="round" stroke-dasharray="4 6" opacity="0.85"/>
+    <!-- Bold ink foam collar & concentric ripples -->
+    <path d="M44,192 C74,180 102,178 128,178 C154,178 182,180 212,192" fill="none" stroke="#1F2A36" stroke-width="3.6" stroke-linecap="round"/>
+    <path d="M58,202 C86,193 110,192 128,192 C146,192 170,193 198,202" fill="none" stroke="#F7FAFB" stroke-width="3.8" stroke-linecap="round"/>
+    <path d="M34,208 C72,220 112,222 152,220 C182,218 206,214 222,208" fill="none" stroke="#1F2A36" stroke-width="2.6" stroke-linecap="round" stroke-dasharray="12 8"/>
+  </g>
+</svg>

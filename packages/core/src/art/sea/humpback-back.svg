@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <!-- Nautical ink & watercolor illustration: Humpback whale surfacing back (3/4 oblique view) -->
+  <!-- Waterline foam collar & concentric ink ripples -->
+  <g filter="url(#wcs)">
+    <ellipse cx="128" cy="176" rx="98" ry="22" fill="#7FA8C4" opacity="0.5"/>
+    <path d="M24,174 C56,158 98,156 136,158 C174,160 206,164 232,175 C210,188 168,194 126,193 C82,192 46,186 24,174 Z" fill="#F7FAFB" opacity="0.94"/>
+    <path d="M40,176 C74,166 116,164 156,166 C186,168 208,172 218,177 C194,184 156,187 118,186 C78,185 54,181 40,176 Z" fill="#F3EBDD" opacity="0.82"/>
+  </g>
+  <!-- Whale arched body & characteristic humped dorsal fin -->
+  <g filter="url(#ink)">
+    <!-- Main dark slate-ink body rising from water -->
+    <path d="M34,174 C40,144 62,116 94,104 C124,93 154,96 176,110 C184,96 194,84 202,86 C208,88 206,102 198,116 C210,128 218,148 222,173 C192,165 154,161 118,162 C82,163 52,167 34,174 Z" fill="#1F2A36" stroke="#1F2A36" stroke-width="4" stroke-linejoin="round"/>
+    <!-- Wet glacier-blue & ice sheen along top dorsal ridge for strong contrast on deep water -->
+    <path d="M48,154 C64,126 90,109 120,102 C146,96 168,103 182,114 C188,104 194,94 198,94 C199,101 196,109 192,118 C170,109 142,106 114,113 C86,120 64,136 48,154 Z" fill="#7FA8C4" opacity="0.88"/>
+    <path d="M62,138 C82,118 110,105 138,104 C156,104 170,108 178,114 C160,111 136,110 112,117 C92,122 74,130 62,138 Z" fill="#F7FAFB" opacity="0.82"/>
+    <!-- Long white-edged pectoral fin visible just at the waterline -->
+    <path d="M88,160 C102,176 126,188 148,186 C152,185 148,176 134,168 C118,160 100,158 88,160 Z" fill="#F7FAFB" stroke="#1F2A36" stroke-width="2.6"/>
+    <!-- Ventral pleats / throat grooves on forward flank -->
+    <path d="M48,166 C64,152 84,146 104,148 M56,170 C72,158 92,153 112,155" fill="none" stroke="#F7FAFB" stroke-width="2.5" stroke-linecap="round" opacity="0.82"/>
+    <!-- Rostrum tubercles & blowhole crease -->
+    <circle cx="58" cy="142" r="2.8" fill="#F3EBDD"/>
+    <circle cx="68" cy="133" r="2.8" fill="#F3EBDD"/>
+    <circle cx="80" cy="125" r="2.6" fill="#F3EBDD"/>
+    <path d="M94,106 C102,102 110,102 116,105" fill="none" stroke="#F7FAFB" stroke-width="3" stroke-linecap="round"/>
+    <!-- Crisp ink hachures along flank -->
+    <path d="M124,120 L120,152 M136,120 L132,153 M148,122 L144,154 M160,124 L156,155 M172,128 L168,156 M184,132 L180,158" fill="none" stroke="#7FA8C4" stroke-width="2" stroke-linecap="round" opacity="0.62"/>
+    <!-- Waterline foam crest & ink wave rings -->
+    <path d="M20,175 C52,164 88,161 128,162 C168,163 204,167 236,176" fill="none" stroke="#1F2A36" stroke-width="3.5" stroke-linecap="round"/>
+    <path d="M32,186 C72,178 114,177 156,179 C186,180 210,183 228,188" fill="none" stroke="#F7FAFB" stroke-width="3.8" stroke-linecap="round"/>
+    <path d="M16,194 C60,204 116,206 174,202 C202,200 224,196 240,191" fill="none" stroke="#1F2A36" stroke-width="2.6" stroke-linecap="round" stroke-dasharray="14 8"/>
+  </g>
+</svg>

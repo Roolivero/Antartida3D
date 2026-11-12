@@ -9,6 +9,7 @@ import {
   TERRAIN_BOX,
   project,
   isAntimeridianSeam,
+  clampTerrainSpikes,
 } from '../src/index.ts';
 
 describe('terrain', () => {
@@ -102,6 +103,26 @@ describe('terrain', () => {
     const elapsed = performance.now() - start;
     expect(sum).toBeGreaterThan(0);
     expect(elapsed).toBeLessThan(50);
+  });
+
+  it('clamps isolated elevation spikes on a synthetic grid without altering surrounding plateau', () => {
+    const size = 7;
+    const grid = new Float32Array(size * size).fill(600);
+    const masks = new Uint8Array(size * size).fill(1);
+    // Inject an isolated 1850 m needle at center (3, 3) on a 600 m plateau
+    const centerIdx = 3 * size + 3;
+    grid[centerIdx] = 1850;
+
+    const clamped = clampTerrainSpikes(grid, size, 70, { masks, radii: [2, 1], passes: 2 });
+    expect(clamped).toBe(1);
+    expect(grid[centerIdx]).toBe(670);
+
+    // All surrounding plateau cells remain untouched at 600 m
+    for (let i = 0; i < grid.length; i++) {
+      if (i !== centerIdx) {
+        expect(grid[i]).toBe(600);
+      }
+    }
   });
 });
 

@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <!-- Nautical ink & watercolor illustration: Icebreaker ARA Almirante Irizar Kelvin V-wake -->
+  <!-- Two diverging foam arms in V made of short broken strokes fading toward the far left (-X), -->
+  <!-- plus denser turbulent prop-wash right behind the stern on the right (+X). No solid fill or closed outline. -->
+  <g filter="url(#ink)" fill="none" stroke-linecap="round">
+    <!-- 1. Dense turbulent propeller wash right behind the stern (x = 186..244) -->
+    <g opacity="1.0">
+      <path d="M242,125 C228,119 214,120 200,125 M240,132 C226,138 212,137 196,131 M236,120 C222,113 206,112 190,117 M236,137 C222,144 206,145 190,139" stroke="#F7FAFB" stroke-width="5.2"/>
+      <path d="M230,128 L204,128 M220,122 C210,119 200,122 192,126 M220,135 C210,138 200,135 192,131" stroke="#7FA8C4" stroke-width="3.8"/>
+      <path d="M238,116 C226,110 212,108 198,112 M238,141 C226,147 212,149 198,145" stroke="#1F2A36" stroke-width="2.6"/>
+    </g>
+
+    <!-- 2. Near-stern Kelvin V-arms & turbulent inner eddies (x = 146..198) -->
+    <g opacity="0.88">
+      <!-- Upper V-arm feathered cusp strokes -->
+      <path d="M196,112 C182,105 168,101 154,99 M182,116 C168,110 156,107 144,105" stroke="#F7FAFB" stroke-width="4.6"/>
+      <path d="M192,106 C178,100 164,96 150,94" stroke="#1F2A36" stroke-width="2.4"/>
+      <path d="M186,120 C172,115 160,112 148,110" stroke="#7FA8C4" stroke-width="3.4"/>
+      <!-- Lower V-arm feathered cusp strokes -->
+      <path d="M196,144 C182,151 168,155 154,157 M182,140 C168,146 156,149 144,151" stroke="#F7FAFB" stroke-width="4.6"/>
+      <path d="M192,150 C178,156 164,160 150,162" stroke="#1F2A36" stroke-width="2.4"/>
+      <path d="M186,136 C172,141 160,144 148,146" stroke="#7FA8C4" stroke-width="3.4"/>
+      <!-- Broken centerline prop-wash turbulence -->
+      <path d="M190,126 C176,124 164,125 152,127 M180,132 C168,135 158,133 148,130" stroke="#F7FAFB" stroke-width="3.8"/>
+      <path d="M174,121 L156,120 M172,136 L154,137" stroke="#7FA8C4" stroke-width="2.8"/>
+    </g>
+
+    <!-- 3. Mid Kelvin V-arms: broken echelon wavelets opening wider (x = 100..150) -->
+    <g opacity="0.72">
+      <!-- Upper V-arm -->
+      <path d="M148,96 C134,89 118,85 104,83 M134,101 C120,95 106,92 94,90" stroke="#F7FAFB" stroke-width="4.2"/>
+      <path d="M144,90 C130,84 116,80 102,78" stroke="#1F2A36" stroke-width="2.2"/>
+      <path d="M138,106 C124,101 110,98 98,96" stroke="#7FA8C4" stroke-width="3.2"/>
+      <!-- Lower V-arm -->
+      <path d="M148,160 C134,167 118,171 104,173 M134,155 C120,161 106,164 94,166" stroke="#F7FAFB" stroke-width="4.2"/>
+      <path d="M144,166 C130,172 116,176 102,178" stroke="#1F2A36" stroke-width="2.2"/>
+      <path d="M138,150 C124,155 110,158 98,160" stroke="#7FA8C4" stroke-width="3.2"/>
+      <!-- Sparse dissipating central foam ticks -->
+      <path d="M142,125 L122,124 M132,133 L114,134" stroke="#F7FAFB" stroke-width="3.0"/>
+    </g>
+
+    <!-- 4. Outer Kelvin V-arms: short broken strokes fading out (x = 54..102) -->
+    <g opacity="0.54">
+      <!-- Upper V-arm -->
+      <path d="M98,80 C84,74 68,70 54,68 M84,86 C70,81 58,78 48,76" stroke="#F7FAFB" stroke-width="3.8"/>
+      <path d="M94,74 C80,68 66,64 54,62" stroke="#1F2A36" stroke-width="2.0"/>
+      <path d="M88,91 C74,86 62,83 52,81" stroke="#7FA8C4" stroke-width="2.8"/>
+      <!-- Lower V-arm -->
+      <path d="M98,176 C84,182 68,186 54,188 M84,170 C70,175 58,178 48,180" stroke="#F7FAFB" stroke-width="3.8"/>
+      <path d="M94,182 C80,188 66,192 54,194" stroke="#1F2A36" stroke-width="2.0"/>
+      <path d="M88,165 C74,170 62,173 52,175" stroke="#7FA8C4" stroke-width="2.8"/>
+    </g>
+
+    <!-- 5. Far wake tips: faint broken ripples vanishing into the sea (x = 14..54) -->
+    <g opacity="0.35">
+      <!-- Upper V-arm tip -->
+      <path d="M50,65 C38,60 26,57 16,55 M38,71 C28,68 20,66 14,64" stroke="#F7FAFB" stroke-width="3.2"/>
+      <path d="M44,59 C32,55 22,52 14,50" stroke="#7FA8C4" stroke-width="2.4"/>
+      <!-- Lower V-arm tip -->
+      <path d="M50,191 C38,196 26,199 16,201 M38,185 C28,188 20,190 14,192" stroke="#F7FAFB" stroke-width="3.2"/>
+      <path d="M44,197 C32,201 22,204 14,206" stroke="#7FA8C4" stroke-width="2.4"/>
+    </g>
+  </g>
+</svg>

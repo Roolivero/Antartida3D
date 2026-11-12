@@ -2,7 +2,7 @@ import { lazy, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState, 
 import {
   DRAG_THRESHOLD, EXPEDITION_POINT, HOME, KEY_PAN, MIN_K, PTS, VOYAGE_POINT, ZOOM_MS,
   buildMarkers, diveView, geometry, isWheelNotch, keyView, panBy, wheelFactor, zoomAround, zoomCenter,
-  type MapPoint, type Marker, type Size, type View,
+  type MapPoint, type Marker, type SeaPoint, type Size, type View,
 } from '@antartida/core';
 import { useReducedMotion, useTimers } from '../hooks.ts';
 import { useVoyage, type VoyageBus } from '../voyage/useVoyage.ts';
@@ -96,7 +96,7 @@ export function MapView({
   const [view, setView] = useState<View>(HOME);
   const [anim, setAnim] = useState<Anim>('');
   const [touched, setTouched] = useState(false);
-  const [sheet, setSheet] = useState<MapPoint | null>(null);
+  const [sheet, setSheet] = useState<MapPoint | SeaPoint | null>(null);
   const [list, setList] = useState(false);
   const later = useTimers();
   const reduced = useReducedMotion();
@@ -270,9 +270,9 @@ export function MapView({
     }
   };
 
-  const openPoint = (p: MapPoint) => {
+  const openPoint = (p: MapPoint | SeaPoint) => {
     if (p.id === VOYAGE_POINT.id && onStartVoyage) onStartVoyage();
-    else if (p.tier === 'A') onStart();
+    else if ('tier' in p && p.tier === 'A') onStart();
     else {
       setSheet(p);
       setTouched(true);

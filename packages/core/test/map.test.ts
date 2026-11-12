@@ -120,7 +120,9 @@ describe('markers and labels', () => {
     const a = markers.find((m) => m.kind === 'point' && m.point.tier === 'A');
     expect(a?.kind === 'point' && a.label).toBeTruthy();
     const small = buildMarkers({ vw: 390, vh: 844 }, HOME, []);
-    expect(small.every((m) => m.kind === 'cluster' || m.point.tier === 'A' || m.label === null)).toBe(true);
+    expect(
+      small.every((m) => m.kind === 'cluster' || (m.kind === 'point' && m.point.tier === 'A') || m.label === null)
+    ).toBe(true);
   });
 
   it('marks the explored point with a check and no pulse', () => {

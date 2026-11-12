@@ -1,6 +1,8 @@
 import { readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { chromium, type Page } from '@playwright/test';
+import { chromiumPath } from '@antartida/e2e/browser';
 
 /**
  * Chromium flags that use the machine's real GPU (ANGLE over EGL). Without them headless Chromium
@@ -72,4 +74,156 @@ export async function measureZoomGpu(url: string, chromiumPath: string | undefin
   } finally {
     await browser.close();
   }
+}
+
+export interface OceanResult {
+  viewport: string;
+  dpr: number;
+  durationMs: number;
+  frames: number;
+  totalGpuMs: number;
+  gpuMsPerFrame: number;
+  maxTaskMs: number;
+  longGpuTasks: number;
+  drawCalls: number;
+  longTasksMain: number;
+}
+
+/**
+ * Benchmark scenario for 3D ocean:
+ * 10 s quiet at 38° overview with water & fauna animation, plus one camera orbit and one zoom.
+ * Measures main thread long tasks (>50 ms), GPU ms per frame, and render draw calls.
+ */
+export async function measureOceanGpu(
+  url = 'http://localhost:5103/',
+  customChromiumPath?: string,
+  outDir = '/tmp'
+): Promise<{ desktop: OceanResult; mobile: OceanResult }> {
+  const execPath = customChromiumPath ?? chromiumPath;
+  const browser = await chromium.launch({ executablePath: execPath, args: GPU_ARGS });
+
+  async function runSingle(width: number, height: number, dpr: number): Promise<OceanResult> {
+    const page = await browser.newPage({ viewport: { width, height }, deviceScaleFactor: dpr });
+    try {
+      await page.goto(url, { waitUntil: 'networkidle' });
+      await page.waitForTimeout(2000);
+      const btn3D = page.getByRole('button', { name: 'Relieve 3D' });
+      await btn3D.click();
+      await page.waitForSelector('canvas');
+      await page.waitForTimeout(2000);
+
+      // Register long task observer on main thread
+      await page.evaluate(() => {
+        (window as unknown as { __longTasks: number[] }).__longTasks = [];
+        const obs = new PerformanceObserver((list) => {
+          for (const entry of list.getEntries()) {
+            if (entry.duration > 50) {
+              (window as unknown as { __longTasks: number[] }).__longTasks.push(Math.round(entry.duration));
+            }
+          }
+        });
+        obs.observe({ entryTypes: ['longtask'] });
+      });
+
+      const traceFile = join(outDir, `trace-ocean-${width}.json`);
+      await browser.startTracing(page, {
+        path: traceFile,
+        categories: ['disabled-by-default-devtools.timeline', 'gpu', 'viz', 'cc', 'toplevel'],
+      });
+
+      const startFrames = await page.evaluate(() => (window as unknown as { __frames?: number }).__frames ?? 0);
+      const t0 = performance.now();
+
+      // 1. 10 s quiet at 38° tilt overview
+      await page.waitForTimeout(10000);
+
+      // 2. One orbit rotation
+      await page.evaluate(() => {
+        const cc = (window as unknown as { __cameraControls?: { rotate: (azimuth: number, polar: number, enableTransition: boolean) => void } }).__cameraControls;
+        cc?.rotate((30 * Math.PI) / 180, 0, true);
+      });
+      await page.waitForTimeout(1000);
+
+      // 3. One zoom in
+      await page.getByRole('button', { name: 'Acercar', exact: true }).click();
+      await page.waitForTimeout(1000);
+
+      const t1 = performance.now();
+      const endFrames = await page.evaluate(() => (window as unknown as { __frames?: number }).__frames ?? 0);
+      const drawCalls = await page.evaluate(() => {
+        const gl = (window as unknown as { __gl?: { info?: { render?: { calls?: number } } } }).__gl;
+        return gl?.info?.render?.calls ?? 0;
+      });
+      const inPageLongTasks = await page.evaluate(() => (window as unknown as { __longTasks?: number[] }).__longTasks ?? []);
+
+      await browser.stopTracing();
+
+      const traceEvents = (JSON.parse(readFileSync(traceFile, 'utf8')).traceEvents as { name: string; dur?: number }[]);
+      rmSync(traceFile, { force: true });
+
+      const gpuTasks = traceEvents
+        .filter((e) => e.name === 'GPUTask' && e.dur)
+        .map((e) => e.dur! / 1000);
+      const totalGpuMs = Math.round(gpuTasks.reduce((a, b) => a + b, 0));
+      const maxTaskMs = Math.round(Math.max(0, ...gpuTasks));
+      const longGpuTasks = gpuTasks.filter((d) => d > 16).length;
+
+      const mainRunTasks = traceEvents
+        .filter((e) => e.name === 'RunTask' && e.dur && e.dur > 50000)
+        .map((e) => Math.round(e.dur! / 1000));
+
+      const frames = Math.max(1, endFrames - startFrames);
+      const gpuMsPerFrame = Number((totalGpuMs / frames).toFixed(2));
+      const durationMs = Math.round(t1 - t0);
+      const longTasksMain = Math.max(inPageLongTasks.length, mainRunTasks.length);
+
+      return {
+        viewport: `${width}×${height}`,
+        dpr,
+        durationMs,
+        frames,
+        totalGpuMs,
+        gpuMsPerFrame,
+        maxTaskMs,
+        longGpuTasks,
+        drawCalls,
+        longTasksMain,
+      };
+    } finally {
+      await page.close();
+    }
+  }
+
+  try {
+    const desktop = await runSingle(1440, 900, 1);
+    const mobile = await runSingle(390, 844, 2);
+    return { desktop, mobile };
+  } finally {
+    await browser.close();
+  }
+}
+
+// Direct execution CLI runner
+const isDirectCli = process.argv[1] && (
+  process.argv[1].endsWith('gpu.ts') ||
+  process.argv[1].endsWith('gpu.js') ||
+  process.argv[1] === fileURLToPath(import.meta.url)
+);
+
+if (isDirectCli) {
+  console.log('Running ocean 3D GPU benchmark...');
+  const res = await measureOceanGpu();
+  console.log('\n--- 1440 px (dpr 1) ---');
+  console.log(`Duration: ${res.desktop.durationMs} ms (${res.desktop.frames} frames)`);
+  console.log(`Total GPU: ${res.desktop.totalGpuMs} ms (${res.desktop.gpuMsPerFrame} ms/frame)`);
+  console.log(`Max GPU task: ${res.desktop.maxTaskMs} ms (tasks > 16ms: ${res.desktop.longGpuTasks})`);
+  console.log(`Draw calls: ${res.desktop.drawCalls}`);
+  console.log(`Main thread long tasks: ${res.desktop.longTasksMain}`);
+
+  console.log('\n--- 390 px (dpr 2) ---');
+  console.log(`Duration: ${res.mobile.durationMs} ms (${res.mobile.frames} frames)`);
+  console.log(`Total GPU: ${res.mobile.totalGpuMs} ms (${res.mobile.gpuMsPerFrame} ms/frame)`);
+  console.log(`Max GPU task: ${res.mobile.maxTaskMs} ms (tasks > 16ms: ${res.mobile.longGpuTasks})`);
+  console.log(`Draw calls: ${res.mobile.drawCalls}`);
+  console.log(`Main thread long tasks: ${res.mobile.longTasksMain}`);
 }

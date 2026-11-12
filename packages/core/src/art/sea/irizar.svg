@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <!-- Nautical ink & watercolor illustration: Icebreaker ARA Almirante Irizar (3/4 view pointing right +X) -->
+  <!-- Waterline foam & bow wave -->
+  <g filter="url(#wcs)">
+    <ellipse cx="128" cy="180" rx="108" ry="20" fill="#7FA8C4" opacity="0.48"/>
+    <path d="M18,178 C58,166 112,164 168,166 C204,168 228,172 244,180 C222,192 176,196 126,196 C74,196 36,190 18,178 Z" fill="#F7FAFB" opacity="0.92"/>
+  </g>
+  <g filter="url(#ink)">
+    <!-- Stern flight deck & hangar (left) + White central superstructure & bridge -->
+    <!-- Helicopter deck at stern -->
+    <path d="M34,136 L88,136 L92,150 L30,150 Z" fill="#5E656C" stroke="#1F2A36" stroke-width="3" stroke-linejoin="round"/>
+    <!-- Tiny Sea King helicopter silhouette on stern flight deck -->
+    <path d="M46,130 L66,130 L70,135 L50,135 Z" fill="#1F2A36"/>
+    <path d="M40,126 L76,126 M58,126 L58,132" stroke="#1F2A36" stroke-width="2.2" stroke-linecap="round"/>
+
+    <!-- Tall white blocky icebreaker superstructure & bridge decks -->
+    <path d="M74,148 L78,96 L158,96 L172,148 Z" fill="#F7FAFB" stroke="#1F2A36" stroke-width="3.6" stroke-linejoin="round"/>
+    <path d="M90,96 L94,76 L150,76 L156,96 Z" fill="#F3EBDD" stroke="#1F2A36" stroke-width="3.2" stroke-linejoin="round"/>
+    <!-- Funnel / exhaust stack with Argentine naval stripe hint & radar mast -->
+    <path d="M104,76 L106,52 L126,52 L128,76 Z" fill="#F7FAFB" stroke="#1F2A36" stroke-width="3" stroke-linejoin="round"/>
+    <path d="M105,52 L127,52 L126,60 L106,60 Z" fill="#1F2A36"/>
+    <!-- Main radar mast & crow's nest -->
+    <path d="M138,76 L138,36 M130,46 L146,46 M132,58 L144,58" fill="none" stroke="#1F2A36" stroke-width="3" stroke-linecap="round"/>
+    <rect x="133" y="32" width="10" height="6" rx="1" fill="#C0862F" stroke="#1F2A36" stroke-width="2"/>
+
+    <!-- Bridge windows & deck lines -->
+    <path d="M98,84 L150,84 M84,110 L162,110 M82,126 L166,126" fill="none" stroke="#1F2A36" stroke-width="3.2" stroke-linecap="round"/>
+
+    <!-- Yellow-ochre (ocre) deck cranes forward and aft -->
+    <path d="M174,144 L174,112 L198,100 M174,118 L194,108" fill="none" stroke="#C0862F" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M174,144 L174,112 L198,100" fill="none" stroke="#1F2A36" stroke-width="1.6" stroke-linecap="round"/>
+    <path d="M72,144 L72,116 L54,106" fill="none" stroke="#C0862F" stroke-width="3.6" stroke-linecap="round"/>
+
+    <!-- Iconic oxide-red (oxide #A4471F) icebreaker hull with raked ice-breaking bow on right (+X) -->
+    <path d="M24,144 L164,144 L174,136 L236,134 C230,152 214,168 194,178 L34,178 C28,168 24,156 24,144 Z" fill="#A4471F" stroke="#1F2A36" stroke-width="4" stroke-linejoin="round"/>
+    <!-- Sunlit upper hull highlight & white hull sheer stripe / Q-5 pennant mark -->
+    <path d="M30,150 L166,150 L176,143 L228,141" fill="none" stroke="#C0862F" stroke-width="2.6" stroke-linecap="round" opacity="0.75"/>
+    <path d="M188,154 L206,154 M194,149 L194,159" fill="none" stroke="#F7FAFB" stroke-width="2.8" stroke-linecap="round"/>
+    <!-- Dark ink waterline boot-top -->
+    <path d="M32,172 L202,172 L194,179 L34,179 Z" fill="#1F2A36"/>
+
+    <!-- Crisp white bow wave & broken pack-ice foam along waterline -->
+    <path d="M188,178 C206,172 224,172 242,182 M20,178 C64,174 128,174 194,178" fill="none" stroke="#F7FAFB" stroke-width="4.5" stroke-linecap="round"/>
+    <path d="M14,186 C62,194 126,195 190,190 C214,188 232,186 246,182" fill="none" stroke="#1F2A36" stroke-width="2.8" stroke-linecap="round" stroke-dasharray="12 6"/>
+  </g>
+</svg>

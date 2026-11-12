@@ -1,4 +1,5 @@
 export * from './content/points.ts';
+export * from './content/sea.ts';
 export * from './content/fossils.ts';
 export * from './content/ushuaia.ts';
 export * from './projection.ts';
@@ -21,3 +22,4 @@ export * from './fuegia.ts';
 export * from './fuegia-mesh.ts';
 export * from './camera.ts';
 export * from './ocean.ts';
+export * from './sea.ts';

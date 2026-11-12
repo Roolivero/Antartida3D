@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import { Box3, Vector3 } from 'three';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { CameraControls, PerformanceMonitor } from '@react-three/drei';
@@ -9,7 +9,9 @@ import {
   DIVE_3D,
   FOV,
   distanceFromK3D,
+  generateSeaLifeInstances,
   homeDistance3D,
+  loadOceanDepth,
   poseFromView,
   viewFrom3D,
   toWorld,
@@ -19,8 +21,13 @@ import {
   fromWorld,
   minCameraDistance,
   FUEGIA_MIN_DISTANCE,
+  irizarStateAtTime,
+  SEA_POINTS,
   type Geometry,
   type Marker,
+  type OceanDepthGrid,
+  type SeaLifeInstance,
+  type SeaMarker,
   type Size,
   type View,
 } from '@antartida/core';
@@ -28,9 +35,9 @@ import { MarkerButton } from '../map/Markers.tsx';
 import { useReducedMotion } from '../hooks.ts';
 import type { Layer3DProps, Phase } from '../map/MapView.tsx';
 import { Ocean } from './Ocean.tsx';
+import { SeaLife } from './SeaLife.tsx';
 import { Terrain } from './Terrain.tsx';
 import { Fuegia } from './Fuegia.tsx';
-import { InkLines } from './InkLines.tsx';
 import { Graticule3D } from './Graticule3D.tsx';
 import { InkEffect } from './InkEffect.ts';
 import { SeaTimeContext, useAnimationClock } from './useAnimationClock.ts';
@@ -49,6 +56,7 @@ function SceneContent({
   overlayRef,
   enablePost,
   voyage,
+  seaMarkers,
 }: {
   wide: boolean;
   lowQuality: boolean;
@@ -62,8 +70,35 @@ function SceneContent({
   overlayRef: RefObject<HTMLDivElement | null>;
   enablePost: boolean;
   voyage: Layer3DProps['voyage'];
+  seaMarkers: SeaMarker[];
 }) {
   const seaTime = useAnimationClock({ lowQuality });
+  const invalidate = useThree((s) => s.invalidate);
+  const [depthGrid, setDepthGrid] = useState<OceanDepthGrid | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    loadOceanDepth().then((grid) => {
+      if (!alive) return;
+      setDepthGrid(grid);
+      invalidate();
+    });
+    return () => {
+      alive = false;
+    };
+  }, [invalidate]);
+
+  const seaLifeInstances = useMemo(
+    () =>
+      depthGrid
+        ? generateSeaLifeInstances({
+            seed: 202611,
+            mobile: !wide,
+            customGrid: depthGrid,
+          })
+        : [],
+    [wide, depthGrid]
+  );
 
   // Expose render frame count for tests
   useFrame(() => {
@@ -75,11 +110,11 @@ function SceneContent({
 
   return (
     <SeaTimeContext.Provider value={seaTime}>
-      <Ocean wide={wide} timeUniform={seaTime} />
+      <Ocean wide={wide} timeUniform={seaTime} instances={seaLifeInstances} />
       <Terrain wide={wide} />
       <Fuegia wide={wide} />
       <Graticule3D />
-      <InkLines />
+      <SeaLife visible={phase !== 'dive'} timeUniform={seaTime} instances={seaLifeInstances} />
       {voyage && <Voyage3D bus={voyage} reduced={reduced} overlay={overlayRef} />}
       {enablePost && (
         <EffectComposer multisampling={0}>
@@ -96,8 +131,11 @@ function SceneContent({
       />
       <ProjectMarkers
         markers={markers}
+        seaMarkers={seaMarkers}
         overlayRef={overlayRef}
         phase={phase}
+        timeUniform={seaTime}
+        instances={seaLifeInstances}
       />
     </SeaTimeContext.Provider>
   );
@@ -133,6 +171,7 @@ function ControlsBridge({
   const controlsRef = useRef<CameraControls>(null);
   const invalidate = useThree((s) => s.invalidate);
   const scene = useThree((s) => s.scene);
+  const gl = useThree((s) => s.gl);
   const initialized = useRef(false);
   const live = useRef({ size, geo, onCameraRest });
   live.current = { size, geo, onCameraRest };
@@ -144,6 +183,7 @@ function ControlsBridge({
     (window as unknown as { __cameraControls?: CameraControls }).__cameraControls = cc;
     (window as unknown as { __invalidate?: () => void }).__invalidate = invalidate;
     (window as unknown as { __scene?: unknown }).__scene = scene;
+    (window as unknown as { __gl?: unknown }).__gl = gl;
 
     cc.minPolarAngle = 0;
     cc.maxPolarAngle = (60 * Math.PI) / 180;
@@ -257,12 +297,18 @@ function ControlsBridge({
 
 function ProjectMarkers({
   markers,
+  seaMarkers,
   overlayRef,
   phase,
+  timeUniform,
+  instances,
 }: {
   markers: Marker[];
+  seaMarkers: SeaMarker[];
   overlayRef: RefObject<HTMLDivElement | null>;
   phase: Phase;
+  timeUniform: { value: number };
+  instances: readonly SeaLifeInstance[];
 }) {
   const camera = useThree((s) => s.camera);
   const size = useThree((s) => s.size);
@@ -294,7 +340,44 @@ function ProjectMarkers({
       btn.style.transform = `translate3d(${sx.toFixed(1)}px, ${sy.toFixed(1)}px, 0px) translate(-50%, -50%)`;
     }
 
-    // 2. Position graticule labels: "0° Greenwich" and "60° S" calculated with project(lon, lat)
+    // 2. Position sea markers
+    const uTime = timeUniform.value;
+    for (const sm of seaMarkers) {
+      const btn = el.querySelector<HTMLElement>(`[data-key="${sm.key}"]`);
+      if (!btn) continue;
+
+      let mapX = sm.x;
+      let mapY = sm.y;
+
+      if (sm.point.id === 'sea-irizar') {
+        const state = irizarStateAtTime(uTime);
+        mapX = state.x;
+        mapY = state.y;
+      } else if (sm.point.targetSpecies) {
+        const inst = instances.find((i) => i.species === sm.point.targetSpecies);
+        if (inst) {
+          mapX = inst.x;
+          mapY = inst.y;
+        }
+      }
+
+      const wPos = toWorld(mapX, mapY, 0.4);
+      const p = new Vector3(wPos.x, wPos.y, wPos.z);
+      p.project(camera);
+
+      const visible = p.z < 1.0 && p.x >= -1.1 && p.x <= 1.1 && p.y >= -1.1 && p.y <= 1.1;
+      if (!visible) {
+        btn.style.display = 'none';
+        continue;
+      }
+
+      btn.style.display = '';
+      const sx = ((p.x + 1) * size.width) / 2;
+      const sy = ((-p.y + 1) * size.height) / 2;
+      btn.style.transform = `translate3d(${sx.toFixed(1)}px, ${sy.toFixed(1)}px, 0px) translate(-50%, -50%)`;
+    }
+
+    // 3. Position graticule labels: "0° Greenwich" and "60° S" calculated with project(lon, lat)
     const updateGraticuleLabel = (selector: string, mapCoord: { x: number; y: number }) => {
       const label = el.querySelector<HTMLElement>(selector);
       if (!label) return;
@@ -339,6 +422,27 @@ export function Map3DLayer({
   const [lowQuality, setLowQuality] = useState(false);
 
   const homeStart = homePose3D(size.vw / size.vh);
+
+  const seaMarkers = useMemo<SeaMarker[]>(
+    () =>
+      SEA_POINTS.map((sp) => ({
+        kind: 'sea',
+        key: sp.id,
+        left: 0,
+        top: 0,
+        x: sp.fallbackX,
+        y: sp.fallbackY,
+        point: sp,
+        cls: 'mk tsea',
+        aria: `${sp.title}, ${sp.place}. Vida en el mar. Ver ficha.`,
+        label: {
+          title: sp.title,
+          sub: sp.place,
+          side: sp.fallbackX > 500 ? 'left' : 'right',
+        },
+      })),
+    []
+  );
 
   return (
     <>
@@ -396,6 +500,7 @@ export function Map3DLayer({
           overlayRef={overlayRef}
           enablePost={enablePost}
           voyage={voyage}
+          seaMarkers={seaMarkers}
         />
       </Canvas>
       <div
@@ -459,6 +564,25 @@ export function Map3DLayer({
                   }}
                 >
                   <MarkerButton m={m} style={{ left: 0, top: 0 }} onPick={onPick} />
+                </div>
+              );
+            })}
+            {seaMarkers.map((sm) => {
+              const zIndex = sm.point.id === 'sea-irizar' ? 0 : 2;
+              return (
+                <div
+                  key={sm.key}
+                  data-key={sm.key}
+                  style={{
+                    position: 'absolute',
+                    left: 0,
+                    top: 0,
+                    pointerEvents: 'auto',
+                    willChange: 'transform',
+                    zIndex,
+                  }}
+                >
+                  <MarkerButton m={sm} style={{ left: 0, top: 0 }} onPick={onPick} />
                 </div>
               );
             })}

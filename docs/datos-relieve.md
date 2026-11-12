@@ -83,18 +83,23 @@ Si cambia la exageración o el sol, hay que regenerar los archivos, porque la in
 
 ## Archivos generados (sí van al repositorio)
 
-Todos están en `packages/core/src/assets/`. Son unos 28 MB en total.
+Todos están en `packages/core/src/assets/`. Son unos 32 MB en total.
 
 | Archivo | Tamaño | Qué es | Quién lo usa |
 |---|---|---|---|
-| `terrain-mesh-hi.bin` | 7,1 MB | Malla de alta calidad: 330 108 triángulos (error máximo ≈ 40 m). Incluye la grilla de alturas de 1025 × 1025 para consultas rápidas. | Pantallas de 820 px o más. |
-| `terrain-mesh-lo.bin` | 3,7 MB | Malla liviana: 109 927 triángulos (error máximo ≈ 155 m). Incluye la misma grilla de alturas. | Celulares (menos de 820 px). |
-| `terrain-relief-4096.webp` | 11,7 MB | Textura de 4096 × 4096 sin pérdida. Los canales RGB guardan la inclinación del terreno («mapa de normales») y el canal alfa guarda la altura en 256 niveles (0 a 4200 m). | Escritorio. |
-| `terrain-relief-2048.webp` | 2,9 MB | La misma textura a 2048 × 2048. | Celulares. |
-| `terrain-light-2048.webp` | 0,55 MB | Textura de 2048 × 2048 con pérdida (calidad 90). El canal R guarda la oclusión ambiental y el G la sombra del sol del noroeste. Como son datos suaves, alcanza una sola versión para todas las pantallas. | Shader del terreno (celulares y escritorio). |
-| `map-paint-3d-2048.webp`, `map-paint-3d-4096.webp` | 0,17 y 0,55 MB | La acuarela del mapa sin los trazos decorativos de glaciar, para el terreno y el océano 3D. Se generan con `pnpm map-raster` junto con las del 2D. No salen de Bedmap3. | Terreno y océano 3D. |
-| `terrain-elevation-grid.bin` | 2,1 MB | Grilla de alturas de 1025 × 1025, en metros, como archivo aparte. | Nadie: la app usa la copia que va dentro de las mallas. Se puede borrar del script y del repositorio. |
-| `paper-512.webp` | 44 kB | Textura de grano de papel, horneada del filtro SVG `#paperf` del 2D. | Shader del terreno. No sale de Bedmap3. |
+| `terrain-mesh-hi.bin` | 7,3 MB | Malla de alta calidad: 330 108 triángulos (error máximo ≈ 40 m). Incluye la grilla de alturas de 1025 × 1025 para consultas rápidas. | Pantallas de 820 px o más. |
+| `terrain-mesh-lo.bin` | 3,3 MB | Malla liviana: 109 927 triángulos (error máximo ≈ 155 m). Incluye la misma grilla de alturas. | Celulares (menos de 820 px). |
+| `terrain-relief-4096.webp` | 13,8 MB | Textura de 4096 × 4096 sin pérdida. Los canales RGB guardan la inclinación del terreno («mapa de normales») y el canal alfa guarda la altura en 256 niveles (0 a 4200 m). | Escritorio. |
+| `terrain-relief-2048.webp` | 3,4 MB | La misma textura a 2048 × 2048. | Celulares. |
+| `terrain-light-2048.webp` | 534 kB | Textura de 2048 × 2048 con pérdida (calidad 90). El canal R guarda la oclusión ambiental y el G la sombra del sol del noroeste. Como son datos suaves, alcanza una sola versión para todas las pantallas. | Shader del terreno (celulares y escritorio). |
+| `map-paint-3d-2048.webp`, `map-paint-3d-4096.webp` | 15 kB y 46 kB | La acuarela del mapa sin los trazos decorativos de glaciar, para el terreno y el océano 3D. Se generan con `pnpm map-raster` junto con las del 2D. No salen de Bedmap3. | Terreno y océano 3D. |
+| `ocean-bathy-2048.webp` | 1,4 MB | Textura batimétrica de 2048 × 2048 derivada de IBCSO v2: R=profundidad codificada, G y B=normales del fondo marino, A=distancia signed a la costa. | Océano 3D en escritorio. |
+| `ocean-bathy-1024.webp` | 451 kB | La misma textura batimétrica a 1024 × 1024. | Océano 3D en celulares. |
+| `ocean-depth-grid.bin` | 514 kB | Grilla binaria de 513 × 513 enteros con signo (Int16) para consultas de profundidad (`depthAt`) en el core. | Validación de fauna y témpanos. |
+| `ocean-waves-a-256.webp`, `ocean-waves-b-256.webp` | 30 kB y 32 kB | Texturas de ondas de agua en escala de grises para el oleaje sutil en el shader del mar. | Shader del océano 3D. |
+| `sea-atlas.webp` | 226 kB | Atlas de texturas que empaqueta las siluetas en acuarela de la fauna marina, témpanos y el ARA Almirante Irízar. | Malla instanciada de fauna 3D. |
+| `sea-atlas.json` | 2,4 kB | Coordenadas UV de cada silueta dentro del atlas de texturas. | Geometría instanciada de fauna. |
+| `paper-512.webp` | 43 kB | Textura de grano de papel, horneada del filtro SVG `#paperf` del 2D. | Shader del terreno. No sale de Bedmap3. |
 
 **Formato de las mallas `.bin`.** Es binario propio. Una cabecera `MESH` con la cantidad de vértices e índices, el tamaño de la grilla y el recuadro. Después las coordenadas de cada vértice (Uint16), su altura en metros (Uint16), su tipo de superficie (Uint8), los índices de los triángulos (Uint32) y la grilla de alturas de 1025 × 1025. Lo lee `parseTerrainMesh` en `packages/core/src/terrain.ts`.
 
@@ -118,15 +123,42 @@ Si cambia `VERTICAL_EXAGGERATION` o `SUN` en `packages/core/src/relief.ts`, hay 
 El shader del terreno está en `packages/react-ui/src/map3d/paintedTerrain.glsl.ts`. Arma la imagen en este orden:
 
 1. **Acuarela del 2D.** Es el color base. Encima va un lavado gris pardo sobre la roca expuesta y un celeste claro sobre las barreras flotantes. El 3D usa una versión horneada sin los 4 trazos decorativos de glaciar del 2D (`map-paint-3d-*.webp`): son ilustración, no datos, y sobre el relieve se veían como líneas rectas que lo cruzaban.
-2. **Tinte por altura (hipsométrico).** El hielo bajo de la costa se ve más gris y frío, y la meseta alta más clara. Así se lee el domo.
-3. **Luz rasante del noroeste,** con dos luces suaves de relleno (oeste y norte), más la oclusión y la sombra precalculadas. Las sombras se pintan como pigmento azul, no como gris, para mantener el estilo de acuarela.
-4. **Hachures.** Son trazos que siguen la dirección de la pendiente en las laderas en sombra. Desaparecen al alejarse para no ensuciar.
-5. **Curvas de nivel:** lápiz muy suave cada 250 m, algo más marcado cada 1000 m. Aparecen solo al acercarse. De lejos el sombreado ya muestra la forma, y las líneas lo tapaban.
-6. **Brillo del hielo:** un reflejo suave del sol sobre el hielo liso, más fuerte en las barreras flotantes. Nunca aparece en la roca ni en las zonas en sombra.
-7. **Bruma de distancia (perspectiva aérea):** el hielo lejano se aclara hacia un tono pálido, así la distancia se lee como profundidad.
-8. **Grano de papel.**
+2. **Tinte por altura (hipsométrico) y aspecto del hielo (F8).** El hielo bajo de la costa se ve más gris y frío, y la meseta alta más clara. Para que el hielo se lea como hielo y no como papel crema, el shader aplica una paleta blanca fría y azulada en el manto glaciar, tinte azul profundo en las zonas en sombra y depresiones del terreno (emulando la absorción óptica de la luz en hielo compacto), acantilados verticales de hielo azul con estratos horizontales en los bordes de barreras flotantes, textura sutil de sastrugi (ondulaciones por viento) visible solo al acercar la cámara, y brillo rasante del sol con Fresnel sobre el hielo liso.
+3. **Costa en tinta alineada con el relieve (F8).** A diferencia del 2D que usa Natural Earth, el 3D extrae la línea de costa directamente de la máscara de Bedmap3 (`masks > 0`). Esto elimina las líneas negras cortadas en guiones y evita que el trazo cruce por dentro las barreras flotantes de Ross y Ronne.
+4. **Recorte de agujas y espinas en montañas (F8).** Con la exageración vertical ×50, las celdas aisladas de fuerte pendiente proyectaban agujas artificiales en la Península y cordilleras. La función `clampTerrainSpikes` en `packages/core/src/relief.ts` y `build-terrain.ts` acota la pendiente máxima a 35 m por celda respecto de la mediana de vecinos en radios 6, 4, 2 y 1, suprimiendo artefactos verticales sin alterar la altura promedio de las cadenas montañosas ni las mesetas.
+5. **Luz rasante del noroeste,** con dos luces suaves de relleno (oeste y norte), más la oclusión y la sombra precalculadas. Las sombras se pintan como pigmento azul, no como gris, para mantener el estilo de acuarela.
+6. **Hachures.** Son trazos que siguen la dirección de la pendiente en las laderas en sombra. Desaparecen al alejarse para no ensuciar.
+7. **Curvas de nivel:** lápiz muy suave cada 250 m, algo más marcado cada 1000 m. Aparecen solo al acercarse. De lejos el sombreado ya muestra la forma, y las líneas lo tapaban.
+8. **Bruma de distancia (perspectiva aérea):** el hielo lejano se aclara hacia un tono pálido, así la distancia se lee como profundidad.
+9. **Grano de papel.**
 
 La vista inicial del 3D encuadra el continente según el tamaño de la pantalla (`homePose3D` en `packages/core/src/camera.ts`), con una inclinación de 38° sobre el horizonte.
+
+## Fuente: IBCSO v2 (Batimetría del Océano Austral)
+
+El fondo y color del océano 3D se basan en **IBCSO v2** (The International Bathymetric Chart of the Southern Ocean Version 2), el mapa batimétrico digital de referencia para todas las aguas al sur de 50° S.
+
+| Dato | Valor |
+|---|---|
+| Organismo | Scientific Committee on Antarctic Research (SCAR) / Alfred Wegener Institute (AWI) |
+| Licencia | [Creative Commons Attribution 4.0 (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/) |
+| Ficha y descarga (PANGAEA) | https://doi.org/10.1594/PANGAEA.937574 |
+| Paper científico | Dorschel, B. et al. (2022), *The International Bathymetric Chart of the Southern Ocean Version 2*, Scientific Data 9:275, https://doi.org/10.1038/s41597-022-01366-7 |
+| Proyección nativa | EPSG:9354 (WGS 84 / IBCSO Polar Stereographic, paralelo estándar −65°) |
+| Definición proj4 | `+proj=stere +lat_0=-90 +lat_ts=-65 +lon_0=0 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs` |
+
+**Cita requerida.** Dorschel, B. et al. (2022), *The International Bathymetric Chart of the Southern Ocean Version 2 (IBCSO v2)* [Data set], PANGAEA, https://doi.org/10.1594/PANGAEA.937574.
+
+### Cobertura y relleno al norte de 50° S
+
+La grilla de IBCSO v2 finaliza en el paralelo 50° S (~ −50.05° S). En el mapa de la app, que abarca el Pasaje de Drake hasta Tierra del Fuego, las aguas al norte de 50° S se extienden tomando los valores de profundidad del margen septentrional y se funden suavemente hacia la llanura abisal de −4000 m a lo largo de un gradiente de 2 grados de latitud con desenfoque de banda de transición (`packages/core/scripts/build-bathymetry.ts`). Esto previene artefactos radiales o cortes visuales rectos en el mar.
+
+### Archivos batimétricos generados
+
+- `packages/core/src/assets/ocean-bathy-2048.webp` (1,4 MB): textura 2048 × 2048 utilizada en escritorio (R = profundidad normalizada, G y B = normales del lecho marino para iluminación submarina, A = distancia con signo a la costa).
+- `packages/core/src/assets/ocean-bathy-1024.webp` (451 kB): misma textura a 1024 × 1024 para dispositivos móviles.
+- `packages/core/src/assets/ocean-depth-grid.bin` (514 kB): grilla binaria de 513 × 513 enteros Int16 para consultas de profundidad (`depthAt`) en el código sin decodificar imágenes en CPU.
+- `packages/core/src/assets/ocean-waves-a-256.webp` (30 kB) y `ocean-waves-b-256.webp` (32 kB): texturas normales de ondas sinérgicas para el shader de oleaje en tiempo real.
 
 ## Tierra del Fuego, Patagonia sur y Malvinas (IBCSO v2)
 
@@ -157,5 +189,30 @@ Bedmap3 termina en 60° S, así que el 3D no tenía tierra en Sudamérica: Ushua
 
 ## Otros datos geográficos del mapa (ya existían)
 
-- **Costa, islas y barreras de hielo:** Natural Earth (`ne_50m_land`, `ne_50m_antarctic_ice_shelves_polys`), dominio público, https://www.naturalearthdata.com/. Están en `packages/core/src/coastline.ts`, y se regeneran con `pnpm coastline`. Natural Earth corta el continente y la barrera de Ross sobre el antimeridiano (la línea de 180°). En 2D ese corte se tapa con un trazo, y en 3D se omite con `isAntimeridianSeam`.
+- **Costa, islas y barreras de hielo en 2D:** Natural Earth (`ne_50m_land`, `ne_50m_antarctic_ice_shelves_polys`), dominio público, https://www.naturalearthdata.com/. Están en `packages/core/src/coastline.ts`, y se regeneran con `pnpm coastline`. Natural Earth corta el continente y la barrera de Ross sobre el antimeridiano (la línea de 180°). En 2D ese corte se tapa con un trazo. En la vista 3D se reemplazó por la máscara de Bedmap3 (F8).
 - **Acuarela del mapa:** `map-paint-*.webp`, horneada de los filtros SVG del diseño con `pnpm map-raster`. No es un dato geográfico, es ilustración. Ver `docs/decisiones.md`.
+
+## Mar ilustrado: fauna representativa, témpanos y puntos de interés marino (F5 y F6)
+
+Las siluetas y animaciones de animales marinos, témpanos y embarcaciones en la vista 3D son **ilustraciones representativas de la biodiversidad antártica, no datos de telemetría en tiempo real ni avistamientos individuales**. La leyenda 3D explicita: «Fauna y témpanos: ilustración representativa, no posiciones reales».
+
+Cada instancia se ubica con una semilla pseudoaleatoria determinista dentro de los polígonos de distribución real documentados por la literatura científica marina y se corrobora contra la grilla batimétrica de IBCSO v2 (`depthAt < -20 m`):
+
+| Elemento | Zona en el mapa | Fuente verificada (consulta: 11 de noviembre de 2026) |
+|---|---|---|
+| Ballena jorobada (*Megaptera novaeangliae*) | Oeste de la Península Antártica, estrecho de Gerlache, bahía Margarita y mar de Scotia | British Antarctic Survey / Clarke, A. et al. (2026), *A Twenty-Six Year Record of Marine Mammals and Birds in Marguerite Bay, Antarctic Peninsula*, Ecology and Evolution 16(3): e73317, https://doi.org/10.1002/ece3.73317; NOAA Fisheries, https://www.fisheries.noaa.gov/species/humpback-whale |
+| Orca (*Orcinus orca*) | Aguas costeras de la Península Antártica, mar de Weddell y mar de Ross | British Antarctic Survey / Clarke, A. et al. (2026), https://doi.org/10.1002/ece3.73317; NOAA Fisheries, https://www.fisheries.noaa.gov/species/killer-whale |
+| Ballena minke antártica (*Balaenoptera bonaerensis*) | Borde del hielo marino circumpolar (mares de Bellingshausen, Amundsen, Weddell y océano Austral oriental) | British Antarctic Survey / Clarke, A. et al. (2026), https://doi.org/10.1002/ece3.73317; NOAA Fisheries, https://www.fisheries.noaa.gov/species/minke-whale |
+| Pingüinos sobre témpano | Aguas costeras de la Península Antártica, mar de Weddell y mar de Ross | British Antarctic Survey / Fretwell, P.T. et al. (2012), *An Emperor Penguin Population Estimate: The First Global, Synoptic Survey of a Species from Space*, PLOS ONE 7(4): e33751, https://doi.org/10.1371/journal.pone.0033751; Armada Argentina, https://www.argentina.gob.ar/armada/antartida/fauna-y-flora |
+| Foca leopardo (*Hydrurga leptonyx*) | Hielo flotante frente al oeste de la Península Antártica y mar de Weddell | British Antarctic Survey / Clarke, A. et al. (2026), https://doi.org/10.1002/ece3.73317; Armada Argentina, https://www.argentina.gob.ar/armada/antartida/fauna-y-flora |
+| Témpanos tabulares (grandes y chicos) | Frentes de las barreras de Filchner-Ronne (giro de Weddell), Ross y Amery | British Antarctic Survey / Marsh, O.J. et al. (2025), *Ocean tides trigger ice shelf rift growth and calving*, Nature Communications 16: 6697, https://doi.org/10.1038/s41467-025-61796-w; NSIDC, https://nsidc.org/learn/parts-cryosphere/ice-shelves |
+| Rompehielos ARA Almirante Irízar (Q-5) | Ruta logística Ushuaia ↔ Pasaje de Drake ↔ Base Marambio con permanencia y amarre en puerto | Armada Argentina — Campaña Antártica de Verano (CAV), https://www.argentina.gob.ar/armada/antartida/campana-antartica |
+
+### Puntos de interés marítimo (`packages/core/src/content/sea.ts`)
+
+Los marcadores del mar en la vista 3D muestran un icono circular en reposo y despliegan su rótulo en hover o foco con teclado, abriendo la ficha temática con fuentes oficiales verificadas:
+
+1. **`sea-irizar` — Rompehielos ARA Almirante Irízar:** abastecimiento logístico y traslado de personal científico antártico. Fuente: Armada Argentina · Campaña Antártica (consulta 11 nov 2026).
+2. **`sea-ballena` — Ballena jorobada:** migración estacional y alimentación estival a base de krill en el Pasaje de Drake y Península Antártica. Fuentes: NOAA Fisheries y Armada Argentina (consulta 11 nov 2026).
+3. **`sea-tempano` — Témpano tabular:** dinámica de desprendimiento de barreras de hielo y deriva en el mar de Weddell. Fuente: NOAA National Ocean Service (consulta 11 nov 2026).
+4. **`sea-pinguino` — Pingüino emperador:** colonias reproductivas sobre hielo costero en la Tierra de la Reina Maud. Fuentes: Fretwell et al. 2012 (PLOS ONE / BAS) y Armada Argentina (consulta 11 nov 2026).
