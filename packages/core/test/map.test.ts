@@ -127,8 +127,8 @@ describe('markers and labels', () => {
 
   it('marks the explored point with a check and no pulse', () => {
     const size = { vw: 1440, vh: 900 };
-    const markers = buildMarkers(size, { k: MAX_K, px: -800, py: -1000 }, ['fosiles']);
-    const a = markers.find((m) => m.key === 'fosiles');
+    const markers = buildMarkers(size, { k: MAX_K, px: -800, py: -1000 }, ['orcadas']);
+    const a = markers.find((m) => m.key === 'orcadas');
     expect(a?.kind === 'point' && a.check && !a.pulse).toBe(true);
   });
 

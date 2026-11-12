@@ -12,7 +12,7 @@ export interface MapPoint {
 }
 
 export const PTS: readonly MapPoint[] = [
-  { id: 'fosiles', tier: 'A', title: 'Fósiles', place: 'Isla Marambio', x: 196, y: 300, q: '¿Cómo era la Antártida antes del hielo?' },
+  { id: 'fosiles', tier: 'B', title: 'Fósiles', place: 'Isla Marambio', x: 196, y: 300, q: '¿Cómo era la Antártida antes del hielo?' },
   { id: 'oceano', tier: 'B', title: 'Océano', place: 'Mar de Weddell', x: 322, y: 322, q: '¿Qué pasa debajo del hielo marino del Mar de Weddell?' },
   { id: 'poncho', tier: 'B', title: 'Poncho', place: 'Península Antártica · ubicación a definir', x: 196, y: 352, q: '¿Qué historia puede contar un poncho en la Antártida?' },
   { id: 'campana', tier: 'A', title: 'Desde Ushuaia', place: 'Ushuaia', x: 31.4, y: 313.5, q: '¿Cómo se llega desde Ushuaia hasta la Antártida?' },
@@ -28,8 +28,8 @@ export const PTS: readonly MapPoint[] = [
 
 export const TIER: Record<Tier, string> = { A: 'Expedición disponible', B: 'Ampliación prevista', C: 'Próximamente' };
 
-export const EXPEDITION_POINT = PTS[0];
+export const ORCADAS_POINT = PTS.find((p) => p.id === 'orcadas')!;
+export const EXPEDITION_POINT = ORCADAS_POINT;
 /** The trip from Ushuaia happens on the map itself, not on a separate screen. */
 export const VOYAGE_POINT = PTS.find((p) => p.id === 'campana')!;
-export const ORCADAS_POINT = PTS.find((p) => p.id === 'orcadas')!;
 export const AVAILABLE_COUNT = PTS.filter((p) => p.tier === 'A').length;

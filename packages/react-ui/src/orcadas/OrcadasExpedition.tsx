@@ -12,7 +12,10 @@ import {
   initialOrcadas,
   observationFor,
   orcadasReducer,
+  READING_KINDS,
+  checkGuess,
   scoreObservation,
+  truthFor,
   seaIceAt,
   sourcesOf,
   type Chapter,
@@ -20,6 +23,7 @@ import {
 } from '@antartida/core';
 import { Icon } from '../ui.tsx';
 import { CenturyChart } from './CenturyChart.tsx';
+import { NOTEBOOK_LABELS, formatRecorded } from './observation/Notebook.tsx';
 import { Hotspots, type HotspotId } from './Hotspots.tsx';
 import { KindChip } from './KindChip.tsx';
 import { Observation } from './observation/Observation.tsx';
@@ -172,6 +176,7 @@ export function OrcadasExpedition({
   const canAdvance = canAdvanceOrcadas(s);
   const monthName = MONTH_NAMES[(s.month - 1 + 12) % 12] ?? 'enero';
   const obsScore = scoreObservation(s.guesses, reading);
+  const recorded = READING_KINDS.filter((kind) => typeof s.guesses[kind] === 'number').length;
 
   return (
     <section
@@ -356,12 +361,42 @@ export function OrcadasExpedition({
                 <div className="orc-done-summary">
                   <span className="orc-kicker hand">Bitácora sellada</span>
                   <p>
-                    Recorriste el istmo de la isla Laurie, registraste la observación de {monthName}{' '}
-                    ({obsScore}/4 lecturas en tolerancia) y viajaste desde Omond House (1903) hasta
-                    la serie climática actual.
+                    Recorriste el istmo de la isla Laurie y viajaste desde Omond House (1903) hasta
+                    la serie climática actual.{' '}
+                    {recorded === 0
+                      ? 'No anotaste la observación del día: podés volver al capítulo 2 antes de terminar.'
+                      : `Tu observación de ${monthName}: ${obsScore} de ${recorded} lecturas dentro del margen.`}
                   </p>
                 </div>
               </div>
+              {recorded > 0 && (
+                <div className="orc-done-sim">
+                  <KindChip kind="sim" />
+                  <span>El tiempo del día se sorteó dentro del clima real de {monthName}.</span>
+                </div>
+              )}
+              {recorded > 0 && (
+                <dl className="orc-done-readings" aria-label="Tu observación del día">
+                  {READING_KINDS.map((kind) => {
+                    const val = s.guesses[kind];
+                    if (typeof val !== 'number') return null;
+                    const status = checkGuess(kind, val, reading);
+                    return (
+                      <div key={kind}>
+                        <dt>{NOTEBOOK_LABELS[kind].title}</dt>
+                        <dd className="hand">{formatRecorded(kind, val, reading)}</dd>
+                        <small>
+                          {status === 'off'
+                            ? `Fuera del margen: el instrumento marcaba ${formatRecorded(kind, truthFor(kind, reading), reading)}.`
+                            : status === 'exact'
+                              ? 'Lectura exacta.'
+                              : 'Dentro del margen.'}
+                        </small>
+                      </div>
+                    );
+                  })}
+                </dl>
+              )}
               <FactList facts={chapterFacts} />
             </div>
           )}

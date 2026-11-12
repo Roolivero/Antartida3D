@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
 import {
+  APPROACH_MS,
   DIVE_MS,
   FADE_MS,
   AVAILABLE_COUNT,
@@ -17,9 +18,6 @@ import {
 import { useReducedMotion, useTimers } from './hooks.ts';
 import { MapView, type Layer3DProps, type Phase, type ViewMode } from './map/MapView.tsx';
 import { Filters } from './ui.tsx';
-
-const loadExpedition = () => import('./expedition/Expedition.tsx');
-const Expedition = lazy(() => loadExpedition().then((m) => ({ default: m.Expedition })));
 
 const loadOrcadas = () => import('./orcadas/OrcadasExpedition.tsx');
 const OrcadasExpedition = lazy(() => loadOrcadas().then((m) => ({ default: m.OrcadasExpedition })));
@@ -47,7 +45,7 @@ function hasWebGL(): boolean {
 }
 
 export function AntarcticaApp() {
-  const [screen, setScreen] = useState<'map' | 'exp' | 'orcadas'>('map');
+  const [screen, setScreen] = useState<'map' | 'orcadas'>('map');
   const [phase, setPhase] = useState<Phase>('idle');
   const [explored, setExplored] = useState<string[]>([]);
   const [voyaging, setVoyaging] = useState(false);
@@ -93,6 +91,8 @@ export function AntarcticaApp() {
   }, [reduced]);
 
   const toggleMode = (next: ViewMode) => {
+    // A transition into an expedition is tied to the view it started on.
+    if (phase !== 'idle') return;
     if (next === '3d' && !webglSupported) {
       setToast('WebGL no está disponible en este navegador');
       later('toast', () => setToast(''), TOAST_MS);
@@ -103,20 +103,20 @@ export function AntarcticaApp() {
   };
 
   const start = (point: MapPoint) => {
-    if (phase !== 'idle') return;
+    if (phase !== 'idle' || point.id !== 'orcadas') return;
     setToast('');
     setActivePoint(point);
-    const nextScreen = point.id === 'orcadas' ? 'orcadas' : 'exp';
-    if (nextScreen === 'orcadas') void loadOrcadas();
-    else void loadExpedition();
-    setPhase(reduced ? 'fade' : 'dive');
+    void loadOrcadas();
+    // Orcadas on the 3D map: the camera zooms all the way down to the island, like the trip from Ushuaia.
+    const approach = !reduced && mode === '3d' && document.querySelector('.stage.m3d canvas') !== null;
+    setPhase(reduced ? 'fade' : approach ? 'approach' : 'dive');
     later(
       'enter',
       () => {
-        setScreen(nextScreen);
+        setScreen('orcadas');
         setPhase('idle');
       },
-      reduced ? FADE_MS : DIVE_MS
+      reduced ? FADE_MS : approach ? APPROACH_MS : DIVE_MS
     );
   };
 
@@ -171,13 +171,9 @@ export function AntarcticaApp() {
           onStartVoyage={startVoyage}
           onEndVoyage={endVoyage}
         />
-      ) : screen === 'orcadas' ? (
-        <Suspense fallback={null}>
-          <OrcadasExpedition reduced={reduced} onLeave={leave} />
-        </Suspense>
       ) : (
         <Suspense fallback={null}>
-          <Expedition reduced={reduced} onLeave={leave} />
+          <OrcadasExpedition reduced={reduced} onLeave={leave} />
         </Suspense>
       )}
     </div>

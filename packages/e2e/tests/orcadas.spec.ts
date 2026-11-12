@@ -11,21 +11,6 @@ async function openOrcadasFromMap(page: Page) {
   await page.waitForFunction(() => (window as unknown as { __orcadasReady?: boolean }).__orcadasReady === true);
 }
 
-async function openFosilesFromList(page: Page) {
-  await page.getByRole('button', { name: 'Ver como lista' }).click();
-  await page.getByRole('dialog', { name: 'Todos los puntos' }).getByRole('button', { name: /Fósiles/ }).click();
-  await expect(page.getByRole('heading', { name: '¿Cómo era la Antártida antes del hielo?' })).toBeVisible();
-}
-
-async function brushWithPointer(page: Page, spot: number) {
-  const box = (await page.locator('.dig').boundingBox())!;
-  const spots = [{ x: 0.23, y: 0.613 }, { x: 0.535, y: 0.753 }, { x: 0.795, y: 0.56 }];
-  for (let i = 0; i < 4; i++) {
-    await page.mouse.click(box.x + spots[spot].x * box.width, box.y + spots[spot].y * box.height);
-    await page.waitForTimeout(140);
-  }
-}
-
 async function tabTo(page: Page, name: RegExp, max = 50) {
   for (let i = 0; i < max; i++) {
     await page.keyboard.press('Tab');
@@ -57,7 +42,7 @@ test.beforeEach(async ({ page }) => {
   await page.goto('/');
   await page.evaluate(() => localStorage.clear());
   await page.reload();
-  await expect(log(page)).toContainText('0/3');
+  await expect(log(page)).toContainText('0/2');
 });
 
 test.afterEach(() => {
@@ -133,13 +118,15 @@ test('completes all chapters of Orcadas with the keyboard only, opens Sources, a
   await tabTo(page, /^Terminar expedición$/);
   await page.keyboard.press('Enter');
 
-  await expect(log(page)).toContainText('1/3');
+  await expect(log(page)).toContainText('1/2');
   await expect(page.locator('.toast')).toHaveText(
-    'Estación Orcadas quedó explorado. Registro de exploración: 1/3'
+    'Estación Orcadas quedó explorado. Registro de exploración: 1/2'
   );
+  // Back on the map, focus lands on the marker of the expedition that was just finished.
+  await expect.poll(() => focusedName(page)).toContain('Estación Orcadas');
 });
 
-test('opens Orcadas from the 2D map, completes it, and reaches 2/3 after Fósiles', async ({ page }) => {
+test('opens Orcadas from the 2D map, completes it, and updates the log', async ({ page }) => {
   await openOrcadasFromMap(page);
   await page
     .getByRole('navigation', { name: 'Capítulos de la expedición' })
@@ -147,26 +134,44 @@ test('opens Orcadas from the 2D map, completes it, and reaches 2/3 after Fósile
     .click();
   await page.getByRole('button', { name: 'Terminar expedición' }).click();
 
-  await expect(log(page)).toContainText('1/3');
+  await expect(log(page)).toContainText('1/2');
   await expect(page.locator('.toast')).toHaveText(
-    'Estación Orcadas quedó explorado. Registro de exploración: 1/3'
+    'Estación Orcadas quedó explorado. Registro de exploración: 1/2'
   );
   await expect(page.locator('.stage.ret')).toHaveCount(0);
 
-  await openFosilesFromList(page);
-  await primary(page).click();
-  for (const spot of [0, 1, 2]) {
-    await brushWithPointer(page, spot);
-    const card = page.getByRole('dialog');
-    await card.getByRole('button', { name: spot < 2 ? 'Seguir excavando' : 'Comparar evidencias' }).click();
-  }
-  await page.getByRole('button', { name: /Con tres restos todavía no alcanza/ }).click();
-  await primary(page).click();
-  await primary(page).click();
-  await primary(page).click();
+  // Fósiles is now an "Ampliación prevista" point, opening a sheet rather than an expedition
+  await page.getByRole('button', { name: 'Ver como lista' }).click();
+  const fosilesBtn = page.getByRole('dialog', { name: 'Todos los puntos' }).getByRole('button', { name: /Fósiles/ });
+  await expect(fosilesBtn).toBeVisible();
+  await fosilesBtn.click();
+  await expect(page.getByRole('dialog').getByRole('heading', { name: 'Fósiles' })).toBeVisible();
+});
 
-  await expect(log(page)).toContainText('2/3');
-  await expect(page.locator('.toast')).toHaveText('Fósiles quedó explorado. Registro de exploración: 2/3');
+test('from the 3D map with motion allowed, the camera zooms down to the island before the station opens', async ({ page }) => {
+  test.setTimeout(90_000);
+  // The app reads the motion preference once, when it loads.
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await page.reload();
+  const toggle = page.getByRole('group', { name: 'Modo de vista' });
+  await toggle.getByRole('button', { name: 'Relieve 3D' }).click();
+  await expect(toggle.getByRole('button', { name: 'Relieve 3D' })).toHaveAttribute('aria-pressed', 'true');
+  const cluster = page.getByRole('button', { name: /Grupo de .*Estación Orcadas/ });
+  const marker = page.getByRole('button', { name: /^Estación Orcadas, Islas Orcadas del Sur/ });
+  // The 3D markers appear once the layer has loaded: wait for the marker or the group that holds it.
+  await cluster.or(marker).first().waitFor();
+  if (await cluster.isVisible()) await cluster.click();
+  // The approach lasts 2.6 s and software rendering can starve the test's polling: record it in the page.
+  await page.evaluate(() => {
+    const w = window as unknown as { __sawApproach?: boolean };
+    new MutationObserver(() => {
+      if (document.querySelector('.stage.approach') && document.querySelector('.veil.late')) w.__sawApproach = true;
+    }).observe(document.body, { subtree: true, attributes: true, attributeFilter: ['class'] });
+  });
+  await marker.click();
+  await expect(page.getByRole('heading', { level: 2, name: 'Estación Orcadas' })).toBeVisible({ timeout: 30_000 });
+  // The map stayed on screen during the zoom (no tilt) and the paper veil came only at the end.
+  expect(await page.evaluate(() => (window as unknown as { __sawApproach?: boolean }).__sawApproach)).toBe(true);
 });
 
 test('respects reducedMotion, opens hotspot cards, and keeps mobile sheet within 45% height', async ({ page }) => {
@@ -222,9 +227,7 @@ test('never renders facts from unverified sources in any chapter', async ({ page
   await openOrcadasFromMap(page);
 
   const unverifiedSnippets = [
-    '8 m sobre el nivel del mar',
     'número OMM 88968',
-    'anemómetro de cazoletas Robinson',
     'El registro de hielo de la bahía Scotia empieza en 1903',
     'Zazulie',
   ];

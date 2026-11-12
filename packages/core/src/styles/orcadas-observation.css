@@ -719,6 +719,13 @@
   animation: none;
 }
 
+@media (min-width: 900px) {
+  /* The side panel is wide enough to show the instrument drawings at full size. */
+  .orc-obs-svg {
+    max-height: 260px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .orc-obs-shelter-door {
     animation: none;

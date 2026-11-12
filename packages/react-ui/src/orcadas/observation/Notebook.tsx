@@ -12,14 +12,14 @@ import {
 } from '@antartida/core';
 import { KindChip } from '../KindChip.tsx';
 
-const NOTEBOOK_LABELS: Record<ReadingKind, { title: string; unit: string }> = {
+export const NOTEBOOK_LABELS: Record<ReadingKind, { title: string; unit: string }> = {
   temp: { title: 'Termómetro (abrigo)', unit: '°C' },
   pressure: { title: 'Barómetro', unit: 'hPa' },
   wind: { title: 'Anemómetro y veleta', unit: 'km/h' },
   clouds: { title: 'Nubosidad', unit: 'octas' },
 };
 
-function formatRecorded(kind: ReadingKind, val: number, reading: Reading): string {
+export function formatRecorded(kind: ReadingKind, val: number, reading: Reading): string {
   switch (kind) {
     case 'temp':
       return `${val > 0 ? '+' : ''}${val.toFixed(1)} °C`;

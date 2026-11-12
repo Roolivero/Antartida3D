@@ -1,6 +1,5 @@
 export * from './content/points.ts';
 export * from './content/sea.ts';
-export * from './content/fossils.ts';
 export * from './content/ushuaia.ts';
 export * from './content/orcadas.ts';
 export * from './content/orcadas-series.ts';
@@ -11,7 +10,6 @@ export * from './clustering.ts';
 export * from './labels.ts';
 export * from './viewport.ts';
 export * from './markers.ts';
-export * from './expedition.ts';
 export * from './orcadas.ts';
 export * from './storage.ts';
 export * from './motion.ts';

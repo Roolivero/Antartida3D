@@ -67,8 +67,8 @@ export const ORCADAS_SOURCES: readonly OrcadasSource[] = [
     label: 'R. C. Mossman (1907)',
     org: 'Report on the Scientific Results of the Voyage of S.Y. Scotia, vol. II, Meteorology',
     url: 'https://archive.org/details/reportonscientif02scot',
-    consulted: '11 de noviembre de 2026',
-    verified: false,
+    consulted: '12 de noviembre de 2026',
+    verified: true,
   },
   {
     id: 'oscar',
@@ -83,24 +83,16 @@ export const ORCADAS_SOURCES: readonly OrcadasSource[] = [
     label: 'Antarctic Station Catalogue (Argentina)',
     org: 'COMNAP',
     url: 'https://www.comnap.aq/s/Argentina_Catalogue_Aug2017.pdf',
-    consulted: '11 de noviembre de 2026',
-    verified: false,
-  },
-  {
-    id: 'murphy1995',
-    label: 'Murphy, Clarke, Symon y Priddle (1995)',
-    org: 'Deep-Sea Research I',
-    url: 'https://doi.org/10.1016/0967-0637(95)00057-D',
-    consulted: '11 de noviembre de 2026',
-    verified: false,
+    consulted: '12 de noviembre de 2026',
+    verified: true,
   },
   {
     id: 'hsm42',
     label: 'Sitio y Monumento Histórico N.º 42',
     org: 'Secretaría del Tratado Antártico',
     url: 'https://www.ats.aq/devph/en/apa-database/119',
-    consulted: '11 de noviembre de 2026',
-    verified: false,
+    consulted: '12 de noviembre de 2026',
+    verified: true,
   },
 ] as const;
 
@@ -197,7 +189,7 @@ export const ORCADAS_FACTS: readonly OrcadasFact[] = [
     chapter: 'observation',
     kind: 'real',
     title: 'Instrumental de 1903',
-    text: 'En 1903 había abrigos meteorológicos con termómetros seco y húmedo, de máxima y de mínima, termógrafos e higrógrafo Richard; barómetro de mercurio modelo Kew; anemómetro de cazoletas Robinson; heliógrafo Campbell-Stokes.',
+    text: 'En 1903 la estación de Omond House tenía cuatro abrigos meteorológicos con termómetros seco y húmedo, de máxima y de mínima, termógrafos e higrógrafo Richard, un barómetro de modelo Kew y un heliógrafo Campbell-Stokes. El anemómetro de cazoletas Robinson estaba en la cubierta del Scotia, anclado en la bahía.',
     sourceIds: ['mossman1907'],
   },
 
@@ -217,14 +209,6 @@ export const ORCADAS_FACTS: readonly OrcadasFact[] = [
     title: 'Hielo en la bahía',
     text: 'El hielo de la bahía por mes es una simulación ilustrativa.',
     sourceIds: [],
-  },
-  {
-    id: 'year-registro-hielo',
-    chapter: 'year',
-    kind: 'real',
-    title: 'Registro de hielo marino',
-    text: 'El registro de hielo de la bahía Scotia empieza en 1903.',
-    sourceIds: ['murphy1995'],
   },
   {
     id: 'year-fauna-meses',
@@ -350,7 +334,7 @@ export const ORCADAS_FACTS: readonly OrcadasFact[] = [
     kind: 'real',
     title: 'Sitio y Monumento Histórico N.º 42',
     text: 'Casa Moneta, Casa Omond y un cementerio contiguo forman el Sitio y Monumento Histórico N.º 42 del Tratado Antártico.',
-    sourceIds: ['cancilleria'],
+    sourceIds: ['cancilleria', 'hsm42'],
   },
   {
     id: 'done-laborc-actual',

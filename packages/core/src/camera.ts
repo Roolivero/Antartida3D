@@ -125,5 +125,33 @@ export function divePose3D(point: { x: number; y: number }): CameraPose {
   };
 }
 
+/**
+ * Pose at progress t (0..1) of a continuous zoom between two poses. The distance shrinks
+ * geometrically, so the zoom looks even on screen, and the target moves with the distance, so it
+ * settles while the camera is still far and the point does not slide at the end.
+ */
+export function approachPose3D(from: CameraPose, to: CameraPose, t: number): CameraPose {
+  const u = Math.min(1, Math.max(0, t));
+  const offset = (p: CameraPose) => ({ x: p.pos.x - p.target.x, y: p.pos.y - p.target.y, z: p.pos.z - p.target.z });
+  const a = offset(from);
+  const b = offset(to);
+  const d0 = Math.hypot(a.x, a.y, a.z);
+  const d1 = Math.hypot(b.x, b.y, b.z);
+  if (d0 === 0 || d1 === 0) return to;
+  const d = d0 * Math.pow(d1 / d0, u);
+  const w = d0 === d1 ? u : (d0 - d) / (d0 - d1);
+  const dir = { x: a.x / d0 + (b.x / d1 - a.x / d0) * u, y: a.y / d0 + (b.y / d1 - a.y / d0) * u, z: a.z / d0 + (b.z / d1 - a.z / d0) * u };
+  const len = Math.hypot(dir.x, dir.y, dir.z) || 1;
+  const target = {
+    x: from.target.x + (to.target.x - from.target.x) * w,
+    y: from.target.y + (to.target.y - from.target.y) * w,
+    z: from.target.z + (to.target.z - from.target.z) * w,
+  };
+  return {
+    pos: { x: target.x + (dir.x / len) * d, y: target.y + (dir.y / len) * d, z: target.z + (dir.z / len) * d },
+    target,
+  };
+}
+
 /** DIVE_3D: Low, south of Marambio looking north over the island, above heightAt. */
 export const DIVE_3D: CameraPose = divePose3D(EXPEDITION_POINT);

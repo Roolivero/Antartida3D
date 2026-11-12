@@ -6,6 +6,9 @@ import { EffectComposer } from '@react-three/postprocessing';
 import {
   homePose3D,
   performanceBounds,
+  APPROACH_MS,
+  approachPose3D,
+  type CameraPose,
   divePose3D,
   FOV,
   distanceFromK3D,
@@ -184,6 +187,7 @@ function ControlsBridge({
   const scene = useThree((s) => s.scene);
   const gl = useThree((s) => s.gl);
   const initialized = useRef(false);
+  const approach = useRef<{ from: CameraPose; to: CameraPose; startMs: number } | null>(null);
   const live = useRef({ size, geo, onCameraRest });
   live.current = { size, geo, onCameraRest };
 
@@ -204,7 +208,11 @@ function ControlsBridge({
     const bbox = new Box3(new Vector3(-800, -50, -800), new Vector3(800, 2500, 800));
     cc.setBoundary(bbox);
 
-    if (phase === 'dive') {
+    if (phase === 'approach') {
+      const from = { pos: cc.getPosition(new Vector3()), target: cc.getTarget(new Vector3()) };
+      approach.current = { from, to: divePose3D(diveTarget), startMs: performance.now() };
+      invalidate();
+    } else if (phase === 'dive') {
       const dur = reduced ? 0 : 1.5;
       const dive = divePose3D(diveTarget);
       cc.setLookAt(
@@ -223,6 +231,18 @@ function ControlsBridge({
     }
   }, [phase, reduced, diveTarget]);
 
+  // Continuous zoom down to the point: the camera follows approachPose3D on every frame.
+  useFrame(() => {
+    const cc = controlsRef.current;
+    const run = approach.current;
+    if (!cc || !run) return;
+    const u = Math.min(1, (performance.now() - run.startMs) / APPROACH_MS);
+    const pose = approachPose3D(run.from, run.to, u * u * (3 - 2 * u));
+    void cc.setLookAt(pose.pos.x, pose.pos.y, pose.pos.z, pose.target.x, pose.target.y, pose.target.z, false);
+    if (u < 1) invalidate();
+    else approach.current = null;
+  });
+
   // Report where the camera settled, so clustering and the 2D view follow the orbit camera.
   useEffect(() => {
     const cc = controlsRef.current;
@@ -240,7 +260,7 @@ function ControlsBridge({
   // a pose from the 2D view, which used to undo the user's orbit and zoom.
   useEffect(() => {
     const cc = controlsRef.current;
-    if (!cc || !command || phase === 'dive') return;
+    if (!cc || !command || phase === 'dive' || phase === 'approach') return;
     const smooth = !reduced;
     const { cmd } = command;
     const aspect = size.vw / size.vh;
@@ -301,6 +321,8 @@ function ControlsBridge({
       ref={controlsRef}
       makeDefault
       dollyToCursor
+      // The zoom into an expedition drives the camera on every frame: gestures would fight it.
+      enabled={phase !== 'approach' && phase !== 'dive'}
       minDistance={MIN_DISTANCE}
       maxDistance={MAX_DISTANCE}
     />
@@ -329,7 +351,7 @@ function ProjectMarkers({
 
   useFrame(() => {
     const el = overlayRef.current;
-    if (!el || phase === 'dive') return;
+    if (!el || phase === 'dive' || phase === 'approach') return;
 
     // 1. Position expedition & fossil markers
     for (const m of markers) {
@@ -525,11 +547,11 @@ export function Map3DLayer({
         />
       </Canvas>
       <div
-        className={'ov' + (phase === 'dive' ? ' hide' : '')}
+        className={'ov' + (phase === 'dive' || phase === 'approach' ? ' hide' : '')}
         ref={overlayRef}
         style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}
       >
-        {phase !== 'dive' && (
+        {phase !== 'dive' && phase !== 'approach' && (
           <>
             <span
               data-graticule="greenwich"

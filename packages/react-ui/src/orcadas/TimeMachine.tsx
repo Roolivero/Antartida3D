@@ -70,7 +70,7 @@ export function TimeMachine({
 
   const rulerGeom = useMemo(() => {
     const w = 336;
-    const h = 68;
+    const h = 74;
     const padL = 18;
     const padR = 18;
     const plotW = w - padL - padR;
@@ -252,8 +252,8 @@ export function TimeMachine({
           {/* Era milestone notches and labels */}
           {rulerGeom.eraSpans.map((sp, i) => {
             const isActive = sp.id === currentEra.id;
-            // Offset 1905 label slightly so it doesn't collide with 1903
-            const labelX = i === 1 ? sp.x1 + 14 : sp.x1;
+            // 1905 sits two years after 1903: its label goes on a second row so they do not overlap.
+            const labelY = i === 1 ? 61 : 51;
             return (
               <g key={sp.id}>
                 <line
@@ -269,8 +269,8 @@ export function TimeMachine({
                   fill={isActive ? '#A4471F' : '#1E3E5C'}
                 />
                 <text
-                  x={labelX}
-                  y="51"
+                  x={sp.x1}
+                  y={labelY}
                   textAnchor={i === 0 ? 'start' : 'middle'}
                   fontSize="8.5"
                   fontWeight="800"

@@ -3,7 +3,6 @@ import {
   READING_KINDS,
   TOLERANCE,
   checkGuess,
-  compassPoint,
   prefersReducedMotion,
   truthFor,
   type Reading,
@@ -137,7 +136,6 @@ export function Observation({
   }, [reading]);
 
   const monthName = MONTH_NAMES[(month - 1 + 12) % 12] ?? 'enero';
-  const windDir = compassPoint(reading.windDirDeg);
   const meta = FIELD_META[activeKind];
   const currentDraft = drafts[activeKind];
   const recordedVal = guesses[activeKind];
@@ -197,7 +195,7 @@ export function Observation({
       <div className="orc-obs-head">
         <KindChip kind="sim" />
         <span className="orc-obs-meta">
-          Climatología de {monthName} · Rumbo de veleta: {windDir}
+          Clima de {monthName}
         </span>
       </div>
 

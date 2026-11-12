@@ -16,7 +16,8 @@ import { Map2DLayer, type LayerProps } from './Map2DLayer.tsx';
 
 const VoyagePanel = lazy(() => import('../voyage/VoyagePanel.tsx').then((m) => ({ default: m.VoyagePanel })));
 
-export type Phase = 'idle' | 'dive' | 'fade' | 'ret';
+/** `approach`: the 3D camera zooms down to the point before its scene opens. */
+export type Phase = 'idle' | 'dive' | 'approach' | 'fade' | 'ret';
 export type Anim = '' | 'zoom' | 'wheel' | 'dive';
 export type ViewMode = '2d' | '3d';
 
@@ -144,9 +145,23 @@ export function MapView({
     return () => ro.disconnect();
   }, []);
 
+  // Title of the expedition the user came back from: only read when the map mounts again.
+  const returnTitle = useRef(diveTarget.title);
   useEffect(() => {
     if (!focusExpedition) return;
-    vpRef.current?.querySelector<HTMLElement>('.mk.ta, .mk.has-a')?.focus();
+    // Back from an expedition: focus its own marker, or the group that holds it.
+    // The 3D markers appear once the layer has loaded, so look for them over a few frames.
+    let id = 0;
+    let tries = 0;
+    const title = returnTitle.current;
+    const focus = () => {
+      const markers = Array.from(vpRef.current?.querySelectorAll<HTMLElement>('.mk') ?? []);
+      const el = markers.find((m) => m.getAttribute('aria-label')?.includes(title)) ?? vpRef.current?.querySelector<HTMLElement>('.mk.ta, .mk.has-a');
+      if (el) el.focus();
+      else if (++tries < 120) id = requestAnimationFrame(focus);
+    };
+    focus();
+    return () => cancelAnimationFrame(id);
   }, [focusExpedition]);
 
   useEffect(() => {
@@ -293,7 +308,7 @@ export function MapView({
 
   const markers = useMemo(() => buildMarkers(size, view, explored, PTS), [size, view, explored]);
   const geo = geometry(size);
-  const stageCls = 'stage' + (is3D ? ' m3d' : '') + (voyaging ? ' voyaging' : '') + (phase === 'dive' ? ' dive' : phase === 'fade' ? ' fade' : phase === 'ret' ? ' ret' : '');
+  const stageCls = 'stage' + (is3D ? ' m3d' : '') + (voyaging ? ' voyaging' : '') + (phase === 'dive' ? ' dive' : phase === 'approach' ? ' approach' : phase === 'fade' ? ' fade' : phase === 'ret' ? ' ret' : '');
 
   return (
     <div className="stagewrap">
@@ -381,7 +396,7 @@ export function MapView({
         )}
         {sheet && <PointSheet point={sheet} onClose={() => setSheet(null)} fallbackFocus={() => vpRef.current} />}
       </div>
-      <div className={'veil' + (phase === 'dive' ? ' on' : '')} />
+      <div className={'veil' + (phase === 'dive' ? ' on' : phase === 'approach' ? ' late' : '')} />
     </div>
   );
 }

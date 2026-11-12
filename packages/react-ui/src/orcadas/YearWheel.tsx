@@ -504,7 +504,7 @@ export function YearWheel({
         <article className="orc-reading-card">
           <div className="orc-reading-top">
             <KindChip kind="real" />
-            <span className="orc-reading-kicker">Climatología mensual</span>
+            <span className="orc-reading-kicker">Clima del mes</span>
           </div>
           <p className="orc-reading-main">
             Temperatura media de {monthName}:{' '}

@@ -33,7 +33,7 @@ import { EffectComposer } from '@react-three/postprocessing';
 import {
   ORCADAS_LAT,
   midMonthDayOfYear,
-  performanceBounds,
+  shouldTick,
   solarAzimuthDeg,
   solarElevationDeg,
   type BuildingId,
@@ -1179,7 +1179,7 @@ function StationCameraAndProjection({
 
       const rawSx = ((projVec.x + 1) * size.width) / 2;
       const rawSy = ((-projVec.y + 1) * size.height) / 2;
-      const maxX = size.width >= 900 ? size.width - 510 : size.width - 68;
+      const maxX = size.width >= 900 ? size.width - 560 : size.width - 68;
       const maxY = size.width >= 900 ? size.height - 64 : size.height * 0.52;
       const sx = Math.max(58, Math.min(maxX, rawSx));
       const sy = Math.max(116, Math.min(maxY, rawSy));
@@ -1192,6 +1192,38 @@ function StationCameraAndProjection({
   });
 
   return <CameraControls ref={controlsRef} makeDefault dollyToCursor />;
+}
+
+/** Fps cap of the scene, and while quality is low: fewer frames keep a slow GPU responsive. */
+const SCENE_FPS = 60;
+const LOW_QUALITY_FPS = 30;
+/**
+ * Quality monitor bounds: [decline below, incline above]. A 90 or 144 Hz screen under the 60 fps
+ * cap draws 45 to 48 fps, which must still count as fast. Low quality never reaches the upper one.
+ */
+const QUALITY_FPS_BOUNDS: [number, number] = [36, 42];
+
+/**
+ * Keeps the demand-driven canvas drawing while the scene animates. Without it the snow, sea and
+ * fauna only advanced when the camera moved, and jumped ahead on the next frame.
+ */
+function SceneClock({ reduced, lowQuality }: { reduced: boolean; lowQuality: boolean }) {
+  const invalidate = useThree((s) => s.invalidate);
+  useEffect(() => {
+    if (reduced) return;
+    let id = 0;
+    let lastTickMs = 0;
+    const loop = (nowMs: number) => {
+      if (!document.hidden && shouldTick(nowMs, lastTickMs, lowQuality ? LOW_QUALITY_FPS : SCENE_FPS)) {
+        lastTickMs = nowMs;
+        invalidate();
+      }
+      id = requestAnimationFrame(loop);
+    };
+    id = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(id);
+  }, [invalidate, reduced, lowQuality]);
+  return null;
 }
 
 export const StationScene = memo(function StationScene({
@@ -1270,22 +1302,18 @@ export const StationScene = memo(function StationScene({
           dom.addEventListener('webglcontextlost', handleLost, { once: true });
         }}
       >
-        <PerformanceMonitor
-          flipflops={3}
-          bounds={() => performanceBounds(lowQuality)}
-          onIncline={() => {
-            setLowQuality((prev) => (prev ? false : prev));
-            setEnablePost((prev) => (!prev ? true : prev));
-          }}
-          onDecline={() => {
-            setLowQuality((prev) => (!prev ? true : prev));
-            setEnablePost((prev) => (prev ? false : prev));
-          }}
-          onFallback={() => {
-            setLowQuality(true);
-            setEnablePost(false);
-          }}
-        />
+        <SceneClock reduced={reduced} lowQuality={lowQuality} />
+        {/* Reduced motion draws on demand: sparse frames would read as a slow GPU. */}
+        {!reduced && (
+          <PerformanceMonitor
+            bounds={() => QUALITY_FPS_BOUNDS}
+            onIncline={() => setEnablePost(true)}
+            onDecline={() => {
+              setLowQuality(true);
+              setEnablePost(false);
+            }}
+          />
+        )}
         <SkyAndLighting
           sunDir={sunDir}
           sunElevationDeg={sunElevationDeg}

@@ -1,5 +1,5 @@
 import type { BufferGeometry, Object3D } from 'three';
-import type { Sighting } from '@antartida/core';
+import { createSeededRng, type Sighting } from '@antartida/core';
 import { buildBoxGeometry, type Box } from './vehicles.ts';
 
 // Approximate colors. The models are illustrations, not portraits: one unit is about the length of the model.
@@ -376,78 +376,73 @@ const ICE_SHADE = 0xc5dbe6;
 
 /** Pale turquoise of the ice seen through shallow water: the foot that spreads under an iceberg. */
 const ICE_SUBMERGED = 0x9fd6dc;
-/** Deep blue of a crevasse, where the ice is dense and old. */
-const ICE_DEEP = 0x7fb0cc;
 /** Wall of an iceberg: bluer than snow, so the baked face shading reads as ice and not as grey stone. */
-const ICE_WALL = 0xcfe8f5;
+const ICE_WALL = 0xb4d5ea;
+
+/** Side of one ice column, in model units. */
+const ICE_CELL = 0.1;
+/** Height step of the columns: heights snap to it, so the ice breaks into terraces and not into a ramp. */
+const ICE_STEP = 0.035;
 
 /**
- * Tabular iceberg: a wide, low slab that broke off an ice shelf. Overlapping slabs of one height
- * give it a ragged outline with sheer walls; the top is one flat snow field (no stacked block, which
- * reads as a roof), one end has collapsed into a lower step, and crevasses run down the walls.
+ * An iceberg as a field of square ice columns over a ragged footprint. Straight walls, a flat roof
+ * and dark slits read as a building, so the outline is broken column by column, the rim steps down
+ * to the water and nothing is darker than wet ice. `height(u, v)` gets the cell position in -1..1
+ * along the length and the width and returns the ice height there, or 0 for open water.
  */
-const ICEBERG_TABULAR: Box[] = [
-  // Submerged foot, wider than the walls
-  [0, 0.006, 0, 1.06, 0.012, 0.74, ICE_SUBMERGED],
-  [0.14, 0.006, 0.08, 0.84, 0.012, 0.8, ICE_SUBMERGED],
-  // Wave-cut band at the waterline
-  [-0.05, 0.025, 0, 0.8, 0.03, 0.52, ICE_SHADE],
-  [0.22, 0.025, 0.06, 0.52, 0.03, 0.56, ICE_SHADE],
-  [-0.3, 0.025, -0.08, 0.38, 0.03, 0.46, ICE_SHADE],
-  // Walls: slabs of the same height, shifted to break the rectangle
-  [-0.05, 0.09, 0, 0.78, 0.16, 0.5, ICE_WALL],
-  [0.22, 0.09, 0.06, 0.5, 0.16, 0.54, ICE_WALL],
-  [-0.3, 0.09, -0.08, 0.36, 0.16, 0.44, ICE_WALL],
-  [0.05, 0.09, -0.2, 0.5, 0.16, 0.2, ICE_WALL],
-  // Collapsed ends, lower than the plateau
-  [-0.52, 0.06, 0.04, 0.12, 0.1, 0.3, ICE_WALL],
-  [0.5, 0.075, -0.05, 0.08, 0.13, 0.3, ICE_WALL],
-  // Snow on the plateau: follows the outline of the walls
-  [-0.05, 0.18, 0, 0.75, 0.02, 0.47, WHITE],
-  [0.22, 0.18, 0.06, 0.47, 0.02, 0.51, WHITE],
-  [-0.3, 0.18, -0.08, 0.33, 0.02, 0.41, WHITE],
-  [0.05, 0.18, -0.2, 0.47, 0.02, 0.17, WHITE],
-  [-0.52, 0.116, 0.04, 0.1, 0.012, 0.27, WHITE],
-  [0.5, 0.146, -0.05, 0.065, 0.012, 0.27, WHITE],
-  // Crevasses: thin and tall, unevenly spaced
-  [0.12, 0.12, 0.331, 0.014, 0.1, 0.006, ICE_DEEP],
-  [0.34, 0.1, 0.331, 0.012, 0.14, 0.006, ICE_DEEP],
-  [-0.25, 0.11, 0.251, 0.012, 0.12, 0.006, ICE_DEEP],
-  [0.1, 0.11, -0.301, 0.012, 0.12, 0.006, ICE_DEEP],
-  [-0.36, 0.1, -0.301, 0.012, 0.1, 0.006, ICE_DEEP],
+function iceberg(cols: number, rows: number, seed: number, height: (u: number, v: number, noise: number) => number): Box[] {
+  const rng = createSeededRng(seed);
+  const length = cols * ICE_CELL;
+  const width = rows * ICE_CELL;
+  const boxes: Box[] = [
+    // Submerged foot, wider than the ice above the water
+    [0, 0.006, 0, length * 0.92, 0.012, width * 0.8, ICE_SUBMERGED],
+    [length * 0.06, 0.006, width * 0.05, length * 0.7, 0.012, width, ICE_SUBMERGED],
+  ];
+  for (let i = 0; i < cols; i++) {
+    for (let j = 0; j < rows; j++) {
+      const u = ((i + 0.5) / cols) * 2 - 1;
+      const v = ((j + 0.5) / rows) * 2 - 1;
+      const h = Math.round(height(u, v, rng()) / ICE_STEP) * ICE_STEP;
+      if (h <= 0) continue;
+      const x = (u * length) / 2;
+      const z = (v * width) / 2;
+      // The lowest terrace is washed by the waves: wet, bluer ice with no snow on it.
+      const low = h <= ICE_STEP;
+      boxes.push([x, h / 2, z, ICE_CELL, h, ICE_CELL, low ? ICE_SHADE : ICE_WALL]);
+      if (!low) boxes.push([x, h + 0.005, z, ICE_CELL, 0.01, ICE_CELL, WHITE]);
+    }
+  }
   // Calved fragments drifting next to it
-  [0.66, 0.02, 0.24, 0.1, 0.05, 0.08, ICE_WALL],
-  [0.72, 0.012, 0.12, 0.05, 0.03, 0.05, WHITE],
-  [-0.66, 0.018, -0.22, 0.08, 0.045, 0.1, ICE_WALL],
-];
+  boxes.push(
+    [length * 0.6, 0.02, width * 0.38, 0.09, 0.045, 0.07, ICE_WALL],
+    [length * 0.66, 0.012, width * 0.2, 0.05, 0.03, 0.05, WHITE],
+    [-length * 0.6, 0.018, -width * 0.36, 0.07, 0.04, 0.09, ICE_WALL],
+  );
+  return boxes;
+}
 
 /**
- * Small weathered iceberg: a wedge. One side is a sheer cliff, the other a ramp of melted steps
- * (all steps share the cliff edge, so it never reads as a tower), with a low second peak past a notch.
+ * Tabular iceberg: a wide plateau that broke off an ice shelf. The plateau is level, the rim falls
+ * to the sea in terraces, and one end has collapsed.
  */
-const ICEBERG_PEAKS: Box[] = [
-  [0.02, 0.006, 0, 0.86, 0.012, 0.6, ICE_SUBMERGED],
-  [0, 0.025, 0, 0.7, 0.03, 0.48, ICE_SHADE],
-  // Ramp: every step starts at the cliff (x = -0.33) and is shorter than the one below
-  [0, 0.07, 0, 0.66, 0.08, 0.44, ICE_WALL],
-  [-0.08, 0.14, -0.02, 0.5, 0.08, 0.38, ICE_WALL],
-  [-0.15, 0.21, 0.01, 0.36, 0.08, 0.3, ICE_WALL],
-  [-0.21, 0.28, -0.02, 0.24, 0.08, 0.22, WHITE],
-  [-0.26, 0.35, 0, 0.14, 0.08, 0.14, WHITE],
-  [-0.295, 0.41, -0.01, 0.07, 0.06, 0.08, WHITE],
-  // Snow lying on the lower steps
-  [0.2, 0.113, 0, 0.24, 0.008, 0.36, WHITE],
-  [0.06, 0.183, -0.02, 0.2, 0.008, 0.3, WHITE],
-  // Second, lower peak
-  [0.27, 0.15, 0.12, 0.12, 0.08, 0.14, ICE_WALL],
-  [0.28, 0.21, 0.12, 0.07, 0.05, 0.08, WHITE],
-  // Crevasse down the cliff
-  [-0.331, 0.17, 0.04, 0.006, 0.2, 0.012, ICE_DEEP],
-  [-0.331, 0.1, -0.1, 0.006, 0.1, 0.01, ICE_DEEP],
-  // Calved fragments
-  [0.5, 0.018, -0.16, 0.09, 0.045, 0.08, ICE_WALL],
-  [-0.48, 0.012, 0.2, 0.05, 0.03, 0.05, WHITE],
-];
+const ICEBERG_TABULAR: Box[] = iceberg(11, 7, 190421, (u, v, noise) => {
+  const edge = 1 - Math.hypot(u * 0.95, v) - (noise - 0.5) * 0.34 + (u > 0.3 && v < 0 ? -0.22 : 0);
+  if (edge <= 0) return 0;
+  return Math.min(0.21, ICE_STEP + edge * 0.62);
+});
+
+/**
+ * Small weathered iceberg: a tall peak off centre, a lower second peak past a saddle, and melted
+ * terraces around them.
+ */
+const ICEBERG_PEAKS: Box[] = iceberg(8, 6, 190422, (u, v, noise) => {
+  // Each peak falls as a sheer cliff on its west side and as a long melted slope on the east one.
+  const peak = (cu: number, cv: number, top: number, reach: number) =>
+    top * Math.max(0, 1 - Math.hypot((u - cu) * (u < cu ? 2.6 : 1), v - cv) / reach) ** 1.5;
+  const h = Math.max(peak(-0.45, -0.15, 0.5, 1.15), peak(0.45, 0.4, 0.27, 0.6)) + (noise - 0.5) * 0.09;
+  return h < 0.03 ? 0 : h;
+});
 
 /** Penguins on a floe of sea ice. */
 const FLOE_PENGUINS: Box[] = [

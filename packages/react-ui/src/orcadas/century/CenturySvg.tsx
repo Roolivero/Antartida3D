@@ -28,7 +28,7 @@ export function CenturySvg({
   const hasUserTemp = typeof userTempC === 'number' && Number.isFinite(userTempC);
 
   const W = 380;
-  const H = 176;
+  const H = 214;
   const padL = 36;
   const padR = view === 'month' && hasUserTemp ? 68 : 14;
   const padT = 18;

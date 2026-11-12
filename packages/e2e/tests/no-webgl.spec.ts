@@ -31,10 +31,10 @@ test('without WebGL the app falls back cleanly to 2D without the toggle', async 
   await expect(page.locator('.layer')).toBeVisible();
   await expect(page.locator('canvas')).toHaveCount(0);
 
-  // Flow still works
+  // Flow still works: opening an expedition shows its fallback scene without WebGL
   await page.getByRole('button', { name: 'Ver como lista' }).click();
   const dialog = page.getByRole('dialog', { name: 'Todos los puntos' });
   await expect(dialog).toBeVisible();
-  await dialog.getByRole('button', { name: /Fósiles/ }).click();
-  await expect(page.getByRole('heading', { name: '¿Cómo era la Antártida antes del hielo?' })).toBeVisible();
+  await dialog.getByRole('button', { name: /Estación Orcadas/ }).click();
+  await expect(page.getByRole('heading', { level: 2, name: 'Estación Orcadas' })).toBeVisible();
 });

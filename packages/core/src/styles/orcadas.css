@@ -773,6 +773,54 @@
   line-height: 1.35;
 }
 
+.orc-done-sim {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  line-height: 1.3;
+}
+
+.orc-done-readings {
+  margin: 0;
+  background: #FBF4E6;
+  border: 1.5px solid var(--ink);
+  border-radius: 10px;
+  padding: 4px 12px;
+}
+
+.orc-done-readings > div {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: baseline;
+  gap: 2px 12px;
+  padding: 7px 0;
+}
+
+.orc-done-readings > div + div {
+  border-top: 1px dashed rgba(31, 42, 54, 0.3);
+}
+
+.orc-done-readings dt {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.orc-done-readings dd {
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.1;
+  text-align: right;
+  color: var(--deep);
+}
+
+.orc-done-readings small {
+  grid-column: 1 / -1;
+  font-size: 12px;
+  color: var(--ink);
+  opacity: 0.8;
+}
+
 /* Bottom bar inside panel */
 .orc-panel .orc-bar {
   position: static;
@@ -905,7 +953,7 @@
     right: 24px;
     bottom: 24px;
     left: auto;
-    width: 430px;
+    width: 480px;
     max-height: calc(100dvh - 110px);
     border: 2px solid var(--ink);
     border-radius: 10px 18px 12px 16px;

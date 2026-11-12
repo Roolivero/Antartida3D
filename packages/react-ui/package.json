@@ -5,8 +5,7 @@
   "type": "module",
   "sideEffects": false,
   "exports": {
-    ".": "./src/index.ts",
-    "./expedition": "./src/expedition/Expedition.tsx"
+    ".": "./src/index.ts"
   },
   "scripts": {
     "typecheck": "tsc -p .",
