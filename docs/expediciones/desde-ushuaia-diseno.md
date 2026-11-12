@@ -119,3 +119,26 @@ Propuesta (a validar):
 
 - #4 depende de #2 (estructura común), que aún no está hecha. Decisión: se trabaja sobre archivos propios de la expedición y se corrigen los bugs que aparezcan, avisando en el issue cuando se toquen archivos compartidos.
 - Criterio de terminado (del issue): recorrido completo en los tres niveles, fuentes verificadas, simulaciones marcadas, probado en celular y escritorio, `pnpm test && pnpm typecheck` en verde.
+
+## Segunda iteración (#46)
+
+Registro de lo que se decide en el issue #46 (rama `46-segunda-iteracion-expedicion-desde-ushuaia`). Cada decisión se anota acá en el mismo commit que la aplica, para que quien trabaje en otra rama la vea.
+
+### Kilómetros y horas en la barra del viaje (12-11-2026)
+
+- **Qué se ve:** una línea debajo de la barra de progreso, por ejemplo «Estimación: ≈ 320 de 1.408 km · ≈ 12 h de navegación». En el avión dice «de vuelo». Se actualiza mientras el viaje avanza o retrocede.
+- **Siempre es una estimación** y la línea lo dice con esa palabra. No es el registro de un viaje real.
+- **Kilómetros:** distancia sobre la esfera (fórmula de haversine, radio 6.371 km) a lo largo del recorrido dibujado, muestreado en 400 tramos. No se escalan las unidades del mapa: la proyección estereográfica polar las estira distinto según la latitud.
+- **Horas:** kilómetros dividido por la velocidad de crucero del transporte. No cuentan paradas, hielo, mal tiempo ni maniobras.
+- **Velocidades** (campo `cruiseKmh` de `TRANSPORTS`, en `core/src/content/ushuaia.ts`):
+  - Irízar: 14 nudos `[O5]`, unos 25,9 km/h.
+  - Puerto Argentino: 15 nudos `[O6]`, unos 27,8 km/h.
+  - Hércules: unos 453 km/h. **Cálculo propio**, porque ninguna fuente del catálogo da su velocidad de crucero: son los 1.584 km en línea recta entre el aeropuerto de Río Gallegos (69,31° O, 51,61° S) y Marambio, divididos por las «tres horas y media» de `[O14]`. La coordenada del aeropuerto no tiene fuente en el catálogo: queda pendiente.
+- **Totales que resultan:**
+  - barcos: 1.408 km; unas 54 h el Irízar y unas 51 h el Puerto Argentino;
+  - avión: 1.233 km y unas 2 h 43 min.
+- **Diferencias con datos ya publicados, a propósito:**
+  - La ficha del Irízar dice «39 horas [...] los 1.000 km hasta la Península». Es otro tramo: la barra mide el recorrido dibujado hasta Marambio, que además empieza unos 10 km adentro de la ruta (`SHIP_HEAD_START`).
+  - La duración del vuelo desde Ushuaia sigue sin fuente (sección 9 de `desde-ushuaia.md`). La barra la muestra solo como estimación; si aparece una fuente, se reemplaza la velocidad calculada.
+- **Dónde está:** `voyageProgress(transport, t)` en `core/src/voyage.ts` (con pruebas en `core/test/voyage.test.ts`); el texto lo arma `tripLine` en `react-ui/src/voyage/VoyagePanel.tsx`; el estilo es `.vtrip` en `core/src/styles/voyage.css`.
+- **Accesibilidad:** la línea no es una región viva. Cambia en cada kilómetro y un lector de pantalla la anunciaría sin pausa. Se lee al recorrer la barra.

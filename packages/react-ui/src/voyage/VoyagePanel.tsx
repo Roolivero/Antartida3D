@@ -13,9 +13,11 @@ import {
   VOYAGE_SOURCE_CODES,
   VOYAGE_TOURISM_NOTE,
   voyageArrived,
+  voyageProgress,
   voyageSightings,
   voyageStops,
   type TransportId,
+  type TransportKind,
   type VoyageSourceCode,
 } from '@antartida/core';
 import { useFocusReturn } from '../hooks.ts';
@@ -266,9 +268,25 @@ const SPEED_HINT_SHOWN_MS = 9000;
 /** Shown once per visit: a tip repeated on every leg is noise. */
 let speedHintShown = false;
 
+const WHOLE = new Intl.NumberFormat('es-AR', { maximumFractionDigits: 0 });
+
+/** Hours for the trip line: with minutes while they still matter (the flight), whole hours after that (the ships). */
+function formatTripHours(hours: number): string {
+  if (hours >= 10) return `${Math.round(hours)} h`;
+  const minutes = Math.round(hours * 60);
+  return minutes < 60 ? `${minutes} min` : `${Math.floor(minutes / 60)} h ${String(minutes % 60).padStart(2, '0')} min`;
+}
+
+/** Distance and time travelled so far. Always an estimate, and the text says so. */
+function tripLine(transport: TransportId, kind: TransportKind, t: number): string {
+  const { km, totalKm, hours } = voyageProgress(transport, t);
+  return `Estimación: ≈ ${WHOLE.format(km)} de ${WHOLE.format(totalKm)} km · ≈ ${formatTripHours(hours)} ${kind === 'plane' ? 'de vuelo' : 'de navegación'}`;
+}
+
 function TravelBar({ voyage, animated, onExit }: { voyage: VoyageController; animated: boolean; onExit: () => void }) {
   const state = voyage.state!;
   const bar = useRef<HTMLElement>(null);
+  const trip = useRef<HTMLParagraphElement>(null);
   const { bus } = voyage;
   const [atStart, setAtStart] = useState(state.t <= 0);
 
@@ -276,6 +294,11 @@ function TravelBar({ voyage, animated, onExit }: { voyage: VoyageController; ani
   useEffect(() => {
     const paint = () => {
       if (bar.current && bus.state) bar.current.style.transform = `scaleX(${bus.state.t})`;
+      if (trip.current && bus.state) {
+        // Written only when it changes: the text moves by whole km and minutes, not every frame.
+        const text = tripLine(bus.state.transport, bus.state.kind, bus.state.t);
+        if (trip.current.textContent !== text) trip.current.textContent = text;
+      }
       if (bus.state) setAtStart(bus.state.t <= 0); // re-renders only when it changes
     };
     paint();
@@ -339,6 +362,8 @@ function TravelBar({ voyage, animated, onExit }: { voyage: VoyageController; ani
         {hint && <><strong>¿Sabías?</strong> Tocá el botón dos veces seguidas y mantenelo apretado para ir más rápido.</>}
       </p>
       <div className="vprog" aria-hidden="true"><i ref={bar} /></div>
+      {/* Filled frame by frame, like the bar. Not a live region: it would be announced without pause. */}
+      <p className="vtrip" ref={trip} />
       <p className="vnext">
         <span>Próximo hito: <strong>{next.title}</strong></span>
         {animated && voyageSightings(state.kind).length > 0 && (

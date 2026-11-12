@@ -90,8 +90,18 @@ export interface Transport {
   type: string;
   /** One line for the picker. */
   pitch: string;
+  /** Cruise speed in km/h, for the estimated hours of the trip. Not a measured speed of any one trip. */
+  cruiseKmh: number;
   facts: readonly VoyageFact[];
 }
+
+const KMH_PER_KNOT = 1.852;
+/**
+ * Own estimate: no source gives the cruise speed of the C-130. Source O14 gives "about three and a
+ * half hours" from Río Gallegos to Marambio, about 1,584 km apart in a straight line (airport at
+ * 69.31° W, 51.61° S).
+ */
+const HERCULES_CRUISE_KMH = 1584 / 3.5;
 
 export const TRANSPORTS: readonly Transport[] = [
   {
@@ -100,6 +110,7 @@ export const TRANSPORTS: readonly Transport[] = [
     name: 'ARA Almirante Irízar',
     type: 'Rompehielos',
     pitch: 'El buque insignia de la campaña antártica. Lleva carga, combustible y dos helicópteros.',
+    cruiseKmh: 14 * KMH_PER_KNOT, // 14 knots, source O5
     facts: [
       { text: 'Es «el buque insignia del Comando Conjunto Antártico». Mide 121,3 m de largo y navega a 14 nudos.', kind: 'real', sources: ['O5'] },
       { text: 'En marzo de 2026 salió de Ushuaia con 65 toneladas de carga y 260 tambores y tubos de combustible, gas y aceites para las bases.', kind: 'real', sources: ['O22'] },
@@ -113,6 +124,7 @@ export const TRANSPORTS: readonly Transport[] = [
     name: 'Hércules C-130',
     type: 'Avión de carga',
     pitch: 'El puente aéreo de la Fuerza Aérea. Cruza en horas y aterriza en la pista de Marambio.',
+    cruiseKmh: HERCULES_CRUISE_KMH,
     facts: [
       { text: 'Los C-130 cubren el cruce entre «Río Gallegos o Ushuaia» y la Base Marambio.', kind: 'real', sources: ['O10'] },
       { text: 'Desde Río Gallegos el vuelo dura unas tres horas y media.', kind: 'real', sources: ['O14'] },
@@ -126,6 +138,7 @@ export const TRANSPORTS: readonly Transport[] = [
     name: 'ARA Puerto Argentino',
     type: 'Aviso',
     pitch: 'Un buque de servicio antártico. Patrulla, mantiene balizas y abastece bases.',
+    cruiseKmh: 15 * KMH_PER_KNOT, // 15 knots, source O6
     facts: [
       { text: 'En la campaña 2025/26 hizo patrullas, mantuvo balizas y abasteció bases. También fue Buque de Estación desde Ushuaia.', kind: 'real', sources: ['O7'] },
       { text: 'Mide 81,37 m de largo, navega a 15 nudos y puede pasar 40 días en el mar a 12 nudos.', kind: 'real', sources: ['O6'] },

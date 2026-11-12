@@ -38,6 +38,7 @@ import {
   voyageAt,
   voyageHeading,
   voyageLength,
+  voyageProgress,
   voyageSightings,
   voyageStops,
   worldHeight,
@@ -330,6 +331,45 @@ describe('sightings', () => {
   it('has none from the plane', () => {
     expect(voyageSightings('plane')).toEqual([]);
     expect(sightingsInView('plane', 0.5)).toEqual([]);
+  });
+});
+
+describe('distance and time travelled', () => {
+  it('starts at zero and ends at the whole trip', () => {
+    for (const { id } of TRANSPORTS) {
+      const { totalKm } = voyageProgress(id, 0);
+      expect(voyageProgress(id, 0)).toMatchObject({ km: 0, hours: 0 });
+      expect(voyageProgress(id, 1).km).toBeCloseTo(totalKm, 6);
+      expect(voyageProgress(id, 2).km).toBeCloseTo(totalKm, 6);
+    }
+  });
+
+  it('grows along the trip', () => {
+    for (const { id } of TRANSPORTS) {
+      for (let i = 1; i <= 50; i++) {
+        expect(voyageProgress(id, i / 50).km).toBeGreaterThan(voyageProgress(id, (i - 1) / 50).km);
+      }
+    }
+  });
+
+  it('measures the flight as the real distance between Ushuaia and Marambio, not in map units', () => {
+    // The transport card gives about 1,230 km in a straight line.
+    const { totalKm } = voyageProgress('hercules', 1);
+    expect(totalKm).toBeGreaterThan(1230);
+    expect(totalKm).toBeLessThan(1300);
+  });
+
+  it('has a longer way by sea than by air', () => {
+    expect(voyageProgress('irizar', 1).totalKm).toBeGreaterThan(voyageProgress('hercules', 1).totalKm);
+  });
+
+  it('takes the hours of the distance at the cruise speed of each transport', () => {
+    for (const { id, cruiseKmh } of TRANSPORTS) {
+      const { km, hours } = voyageProgress(id, 0.5);
+      expect(hours).toBeCloseTo(km / cruiseKmh, 9);
+    }
+    // 14 and 15 knots: the faster ship takes less over the same route.
+    expect(voyageProgress('puerto-argentino', 1).hours).toBeLessThan(voyageProgress('irizar', 1).hours);
   });
 });
 

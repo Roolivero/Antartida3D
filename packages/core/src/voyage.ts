@@ -109,6 +109,48 @@ const LENGTHS: Record<TransportKind, number> = { ship: pathLength('ship'), plane
 /** Length of the whole trip in map units. */
 export const voyageLength = (kind: TransportKind) => LENGTHS[kind];
 
+const EARTH_RADIUS_KM = 6371;
+const RAD = Math.PI / 180;
+/** Great-circle distance in km between two points of the map space. */
+const groundKm = (a: Point, b: Point) => {
+  const from = unproject(a.x, a.y);
+  const to = unproject(b.x, b.y);
+  const h =
+    Math.sin(((to.lat - from.lat) * RAD) / 2) ** 2 +
+    Math.cos(from.lat * RAD) * Math.cos(to.lat * RAD) * Math.sin(((to.lon - from.lon) * RAD) / 2) ** 2;
+  return 2 * EARTH_RADIUS_KM * Math.asin(Math.sqrt(h));
+};
+/** Km travelled at each sample of the path. Map units would not do: the projection stretches them with latitude. */
+const pathKm = (kind: TransportKind) => {
+  const km = [0];
+  for (let i = 1; i <= PATH_SAMPLES; i++) {
+    km.push(km[i - 1] + groundKm(voyageAt(kind, (i - 1) / PATH_SAMPLES), voyageAt(kind, i / PATH_SAMPLES)));
+  }
+  return km;
+};
+const KM: Record<TransportKind, readonly number[]> = { ship: pathKm('ship'), plane: pathKm('plane') };
+
+export interface VoyageProgress {
+  /** Km travelled along the drawn path. */
+  km: number;
+  /** Km of the whole trip. */
+  totalKm: number;
+  /** Hours it takes to travel `km` at the cruise speed of the transport, without stops. */
+  hours: number;
+}
+
+/**
+ * Distance and time travelled at fraction `t` of the trip. An estimate, not a logged trip: the
+ * path is the drawn one and the speed is the cruise speed of the transport.
+ */
+export function voyageProgress(transport: TransportId, t: number): VoyageProgress {
+  const { kind, cruiseKmh } = TRANSPORTS.find((v) => v.id === transport)!;
+  const at = clamp01(t) * PATH_SAMPLES;
+  const i = Math.min(PATH_SAMPLES - 1, Math.floor(at));
+  const km = KM[kind][i] + (KM[kind][i + 1] - KM[kind][i]) * (at - i);
+  return { km, totalKm: KM[kind][PATH_SAMPLES], hours: km / cruiseKmh };
+}
+
 /** Direction of travel at `t` in map space, as an angle from +x towards +y (radians). */
 export function voyageHeading(kind: TransportKind, t: number): number {
   const step = 0.002;

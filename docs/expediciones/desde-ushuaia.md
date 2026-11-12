@@ -242,7 +242,7 @@ Límites conocidos: [O44] describe el curso del personal de las Fuerzas Armadas,
 
 ## 9. Pendiente: no se publica hasta tener fuente
 
-- Duración del vuelo del C-130 desde Ushuaia (hay 3,5 h desde Río Gallegos `[O14]`).
+- Duración del vuelo del C-130 desde Ushuaia (hay 3,5 h desde Río Gallegos `[O14]`). La barra del viaje muestra una duración solo como **estimación** (cálculo propio, ver «Segunda iteración (#46)» en `desde-ushuaia-diseno.md`).
 - Profundidad y largo del Pasaje de Drake, y latitud del frente polar dentro del Drake.
 - Coordenada oficial del puerto de Ushuaia (pedir al Servicio de Hidrografía Naval; el Derrotero Argentino no está en línea).
 - Historia de William Smith y Bransfield; origen del nombre «Beagle» (hay fuente secundaria); quién nombró el Cabo de Hornos (Le Maire y Hoorn).
