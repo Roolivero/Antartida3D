@@ -39,6 +39,8 @@ El turismo se menciona como una línea de contexto: no es un transporte jugable 
 
 ## Avistajes (mapa vivo)
 
+- Los avistajes cercanos a Ushuaia (cormorán, faro Les Éclaireurs, lobos marinos, pingüinera) ya están a la vista al empezar el viaje (`SIGHTING_AT_DEPARTURE` en `core/src/voyage.ts`). Antes aparecían de golpe apenas se avanzaba.
+
 - Durante el viaje aparecen animales cerca del vehículo. Se pueden tocar un rato para abrir una ficha con nombre, un dato curioso y su fuente.
 - **La ventana se mide en avance del viaje, no en segundos:** si el usuario pausa, el animal espera. Es justo para cualquier edad y accesible. Si pasa de largo, el animal se aleja.
 - Un animal ya visto no desaparece: queda en gris en el mapa y se puede volver a abrir. Los animales siguen visibles mientras hay una tarjeta de hito abierta. Desde el avión no hay avistajes.

@@ -285,12 +285,19 @@ describe('sightings', () => {
 
   it('shows them in trip order, with a window inside the trip', () => {
     for (let i = 0; i < spots.length; i++) {
-      expect(spots[i].from).toBeGreaterThan(0);
+      expect(spots[i].from).toBeGreaterThanOrEqual(0);
       expect(spots[i].to).toBeLessThan(1);
       expect(spots[i].to - spots[i].from).toBeGreaterThan(SIGHTING_WINDOW_BRIEF * 0.6);
       // The ship starts out in the bay: the first ones can already be in view at departure, together.
       if (i > 0) expect(spots[i].from).toBeGreaterThanOrEqual(spots[i - 1].from);
     }
+  });
+
+  it('has the ones near Ushuaia in view from the departure, not a moment later', () => {
+    const atStart = sightingsInView('ship', 0).map((s) => s.sighting.id);
+    expect(atStart).toEqual(expect.arrayContaining(['cormoran', 'eclaireurs', 'lobos']));
+    // The rest still come later, along the trip.
+    expect(atStart.length).toBeLessThan(spots.length / 2);
   });
 
   it('has more of them the farther south', () => {

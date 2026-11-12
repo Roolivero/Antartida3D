@@ -152,6 +152,8 @@ export function voyageStops(kind: TransportKind): readonly VoyageStop[] {
 /** Trip fraction during which a sighting can be spotted (about 3.5 s of steady advance at normal speed). */
 export const SIGHTING_WINDOW = 0.07;
 export const SIGHTING_WINDOW_BRIEF = 0.03;
+/** A sighting whose window opens within this fraction of the trip is in view from the departure. */
+export const SIGHTING_AT_DEPARTURE = 0.03;
 
 export interface SightingSpot {
   sighting: Sighting;
@@ -178,7 +180,8 @@ const SPOTS: SightingSpot[] = SIGHTINGS.map((sighting) => {
   const half = (sighting.brief ? SIGHTING_WINDOW_BRIEF : SIGHTING_WINDOW) / 2;
   return {
     sighting,
-    from: Math.max(0.004, at - half),
+    // What is close to the departure is already there when the trip starts, not popping in a moment later.
+    from: at - half <= SIGHTING_AT_DEPARTURE ? 0 : at - half,
     to: Math.min(0.996, at + half),
     // An animal goes beside the route; a place stays where it is.
     ...(sighting.place
