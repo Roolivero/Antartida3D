@@ -18,6 +18,7 @@ import {
   voyageStops,
   type TransportId,
   type TransportKind,
+  type VoyageSource,
   type VoyageSourceCode,
 } from '@antartida/core';
 import { useFocusReturn } from '../hooks.ts';
@@ -28,6 +29,9 @@ import type { VoyageController } from './useVoyage.ts';
 
 // Its own chunk: it needs WebGL, which the 2D fallback of the trip does not.
 const VehiclePreview = lazy(() => import('./VehiclePreview.tsx').then((m) => ({ default: m.VehiclePreview })));
+
+/** Date a source was read, when it is not the date the page gives for all of them. */
+const sourceConsulted = (code: VoyageSourceCode) => (VOYAGE_SOURCES[code] as VoyageSource).consulted;
 
 /** Separate page with every source of the expedition, numbered as the facts cite them. */
 function SourcesPage({ focus, onClose }: { focus: VoyageSourceCode; onClose: () => void }) {
@@ -51,12 +55,13 @@ function SourcesPage({ focus, onClose }: { focus: VoyageSourceCode; onClose: () 
           <h2 id="sources-title">Fuentes</h2>
           <button type="button" className="btn" onClick={onClose}>Volver al viaje</button>
         </div>
-        <p className="gdesc">Cada dato del viaje lleva un número entre corchetes. Acá está de dónde sale. Consultadas el {VOYAGE_SOURCES_CONSULTED}.</p>
+        <p className="gdesc">Cada dato del viaje lleva un número entre corchetes. Acá está de dónde sale. Consultadas el {VOYAGE_SOURCES_CONSULTED}, salvo las que dan otra fecha.</p>
         <ol className="vsrclist">
           {VOYAGE_SOURCE_CODES.map((code) => (
             <li key={code} data-source={code} className={code === focus ? 'on' : undefined}>
               <strong>{VOYAGE_SOURCES[code].org}</strong>
               <span>{VOYAGE_SOURCES[code].title}</span>
+              {sourceConsulted(code) && <span>Consultada el {sourceConsulted(code)}.</span>}
               <a href={VOYAGE_SOURCES[code].url} target="_blank" rel="noopener noreferrer">Abrir la fuente</a>
             </li>
           ))}

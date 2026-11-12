@@ -142,3 +142,25 @@ Registro de lo que se decide en el issue #46 (rama `46-segunda-iteracion-expedic
   - La duración del vuelo desde Ushuaia sigue sin fuente (sección 9 de `desde-ushuaia.md`). La barra la muestra solo como estimación; si aparece una fuente, se reemplaza la velocidad calculada.
 - **Dónde está:** `voyageProgress(transport, t)` en `core/src/voyage.ts` (con pruebas en `core/test/voyage.test.ts`); el texto lo arma `tripLine` en `react-ui/src/voyage/VoyagePanel.tsx`; el estilo es `.vtrip` en `core/src/styles/voyage.css`.
 - **Accesibilidad:** la línea no es una región viva. Cambia en cada kilómetro y un lector de pantalla la anunciaría sin pausa. Se lee al recorrer la barra.
+
+### Tormenta en el Pasaje de Drake (12-11-2026)
+
+Primera versión. Se va a seguir iterando.
+
+- **Qué es:** un efecto fijo sobre el mar, hecho con cajas (regla del estilo de bloques): banco de nubes, lluvia, relámpagos, crestas blancas y ráfagas de viento. Se ve siempre, en el mapa 3D abierto y durante el viaje. No se dibuja en el mapa 2D.
+- **Es una ilustración, no un dato.** No muestra el tiempo real ni el lugar de un temporal. La ficha del hito lo dice con una línea marcada como ilustrativa.
+- **Dónde está:** `DRAKE_STORM` en `core/src/voyage.ts`, definido una sola vez. Centro donde la ruta marítima cruza 57,5° S; radio de 19 unidades de mapa (unos 150 km). `stormAt(x, y)` da cuánta tormenta hay en un punto (0 afuera, 1 adentro, con un borde suave de 4 unidades).
+- **Por qué ese lugar y ese tamaño:** entra entera en la caja de Tierra del Fuego, la única zona donde la cámara puede acercarse a menos de 60 unidades (`minCameraDistance`). Más al sur la cámara no podría bajar debajo de las nubes. Una prueba lo verifica.
+- **Viento de oeste a este** (`DRAKE_STORM.wind`): la lluvia cae inclinada hacia el este y las ráfagas y las crestas corren hacia el este. Los vientos del oeste figuran en `[I5]`.
+- **Ráfagas:** tiras blancas finas que nacen de la nada, se deslizan y se afinan hasta desaparecer. Tardan 7 segundos en cruzar su tramo, para que el movimiento sea suave.
+- **Nubes:** un solo banco que cubre toda la tormenta, sin pasillo. Base a 12 unidades de altura (`DRAKE_STORM.cloudBase`).
+- **Cámara:** cuando el vehículo entra en la tormenta, la cámara baja hasta quedar 2 unidades por debajo de la base de las nubes, para que no tapen el vehículo. Al salir vuelve a la distancia que tenía. El usuario puede volver a alejarse si quiere. Está en `react-ui/src/voyage/Voyage3D.tsx`.
+- **Vehículo en la tormenta:** el barco cabecea, rola y sube y baja con las olas, más cuanto más adentro está, y levanta rocío en la proa cuando la proa cae al agua. El avión se sacude un poco. Fuera de la tormenta el movimiento es el de siempre.
+- **Tamaño de lluvia, crestas y ráfagas:** están pensadas para la cámara del viaje (unas 9 unidades de altura). Si la cámara sube, crecen con ella hasta 6 veces. Desde lejos, cuando una gota mide menos de 5 px, no se dibujan: solo queda el banco de nubes.
+- **Movimiento reducido:** la tormenta queda quieta, sin relámpagos, y el barco no se sacude.
+- **Rendimiento:** las nubes son una sola geometría; lluvia, crestas y ráfagas son tres `InstancedMesh`. El tiempo sale del reloj del mar (`useSeaTime`), que ya pide cuadros a 30 fps.
+- **Texto del hito «Pasaje de Drake»:** lo primero que se lee es «Tiene fama de ser uno de los mares más bravos del planeta: es famoso por sus temporales.» No es cita textual, por pedido de quien lleva el issue. La fuente es `[O46]`: dice «famoso por sus temporales» en el cuerpo y «uno de los mares más turbulentos del planeta» en la descripción de la página. La frase «las más tormentosas del planeta según los navegantes» no se usa: solo se encontró en Wikipedia y en prensa.
+- **Fuente nueva `[O46]`:** Armada Argentina, consultada el 12-11-2026. La página no muestra fecha; sus metadatos dicen 25-11-2019. La página de fuentes ahora muestra la fecha de consulta de cada fuente que no sea del 11-11-2026.
+- **Archivo compartido tocado:** `react-ui/src/map3d/Map3DLayer.tsx`, una línea para montar `Storm3D`. Avisado en el issue #46. El shader del océano no se tocó.
+- **Dónde está el código:** `react-ui/src/voyage/Storm3D.tsx` (efecto), `Voyage3D.tsx` (cámara, movimiento del vehículo y rocío), `core/src/voyage.ts` (zona), `core/src/content/ushuaia.ts` (texto y fuente).
+- **Pendiente para la próxima iteración:** agitar el agua en el shader del océano; dibujar la tormenta en el mapa 2D.

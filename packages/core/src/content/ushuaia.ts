@@ -15,9 +15,11 @@ export interface VoyageSource {
   org: string;
   title: string;
   url: string;
+  /** Date it was read, when it is not VOYAGE_SOURCES_CONSULTED. */
+  consulted?: string;
 }
 
-/** Date every source below was read. */
+/** Date the sources below were read, unless one gives its own. */
 export const VOYAGE_SOURCES_CONSULTED = '2026-11-11';
 
 export const VOYAGE_SOURCES = {
@@ -51,6 +53,8 @@ export const VOYAGE_SOURCES = {
   O43: { org: 'Armada Argentina', title: '«Despliegue de dotaciones de trabajo e invernada y descarga de materiales en la Antártida» (17-01-2023)', url: 'https://www.argentina.gob.ar/noticias/despliegue-de-dotaciones-de-trabajo-e-invernada-y-descarga-de-materiales-en-la-antartida' },
   O44: { org: 'Armada Argentina', title: '«Personal de la Armada que invernará en la Antártida se adiestró en Neuquén» (04-10-2023)', url: 'https://www.argentina.gob.ar/noticias/personal-de-la-armada-que-invernara-en-la-antartida-se-adiestro-en-neuquen' },
   O45: { org: 'Fuerza Aérea Argentina', title: '«51° Aniversario de la Base Marambio: más de medio siglo de soberanía en el Continente Antártico» (31-10-2020)', url: 'https://www.argentina.gob.ar/noticias/51deg-aniversario-de-la-base-marambio-mas-de-medio-siglo-de-soberania-en-el-continente' },
+  // The page shows no date; its metadata says 25-11-2019.
+  O46: { org: 'Armada Argentina', title: '«Cruzando el Pasaje de Drake a bordo del rompehielos ARA "Almirante Irízar"» (25-11-2019, según los metadatos de la página)', url: 'https://www.argentina.gob.ar/noticias/cruzando-el-pasaje-de-drake-bordo-del-rompehielos-ara-almirante-irizar', consulted: '2026-11-12' },
   I1: { org: 'Secretaría del Tratado Antártico', title: 'Tratado Antártico (1959), art. VI', url: 'https://documents.ats.aq/keydocs/vol_1/vol1_2_AT_Antarctic_Treaty_e.pdf' },
   I2: { org: 'Secretaría del Tratado Antártico', title: 'Protocolo al Tratado Antártico sobre Protección del Medio Ambiente (Protocolo de Madrid)', url: 'https://www.ats.aq/s/protocol.html' },
   I3: { org: 'Secretaría del Tratado Antártico', title: 'Anexo III del Protocolo de Madrid: eliminación y tratamiento de residuos', url: 'https://documents.ats.aq/recatt/Att010_s.pdf' },
@@ -208,9 +212,11 @@ export const MILESTONES: readonly Milestone[] = [
     title: 'Pasaje de Drake',
     anchor: { lat: -57.6 },
     kinds: BOTH,
-    essential: { text: 'Unos 800 km de mar abierto entre el Cabo de Hornos y las islas Shetland del Sur. Por acá pasa la corriente más caudalosa del planeta.', kind: 'real', sources: ['I6'] },
+    essential: { text: 'Unos 800 km de mar abierto entre el Cabo de Hornos y las islas Shetland del Sur. Tiene fama de ser uno de los mares más bravos del planeta: es famoso por sus temporales.', kind: 'real', sources: ['I6', 'O46'] },
     more: [
-      { text: 'La Corriente Circumpolar Antártica mueve en promedio 173,3 millones de metros cúbicos de agua por segundo, medidos entre 2007 y 2011. Es un 30 % más de lo que se creía.', kind: 'real', sources: ['I6'] },
+      { text: 'Acá se registraron vientos de más de 50 nudos (unos 93 km/h, conversión propia) y olas de 10 metros. Los temporales se deben a las bajas presiones y a un fondo de más de 4.000 metros.', kind: 'real', sources: ['O46'] },
+      { text: 'La tormenta dibujada en el mapa es ilustrativa: no muestra el tiempo de hoy ni el lugar exacto de un temporal.', kind: 'illustrative', sources: [] },
+      { text: 'Por acá pasa la corriente más caudalosa del planeta. La Corriente Circumpolar Antártica mueve en promedio 173,3 millones de metros cúbicos de agua por segundo, medidos entre 2007 y 2011. Es un 30 % más de lo que se creía.', kind: 'real', sources: ['I6'] },
       { text: 'En la campaña 2024/25 el Irízar cruzó el Drake «en menos de dos días», a 14 nudos de promedio.', kind: 'real', sources: ['O16'] },
     ],
   },

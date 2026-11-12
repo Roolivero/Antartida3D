@@ -2,7 +2,9 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
+  DRAKE_STORM,
   FLIGHT_CRUISE,
+  FUEGIA_MIN_DISTANCE,
   FUEGIA_LAND_MASK,
   GEAR_TAP_MS,
   ROUTE_LENGTH,
@@ -23,6 +25,7 @@ import {
   flightClearance,
   fuegiaWorldHeight,
   heightAt,
+  minCameraDistance,
   expeditionAt,
   nextGear,
   quizScore,
@@ -33,6 +36,7 @@ import {
   project,
   skipToNextStop,
   startVoyage,
+  stormAt,
   unproject,
   voyageArrived,
   voyageAt,
@@ -331,6 +335,52 @@ describe('sightings', () => {
   it('has none from the plane', () => {
     expect(voyageSightings('plane')).toEqual([]);
     expect(sightingsInView('plane', 0.5)).toEqual([]);
+  });
+});
+
+describe('storm over the Drake Passage', () => {
+  const at = (kind: 'ship' | 'plane', t: number) => {
+    const p = voyageAt(kind, t);
+    return stormAt(p.x, p.y);
+  };
+
+  it('sits on the sea route, in open sea between Cape Horn and the 60° S parallel', () => {
+    const { lat } = unproject(DRAKE_STORM.x, DRAKE_STORM.y);
+    const degrees = DRAKE_STORM.radius / (project(0, -57).y - project(0, -58).y);
+    expect(lat - degrees).toBeGreaterThan(-60);
+    expect(lat + degrees).toBeLessThan(-55.98); // Cape Horn
+    expect(stormAt(DRAKE_STORM.x, DRAKE_STORM.y)).toBe(1);
+    expect(at('ship', 0)).toBe(0);
+    expect(at('ship', 1)).toBe(0);
+  });
+
+  it('builds up from its edge', () => {
+    const { x, y, radius } = DRAKE_STORM;
+    expect(stormAt(x + radius, y)).toBe(0);
+    expect(stormAt(x + radius - 1, y)).toBeGreaterThan(0);
+    expect(stormAt(x + radius - 1, y)).toBeLessThan(stormAt(x + radius - 3, y));
+  });
+
+  it('fits where the camera may get close, so the trip camera stays under the clouds', () => {
+    const { x, y, radius } = DRAKE_STORM;
+    for (let i = 0; i < 16; i++) {
+      const a = (i / 16) * Math.PI * 2;
+      expect(minCameraDistance(x + Math.cos(a) * radius, y + Math.sin(a) * radius, 60)).toBe(FUEGIA_MIN_DISTANCE);
+    }
+  });
+
+  it('is where the ship and the plane are when the card of the Drake opens', () => {
+    for (const kind of ['ship', 'plane'] as const) {
+      const stop = voyageStops(kind).find((s) => s.milestone.id === 'drake')!;
+      expect(at(kind, stop.t), kind).toBeGreaterThan(0);
+    }
+  });
+
+  it('is explained in the card of the Drake, with its source, and owned up as a drawing', () => {
+    const drake = MILESTONES.find((m) => m.id === 'drake')!;
+    const facts = [drake.essential, ...drake.more];
+    expect(facts.some((f) => f.kind === 'real' && f.sources.includes('O46') && /temporales/.test(f.text))).toBe(true);
+    expect(facts.some((f) => f.kind === 'illustrative' && /tormenta/.test(f.text))).toBe(true);
   });
 });
 

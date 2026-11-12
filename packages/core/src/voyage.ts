@@ -159,6 +159,38 @@ export function voyageHeading(kind: TransportKind, t: number): number {
   return Math.atan2(to.y - from.y, to.x - from.x);
 }
 
+/**
+ * The storm drawn over the Drake Passage, on the open map and during the trip. An illustration of
+ * its fame for gales (source O46), not weather data: neither its place nor its size is measured.
+ */
+export const DRAKE_STORM = (() => {
+  // Where the sea route crosses 57.5° S, just before the card of the Drake opens.
+  let t = 0;
+  while (t < 1 && unproject(voyageAt('ship', t).x, voyageAt('ship', t).y).lat > -57.5) t += 1 / PATH_SAMPLES;
+  const center = voyageAt('ship', t);
+  const { lon, lat } = unproject(center.x, center.y);
+  const east = project(lon + 0.5, lat);
+  return {
+    ...center,
+    /**
+     * Map units, about 150 km. It fits inside the box of Tierra del Fuego, where the camera may get
+     * close (minCameraDistance): the trip camera goes under the clouds all the way through.
+     */
+    radius: 19,
+    /** Where the wind blows to, as an angle like voyageHeading: the westerlies blow to the east (source I5). */
+    wind: Math.atan2(east.y - center.y, east.x - center.x),
+    /** World height of the base of the clouds. */
+    cloudBase: 12,
+  };
+})();
+/** Map units over which the storm builds up from its edge. */
+const STORM_EDGE = 4;
+
+/** How much storm there is at a point of the map: 0 outside, 1 well inside. */
+export function stormAt(x: number, y: number): number {
+  return smooth01((DRAKE_STORM.radius - Math.hypot(x - DRAKE_STORM.x, y - DRAKE_STORM.y)) / STORM_EDGE);
+}
+
 export interface VoyageStop {
   milestone: Milestone;
   /** Fraction of the trip where the milestone opens. */
