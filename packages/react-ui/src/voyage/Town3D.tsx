@@ -8,7 +8,12 @@ import { vehicleMaterial } from './vehicles.ts';
 
 /** The bay the trip leaves from, where the real town is. */
 const BAY = project(-68.3, -54.81);
-/** The town is drawn on the land closest to that point, looked for this far around it, in map units. */
+/**
+ * The vehicle waits at that point, so the town is drawn beside it: on the land closest to a point
+ * BESIDE map units along the shore, to the left of the vehicle as the departure camera sees it.
+ * Land is looked for SEARCH map units around.
+ */
+const BESIDE = { x: -0.85, y: 0.25 };
 const SEARCH = 0.6;
 const SEARCH_STEP = 0.05;
 
@@ -45,13 +50,14 @@ const PUFF_SECONDS = 3.2;
 const puffGeometry = new BoxGeometry(1, 1, 1);
 const puffMaterial = new MeshBasicMaterial({ color: 0xf7fafb, transparent: true, opacity: 0.8 });
 
-/** Land closest to the point the trip leaves from, in map space; that point itself if there is none. */
+/** Land closest to the point beside the vehicle, in map space; that point itself if there is none. */
 function findSite(mesh: TerrainMesh): { x: number; y: number } {
-  let best = { x: BAY.x, y: BAY.y, far: Infinity };
+  const [cx, cy] = [BAY.x + BESIDE.x, BAY.y + BESIDE.y];
+  let best = { x: cx, y: cy, far: Infinity };
   for (let dx = -SEARCH; dx <= SEARCH; dx += SEARCH_STEP) {
     for (let dy = -SEARCH; dy <= SEARCH; dy += SEARCH_STEP) {
       const far = Math.hypot(dx, dy);
-      if (far < best.far && highestGround(mesh, BAY.x + dx, BAY.y + dy, SEARCH_STEP) > 0) best = { x: BAY.x + dx, y: BAY.y + dy, far };
+      if (far < best.far && highestGround(mesh, cx + dx, cy + dy, SEARCH_STEP) > 0) best = { x: cx + dx, y: cy + dy, far };
     }
   }
   return best;
