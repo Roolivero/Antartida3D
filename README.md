@@ -12,7 +12,7 @@ Equipo **DOT ENV**, hackatón SoberaníaTech (Ushuaia, 2026), Eje 2: Antártida,
 
 El repositorio contiene dos enfoques en `apps/` para evaluar y seleccionar la base definitiva:
 
-- **`apps/dibujado`** (puerto 5103): mapa dibujado estilo acuarela con relieve (2D y 3D) y expedición interactiva en Marambio («¿Cómo era la Antártida antes del hielo?»). Máxima optimización de interacción, foco en accesibilidad completa por teclado y zoom fluido.
+- **`apps/dibujado`** (puerto 5103): mapa dibujado estilo acuarela con relieve (2D y 3D) y expediciones interactivas en Marambio («¿Cómo era la Antártida antes del hielo?») y Estación Orcadas («¿Cómo es pasar un invierno entero en Orcadas?»). Máxima optimización de interacción, foco en accesibilidad completa por teclado y zoom fluido.
 - **`apps/atlas`** (puerto 5175): prototipo exploratorio de atlas 3D con 5 propuestas temáticas, filtros por Naturaleza e Historias, vista 2D/3D y paneles informativos accesibles.
 
 ### Cómo descartar una app
@@ -96,6 +96,19 @@ pnpm bench           # benchmark de rendimiento
   - Publicación científica: Marsh, O.J. et al. (2025), *Ocean tides trigger ice shelf rift growth and calving*, Nature Communications 16: 6697, [https://doi.org/10.1038/s41467-025-61796-w](https://doi.org/10.1038/s41467-025-61796-w). Licencia [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
   - National Snow and Ice Data Center (NSIDC), [https://nsidc.org/learn/parts-cryosphere/ice-shelves](https://nsidc.org/learn/parts-cryosphere/ice-shelves).
   - Fecha de consulta: 11 de noviembre de 2026.
+- **Expedición Estación Orcadas (apps/dibujado):**
+  - **Base Orcadas:** Cancillería Argentina · Dirección Nacional del Antártico. URL: [https://cancilleria.gob.ar/es/iniciativas/dna/antartida-argentina/bases/orcadas](https://cancilleria.gob.ar/es/iniciativas/dna/antartida-argentina/bases/orcadas). Fecha de consulta: 11 de noviembre de 2026.
+  - **Bases permanentes:** Armada Argentina. URL: [https://www.argentina.gob.ar/armada/antartida/bases-permanentes](https://www.argentina.gob.ar/armada/antartida/bases-permanentes). Fecha de consulta: 11 de noviembre de 2026.
+  - **READER: datos de superficie de Orcadas:** SCAR · British Antarctic Survey. URL: [https://legacy.bas.ac.uk/met/READER/surface/Orcadas.All.temperature.html](https://legacy.bas.ac.uk/met/READER/surface/Orcadas.All.temperature.html). Fecha de consulta: 11 de noviembre de 2026. Licencia: Open Government Licence v3.0. Atribución de los datos de temperatura: SCAR READER, British Antarctic Survey, Open Government Licence v3.0.
+  - **Zazulie, Rusticucci y Solomon (2010):** Journal of Climate 23(1). URL: [https://doi.org/10.1175/2009JCLI3074.1](https://doi.org/10.1175/2009JCLI3074.1). Fecha de consulta: 11 de noviembre de 2026.
+  - **OMM · OSCAR/Surface, estación 88968:** OMM. URL: [https://oscar.wmo.int/surface/#/search/station/stationReportDetails/12480](https://oscar.wmo.int/surface/#/search/station/stationReportDetails/12480). Fecha de consulta: 11 de noviembre de 2026.
+  - **R. C. Mossman (1907):** Report on the Scientific Results of the Voyage of S.Y. Scotia, vol. II, Meteorology. URL: [https://archive.org/details/reportonscientif02scot](https://archive.org/details/reportonscientif02scot). Fecha de consulta: 12 de noviembre de 2026. Licencia: dominio público.
+  - **Antarctic Station Catalogue (Argentina):** COMNAP. URL: [https://www.comnap.aq/s/Argentina_Catalogue_Aug2017.pdf](https://www.comnap.aq/s/Argentina_Catalogue_Aug2017.pdf). Fecha de consulta: 12 de noviembre de 2026.
+  - **Sitio y Monumento Histórico N.º 42:** Secretaría del Tratado Antártico. URL: [https://www.ats.aq/devph/en/apa-database/119](https://www.ats.aq/devph/en/apa-database/119). Fecha de consulta: 12 de noviembre de 2026.
+  - Las fuentes pendientes de verificación están en [`docs/orcadas-fuentes.md`](docs/orcadas-fuentes.md) y sus datos no se muestran en la interfaz.
+  - La serie de temperatura es dato real.
+  - La observación del día y el hielo de la bahía por mes son simulaciones rotuladas.
+  - El diorama de la estación es una reconstrucción ilustrada; las horas de luz son un cálculo astronómico.
 - **Librerías 3D (apps/dibujado y react-ui):** Three.js (licencia MIT), React Three Fiber (licencia MIT), @react-three/drei (licencia MIT), @react-three/postprocessing (licencia MIT).
 - **Costa y barreras de hielo:** [Natural Earth](https://www.naturalearthdata.com/) (`ne_50m_land`, `ne_50m_antarctic_ice_shelves_polys`), dominio público. [Términos de uso](https://www.naturalearthdata.com/about/terms-of-use/).
 - **Base Orcadas (apps/atlas):** coordenadas de [Armada Argentina · bases permanentes](https://www.argentina.gob.ar/armada/antartida/bases-permanentes) e historia y ubicación de [Cancillería Argentina](https://cancilleria.gob.ar/es/iniciativas/dna/antartida-argentina/bases/orcadas).
@@ -111,3 +124,5 @@ En cumplimiento con las bases de la hackatón, se declara el uso de herramientas
   > Como exigen las bases de la hackatón: se dibujo un boceto con todas las posibles ideas y luego **el diseño se generó con Claude Design** (prototipo en `docs/diseno/design/Main.dc.html`) y **el código de este repositorio se escribió con Claude Code**, con multiples revisiones del equipo.
 - **App atlas:**
   > Interfaz y código de este prototipo desarrollados con Codex a partir de la revisión de los dos proyectos y del borrador provisto por el equipo.
+- **Expedición Estación Orcadas:**
+  > Planificación, arquitectura, revisión y verificación de fuentes con Claude Code (modelo Claude Fable 5.2); implementación delegada a agentes de Antigravity (Gemini 4 Argon y Gemini 3.8 Flash) bajo revisión; búsqueda inicial de fuentes con Gemini 3.8 Flash, con cada fuente publicada abierta y confirmada después por el orquestador (Claude Code); la confirmación humana de cada fuente se hace en la revisión del PR; ninguna imagen ni texto generado se presenta como dato.

@@ -1,0 +1,1000 @@
+/* Estación Orcadas expedition styles (.orc prefix). Uses tokens from tokens.css. */
+
+.orc {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.orc-scene-wrap,
+.orc-fallback {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.orc-fallback-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* Always-visible reconstruction chip on the scene */
+.orc-scene-badge {
+  position: absolute;
+  left: 12px;
+  top: 104px;
+  z-index: 3;
+  pointer-events: none;
+}
+
+/* KindChip: color + shape + border + text */
+.orc-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.25;
+  padding: 3px 9px;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+
+.orc-chip-ico {
+  width: 11px;
+  height: 11px;
+  flex: none;
+}
+
+.orc-chip-real {
+  background: var(--ink);
+  color: var(--ice);
+  border: 1.5px solid var(--ink);
+}
+
+.orc-chip-sim {
+  background: #D6E5EF;
+  color: #152E47;
+  border: 1.5px solid var(--deep);
+}
+
+.orc-chip-recon {
+  background: #FBF4E6;
+  color: #4A2E08;
+  border: 1.5px dashed #7A4E10;
+}
+
+.orc-chip-calc {
+  background: #E8DEC9;
+  color: var(--ink);
+  border: 1.5px dotted var(--ink);
+}
+
+/* Top bar */
+.orc-top {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  z-index: 5;
+  padding: 8px 12px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: linear-gradient(
+    rgba(243, 235, 221, 0.96) 65%,
+    rgba(243, 235, 221, 0)
+  );
+  pointer-events: none;
+}
+
+.orc-top > * {
+  pointer-events: auto;
+}
+
+.orc-top-r1 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.orc-top-btn {
+  min-height: 44px;
+  padding: 0 12px;
+  font-size: 14px;
+  box-shadow: 1px 2px 0 rgba(31, 42, 54, 0.16);
+}
+
+.orc-top-title {
+  flex: 1;
+  min-width: 0;
+  text-align: center;
+}
+
+.orc-top-title strong {
+  display: block;
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 16px;
+  line-height: 1.1;
+  color: var(--ink);
+}
+
+.orc-top-title span {
+  display: block;
+  font-size: 12px;
+  color: #2B3640;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Chapter step navigation */
+.orc-steps-nav {
+  width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.orc-steps-nav::-webkit-scrollbar {
+  display: none;
+}
+
+.orc-steps {
+  list-style: none;
+  margin: 0;
+  padding: 2px 0;
+  display: flex;
+  gap: 5px;
+  min-width: min-content;
+}
+
+.orc-step-item {
+  flex: 1 0 auto;
+}
+
+.orc-step-btn {
+  min-height: 36px;
+  padding: 4px 9px;
+  border-radius: 18px;
+  border: 1.5px solid rgba(31, 42, 54, 0.45);
+  background: rgba(251, 244, 230, 0.92);
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+  transition: transform 0.15s ease, background-color 0.15s ease;
+}
+
+.orc-step-btn:hover {
+  background: #fff;
+}
+
+.orc-step-btn.is-visited {
+  border-color: var(--deep);
+  background: #E7F0F5;
+}
+
+.orc-step-btn.is-current {
+  background: var(--ink);
+  color: var(--ice);
+  border-color: var(--ink);
+}
+
+.orc-step-num {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(31, 42, 54, 0.12);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+}
+
+.orc-step-btn.is-current .orc-step-num {
+  background: var(--ocre);
+  color: var(--ink);
+}
+
+/* 3D-projected HTML Hotspots */
+.orc-hotspots {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.orc-hs {
+  position: absolute;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 4px 8px;
+  border: 0;
+  background: transparent;
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transform: translate(-50%, -50%);
+  will-change: transform;
+}
+
+.orc-hs-dot {
+  position: relative;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--ocre);
+  border: 2px solid var(--ink);
+  box-shadow: 0 0 0 2px var(--paper);
+  flex: none;
+}
+
+.orc-hs.is-active .orc-hs-dot {
+  background: var(--oxide);
+  transform: scale(1.15);
+}
+
+.orc-hs-ring {
+  position: absolute;
+  left: 6px;
+  top: 50%;
+  width: 22px;
+  height: 22px;
+  margin-top: -11px;
+  border-radius: 50%;
+  border: 2px solid var(--ocre);
+  pointer-events: none;
+  animation: orc-pulse 2.4s ease-out infinite;
+}
+
+@keyframes orc-pulse {
+  0% {
+    transform: scale(0.75);
+    opacity: 0.95;
+  }
+  100% {
+    transform: scale(1.85);
+    opacity: 0;
+  }
+}
+
+.orc-hs-lbl {
+  font-family: 'Caveat', cursive;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.05;
+  color: var(--ink);
+  background: rgba(251, 244, 230, 0.95);
+  border: 1.5px solid var(--ink);
+  border-radius: 4px 10px 6px 8px;
+  padding: 2px 7px 3px;
+  box-shadow: 1px 2px 0 rgba(31, 42, 54, 0.18);
+  white-space: nowrap;
+}
+
+/* Hotspot floating fact card */
+.orc-spot-card {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  top: 102px;
+  max-height: 44dvh;
+  overflow-y: auto;
+  z-index: 8;
+  background: #FBF4E6;
+  border: 2px solid var(--ink);
+  border-radius: 10px 18px 12px 14px;
+  padding: 12px 14px;
+  box-shadow: 3px 5px 0 rgba(31, 42, 54, 0.22);
+  animation: orc-card-in 0.24s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
+
+@keyframes orc-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.orc-spot-head,
+.orc-sources-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.orc-spot-head h3,
+.orc-sources-head h3 {
+  margin: 0;
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 19px;
+  line-height: 1.15;
+}
+
+.orc-spot-sub {
+  margin: 4px 0 8px;
+  font-size: 13px;
+  color: #2B3640;
+}
+
+.orc-spot-facts {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Chapter Notebook Panel: mobile <= 45% height bottom sheet */
+.orc-panel {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  max-height: 44dvh;
+  z-index: 6;
+  background: var(--paper);
+  border-top: 2px solid var(--ink);
+  border-radius: 18px 18px 0 0;
+  box-shadow: 0 -8px 24px rgba(31, 42, 54, 0.22);
+  display: flex;
+  flex-direction: column;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.orc-panel-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 10px 14px 8px;
+}
+
+.orc-panel-head {
+  margin-bottom: 6px;
+}
+
+.orc-kicker {
+  display: block;
+  font-size: 17px;
+  line-height: 1.05;
+  color: var(--deep);
+}
+
+.orc-chapter-h2 {
+  margin: 1px 0 0;
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 20px;
+  line-height: 1.12;
+  color: var(--ink);
+}
+
+.orc-chapter-h2:focus {
+  outline: none;
+}
+
+.orc-chapter-h2:focus-visible {
+  outline: 2px solid var(--deep);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+.orc-chapter-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.orc-lead {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.38;
+  color: var(--ink);
+}
+
+/* Fact cards */
+.orc-facts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.orc-fact-card {
+  background: #FBF4E6;
+  border: 1.5px solid rgba(31, 42, 54, 0.42);
+  border-radius: 6px 14px 8px 12px;
+  padding: 8px 10px;
+  box-shadow: 2px 3px 0 rgba(31, 42, 54, 0.1);
+}
+
+.orc-fact-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.orc-fact-title {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 14px;
+  color: var(--ink);
+}
+
+.orc-fact-text {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.35;
+  color: var(--ink);
+}
+
+.orc-fact-src {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+  color: #3B4651;
+}
+
+/* Activity blocks */
+.orc-activity {
+  background: #FBF4E6;
+  border: 1.5px solid var(--ink);
+  border-radius: 8px 14px 10px 12px;
+  padding: 9px 11px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.orc-chip-row,
+.orc-obs-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.orc-obs-meta {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--deep);
+}
+
+.orc-activity-intro {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.3;
+  color: #2B3640;
+}
+
+.orc-obs-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.orc-obs-field {
+  background: var(--paper);
+  border: 1px solid rgba(31, 42, 54, 0.35);
+  border-radius: 8px;
+  padding: 6px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.orc-obs-field.is-exact,
+.orc-obs-field.is-close {
+  border-color: var(--deep);
+  background: #E8F1F6;
+}
+
+.orc-obs-label {
+  display: flex;
+  flex-direction: column;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.orc-obs-instrument {
+  font-weight: 400;
+  font-size: 11px;
+  color: #2B3640;
+}
+
+.orc-obs-input-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.orc-input-num {
+  width: 100%;
+  min-width: 0;
+  min-height: 34px;
+  padding: 4px 6px;
+  border: 1.5px solid var(--ink);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.orc-mini-btn {
+  flex: none;
+  min-height: 34px;
+  padding: 0 7px;
+  border-radius: 6px;
+  border: 1px solid var(--deep);
+  background: #DCE8EF;
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.orc-obs-badge {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--deep);
+}
+
+.orc-obs-badge.is-off {
+  color: var(--oxide);
+}
+
+.orc-obs-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.orc-link-btn {
+  border: 0;
+  background: transparent;
+  color: var(--deep);
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: underline;
+  padding: 4px;
+}
+
+/* Sliders (YearWheel & TimeMachine) */
+.orc-slider-group {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.orc-slider-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 13px;
+}
+
+.orc-slider-val {
+  font-family: 'Fraunces', Georgia, serif;
+  color: var(--deep);
+}
+
+.orc-range {
+  width: 100%;
+  accent-color: var(--deep);
+  height: 24px;
+  cursor: pointer;
+}
+
+.orc-stats-cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.orc-stat-box {
+  background: var(--paper);
+  border: 1px solid rgba(31, 42, 54, 0.3);
+  border-radius: 8px;
+  padding: 6px 8px;
+}
+
+.orc-stat-box small {
+  display: block;
+  font-size: 11px;
+  color: #3B4651;
+}
+
+.orc-stat-box strong {
+  display: block;
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 14px;
+  color: var(--ink);
+}
+
+.orc-stat-box span {
+  display: block;
+  font-size: 11px;
+  color: #2B3640;
+}
+
+.orc-fauna-box {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.orc-sub-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #2B3640;
+}
+
+.orc-fauna-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.orc-fauna-pill {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: #E2EDF3;
+  border: 1px solid var(--deep);
+  color: var(--ink);
+}
+
+/* TimeMachine eras */
+.orc-era-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.orc-era-btn {
+  min-height: 32px;
+  padding: 2px 10px;
+  border-radius: 14px;
+  border: 1.5px solid var(--ink);
+  background: var(--paper);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.orc-era-btn.is-active {
+  background: var(--ink);
+  color: var(--ice);
+}
+
+.orc-era-card {
+  background: var(--paper);
+  border: 1px solid rgba(31, 42, 54, 0.35);
+  border-radius: 8px;
+  padding: 7px 9px;
+}
+
+.orc-era-head h3 {
+  margin: 0;
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 15px;
+}
+
+.orc-era-from {
+  font-size: 16px;
+  color: var(--deep);
+}
+
+.orc-era-card p {
+  margin: 4px 0 0;
+  font-size: 12.5px;
+  line-height: 1.35;
+}
+
+/* CenturyChart */
+.orc-century-summary {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.32;
+}
+
+.orc-chart-frame {
+  background: var(--paper);
+  border: 1px solid rgba(31, 42, 54, 0.35);
+  border-radius: 8px;
+  padding: 6px 8px;
+}
+
+.orc-chart-svg {
+  display: block;
+  width: 100%;
+  height: 76px;
+}
+
+.orc-chart-axis {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #3B4651;
+  margin-top: 2px;
+}
+
+.orc-user-obs-note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  background: var(--paper);
+  border: 1px dashed var(--deep);
+  border-radius: 8px;
+  padding: 5px 8px;
+}
+
+/* Done chapter */
+.orc-done-seal-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #FBF4E6;
+  border: 1.5px solid var(--ink);
+  border-radius: 10px;
+  padding: 8px 10px;
+}
+
+.orc-seal {
+  width: 68px;
+  height: 68px;
+  flex: none;
+}
+
+.orc-done-summary p {
+  margin: 2px 0 0;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.orc-done-sim {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  line-height: 1.3;
+}
+
+.orc-done-readings {
+  margin: 0;
+  background: #FBF4E6;
+  border: 1.5px solid var(--ink);
+  border-radius: 10px;
+  padding: 4px 12px;
+}
+
+.orc-done-readings > div {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: baseline;
+  gap: 2px 12px;
+  padding: 7px 0;
+}
+
+.orc-done-readings > div + div {
+  border-top: 1px dashed rgba(31, 42, 54, 0.3);
+}
+
+.orc-done-readings dt {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.orc-done-readings dd {
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.1;
+  text-align: right;
+  color: var(--deep);
+}
+
+.orc-done-readings small {
+  grid-column: 1 / -1;
+  font-size: 12px;
+  color: var(--ink);
+  opacity: 0.8;
+}
+
+/* Bottom bar inside panel */
+.orc-panel .orc-bar {
+  position: static;
+  padding: 7px 14px 9px;
+  background: var(--paper);
+  border-top: 1px dashed rgba(31, 42, 54, 0.3);
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.orc-panel .orc-bar .btn {
+  min-height: 44px;
+  font-size: 15px;
+  padding: 0 14px;
+}
+
+/* Sources dialog panel */
+.orc-sources {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  max-height: 76dvh;
+  z-index: 15;
+  background: #FBF4E6;
+  border: 2px solid var(--ink);
+  border-radius: 16px;
+  padding: 14px 16px;
+  box-shadow: 0 -8px 28px rgba(31, 42, 54, 0.28);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  animation: orc-card-in 0.24s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
+
+.orc-close-btn {
+  width: 44px;
+  height: 44px;
+  flex: none;
+}
+
+.orc-sources-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.orc-sources-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.orc-source-item {
+  background: var(--paper);
+  border: 1px solid rgba(31, 42, 54, 0.32);
+  border-radius: 8px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.orc-source-link {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--deep);
+}
+
+.orc-source-org {
+  font-size: 13px;
+  color: var(--ink);
+}
+
+.orc-source-meta {
+  font-size: 11.5px;
+  color: #3B4651;
+}
+
+/* Desktop layout (>= 900px): side notebook column */
+@media (min-width: 900px) {
+  .orc-top {
+    padding: 14px 24px 16px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+  }
+
+  .orc-top-r1 {
+    flex: 0 0 auto;
+    gap: 14px;
+  }
+
+  .orc-top-title {
+    text-align: left;
+  }
+
+  .orc-top-title strong {
+    font-size: 20px;
+  }
+
+  .orc-steps-nav {
+    width: auto;
+    flex: 1;
+    display: flex;
+    justify-content: center;
+  }
+
+  .orc-step-btn {
+    min-height: 40px;
+    padding: 6px 12px;
+    font-size: 13px;
+  }
+
+  .orc-scene-badge {
+    left: 24px;
+    top: auto;
+    bottom: 24px;
+  }
+
+  .orc-panel {
+    top: 86px;
+    right: 24px;
+    bottom: 24px;
+    left: auto;
+    width: 480px;
+    max-height: calc(100dvh - 110px);
+    border: 2px solid var(--ink);
+    border-radius: 10px 18px 12px 16px;
+    box-shadow: 4px 6px 0 rgba(31, 42, 54, 0.2);
+  }
+
+  .orc-panel-scroll {
+    padding: 16px 18px 12px;
+  }
+
+  .orc-chapter-h2 {
+    font-size: 26px;
+  }
+
+  .orc-spot-card {
+    left: 24px;
+    right: auto;
+    top: auto;
+    bottom: 68px;
+    width: 390px;
+    max-height: 60dvh;
+  }
+
+  .orc-sources {
+    left: 24px;
+    right: auto;
+    bottom: 24px;
+    width: 440px;
+    max-height: calc(100dvh - 120px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .orc-hs-ring {
+    animation: none;
+    display: none;
+  }
+  .orc-spot-card,
+  .orc-sources,
+  .orc-step-btn {
+    animation: none;
+    transition: none;
+  }
+}

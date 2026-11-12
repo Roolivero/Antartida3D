@@ -6,7 +6,10 @@ import { EffectComposer } from '@react-three/postprocessing';
 import {
   homePose3D,
   performanceBounds,
-  DIVE_3D,
+  APPROACH_MS,
+  approachPose3D,
+  type CameraPose,
+  divePose3D,
   FOV,
   distanceFromK3D,
   generateSeaLifeInstances,
@@ -24,6 +27,7 @@ import {
   irizarStateAtTime,
   SEA_POINTS,
   type Geometry,
+  type MapPoint,
   type Marker,
   type OceanDepthGrid,
   type SeaLifeInstance,
@@ -42,12 +46,14 @@ import { Graticule3D } from './Graticule3D.tsx';
 import { InkEffect } from './InkEffect.ts';
 import { SeaTimeContext, useAnimationClock } from './useAnimationClock.ts';
 import { Town3D } from '../voyage/Town3D.tsx';
+import { OrcadasSite } from './OrcadasSite.tsx';
 import { Voyage3D } from '../voyage/Voyage3D.tsx';
 
 function SceneContent({
   wide,
   lowQuality,
   phase,
+  diveTarget,
   reduced,
   size,
   geo,
@@ -62,6 +68,7 @@ function SceneContent({
   wide: boolean;
   lowQuality: boolean;
   phase: Phase;
+  diveTarget: MapPoint;
   reduced: boolean;
   size: Size;
   geo: Geometry;
@@ -117,6 +124,7 @@ function SceneContent({
       <Graticule3D />
       <SeaLife visible={phase !== 'dive'} timeUniform={seaTime} instances={seaLifeInstances} voyage={voyage} />
       <Town3D reduced={reduced} wide={wide} overlay={overlayRef} />
+      <OrcadasSite reduced={reduced} />
       {voyage && <Voyage3D bus={voyage} reduced={reduced} overlay={overlayRef} />}
       {enablePost && (
         <EffectComposer multisampling={0}>
@@ -125,6 +133,7 @@ function SceneContent({
       )}
       <ControlsBridge
         phase={phase}
+        diveTarget={diveTarget}
         reduced={reduced}
         size={size}
         geo={geo}
@@ -158,6 +167,7 @@ const NEAR_CLOSE = NEAR * (FUEGIA_MIN_DISTANCE / MIN_DISTANCE);
 
 function ControlsBridge({
   phase,
+  diveTarget,
   reduced,
   size,
   geo,
@@ -165,6 +175,7 @@ function ControlsBridge({
   onCameraRest,
 }: {
   phase: Phase;
+  diveTarget: MapPoint;
   reduced: boolean;
   size: Size;
   geo: Geometry;
@@ -176,6 +187,7 @@ function ControlsBridge({
   const scene = useThree((s) => s.scene);
   const gl = useThree((s) => s.gl);
   const initialized = useRef(false);
+  const approach = useRef<{ from: CameraPose; to: CameraPose; startMs: number } | null>(null);
   const live = useRef({ size, geo, onCameraRest });
   live.current = { size, geo, onCameraRest };
 
@@ -196,15 +208,20 @@ function ControlsBridge({
     const bbox = new Box3(new Vector3(-800, -50, -800), new Vector3(800, 2500, 800));
     cc.setBoundary(bbox);
 
-    if (phase === 'dive') {
+    if (phase === 'approach') {
+      const from = { pos: cc.getPosition(new Vector3()), target: cc.getTarget(new Vector3()) };
+      approach.current = { from, to: divePose3D(diveTarget), startMs: performance.now() };
+      invalidate();
+    } else if (phase === 'dive') {
       const dur = reduced ? 0 : 1.5;
+      const dive = divePose3D(diveTarget);
       cc.setLookAt(
-        DIVE_3D.pos.x,
-        DIVE_3D.pos.y,
-        DIVE_3D.pos.z,
-        DIVE_3D.target.x,
-        DIVE_3D.target.y,
-        DIVE_3D.target.z,
+        dive.pos.x,
+        dive.pos.y,
+        dive.pos.z,
+        dive.target.x,
+        dive.target.y,
+        dive.target.z,
         dur > 0
       );
     } else if (!initialized.current) {
@@ -212,7 +229,19 @@ function ControlsBridge({
       const home = homePose3D(size.vw / size.vh);
       cc.setLookAt(home.pos.x, home.pos.y, home.pos.z, home.target.x, home.target.y, home.target.z, false);
     }
-  }, [phase, reduced]);
+  }, [phase, reduced, diveTarget]);
+
+  // Continuous zoom down to the point: the camera follows approachPose3D on every frame.
+  useFrame(() => {
+    const cc = controlsRef.current;
+    const run = approach.current;
+    if (!cc || !run) return;
+    const u = Math.min(1, (performance.now() - run.startMs) / APPROACH_MS);
+    const pose = approachPose3D(run.from, run.to, u * u * (3 - 2 * u));
+    void cc.setLookAt(pose.pos.x, pose.pos.y, pose.pos.z, pose.target.x, pose.target.y, pose.target.z, false);
+    if (u < 1) invalidate();
+    else approach.current = null;
+  });
 
   // Report where the camera settled, so clustering and the 2D view follow the orbit camera.
   useEffect(() => {
@@ -231,7 +260,7 @@ function ControlsBridge({
   // a pose from the 2D view, which used to undo the user's orbit and zoom.
   useEffect(() => {
     const cc = controlsRef.current;
-    if (!cc || !command || phase === 'dive') return;
+    if (!cc || !command || phase === 'dive' || phase === 'approach') return;
     const smooth = !reduced;
     const { cmd } = command;
     const aspect = size.vw / size.vh;
@@ -292,6 +321,8 @@ function ControlsBridge({
       ref={controlsRef}
       makeDefault
       dollyToCursor
+      // The zoom into an expedition drives the camera on every frame: gestures would fight it.
+      enabled={phase !== 'approach' && phase !== 'dive'}
       minDistance={MIN_DISTANCE}
       maxDistance={MAX_DISTANCE}
     />
@@ -320,7 +351,7 @@ function ProjectMarkers({
 
   useFrame(() => {
     const el = overlayRef.current;
-    if (!el || phase === 'dive') return;
+    if (!el || phase === 'dive' || phase === 'approach') return;
 
     // 1. Position expedition & fossil markers
     for (const m of markers) {
@@ -419,6 +450,7 @@ export function Map3DLayer({
   size,
   geo,
   phase,
+  diveTarget,
   markers,
   onPick,
   command,
@@ -501,6 +533,7 @@ export function Map3DLayer({
           wide={size.vw > 820}
           lowQuality={lowQuality}
           phase={phase}
+          diveTarget={diveTarget}
           reduced={reduced}
           size={size}
           geo={geo}
@@ -514,11 +547,11 @@ export function Map3DLayer({
         />
       </Canvas>
       <div
-        className={'ov' + (phase === 'dive' ? ' hide' : '')}
+        className={'ov' + (phase === 'dive' || phase === 'approach' ? ' hide' : '')}
         ref={overlayRef}
         style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}
       >
-        {phase !== 'dive' && (
+        {phase !== 'dive' && phase !== 'approach' && (
           <>
             <span
               data-graticule="greenwich"

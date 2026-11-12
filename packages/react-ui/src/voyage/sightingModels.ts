@@ -1,5 +1,5 @@
 import type { BufferGeometry, Object3D } from 'three';
-import type { Sighting } from '@antartida/core';
+import { createSeededRng, type Sighting } from '@antartida/core';
 import { buildBoxGeometry, type Box } from './vehicles.ts';
 
 // Approximate colors. The models are illustrations, not portraits: one unit is about the length of the model.
@@ -18,6 +18,10 @@ const WHALE_GREY = 0x55606b;
 const LAMP = 0xf2c14e;
 const ZINC = 0x7d868c;
 const SKY = 0x7fb6dc;
+const RED_DARK = 0x96351e;
+const NAVY_ROOF = 0x1e3e5c;
+const ROCK_DARK = 0x656a68;
+const WOOD_LIGHT = 0xc49a6c;
 
 interface Model {
   body: readonly Box[];
@@ -158,7 +162,7 @@ type PenguinFace = 'strap' | 'ring' | 'band';
  * A penguin standing at (x, z), `k` times the full size. The face tells the species apart:
  * chinstrap (white face, thin black strap), Adélie (white ring around the eye), Magellanic (white band).
  */
-const penguinAt = (x: number, z: number, k: number, face: PenguinFace): Box[] => {
+export const penguinAt = (x: number, z: number, k: number, face: PenguinFace): Box[] => {
   const at = (cx: number, cy: number, cz: number, sx: number, sy: number, sz: number, color: number): Box =>
     [x + cx * k, 0.04 + cy * k, z + cz * k, sx * k, sy * k, sz * k, color];
   const marks: Box[] = face === 'strap'
@@ -370,37 +374,75 @@ const SPOUT: Box[] = [
 
 const ICE_SHADE = 0xc5dbe6;
 
-/** Tabular iceberg: flat top, sheer walls, a blue line where the water wears it. */
-const ICEBERG_TABULAR: Box[] = [
-  [0, 0.01, 0, 1, 0.04, 0.66, ICE_SHADE],
-  [0, 0.12, 0, 0.94, 0.2, 0.6, ICE],
-  [0.05, 0.24, 0.02, 0.8, 0.06, 0.5, WHITE],
-  [-0.2, 0.29, -0.05, 0.4, 0.05, 0.34, WHITE],
-  [0.47, 0.1, 0.1, 0.06, 0.14, 0.3, ICE_SHADE],
-  [-0.47, 0.08, -0.12, 0.06, 0.1, 0.26, ICE_SHADE],
-  [0.2, 0.1, 0.31, 0.3, 0.14, 0.04, ICE_SHADE],
-  [-0.25, 0.09, -0.31, 0.26, 0.12, 0.04, ICE_SHADE],
-  [0.3, 0.275, 0.12, 0.16, 0.012, 0.03, SKY],
-  [-0.1, 0.275, 0.18, 0.1, 0.012, 0.03, SKY],
-  [0.58, 0.02, -0.2, 0.14, 0.05, 0.14, ICE],
-  [-0.6, 0.02, 0.22, 0.1, 0.04, 0.1, ICE],
-];
+/** Pale turquoise of the ice seen through shallow water: the foot that spreads under an iceberg. */
+const ICE_SUBMERGED = 0x9fd6dc;
+/** Wall of an iceberg: bluer than snow, so the baked face shading reads as ice and not as grey stone. */
+const ICE_WALL = 0xb4d5ea;
 
-/** Small iceberg worn into peaks. */
-const ICEBERG_PEAKS: Box[] = [
-  [0, 0.01, 0, 0.8, 0.04, 0.56, ICE_SHADE],
-  [0, 0.08, 0, 0.66, 0.12, 0.44, ICE],
-  [-0.14, 0.2, 0.02, 0.3, 0.14, 0.26, ICE],
-  [-0.16, 0.33, 0.02, 0.2, 0.12, 0.18, WHITE],
-  [-0.17, 0.44, 0.02, 0.1, 0.1, 0.1, WHITE],
-  [0.2, 0.18, -0.04, 0.22, 0.1, 0.2, ICE],
-  [0.21, 0.27, -0.04, 0.12, 0.08, 0.12, WHITE],
-  [0.02, 0.16, 0.16, 0.14, 0.05, 0.08, ICE_SHADE],
-  [0.32, 0.09, 0.2, 0.06, 0.1, 0.04, ICE_SHADE],
-  [-0.33, 0.09, -0.2, 0.06, 0.1, 0.04, ICE_SHADE],
-  [-0.05, 0.215, 0.152, 0.1, 0.012, 0.01, SKY],
-  [0.5, 0.02, 0.1, 0.12, 0.05, 0.1, ICE],
-];
+/** Side of one ice column, in model units. */
+const ICE_CELL = 0.1;
+/** Height step of the columns: heights snap to it, so the ice breaks into terraces and not into a ramp. */
+const ICE_STEP = 0.035;
+
+/**
+ * An iceberg as a field of square ice columns over a ragged footprint. Straight walls, a flat roof
+ * and dark slits read as a building, so the outline is broken column by column, the rim steps down
+ * to the water and nothing is darker than wet ice. `height(u, v)` gets the cell position in -1..1
+ * along the length and the width and returns the ice height there, or 0 for open water.
+ */
+function iceberg(cols: number, rows: number, seed: number, height: (u: number, v: number, noise: number) => number): Box[] {
+  const rng = createSeededRng(seed);
+  const length = cols * ICE_CELL;
+  const width = rows * ICE_CELL;
+  const boxes: Box[] = [
+    // Submerged foot, wider than the ice above the water
+    [0, 0.006, 0, length * 0.92, 0.012, width * 0.8, ICE_SUBMERGED],
+    [length * 0.06, 0.006, width * 0.05, length * 0.7, 0.012, width, ICE_SUBMERGED],
+  ];
+  for (let i = 0; i < cols; i++) {
+    for (let j = 0; j < rows; j++) {
+      const u = ((i + 0.5) / cols) * 2 - 1;
+      const v = ((j + 0.5) / rows) * 2 - 1;
+      const h = Math.round(height(u, v, rng()) / ICE_STEP) * ICE_STEP;
+      if (h <= 0) continue;
+      const x = (u * length) / 2;
+      const z = (v * width) / 2;
+      // The lowest terrace is washed by the waves: wet, bluer ice with no snow on it.
+      const low = h <= ICE_STEP;
+      boxes.push([x, h / 2, z, ICE_CELL, h, ICE_CELL, low ? ICE_SHADE : ICE_WALL]);
+      if (!low) boxes.push([x, h + 0.005, z, ICE_CELL, 0.01, ICE_CELL, WHITE]);
+    }
+  }
+  // Calved fragments drifting next to it
+  boxes.push(
+    [length * 0.6, 0.02, width * 0.38, 0.09, 0.045, 0.07, ICE_WALL],
+    [length * 0.66, 0.012, width * 0.2, 0.05, 0.03, 0.05, WHITE],
+    [-length * 0.6, 0.018, -width * 0.36, 0.07, 0.04, 0.09, ICE_WALL],
+  );
+  return boxes;
+}
+
+/**
+ * Tabular iceberg: a wide plateau that broke off an ice shelf. The plateau is level, the rim falls
+ * to the sea in terraces, and one end has collapsed.
+ */
+const ICEBERG_TABULAR: Box[] = iceberg(11, 7, 190421, (u, v, noise) => {
+  const edge = 1 - Math.hypot(u * 0.95, v) - (noise - 0.5) * 0.34 + (u > 0.3 && v < 0 ? -0.22 : 0);
+  if (edge <= 0) return 0;
+  return Math.min(0.21, ICE_STEP + edge * 0.62);
+});
+
+/**
+ * Small weathered iceberg: a tall peak off centre, a lower second peak past a saddle, and melted
+ * terraces around them.
+ */
+const ICEBERG_PEAKS: Box[] = iceberg(8, 6, 190422, (u, v, noise) => {
+  // Each peak falls as a sheer cliff on its west side and as a long melted slope on the east one.
+  const peak = (cu: number, cv: number, top: number, reach: number) =>
+    top * Math.max(0, 1 - Math.hypot((u - cu) * (u < cu ? 2.6 : 1), v - cv) / reach) ** 1.5;
+  const h = Math.max(peak(-0.45, -0.15, 0.5, 1.15), peak(0.45, 0.4, 0.27, 0.6)) + (noise - 0.5) * 0.09;
+  return h < 0.03 ? 0 : h;
+});
 
 /** Penguins on a floe of sea ice. */
 const FLOE_PENGUINS: Box[] = [
@@ -425,11 +467,45 @@ export const SEA_MODELS = {
 } as const satisfies Record<string, readonly Box[]>;
 export type SeaModelId = keyof typeof SEA_MODELS;
 
+/**
+ * Minimal block model of Estación Orcadas on Laurie Island:
+ * two houses (Casa Moneta and modern orange module), Argentine flagpole with waving flag,
+ * and a pair of Adélie & Chinstrap penguins on the terrace. (42 boxes, 12 colors).
+ */
+export const ORCADAS_SITE: Box[] = [
+  // Ground footing / rock terrace on Laurie Island isthmus
+  [0, 0.02, 0, 1.4, 0.04, 1.1, ROCK],
+  [-0.1, 0.05, 0.1, 0.8, 0.04, 0.6, ICE],
+  // House 1: Casa Moneta (historic timber cabin, stepped red roof, chimney, window)
+  [-0.32, 0.16, 0.08, 0.44, 0.22, 0.3, WOOD_LIGHT],
+  [-0.32, 0.29, 0.08, 0.48, 0.06, 0.34, RED],
+  [-0.32, 0.34, 0.08, 0.44, 0.04, 0.22, RED_DARK],
+  [-0.32, 0.38, 0.08, 0.44, 0.04, 0.1, RED],
+  [-0.18, 0.41, 0.02, 0.05, 0.12, 0.05, BLACK],
+  [-0.32, 0.16, 0.235, 0.07, 0.08, 0.01, LAMP],
+  // House 2: Modern orange container pavilion (orange walls, dark navy roof, radome, window)
+  [0.32, 0.15, -0.12, 0.42, 0.2, 0.26, ORANGE],
+  [0.32, 0.26, -0.12, 0.46, 0.05, 0.3, NAVY_ROOF],
+  [0.32, 0.15, 0.015, 0.07, 0.07, 0.01, LAMP],
+  [0.38, 0.31, -0.12, 0.08, 0.07, 0.08, WHITE],
+  // Argentine flagpole (stone cairn base, white mast, waving flag with Sol de Mayo)
+  [0.08, 0.1, 0.28, 0.14, 0.14, 0.14, ROCK_DARK],
+  [0.08, 0.38, 0.28, 0.02, 0.44, 0.02, WHITE],
+  [0.17, 0.54, 0.28, 0.16, 0.04, 0.01, SKY],
+  [0.17, 0.5, 0.28, 0.16, 0.04, 0.01, WHITE],
+  [0.17, 0.46, 0.28, 0.16, 0.04, 0.01, SKY],
+  [0.15, 0.5, 0.28, 0.04, 0.04, 0.012, LAMP],
+  // Two penguins standing on the rock terrace (Adélie and Chinstrap)
+  ...penguinAt(-0.15, 0.35, 0.32, 'ring'),
+  ...penguinAt(0.12, -0.32, 0.32, 'strap'),
+];
+
 /** Every model of this file by name, for the test of least detail. */
 export const SCENE_MODELS: Readonly<Record<string, readonly Box[]>> = {
   ...Object.fromEntries(Object.entries(MODELS).map(([id, m]) => [id, [...m.body, ...(m.wing ?? []), ...(m.wing ?? [])]])),
   ...Object.fromEntries(Object.entries(SEA_MODELS).map(([id, boxes]) => [`sea:${id}`, boxes])),
   ushuaia: TOWN,
+  orcadas: ORCADAS_SITE,
 };
 
 export const buildSeaGeometry = (id: SeaModelId) => buildBoxGeometry(SEA_MODELS[id]);

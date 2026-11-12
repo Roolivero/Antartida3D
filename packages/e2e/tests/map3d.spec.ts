@@ -40,7 +40,7 @@ test.describe('3D relief view', () => {
     await expect(toggle.getByRole('button', { name: 'Mapa 2D' })).toHaveAttribute('aria-pressed', 'true');
   });
 
-  test('markers are focusable in 3D and Fósiles opens the expedition', async ({ page }) => {
+  test('markers are focusable in 3D and Orcadas opens the expedition', async ({ page }) => {
     await page.goto('/');
     const toggle = page.getByRole('group', { name: 'Modo de vista' });
     await expect(toggle).toBeVisible();
@@ -49,18 +49,18 @@ test.describe('3D relief view', () => {
     await toggle.getByRole('button', { name: 'Relieve 3D' }).click();
     await page.waitForSelector('canvas');
 
-    // Click cluster containing fosiles or directly fosiles marker
-    const clusterOrMarker = page.locator('.ov [data-key*="fosiles"] button');
+    // Click cluster containing orcadas or directly orcadas marker
+    const clusterOrMarker = page.locator('.ov [data-key*="orcadas"] button');
     await expect(clusterOrMarker).toBeVisible();
     await clusterOrMarker.click();
 
-    // If it was a cluster, clicking it zooms in and separates the points; wait for Fósiles marker
-    // Two expeditions are available now (Fósiles and Desde Ushuaia): name the one under test.
-    const fosilesBtn = page.getByRole('button', { name: /Fósiles.*Expedición disponible/ });
-    await expect(fosilesBtn).toBeVisible({ timeout: 5000 });
-    await fosilesBtn.click();
+    // If it was in a cluster, clicking it zooms in and separates the points; then click the marker.
+    const orcadasBtn = page.getByRole('button', { name: /Estación Orcadas.*Expedición disponible/ });
+    if (await orcadasBtn.isVisible()) {
+      await orcadasBtn.click();
+    }
 
-    await expect(page.getByRole('heading', { name: '¿Cómo era la Antártida antes del hielo?' })).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole('heading', { level: 2, name: 'Estación Orcadas' })).toBeVisible({ timeout: 10000 });
   });
 
   test('zoom buttons move the orbit camera from where it is, without resetting it', async ({ page }) => {

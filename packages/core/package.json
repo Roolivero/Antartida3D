@@ -15,6 +15,7 @@
     "coastline": "tsx scripts/build-coastline.ts",
     "terrain": "tsx scripts/build-terrain.ts",
     "bathymetry": "tsx scripts/build-bathymetry.ts",
+    "orcadas-series": "tsx scripts/build-orcadas-series.ts",
     "fuegia": "tsx scripts/build-fuegia.ts",
     "flight-ground": "tsx scripts/build-flight-ground.ts",
     "sea-atlas": "tsx scripts/build-sea-atlas.ts",

@@ -1,0 +1,742 @@
+/* Orcadas · observation (tinta y acuarela, cuaderno de campo) */
+
+.orc-obs {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* Instrument step / tab navigation */
+.orc-obs-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.orc-obs-tab {
+  min-height: 44px;
+  padding: 5px 8px;
+  border-radius: 8px 12px 6px 10px;
+  border: 1.5px solid var(--ink);
+  background: var(--paper);
+  color: var(--ink);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 1px;
+  text-align: left;
+  box-shadow: 1px 2px 0 rgba(31, 42, 54, 0.14);
+  transition: transform 0.15s ease, background-color 0.15s ease;
+}
+
+.orc-obs-tab:hover {
+  background: var(--ice);
+}
+
+.orc-obs-tab.is-active {
+  background: var(--ink);
+  color: var(--ice);
+  border-color: var(--ink);
+  box-shadow: 2px 3px 0 rgba(30, 62, 92, 0.28);
+}
+
+.orc-obs-tab.is-exact:not(.is-active),
+.orc-obs-tab.is-close:not(.is-active) {
+  border-color: var(--deep);
+  background: var(--ice);
+}
+
+.orc-obs-tab.is-off:not(.is-active) {
+  border-color: var(--oxide);
+}
+
+.orc-obs-tab-title {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+.orc-obs-tab-sub {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--deep);
+}
+
+.orc-obs-tab.is-active .orc-obs-tab-sub {
+  color: var(--ocre);
+}
+
+.orc-obs-tab.is-off:not(.is-active) .orc-obs-tab-sub {
+  color: var(--oxide);
+}
+
+/* Active instrument stage */
+.orc-obs-stage {
+  background: var(--paper);
+  border: 1.5px solid var(--ink);
+  border-radius: 10px 14px 8px 12px;
+  padding: 9px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.orc-obs-stage-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.orc-obs-stage-title {
+  margin: 0;
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 15px;
+  line-height: 1.15;
+  color: var(--ink);
+}
+
+.orc-obs-stage-desc {
+  margin: 2px 0 0;
+  font-size: 12px;
+  line-height: 1.32;
+  color: var(--ink);
+}
+
+.orc-obs-tol-pill {
+  flex: none;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 7px;
+  border-radius: 10px;
+  background: var(--ice);
+  border: 1px solid var(--deep);
+  color: var(--deep);
+  white-space: nowrap;
+}
+
+/* Instrument SVG Plate */
+.orc-obs-plate {
+  position: relative;
+  background: var(--ice);
+  border: 1.5px solid var(--ink);
+  border-radius: 8px 12px 8px 10px;
+  padding: 4px;
+  box-shadow: inset 0 0 0 1px rgba(192, 134, 47, 0.25);
+  overflow: hidden;
+}
+
+.orc-obs-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 185px;
+  user-select: none;
+}
+
+.orc-obs-svg-hand {
+  font-family: 'Caveat', cursive;
+  font-size: 15px;
+  font-weight: 700;
+  fill: var(--ink);
+}
+
+.orc-obs-svg-tag {
+  font-family: 'Atkinson Hyperlegible', system-ui, sans-serif;
+  font-size: 10.5px;
+  font-weight: 700;
+  fill: var(--ink);
+}
+
+.orc-obs-svg-scale-num {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 12px;
+  font-weight: 700;
+  fill: var(--ink);
+}
+
+.orc-obs-svg-scale-sub {
+  font-family: 'Atkinson Hyperlegible', system-ui, sans-serif;
+  font-size: 9.5px;
+  font-weight: 700;
+  fill: var(--pencil);
+}
+
+.orc-obs-svg-callout {
+  font-family: 'Caveat', cursive;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.orc-obs-svg-dial-word {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 7.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  fill: var(--pencil);
+}
+
+.orc-obs-svg-dial-num {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 9.5px;
+  font-weight: 700;
+  fill: var(--ink);
+}
+
+.orc-obs-svg-rose-cardinal {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 10px;
+  font-weight: 700;
+  fill: var(--ink);
+}
+
+.orc-obs-svg-rose-point {
+  font-family: 'Atkinson Hyperlegible', system-ui, sans-serif;
+  font-size: 7.8px;
+  font-weight: 700;
+  fill: var(--ink);
+}
+
+.orc-obs-svg-legend {
+  font-family: 'Atkinson Hyperlegible', system-ui, sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  fill: var(--ink);
+}
+
+/* 1. Shelter louvered door opening animation */
+.orc-obs-shelter-door {
+  transform-box: fill-box;
+  transform-origin: 0% 50%;
+  animation: orc-shelter-open 1.1s cubic-bezier(0.22, 0.8, 0.26, 1) 0.15s both;
+}
+
+@keyframes orc-shelter-open {
+  0% {
+    transform: perspective(300px) rotateY(0deg) scaleX(1);
+  }
+  100% {
+    transform: perspective(300px) scaleX(-0.26) skewY(-12deg);
+  }
+}
+
+/* 2. Barometer needle micro-tremor */
+.orc-obs-baro-tremor {
+  transform-origin: 0px 0px;
+  animation: orc-baro-tremble 1.6s ease-in-out infinite alternate;
+}
+
+.orc-obs-baro-tremor-y {
+  animation: orc-baro-tremble-y 1.6s ease-in-out infinite alternate;
+}
+
+@keyframes orc-baro-tremble {
+  0% {
+    transform: rotate(-0.55deg);
+  }
+  50% {
+    transform: rotate(0.45deg);
+  }
+  100% {
+    transform: rotate(-0.25deg);
+  }
+}
+
+@keyframes orc-baro-tremble-y {
+  0% {
+    transform: translate3d(0, -0.8px, 0);
+  }
+  50% {
+    transform: translate3d(0, 0.8px, 0);
+  }
+  100% {
+    transform: translate3d(0, -0.4px, 0);
+  }
+}
+
+/* 3. Anemometer cup rotor spin */
+.orc-obs-anemo-rotor {
+  transform-origin: 0px 0px;
+  animation: orc-anemo-spin 1.2s linear infinite;
+}
+
+@keyframes orc-anemo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.orc-obs-beaufort {
+  margin-top: 4px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  background: var(--paper);
+  border: 1px solid var(--deep);
+  font-size: 12px;
+  color: var(--ink);
+}
+
+.orc-obs-beaufort.is-pending {
+  border-style: dashed;
+  color: var(--ink);
+}
+
+/* 4. Cloud picker interactive sectors */
+.orc-obs-okta-sector {
+  cursor: pointer;
+}
+
+.orc-obs-okta-sector:hover path {
+  fill: rgba(192, 134, 47, 0.34);
+}
+
+/* Custom Fine Slider Control */
+.orc-obs-control-box {
+  background: var(--ice);
+  border: 1.5px solid var(--ink);
+  border-radius: 8px 12px 8px 10px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.orc-obs-control-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.orc-obs-control-lbl {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.orc-obs-draft-readout {
+  font-size: 21px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--deep);
+}
+
+.orc-obs-slider-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.orc-obs-step-btn {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: 10px;
+  border: 1.5px solid var(--ink);
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 1px 2px 0 rgba(31, 42, 54, 0.16);
+}
+
+.orc-obs-step-btn:hover:not(:disabled) {
+  background: var(--ice);
+}
+
+.orc-obs-step-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.orc-obs-slider {
+  flex: 1;
+  min-width: 0;
+  min-height: 44px;
+  padding: 8px 6px 4px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  touch-action: none;
+  user-select: none;
+  border-radius: 8px;
+}
+
+.orc-obs-slider:focus-visible {
+  outline: 3px solid var(--deep);
+  outline-offset: 2px;
+}
+
+.orc-obs-slider-track {
+  position: relative;
+  width: 100%;
+  height: 10px;
+  border-radius: 5px;
+  background: var(--paper);
+  border: 1.5px solid var(--ink);
+}
+
+.orc-obs-slider-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  background: var(--glacier);
+  border-radius: 4px 0 0 4px;
+}
+
+.orc-obs-slider-thumb {
+  position: absolute;
+  top: 50%;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--ocre);
+  border: 2px solid var(--ink);
+  box-shadow: 0 1px 3px rgba(31, 42, 54, 0.3);
+  transform: translate3d(-50%, -50%, 0);
+}
+
+.orc-obs-slider-limits {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.orc-obs-confirm-row {
+  display: flex;
+}
+
+.orc-obs-confirm-btn {
+  width: 100%;
+  min-height: 44px;
+  font-size: 14px;
+  padding: 0 12px;
+}
+
+/* Feedback banner after annotating */
+.orc-obs-feedback {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  border: 1.5px solid var(--deep);
+  background: var(--ice);
+  font-size: 12.5px;
+  line-height: 1.32;
+  color: var(--ink);
+}
+
+.orc-obs-feedback.is-exact {
+  border-color: var(--deep);
+  background: var(--ice);
+}
+
+.orc-obs-feedback.is-close {
+  border-color: var(--ocre);
+  background: var(--paper);
+}
+
+.orc-obs-feedback.is-off {
+  border-color: var(--oxide);
+  background: var(--paper);
+}
+
+.orc-obs-feedback.is-off strong {
+  color: var(--oxide);
+}
+
+.orc-obs-retry-btn {
+  flex: none;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0 12px;
+  border-radius: 8px;
+  border: 1.5px solid var(--oxide);
+  background: var(--ice);
+  color: var(--oxide);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* Meteorological Field Notebook (Notebook.tsx) */
+.orc-notebook {
+  position: relative;
+  display: flex;
+  background: var(--paper);
+  border: 2px solid var(--ink);
+  border-radius: 6px 14px 10px 8px;
+  box-shadow: 2px 4px 0 rgba(31, 42, 54, 0.18);
+  overflow: hidden;
+}
+
+.orc-notebook-holes {
+  flex: none;
+  width: 20px;
+  background: rgba(31, 42, 54, 0.06);
+  border-right: 1.5px dashed rgba(164, 71, 31, 0.45);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-evenly;
+  padding: 8px 0;
+}
+
+.orc-notebook-holes span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--ink);
+  opacity: 0.35;
+}
+
+.orc-notebook-page {
+  flex: 1;
+  min-width: 0;
+  padding: 9px 11px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 23px,
+    rgba(30, 62, 92, 0.1) 24px
+  );
+}
+
+.orc-notebook-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.orc-notebook-title {
+  display: block;
+  font-size: 20px;
+  line-height: 1.05;
+  color: var(--ink);
+}
+
+.orc-notebook-date {
+  display: block;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--deep);
+}
+
+.orc-notebook-count {
+  flex: none;
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: var(--ice);
+  border: 1px solid var(--ink);
+  color: var(--ink);
+}
+
+.orc-notebook-cells {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.orc-notebook-cell {
+  min-height: 48px;
+  padding: 6px 8px;
+  border-radius: 6px 10px 6px 8px;
+  border: 1.5px solid var(--ink);
+  background: var(--ice);
+  color: var(--ink);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  text-align: left;
+}
+
+.orc-notebook-cell.is-active {
+  border-color: var(--deep);
+  box-shadow: 0 0 0 2px rgba(30, 62, 92, 0.22);
+}
+
+.orc-notebook-cell-lbl {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.orc-notebook-cell-val {
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--deep);
+}
+
+.orc-notebook-cell-empty {
+  font-size: 16px;
+  line-height: 1.1;
+  color: var(--pencil);
+}
+
+.orc-notebook-cell-status {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--deep);
+}
+
+.orc-notebook-cell-status.is-off {
+  color: var(--oxide);
+}
+
+/* Completion rubber stamp + simulation notice */
+.orc-notebook-complete {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1.5px solid var(--ink);
+  background: var(--ice);
+}
+
+.orc-notebook-stamp {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  animation: orc-stamp-in 0.38s cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+}
+
+@keyframes orc-stamp-in {
+  0% {
+    opacity: 0;
+    transform: scale(1.45) rotate(-8deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(-2deg);
+  }
+}
+
+.orc-notebook-seal-svg {
+  width: 52px;
+  height: 52px;
+  flex: none;
+}
+
+.orc-notebook-stamp-txt {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.orc-notebook-stamp-title {
+  font-size: 21px;
+  line-height: 1.05;
+  color: var(--oxide);
+}
+
+.orc-notebook-stamp-txt span {
+  font-size: 12px;
+  line-height: 1.3;
+  color: var(--ink);
+}
+
+.orc-notebook-sim-note {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding-top: 6px;
+  border-top: 1px dashed rgba(31, 42, 54, 0.3);
+  font-size: 12px;
+  line-height: 1.32;
+  color: var(--ink);
+}
+
+.orc-notebook-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.orc-notebook-reset-btn {
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0 12px;
+  border-radius: 8px;
+  border: 1.5px solid var(--ink);
+  background: var(--ice);
+  color: var(--ink);
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+.orc-notebook-reset-btn:hover:not(:disabled) {
+  background: var(--paper);
+}
+
+.orc-notebook-reset-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* Reduced motion support (both class and media query) */
+.orc-obs.is-reduced .orc-obs-shelter-door,
+.orc-obs-plate.is-reduced .orc-obs-shelter-door {
+  animation: none;
+  transform: perspective(300px) scaleX(-0.26) skewY(-12deg);
+}
+
+.orc-obs.is-reduced .orc-obs-baro-tremor,
+.orc-obs-plate.is-reduced .orc-obs-baro-tremor,
+.orc-obs.is-reduced .orc-obs-baro-tremor-y,
+.orc-obs-plate.is-reduced .orc-obs-baro-tremor-y,
+.orc-obs.is-reduced .orc-obs-anemo-rotor,
+.orc-obs-plate.is-reduced .orc-obs-anemo-rotor,
+.orc-notebook.is-reduced .orc-notebook-stamp {
+  animation: none;
+}
+
+@media (min-width: 900px) {
+  /* The side panel is wide enough to show the instrument drawings at full size. */
+  .orc-obs-svg {
+    max-height: 260px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .orc-obs-shelter-door {
+    animation: none;
+    transform: perspective(300px) scaleX(-0.26) skewY(-12deg);
+  }
+  .orc-obs-baro-tremor,
+  .orc-obs-baro-tremor-y,
+  .orc-obs-anemo-rotor,
+  .orc-notebook-stamp,
+  .orc-obs-tab {
+    animation: none;
+    transition: none;
+  }
+}

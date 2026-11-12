@@ -21,6 +21,9 @@ button:focus-visible,[tabindex]:focus-visible{outline:3px solid #1E3E5C;outline-
 .veil{position:absolute;inset:0;background:var(--paper);opacity:0;pointer-events:none}
 .veil.on{animation:veil 1.5s ease-in forwards}
 @keyframes veil{0%,55%{opacity:0}100%{opacity:1}}
+/* 3D approach: the map stays visible while the camera zooms, then fades to paper. */
+.veil.late{animation:veil-late 2.6s ease-in forwards}
+@keyframes veil-late{0%,80%{opacity:0}100%{opacity:1}}
 .vp{position:absolute;inset:0;overflow:hidden;touch-action:none;cursor:grab;outline:none}
 .vp:active{cursor:grabbing}
 .vp:focus-visible{box-shadow:inset 0 0 0 3px #1E3E5C}

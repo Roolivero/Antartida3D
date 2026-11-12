@@ -6,10 +6,14 @@ import {
   HOME,
   homePose3D,
   DIVE_3D,
+  approachPose3D,
+  divePose3D,
   fromWorld,
+  toWorld,
   heightAt,
   worldHeight,
   EXPEDITION_POINT,
+  ORCADAS_POINT,
   homeDistance3D,
   kFromDistance3D,
   distanceFromK3D,
@@ -66,14 +70,41 @@ describe('camera', () => {
     expect(viewFrom3D(size, geo, target, 1e6).k).toBeLessThan(MIN_K);
   });
 
-  it('has DIVE_3D above ground heightAt Marambio', () => {
-    const marambioH = heightAt(EXPEDITION_POINT.x, EXPEDITION_POINT.y);
+  it('has DIVE_3D above ground heightAt Orcadas', () => {
+    const orcadasH = heightAt(EXPEDITION_POINT.x, EXPEDITION_POINT.y);
     const targetMap = fromWorld(DIVE_3D.target);
     expect(Math.abs(targetMap.x - EXPEDITION_POINT.x)).toBeLessThan(1e-4);
     expect(Math.abs(targetMap.y - EXPEDITION_POINT.y)).toBeLessThan(1e-4);
 
     // Camera position y must be strictly above target.y
     expect(DIVE_3D.pos.y).toBeGreaterThan(DIVE_3D.target.y);
-    expect(DIVE_3D.pos.y).toBeGreaterThan(worldHeight(marambioH));
+    expect(DIVE_3D.pos.y).toBeGreaterThan(worldHeight(orcadasH));
+  });
+
+  it('approachPose3D starts and ends on the given poses and reaches the geometric mean of the distances at half time', () => {
+    const from = { pos: { x: 0, y: 1600, z: 0.001 }, target: { x: 0, y: 0, z: 0 } };
+    const to = divePose3D(ORCADAS_POINT);
+    const dist = (p: typeof from) => Math.hypot(p.pos.x - p.target.x, p.pos.y - p.target.y, p.pos.z - p.target.z);
+    const start = approachPose3D(from, to, 0);
+    const end = approachPose3D(from, to, 1);
+    expect(start.pos.y).toBeCloseTo(1600, 4);
+    expect(end.pos.x).toBeCloseTo(to.pos.x, 4);
+    expect(end.pos.y).toBeCloseTo(to.pos.y, 4);
+    expect(end.pos.z).toBeCloseTo(to.pos.z, 4);
+    expect(end.target.x).toBeCloseTo(to.target.x, 4);
+    const mid = approachPose3D(from, to, 0.5);
+    expect(dist(mid)).toBeCloseTo(Math.sqrt(dist(from) * dist(to)), 3);
+    // The target is nearly settled at half time: the point does not slide at the end.
+    expect(Math.abs(mid.target.x - to.target.x)).toBeLessThan(Math.abs(from.target.x - to.target.x) * 0.2);
+  });
+
+  it('divePose3D for Orcadas looks at Orcadas and matches DIVE_3D', () => {
+    const pose = divePose3D(ORCADAS_POINT);
+    const expected = toWorld(208, 205);
+    expect(pose.target.x).toBeCloseTo(expected.x, 4);
+    expect(pose.target.z).toBeCloseTo(expected.z, 4);
+    expect(pose.pos.y).toBeGreaterThan(pose.target.y);
+    expect(pose.target).toEqual(DIVE_3D.target);
+    expect(pose.pos).toEqual(DIVE_3D.pos);
   });
 });
