@@ -29,6 +29,8 @@ export const FACT_KIND_LABEL: Record<FactKind, string> = {
 export interface OrcadasSource {
   id: string;
   label: string;
+  /** Short name for the clickable reference under each fact. */
+  short: string;
   org: string;
   url: string;
   consulted: string;
@@ -36,8 +38,11 @@ export interface OrcadasSource {
   verified: boolean;
 }
 
-/** Where a fact is shown: a chapter, or the month strip that stays on screen in every chapter. */
-export type FactPlace = Chapter | 'months';
+/**
+ * Where a fact is shown: a chapter, the month strip that stays on screen in every chapter,
+ * or the scene label («Reconstrucción ilustrada»).
+ */
+export type FactPlace = Chapter | 'months' | 'scene';
 
 export interface OrcadasFact {
   id: string;
@@ -52,6 +57,7 @@ export const ORCADAS_SOURCES: readonly OrcadasSource[] = [
   {
     id: 'cancilleria',
     label: 'Base Orcadas',
+    short: 'Cancillería',
     org: 'Cancillería Argentina · Dirección Nacional del Antártico',
     url: 'https://cancilleria.gob.ar/es/iniciativas/dna/antartida-argentina/bases/orcadas',
     consulted: '11 de noviembre de 2026',
@@ -60,6 +66,7 @@ export const ORCADAS_SOURCES: readonly OrcadasSource[] = [
   {
     id: 'armada',
     label: 'Bases permanentes',
+    short: 'Armada',
     org: 'Armada Argentina',
     url: 'https://www.argentina.gob.ar/armada/antartida/bases-permanentes',
     consulted: '11 de noviembre de 2026',
@@ -68,6 +75,7 @@ export const ORCADAS_SOURCES: readonly OrcadasSource[] = [
   {
     id: 'reader',
     label: 'READER: datos de superficie de Orcadas',
+    short: 'SCAR READER',
     org: 'SCAR · British Antarctic Survey',
     url: 'https://legacy.bas.ac.uk/met/READER/surface/Orcadas.All.temperature.html',
     consulted: '11 de noviembre de 2026',
@@ -77,6 +85,7 @@ export const ORCADAS_SOURCES: readonly OrcadasSource[] = [
   {
     id: 'zazulie2010',
     label: 'Zazulie, Rusticucci y Solomon (2010)',
+    short: 'Zazulie y otros (2010)',
     org: 'Journal of Climate 23(1)',
     url: 'https://doi.org/10.1175/2009JCLI3074.1',
     consulted: '11 de noviembre de 2026',
@@ -85,6 +94,7 @@ export const ORCADAS_SOURCES: readonly OrcadasSource[] = [
   {
     id: 'mossman1907',
     label: 'R. C. Mossman (1907)',
+    short: 'Mossman (1907)',
     org: 'Report on the Scientific Results of the Voyage of S.Y. Scotia, vol. II, Meteorology',
     url: 'https://archive.org/details/reportonscientif02scot',
     consulted: '12 de noviembre de 2026',
@@ -93,6 +103,7 @@ export const ORCADAS_SOURCES: readonly OrcadasSource[] = [
   {
     id: 'oscar',
     label: 'OMM · OSCAR/Surface, estación 88968',
+    short: 'OMM',
     org: 'OMM',
     url: 'https://oscar.wmo.int/surface/#/search/station/stationReportDetails/12480',
     consulted: '11 de noviembre de 2026',
@@ -101,6 +112,7 @@ export const ORCADAS_SOURCES: readonly OrcadasSource[] = [
   {
     id: 'comnap',
     label: 'Antarctic Station Catalogue (Argentina)',
+    short: 'COMNAP',
     org: 'COMNAP',
     url: 'https://www.comnap.aq/s/Argentina_Catalogue_Aug2017.pdf',
     consulted: '12 de noviembre de 2026',
@@ -109,6 +121,7 @@ export const ORCADAS_SOURCES: readonly OrcadasSource[] = [
   {
     id: 'hsm42',
     label: 'Sitio y Monumento Histórico N.º 42',
+    short: 'Tratado Antártico',
     org: 'Secretaría del Tratado Antártico',
     url: 'https://www.ats.aq/devph/en/apa-database/119',
     consulted: '12 de noviembre de 2026',
@@ -164,7 +177,7 @@ export const ORCADAS_FACTS: readonly OrcadasFact[] = [
   },
   {
     id: 'arrival-diorama',
-    chapter: 'arrival',
+    chapter: 'scene',
     kind: 'recon',
     title: 'Diorama de la estación',
     text: 'El diorama de la estación es una reconstrucción ilustrada, no un modelo a escala.',
@@ -465,11 +478,27 @@ export type OrcadasHotspotId = 'screen' | 'mast' | 'house' | 'flag' | 'bay' | 'c
 export const ORCADAS_HOTSPOT_FACTS: Record<OrcadasHotspotId, readonly string[]> = {
   screen: ['obs-instrumental-1903'],
   mast: ['obs-estacion-centenaria'],
-  house: ['eras-casa-moneta-1905'],
-  flag: ['eras-traspaso-1904'],
-  bay: ['year-hielo-bahia'],
+  house: ['arrival-coordenadas'],
+  flag: ['arrival-antiguedad'],
+  bay: ['year-hielo-octubre'],
   colony: ['arrival-fauna'],
 };
+
+/** Facts a panel shows at once; the rest go folded under «Saber más». */
+export const PANEL_VISIBLE_FACTS = 2;
+
+/**
+ * Facts for a panel (a chapter or the month strip): never the ones a hotspot card shows,
+ * so the same fact is not on screen twice. Split into the visible ones and the folded rest.
+ */
+export function panelFacts(facts: readonly OrcadasFact[]): {
+  visible: OrcadasFact[];
+  more: OrcadasFact[];
+} {
+  const onHotspots = new Set(Object.values(ORCADAS_HOTSPOT_FACTS).flat());
+  const own = facts.filter((f) => !onHotspots.has(f.id));
+  return { visible: own.slice(0, PANEL_VISIBLE_FACTS), more: own.slice(PANEL_VISIBLE_FACTS) };
+}
 
 /** Publishable facts of a hotspot, in declared order. */
 export function hotspotFacts(id: OrcadasHotspotId): OrcadasFact[] {

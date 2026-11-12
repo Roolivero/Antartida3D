@@ -55,7 +55,6 @@ test('Viajar: renders annual series chart with moving average, two trend slopes,
   // Two-segment trend banner
   const trendBanner = page.locator('.orc-century-trend-banner');
   await expect(trendBanner).toBeVisible();
-  await expect(trendBanner).toContainText('Cálculo sobre la serie');
   await expect(trendBanner).toContainText('−0,02 °C por década');
   await expect(trendBanner).toContainText('+0,13 °C por década');
   await expect(trendBanner).toContainText('Zazulie');
@@ -110,15 +109,13 @@ test('Responder: with user reading, sentence matches answerFor and chart shows t
 
   const sentenceBlock = page.locator('.orc-answer-sentence-block');
   await expect(sentenceBlock).toBeVisible();
-  await expect(sentenceBlock).toContainText('Cálculo sobre la serie');
-  await expect(sentenceBlock).toContainText('Simulación');
   await expect(sentenceBlock).toContainText(`${seg1.fromYear}`);
   await expect(sentenceBlock).toContainText(`${seg1.toYear}`);
   await expect(sentenceBlock).toContainText(`${seg1.asCold} de ${seg1.years}`);
   await expect(sentenceBlock).toContainText(`${seg2.fromYear}`);
   await expect(sentenceBlock).toContainText(`${seg2.asCold} de ${seg2.years}`);
   await expect(sentenceBlock).toContainText('−3,0 °C');
-  await expect(sentenceBlock).toContainText('SCAR · British Antarctic Survey');
+  await expect(sentenceBlock).toContainText('SCAR READER');
 
   // Bitácora sellada closing content
   await expect(page.locator('.orc-seal')).toBeVisible();

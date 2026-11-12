@@ -30,6 +30,21 @@ export function useReducedMotion(): boolean {
   return reduced;
 }
 
+export function useIsDesktop(breakpoint = 900): boolean {
+  const [isDesktop, setIsDesktop] = useState(() =>
+    typeof window !== 'undefined' ? window.innerWidth >= breakpoint : false
+  );
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const mql = window.matchMedia(`(min-width: ${breakpoint}px)`);
+    const update = () => setIsDesktop(mql.matches);
+    update();
+    mql.addEventListener('change', update);
+    return () => mql.removeEventListener('change', update);
+  }, [breakpoint]);
+  return isDesktop;
+}
+
 export function useTimers() {
   const timers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
   useEffect(() => () => timers.current.forEach(clearTimeout), []);

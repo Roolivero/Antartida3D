@@ -1,15 +1,14 @@
-import { useEffect, useMemo, useRef, type RefObject } from 'react';
+import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import {
   HOTSPOT_BUILDING,
   hotspotFacts,
   layoutOf,
-  sourcesOf,
   type BuildingId,
   type OrcadasHotspotId,
 } from '@antartida/core';
-import { useFocusReturn } from '../hooks.ts';
+import { useFocusReturn, useIsDesktop } from '../hooks.ts';
 import { Icon } from '../ui.tsx';
-import { KindChip } from './KindChip.tsx';
+import { FactCard } from './FactList.tsx';
 
 export type HotspotId =
   | 'overview'
@@ -183,7 +182,10 @@ export function Hotspots({
   onSelectSpot: (id: Exclude<HotspotId, 'overview'>) => void;
   onCloseCard: () => void;
 }) {
+  const isDesktop = useIsDesktop(900);
   const cardRef = useRef<HTMLElement>(null);
+  const [cardPos, setCardPos] = useState<{ left: number; top: number } | null>(null);
+
   const visibleHotspots = useMemo(() => {
     if (!buildings) return HOTSPOTS;
     return HOTSPOTS.filter((spot) => {
@@ -202,13 +204,50 @@ export function Hotspots({
     () => (openCardSpot ? visibleHotspots.find((h) => h.id === openCardSpot) ?? null : null),
     [openCardSpot, visibleHotspots]
   );
-  const relatedFacts = useMemo(
-    () => (selectedDef ? hotspotFacts(selectedDef.id) : []),
+  const spotFact = useMemo(
+    () => (selectedDef ? hotspotFacts(selectedDef.id)[0] ?? null : null),
     [selectedDef]
   );
 
+  // Position the card near its hotspot dot on desktop
+  useEffect(() => {
+    if (!openCardSpot || !isDesktop) {
+      setCardPos(null);
+      return;
+    }
+    const updatePos = () => {
+      const btn = overlayRef.current?.querySelector<HTMLElement>(
+        `[data-hotspot="${openCardSpot}"]`
+      );
+      if (!btn) return;
+      const r = btn.getBoundingClientRect();
+      const dotX = r.left + r.width / 2;
+      const dotY = r.top + r.height / 2;
+      const panelEl = document.querySelector('.orc-panel');
+      const panelLeft = panelEl ? panelEl.getBoundingClientRect().left : window.innerWidth - 504;
+      const cardWidth = 320;
+      const maxRight = panelLeft - 16;
+
+      let left = dotX + 24;
+      if (left + cardWidth > maxRight) {
+        left = dotX - 24 - cardWidth;
+      }
+      left = Math.max(16, Math.min(maxRight - cardWidth, left));
+      const top = Math.max(86, Math.min(window.innerHeight - 260, dotY - 40));
+      setCardPos({ left, top });
+    };
+
+    updatePos();
+    const id = requestAnimationFrame(updatePos);
+    window.addEventListener('resize', updatePos);
+    return () => {
+      cancelAnimationFrame(id);
+      window.removeEventListener('resize', updatePos);
+    };
+  }, [openCardSpot, isDesktop, overlayRef]);
+
   useFocusReturn(
-    Boolean(selectedDef),
+    Boolean(selectedDef && isDesktop),
     cardRef,
     'button',
     () =>
@@ -222,7 +261,7 @@ export function Hotspots({
       <div
         className="orc-hotspots"
         ref={overlayRef}
-         role="group"
+        role="group"
         aria-label="Puntos de interés en la estación"
       >
         {visibleHotspots.map((spot) => {
@@ -243,18 +282,27 @@ export function Hotspots({
             >
               <span className="orc-hs-ring" aria-hidden="true" />
               <span className="orc-hs-dot" aria-hidden="true" />
-              <span className="orc-hs-lbl hand">{spot.shortLabel}</span>
+              <span className="orc-hs-lbl">{spot.shortLabel}</span>
             </button>
           );
         })}
       </div>
 
-      {selectedDef && (
+      {selectedDef && isDesktop && (
         <section
           className="orc-spot-card"
           role="dialog"
           aria-label={selectedDef.label}
           ref={cardRef}
+          style={
+            cardPos
+              ? {
+                  left: `${cardPos.left}px`,
+                  top: `${cardPos.top}px`,
+                  maxWidth: '320px',
+                }
+              : { maxWidth: '320px' }
+          }
           onKeyDown={(e) => {
             if (e.key === 'Escape') {
               e.stopPropagation();
@@ -264,7 +312,7 @@ export function Hotspots({
         >
           <div className="orc-spot-head">
             <div>
-              <span className="orc-kicker hand">Punto de exploración</span>
+              <span className="orc-kicker">Punto de exploración</span>
               <h3>{selectedDef.label}</h3>
             </div>
             <button
@@ -278,23 +326,7 @@ export function Hotspots({
           </div>
           <p className="orc-spot-sub">{selectedDef.subtitle}</p>
           <div className="orc-spot-facts">
-            {relatedFacts.map((fact) => {
-              const srcs = sourcesOf(fact);
-              return (
-                <article key={fact.id} className="orc-fact-card">
-                  <div className="orc-fact-top">
-                    <KindChip kind={fact.kind} />
-                    {fact.title && <strong className="orc-fact-title">{fact.title}</strong>}
-                  </div>
-                  <p className="orc-fact-text">{fact.text}</p>
-                  {srcs.length > 0 && (
-                    <small className="orc-fact-src">
-                      Fuente: {srcs.map((s) => s.org).join(', ')}
-                    </small>
-                  )}
-                </article>
-              );
-            })}
+            {spotFact && <FactCard fact={spotFact} />}
           </div>
         </section>
       )}

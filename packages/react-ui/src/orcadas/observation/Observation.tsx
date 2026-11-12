@@ -298,7 +298,7 @@ export function Observation({
             <span className="orc-obs-control-lbl">
               Tu lectura en el instrumento:
             </span>
-            <output className="orc-obs-draft-readout hand" aria-live="off">
+            <output className="orc-obs-draft-readout" aria-live="off">
               {formatVal(activeKind, currentDraft)} {meta.unit}
             </output>
           </div>

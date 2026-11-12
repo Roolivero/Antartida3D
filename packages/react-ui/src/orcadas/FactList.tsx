@@ -1,27 +1,75 @@
-import { sourcesOf, type OrcadasFact } from '@antartida/core';
+import { createContext, useContext } from 'react';
+import { panelFacts, sourcesOf, type OrcadasFact } from '@antartida/core';
 import { KindChip } from './KindChip.tsx';
 
-export function FactList({ facts }: { facts: readonly OrcadasFact[] }) {
+export const SourceContext = createContext<((sourceId: string) => void) | null>(null);
+
+export function FactCard({ fact }: { fact: OrcadasFact }) {
+  const onOpenSource = useContext(SourceContext);
+  const srcs = sourcesOf(fact);
+  return (
+    <article className="orc-fact-card">
+      <div className="orc-fact-top">
+        <KindChip kind={fact.kind} />
+        {fact.title && <strong className="orc-fact-title">{fact.title}</strong>}
+      </div>
+      <p className="orc-fact-text">{fact.text}</p>
+      {srcs.length > 0 && (
+        <div className="orc-fact-srcs">
+          <span className="orc-src-prefix">Fuente:</span>
+          {srcs.map((src) => (
+            <button
+              key={src.id}
+              type="button"
+              className="orc-src-link"
+              onClick={() => onOpenSource?.(src.id)}
+            >
+              {src.short}
+            </button>
+          ))}
+        </div>
+      )}
+    </article>
+  );
+}
+
+export function FactList({
+  facts,
+  fold = true,
+}: {
+  facts: readonly OrcadasFact[];
+  fold?: boolean;
+}) {
   if (facts.length === 0) return null;
+
+  if (!fold) {
+    return (
+      <div className="orc-facts-list">
+        {facts.map((fact) => (
+          <FactCard key={fact.id} fact={fact} />
+        ))}
+      </div>
+    );
+  }
+
+  const { visible, more } = panelFacts(facts);
+  if (visible.length === 0 && more.length === 0) return null;
+
   return (
     <div className="orc-facts-list">
-      {facts.map((fact) => {
-        const srcs = sourcesOf(fact);
-        return (
-          <article key={fact.id} className="orc-fact-card">
-            <div className="orc-fact-top">
-              <KindChip kind={fact.kind} />
-              {fact.title && <strong className="orc-fact-title">{fact.title}</strong>}
-            </div>
-            <p className="orc-fact-text">{fact.text}</p>
-            {srcs.length > 0 && (
-              <small className="orc-fact-src">
-                Fuente: {srcs.map((s) => s.org).join(' · ')}
-              </small>
-            )}
-          </article>
-        );
-      })}
+      {visible.map((fact) => (
+        <FactCard key={fact.id} fact={fact} />
+      ))}
+      {more.length > 0 && (
+        <details className="orc-more">
+          <summary>Saber más ({more.length})</summary>
+          <div className="orc-more-facts">
+            {more.map((fact) => (
+              <FactCard key={fact.id} fact={fact} />
+            ))}
+          </div>
+        </details>
+      )}
     </div>
   );
 }

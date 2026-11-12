@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useContext, useMemo } from 'react';
 import {
   MONTH_NAMES,
   ORCADAS_GUIDING_QUESTION,
@@ -14,7 +14,7 @@ import {
   type Reading,
   type ReadingKind,
 } from '@antartida/core';
-import { FactList } from './FactList.tsx';
+import { FactList, SourceContext } from './FactList.tsx';
 import { KindChip } from './KindChip.tsx';
 import { formatTempC, getReaderSource } from './century/centuryData.ts';
 import { NOTEBOOK_LABELS, formatRecorded } from './observation/Notebook.tsx';
@@ -53,6 +53,8 @@ export function Answer({
   const referenceText = hasUserTemp
     ? `tu lectura (${formatTempC(threshold)})`
     : `la media de ${monthName} (${formatTempC(threshold)})`;
+
+  const onOpenSource = useContext(SourceContext);
 
   // Dot chart calculations
   const chartGeom = useMemo(() => {
@@ -284,10 +286,6 @@ export function Answer({
 
       {/* Answer sentence block computed only from answerFor */}
       <div className="orc-answer-sentence-block">
-        <div className="orc-fact-top">
-          <KindChip kind="calc" label="Cálculo sobre la serie" />
-          {hasUserTemp && <KindChip kind="sim" />}
-        </div>
         <p className="orc-answer-sentence">
           Entre {seg1.fromYear} y {seg1.toYear}, {seg1.asCold} de {seg1.years}{' '}
           {pluralMonth} fueron tan fríos como {referenceText} o más. Desde {seg2.fromYear}, solo{' '}
@@ -304,9 +302,16 @@ export function Answer({
             </button>
           </div>
         )}
-        <small className="orc-fact-src">
-          Fuente: {readerSource.org} ({readerSource.label})
-        </small>
+        <div className="orc-fact-srcs">
+          <span className="orc-src-prefix">Fuente:</span>
+          <button
+            type="button"
+            className="orc-src-link"
+            onClick={() => onOpenSource?.(readerSource.id)}
+          >
+            {readerSource.short}
+          </button>
+        </div>
       </div>
 
       {/* Closing content moved from 'done' */}
@@ -345,7 +350,7 @@ export function Answer({
             return (
               <div key={kind}>
                 <dt>{NOTEBOOK_LABELS[kind].title}</dt>
-                <dd className="hand">{formatRecorded(kind, val, reading)}</dd>
+                <dd>{formatRecorded(kind, val, reading)}</dd>
                 <small>
                   {status === 'off'
                     ? `Fuera del margen: el instrumento marcaba ${formatRecorded(kind, truthFor(kind, reading), reading)}.`

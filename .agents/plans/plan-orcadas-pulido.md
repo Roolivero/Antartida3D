@@ -271,6 +271,8 @@ Es la fase que más suma en «Innovación» y «Comunicación». Detalle visual 
 
 **Verificación:** la base, más contar a mano en 390 px cuántos elementos hay en la primera pantalla de cada capítulo sin scroll (objetivo: título, frase, actividad o 1 o 2 fichas, y la barra de botones).
 
+> Enmienda (12 nov 2026): fase 4 hecha. Para que una ficha nunca esté dos veces en pantalla, cada punto de interés tiene una sola ficha (`ORCADAS_HOTSPOT_FACTS`) y `panelFacts` la saca de los paneles: Estación muestra las coordenadas, Pabellón «la base más antigua», Bahía Scotia el deshielo de octubre (COMNAP). La nota del diorama pasa al lugar `'scene'` y es la ayuda de la etiqueta «Reconstrucción ilustrada». Cada fuente tiene `short` para la referencia clickeable. Se suma `useIsDesktop` (900 px, el mismo corte del CSS) en `hooks.ts`. En las e2e se quitaron las aserciones de chips generales en bloques mixtos (D3 los elimina). Verificación: `pnpm test`, `pnpm typecheck`, `pnpm build` y e2e de Orcadas (38, 2 omitidas por tamaño de pantalla) en verde.
+
 ---
 
 ## Fase 5 · Disposición real de la base y terreno ampliado · Issue G
@@ -495,7 +497,7 @@ Orden de prioridad, de lo que nunca se recorta a lo que se recorta primero:
 - [ ] Ningún dato real sin fuente verificada; fuentes nuevas abiertas y comprobadas.
 - [ ] Disposición de la base respaldada por `docs/orcadas-emplazamiento.md`; ninguna planta se interseca; elementos sin fuente fuera de la escena.
 - [x] 4 capítulos, pregunta guía en Llegar y respondida en Responder.
-- [ ] Como mucho 2 fichas a la vista por capítulo; una sola capa flotante por vez.
+- [x] Como mucho 2 fichas a la vista por capítulo; una sola capa flotante por vez.
 - [ ] Celular: botones de 44 px o más, texto de 12 px o más (11 px en SVG), horizontal usable, instrumento y control a la vista juntos.
 - [ ] Pingüinera en grupos sobre piedra; hielo coherente con el mes.
 - [ ] `pnpm test`, `pnpm typecheck`, `pnpm build` y `pnpm e2e` en verde.

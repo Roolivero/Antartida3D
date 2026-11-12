@@ -7,6 +7,8 @@ import {
   ORCADAS_ERAS,
   ORCADAS_GUIDING_QUESTION,
   journeyFacts,
+  PANEL_VISIBLE_FACTS,
+  panelFacts,
   ORCADAS_FACTS,
   ORCADAS_FAUNA,
   ORCADAS_HOTSPOT_FACTS,
@@ -178,6 +180,33 @@ describe('orcadas content without repetition (C3)', () => {
     const today = ORCADAS_ERAS[ORCADAS_ERAS.length - 1];
     expect(today.illustrativeStart).toBe(true);
     expect(ORCADAS_ERAS.filter((e) => e.illustrativeStart)).toEqual([today]);
+  });
+});
+
+describe('orcadas panels without saturation (D1, D2)', () => {
+  it('shows at most two facts per panel and never a hotspot fact', () => {
+    const onHotspots = new Set(Object.values(ORCADAS_HOTSPOT_FACTS).flat());
+    const places = [...CHAPTERS, 'months'] as const;
+    for (const place of places) {
+      const { visible, more } = panelFacts(factsFor(place));
+      expect(visible.length, place).toBeLessThanOrEqual(PANEL_VISIBLE_FACTS);
+      for (const f of [...visible, ...more]) expect(onHotspots.has(f.id), f.id).toBe(false);
+    }
+    for (let year = 1903; year <= 2026; year++) {
+      const { visible, more } = panelFacts(journeyFacts(year));
+      expect(visible.length).toBeLessThanOrEqual(PANEL_VISIBLE_FACTS);
+      for (const f of [...visible, ...more]) expect(onHotspots.has(f.id), f.id).toBe(false);
+    }
+  });
+
+  it('gives each hotspot exactly one fact and moves the diorama note to the scene label', () => {
+    for (const ids of Object.values(ORCADAS_HOTSPOT_FACTS)) expect(ids).toHaveLength(1);
+    expect(factsFor('scene').map((f) => f.id)).toEqual(['arrival-diorama']);
+    expect(factsFor('arrival').some((f) => f.id === 'arrival-diorama')).toBe(false);
+  });
+
+  it('gives every source a short name for the fact footer', () => {
+    for (const src of ORCADAS_SOURCES) expect(src.short.trim().length, src.id).toBeGreaterThan(0);
   });
 });
 

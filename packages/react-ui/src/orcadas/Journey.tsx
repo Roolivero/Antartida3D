@@ -30,7 +30,7 @@ function YearCounter({ year }: { year: number }) {
         {digits.map((d, idx) => (
           <span key={idx} className="orc-digit-window">
             <span
-              className="orc-digit-track hand"
+              className="orc-digit-track"
               style={{ transform: `translate3d(0, -${d * 10}%, 0)` }}
             >
               {DIGIT_STRIP.map((n) => (
@@ -396,7 +396,6 @@ export function Journey({
 
           {centuryData.trendSegments.length > 0 && (
             <div className="orc-century-trend-banner">
-              <KindChip kind="calc" label="Cálculo sobre la serie" />
               <div className="orc-century-trend-copy">
                 <strong>
                   Recta de tendencia:{' '}
@@ -418,7 +417,7 @@ export function Journey({
       <article className="orc-era-card" aria-live="polite">
         <div className="orc-era-head">
           <div className="orc-era-head-top">
-            <span className="orc-era-from hand">
+            <span className="orc-era-from">
               {currentEra.illustrativeStart ? currentEra.title : `Desde ${currentEra.fromYear}`}
             </span>
             {currentEra.illustrativeStart ? (

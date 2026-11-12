@@ -4,10 +4,8 @@ import {
   ORCADAS_SOURCES,
   ORCADAS_TREND_SPLIT_YEAR,
   eraAt,
-  factsFor,
   movingAverage,
   segmentedTrend,
-  sourcesOf,
   type OrcadasEra,
   type OrcadasSource,
   type YearValue,
@@ -107,23 +105,9 @@ export function formatTempC(val: number, decimals = 1, signed = false): string {
 }
 
 export function getReaderSource(): OrcadasSource {
-  const journeyFacts = factsFor('journey');
-  for (const fact of journeyFacts) {
-    for (const src of sourcesOf(fact)) {
-      if (src.id === 'reader') return src;
-    }
-  }
-  return (
-    ORCADAS_SOURCES.find((s) => s.id === 'reader') ?? {
-      id: 'reader',
-      label: 'READER: datos de superficie de Orcadas',
-      org: 'SCAR · British Antarctic Survey',
-      url: 'https://legacy.bas.ac.uk/met/READER/surface/Orcadas.All.temperature.html',
-      consulted: '11 de noviembre de 2026',
-      license: 'Open Government Licence v3.0',
-      verified: true,
-    }
-  );
+  const src = ORCADAS_SOURCES.find((s) => s.id === 'reader');
+  if (!src) throw new Error('Missing READER source in ORCADAS_SOURCES');
+  return src;
 }
 
 export function computeCenturyDataset() {

@@ -26,13 +26,59 @@
   height: 100%;
 }
 
-/* Always-visible reconstruction chip on the scene */
+/* Always-visible reconstruction chip on the scene with help button */
 .orc-scene-badge {
   position: absolute;
   left: 12px;
   top: 104px;
-  z-index: 3;
-  pointer-events: none;
+  z-index: 5;
+  pointer-events: auto;
+}
+
+.orc-scene-badge-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.orc-scene-help-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1.5px solid var(--ink);
+  background: var(--paper);
+  color: var(--ink);
+  font-family: 'Atkinson Hyperlegible', system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.orc-scene-help-btn:focus-visible {
+  outline: 2px solid var(--deep);
+  outline-offset: 2px;
+}
+
+.orc-scene-help-popover {
+  margin-top: 6px;
+  max-width: 280px;
+  background: #FBF4E6;
+  border: 1.5px solid var(--ink);
+  border-radius: 6px 12px 8px 10px;
+  padding: 8px 10px;
+  font-size: 12px;
+  line-height: 1.35;
+  color: var(--ink);
+  box-shadow: 2px 3px 0 rgba(31, 42, 54, 0.2);
+}
+
+.orc-scene-help-popover p {
+  margin: 0;
 }
 
 /* KindChip: color + shape + border + text */
@@ -212,7 +258,7 @@
 .orc-hotspots {
   position: absolute;
   inset: 0;
-  z-index: 2;
+  z-index: 11;
   pointer-events: none;
 }
 
@@ -272,8 +318,8 @@
 }
 
 .orc-hs-lbl {
-  font-family: 'Caveat', cursive;
-  font-size: 18px;
+  font-family: 'Atkinson Hyperlegible', system-ui, sans-serif;
+  font-size: 13px;
   font-weight: 700;
   line-height: 1.05;
   color: var(--ink);
@@ -285,13 +331,12 @@
   white-space: nowrap;
 }
 
-/* Hotspot floating fact card */
+/* Hotspot floating fact card (desktop) */
 .orc-spot-card {
   position: absolute;
-  left: 12px;
-  right: 12px;
-  top: 102px;
-  max-height: 44dvh;
+  max-width: 320px;
+  width: 320px;
+  max-height: 60dvh;
   overflow-y: auto;
   z-index: 8;
   background: #FBF4E6;
@@ -300,6 +345,30 @@
   padding: 12px 14px;
   box-shadow: 3px 5px 0 rgba(31, 42, 54, 0.22);
   animation: orc-card-in 0.24s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
+
+/* Hotspot card inside bottom panel (mobile) */
+.orc-spot-panel-card {
+  position: static;
+  width: 100%;
+  max-width: none;
+  max-height: none;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 16px 16px 20px;
+  animation: none;
+}
+
+.orc-btn-return {
+  padding: 4px 10px;
+  font-size: 13px;
+  border: 1.5px solid var(--ink);
+  border-radius: 6px;
+  background: var(--paper);
+  color: var(--ink);
+  cursor: pointer;
 }
 
 @keyframes orc-card-in {
@@ -452,11 +521,91 @@
   color: var(--ink);
 }
 
-.orc-fact-src {
-  display: block;
+.orc-fact-srcs {
+  margin-top: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.orc-src-prefix {
+  color: #5E656C;
+  font-size: 11.5px;
+}
+
+.orc-src-link {
+  appearance: none;
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--deep);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.orc-src-link:hover {
+  color: var(--ocre);
+}
+
+.orc-src-link:focus-visible {
+  outline: 2px solid var(--deep);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+details.orc-more {
   margin-top: 4px;
-  font-size: 11px;
-  color: #3B4651;
+  border: 1px dashed rgba(31, 42, 54, 0.3);
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: rgba(251, 244, 230, 0.6);
+}
+
+details.orc-more > summary {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--deep);
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+details.orc-more > summary::-webkit-details-marker {
+  display: none;
+}
+
+details.orc-more > summary::before {
+  content: '▸';
+  display: inline-block;
+  transition: transform 0.2s ease;
+  font-size: 12px;
+}
+
+details.orc-more[open] > summary::before {
+  transform: rotate(90deg);
+}
+
+details.orc-more > summary:focus-visible {
+  outline: 2px solid var(--deep);
+  outline-offset: 2px;
+}
+
+.orc-more-facts {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 /* Activity blocks */
@@ -621,7 +770,7 @@
   left: 8px;
   right: 8px;
   max-width: calc(100vw - 16px);
-  z-index: 5;
+  z-index: 15;
 }
 
 .orc-month-strip {
@@ -960,14 +1109,28 @@
   opacity: 0.8;
 }
 
+.orc-scrim {
+  position: fixed;
+  inset: 0;
+  background: rgba(31, 42, 54, 0.45);
+  backdrop-filter: blur(1.5px);
+  z-index: 10;
+  animation: orc-fade-in 0.2s ease-out both;
+}
+
+@keyframes orc-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
 /* Sources dialog panel */
 .orc-sources {
   position: absolute;
   left: 12px;
   right: 12px;
   bottom: 12px;
-  max-height: 76dvh;
-  z-index: 15;
+  max-height: 44dvh;
+  z-index: 20;
   background: #FBF4E6;
   border: 2px solid var(--ink);
   border-radius: 16px;
@@ -976,6 +1139,7 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
+  overflow-y: auto;
   animation: orc-card-in 0.24s cubic-bezier(0.2, 0.8, 0.3, 1) both;
 }
 
@@ -985,10 +1149,32 @@
   flex: none;
 }
 
-.orc-sources-chips {
+.orc-sources-defs {
+  margin: 4px 0 8px;
+  padding: 8px 10px;
+  background: rgba(251, 244, 230, 0.7);
+  border: 1px dashed rgba(31, 42, 54, 0.3);
+  border-radius: 8px;
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 6px;
+}
+
+.orc-sources-def {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.orc-sources-def dt {
+  flex-shrink: 0;
+}
+
+.orc-sources-def dd {
+  margin: 0;
+  color: #3B4651;
 }
 
 .orc-sources-list {
@@ -1002,29 +1188,69 @@
 }
 
 .orc-source-item {
-  background: var(--paper);
-  border: 1px solid rgba(31, 42, 54, 0.32);
-  border-radius: 8px;
-  padding: 8px 10px;
+  margin: 0;
+  padding: 0;
+}
+
+.orc-source-card {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  min-height: 44px;
+  padding: 8px 10px;
+  background: var(--paper);
+  border: 1px solid rgba(31, 42, 54, 0.32);
+  border-radius: 8px;
+  text-decoration: none;
+  color: inherit;
+  box-sizing: border-box;
 }
 
-.orc-source-link {
+.orc-source-card:hover {
+  border-color: var(--deep);
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.orc-source-card:focus-visible {
+  outline: 2px solid var(--deep);
+  outline-offset: 2px;
+}
+
+.orc-source-card[data-highlight] {
+  outline: 2.5px solid var(--ocre);
+  outline-offset: 2px;
+}
+
+.orc-source-label {
   font-weight: 700;
   font-size: 14px;
   color: var(--deep);
+  line-height: 1.25;
 }
 
 .orc-source-org {
-  font-size: 13px;
+  font-size: 12.5px;
   color: var(--ink);
+  line-height: 1.25;
 }
 
 .orc-source-meta {
-  font-size: 11.5px;
-  color: #3B4651;
+  font-size: 11px;
+  color: #5E656C;
+}
+
+.orc-sources-footer {
+  margin-top: 6px;
+  padding-top: 8px;
+  border-top: 1px dashed rgba(31, 42, 54, 0.25);
+  display: flex;
+  justify-content: center;
+}
+
+.orc-sources-toggle-btn {
+  font-size: 13px;
+  padding: 6px 14px;
+  min-height: 44px;
 }
 
 /* Desktop layout (>= 900px): side notebook column */
@@ -1067,6 +1293,14 @@
     left: 24px;
     top: auto;
     bottom: 24px;
+    display: flex;
+    flex-direction: column-reverse;
+    align-items: flex-start;
+  }
+
+  .orc-scene-badge .orc-scene-help-popover {
+    margin-top: 0;
+    margin-bottom: 6px;
   }
 
   .orc-month-strip-wrap {
@@ -1074,7 +1308,7 @@
     left: 24px;
     right: auto;
     width: 380px;
-    z-index: 5;
+    z-index: 15;
   }
 
   .orc-panel {
@@ -1098,11 +1332,10 @@
   }
 
   .orc-spot-card {
-    left: 24px;
     right: auto;
-    top: auto;
-    bottom: 68px;
-    width: 390px;
+    bottom: auto;
+    max-width: 320px;
+    width: 320px;
     max-height: 60dvh;
   }
 

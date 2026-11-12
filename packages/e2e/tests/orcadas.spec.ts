@@ -209,7 +209,11 @@ test('respects reducedMotion, opens hotspot cards, and keeps mobile sheet within
   await spotBtn.click();
   const spotDialog = page.getByRole('dialog', { name: 'Abrigo meteorológico' });
   await expect(spotDialog).toBeVisible();
-  await expectFocused(page, 'Cerrar tarjeta de punto');
+  if (vw <= 420) {
+    await expectFocused(page, 'Volver al capítulo');
+  } else {
+    await expectFocused(page, 'Cerrar tarjeta de punto');
+  }
   await page.keyboard.press('Escape');
   await expect(spotDialog).toHaveCount(0);
   await expectFocused(page, 'Punto de interés: Abrigo meteorológico');
@@ -245,7 +249,13 @@ test('never renders facts from unverified sources in any chapter', async ({ page
 
 test('B4: resetting panel scroll on chapter change', async ({ page }) => {
   await openOrcadasFromMap(page);
-  await expect(page.getByRole('heading', { level: 2, name: 'Estación Orcadas' })).toBeVisible();
+
+  // Navigate to Viajar (journey) which is tall enough to scroll on both mobile and desktop
+  await page
+    .getByRole('navigation', { name: 'Capítulos de la expedición' })
+    .getByRole('button', { name: /Viajar/ })
+    .click();
+  await expect(page.getByRole('heading', { level: 2, name: 'Viaje en el tiempo' })).toBeVisible();
 
   // Scroll .orc-panel-scroll to the bottom
   await page.evaluate(() => {
@@ -263,7 +273,7 @@ test('B4: resetting panel scroll on chapter change', async ({ page }) => {
 
   // Advance to next chapter
   await primary(page).click();
-  const nextHeading = page.getByRole('heading', { level: 2, name: 'Observación del día' });
+  const nextHeading = page.getByRole('heading', { level: 2, name: 'La respuesta' });
   await expect(nextHeading).toBeVisible();
 
   // Assert scrollTop is 0 and h2 is in viewport
@@ -338,4 +348,139 @@ test('B1: observation month stays fixed when changing scene month', async ({ pag
   if (currentMonthIdx !== 0) {
     expect(summaryAfter).not.toContain('Tu observación de enero');
   }
+});
+
+test('D1: a chapter panel never shows more than 2 fact cards outside details.orc-more in any chapter', async ({ page }) => {
+  await openOrcadasFromMap(page);
+
+  const chapters = ['Llegar', 'Observar', 'Viajar', 'Responder'];
+  for (const name of chapters) {
+    await page
+      .getByRole('navigation', { name: 'Capítulos de la expedición' })
+      .getByRole('button', { name: new RegExp(name) })
+      .click();
+
+    // Wait for the chapter to settle
+    await page.waitForTimeout(100);
+
+    // Check count of fact cards outside details.orc-more
+    const directFactsCount = await page.evaluate(() => {
+      const panel = document.querySelector('.orc-panel');
+      if (!panel) return 0;
+      const allCards = Array.from(panel.querySelectorAll('.orc-fact-card'));
+      const outsideMore = allCards.filter((card) => !card.closest('details.orc-more'));
+      return outsideMore.length;
+    });
+
+    expect(directFactsCount).toBeLessThanOrEqual(2);
+  }
+});
+
+test('D4/D5: clicking a source reference opens Sources highlighted and clicking scrim closes it', async ({ page }) => {
+  await openOrcadasFromMap(page);
+  await expect(page.getByRole('heading', { level: 2, name: 'Estación Orcadas' })).toBeVisible();
+
+  // Find a source link button in the arrival panel facts
+  const srcBtn = page.locator('.orc-panel .orc-src-link').first();
+  await expect(srcBtn).toBeVisible();
+
+  await srcBtn.click();
+
+  // Sources dialog opens
+  const sourcesDialog = page.getByRole('dialog', { name: 'Fuentes' });
+  await expect(sourcesDialog).toBeVisible();
+
+  // Check highlighted card
+  const highlightedCard = page.locator('.orc-source-card[data-highlight]');
+  await expect(highlightedCard).toBeVisible();
+  await expect(highlightedCard).toHaveAttribute('aria-current', 'true');
+
+  // Clicking the scrim closes Sources
+  const scrim = page.locator('.orc-scrim');
+  await expect(scrim).toBeVisible();
+  await scrim.click({ position: { x: 5, y: 5 } });
+
+  await expect(sourcesDialog).toHaveCount(0);
+});
+
+test('D5: each source link card in Sources panel has height >= 44 px', async ({ page }) => {
+  await openOrcadasFromMap(page);
+  await page.getByRole('button', { name: 'Fuentes' }).click();
+
+  const sourcesDialog = page.getByRole('dialog', { name: 'Fuentes' });
+  await expect(sourcesDialog).toBeVisible();
+
+  // Switch to all expedition sources to verify every single source link
+  const toggleBtn = page.getByRole('button', { name: /Ver todas las fuentes/ });
+  if (await toggleBtn.isVisible()) {
+    await toggleBtn.click();
+  }
+
+  const links = page.locator('.orc-source-card');
+  const count = await links.count();
+  expect(count).toBeGreaterThan(0);
+
+  for (let i = 0; i < count; i++) {
+    const box = (await links.nth(i).boundingBox())!;
+    expect(box.height).toBeGreaterThanOrEqual(44);
+  }
+});
+
+test('D2 (mobile): opening hotspot shows card in bottom panel with Volver al capítulo', async ({ page }) => {
+  const vw = page.viewportSize()?.width ?? 900;
+  test.skip(vw > 420, 'Mobile only test');
+
+  await openOrcadasFromMap(page);
+
+  // Click hotspot
+  const spotBtn = page.getByRole('button', { name: 'Punto de interés: Abrigo meteorológico' });
+  await spotBtn.click();
+
+  // The bottom panel now contains the hotspot card dialog
+  const panel = page.locator('.orc-panel');
+  const returnBtn = panel.getByRole('button', { name: 'Volver al capítulo' });
+  await expect(returnBtn).toBeVisible();
+  await expect(panel.getByRole('heading', { level: 3, name: 'Abrigo meteorológico' })).toBeVisible();
+
+  // Return to chapter content
+  await returnBtn.click();
+  await expect(returnBtn).toHaveCount(0);
+  await expect(panel.getByRole('heading', { level: 2, name: 'Estación Orcadas' })).toBeVisible();
+});
+
+test('D2 (desktop): hotspot card is within 360 px of dot and does not overlap side panel', async ({ page }) => {
+  const vw = page.viewportSize()?.width ?? 900;
+  test.skip(vw < 900, 'Desktop only test');
+
+  await openOrcadasFromMap(page);
+
+  const dotBtn = page.getByRole('button', { name: 'Punto de interés: Abrigo meteorológico' });
+  await expect(dotBtn).toBeVisible();
+  const dotBox = (await dotBtn.boundingBox())!;
+  const dotCenter = {
+    x: dotBox.x + dotBox.width / 2,
+    y: dotBox.y + dotBox.height / 2,
+  };
+
+  await dotBtn.click();
+
+  const card = page.locator('.orc-spot-card[role="dialog"]');
+  await expect(card).toBeVisible();
+  const cardBox = (await card.boundingBox())!;
+
+  // Check distance to dot
+  const closestX = Math.max(cardBox.x, Math.min(dotCenter.x, cardBox.x + cardBox.width));
+  const closestY = Math.max(cardBox.y, Math.min(dotCenter.y, cardBox.y + cardBox.height));
+  const dist = Math.hypot(dotCenter.x - closestX, dotCenter.y - closestY);
+  expect(dist).toBeLessThan(360);
+
+  // Check no overlap with side panel
+  const sidePanelBox = (await page.locator('.orc-panel').boundingBox())!;
+  const overlapsSidePanel =
+    cardBox.x < sidePanelBox.x + sidePanelBox.width &&
+    cardBox.x + cardBox.width > sidePanelBox.x &&
+    cardBox.y < sidePanelBox.y + sidePanelBox.height &&
+    cardBox.y + cardBox.height > sidePanelBox.y;
+
+  expect(overlapsSidePanel).toBe(false);
 });

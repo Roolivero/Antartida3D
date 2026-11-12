@@ -85,7 +85,7 @@ test('MonthStrip: changes month with arrow keys, no horizontal scroll at 390 px,
 
   // Open <details> "Saber más"
   const details = page.locator('.orc-month-details');
-  await details.locator('summary').click();
+  await details.locator('> summary').click();
   await expect(page.getByText(/Luz solar en junio/)).toBeVisible();
   await expect(page.getByText(/Bahía Scotia:/)).toBeVisible();
 
