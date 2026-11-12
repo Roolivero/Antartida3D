@@ -3,7 +3,7 @@ import type { Group } from 'three';
 import { useFrame } from '@react-three/fiber';
 import {
   MODEL_MIN_PX,
-  MODEL_REFERENCE_DISTANCE,
+  placeModelSize,
   ORCADAS_POINT,
   heightAt,
   screenPx,
@@ -15,8 +15,9 @@ import { ORCADAS_SITE } from '../voyage/sightingModels.ts';
 
 export const buildOrcadasSiteGeometry = () => buildBoxGeometry(ORCADAS_SITE);
 
+/** Width as a fraction of the camera distance up close, fixed beyond that (placeModelSize). */
 const SIZE_PER_DISTANCE = 0.028;
-const SITE_SIZE = MODEL_REFERENCE_DISTANCE * SIZE_PER_DISTANCE;
+const MIN_SIZE = 0.2;
 
 /**
  * Minimal voxel maqueta of Estación Orcadas on Laurie Island,
@@ -42,10 +43,11 @@ export function OrcadasSite({ reduced }: { reduced?: boolean }) {
       camera.position.y - wPos.y,
       camera.position.z - wPos.z
     );
-    g.visible = screenPx(SITE_SIZE, distance, size.height) >= MODEL_MIN_PX;
+    const siteSize = placeModelSize(distance, SIZE_PER_DISTANCE, MIN_SIZE);
+    g.visible = screenPx(siteSize, distance, size.height) >= MODEL_MIN_PX;
 
     g.position.set(wPos.x, groundH, wPos.z);
-    g.scale.setScalar(SITE_SIZE);
+    g.scale.setScalar(siteSize);
 
     if (!reduced && distance < 80) {
       invalidate();
