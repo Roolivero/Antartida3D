@@ -55,7 +55,8 @@ test.describe('3D relief view', () => {
     await clusterOrMarker.click();
 
     // If it was a cluster, clicking it zooms in and separates the points; wait for Fósiles marker
-    const fosilesBtn = page.getByRole('button', { name: /Expedición disponible/ });
+    // Two expeditions are available now (Fósiles and Desde Ushuaia): name the one under test.
+    const fosilesBtn = page.getByRole('button', { name: /Fósiles.*Expedición disponible/ });
     await expect(fosilesBtn).toBeVisible({ timeout: 5000 });
     await fosilesBtn.click();
 

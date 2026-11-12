@@ -1,17 +1,23 @@
+import { EXPEDITION_POINT } from './content/points.ts';
+
 export const EXPLORED_KEY = 'antartida:explored';
 export const VIEW_MODE_KEY = 'antartida:view';
 
-export function loadExplored(): boolean {
+/** Ids of the completed expeditions. The old format ('1') meant only Fósiles. */
+export function loadExplored(): string[] {
   try {
-    return localStorage.getItem(EXPLORED_KEY) === '1';
+    const raw = localStorage.getItem(EXPLORED_KEY);
+    if (raw === '1') return [EXPEDITION_POINT.id];
+    const ids: unknown = JSON.parse(raw ?? '[]');
+    return Array.isArray(ids) ? ids.filter((id): id is string => typeof id === 'string') : [];
   } catch {
-    return false;
+    return [];
   }
 }
 
-export function saveExplored(value: boolean): void {
+export function saveExplored(ids: readonly string[]): void {
   try {
-    localStorage.setItem(EXPLORED_KEY, value ? '1' : '0');
+    localStorage.setItem(EXPLORED_KEY, JSON.stringify(ids));
   } catch {
     // Storage unavailable (private mode, blocked cookies): keep the in-memory state only.
   }

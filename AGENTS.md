@@ -105,6 +105,7 @@ Las reglas detalladas residen en `.agents/rules/` (con enlaces simbólicos en `.
 - **Proyecto (`.agents/rules/project/`):**
   - `00-convenciones-del-proyecto.md`: Flujo de issues, ramas, idioma, fuentes verificadas y arquitectura S1.
   - `20-web.md`: Accesibilidad, navegación por teclado, rendimiento en lienzo y pruebas E2E.
+  - `30-estilo-voxel.md`: Un solo estilo visual: modelos de bloques con un mínimo de detalle común.
 - **Centrales (`.agents/rules/core/`):**
   - `00-agent-workflow.md`: Flujo de trabajo, exploración previa y definición de terminado.
   - `01-architecture-and-layers.md`: Estructura de capas y límites entre paquetes y apps.

@@ -41,6 +41,8 @@ import { Fuegia } from './Fuegia.tsx';
 import { Graticule3D } from './Graticule3D.tsx';
 import { InkEffect } from './InkEffect.ts';
 import { SeaTimeContext, useAnimationClock } from './useAnimationClock.ts';
+import { Town3D } from '../voyage/Town3D.tsx';
+import { Voyage3D } from '../voyage/Voyage3D.tsx';
 
 function SceneContent({
   wide,
@@ -54,6 +56,7 @@ function SceneContent({
   markers,
   overlayRef,
   enablePost,
+  voyage,
   seaMarkers,
 }: {
   wide: boolean;
@@ -67,6 +70,7 @@ function SceneContent({
   markers: Marker[];
   overlayRef: RefObject<HTMLDivElement | null>;
   enablePost: boolean;
+  voyage: Layer3DProps['voyage'];
   seaMarkers: SeaMarker[];
 }) {
   const seaTime = useAnimationClock({ lowQuality });
@@ -111,7 +115,9 @@ function SceneContent({
       <Terrain wide={wide} />
       <Fuegia wide={wide} />
       <Graticule3D />
-      <SeaLife visible={phase !== 'dive'} timeUniform={seaTime} instances={seaLifeInstances} />
+      <SeaLife visible={phase !== 'dive'} timeUniform={seaTime} instances={seaLifeInstances} voyage={voyage} />
+      <Town3D reduced={reduced} wide={wide} overlay={overlayRef} />
+      {voyage && <Voyage3D bus={voyage} reduced={reduced} overlay={overlayRef} />}
       {enablePost && (
         <EffectComposer multisampling={0}>
           <InkEffect />
@@ -132,6 +138,7 @@ function SceneContent({
         phase={phase}
         timeUniform={seaTime}
         instances={seaLifeInstances}
+        voyage={voyage}
       />
     </SeaTimeContext.Provider>
   );
@@ -298,9 +305,11 @@ function ProjectMarkers({
   phase,
   timeUniform,
   instances,
+  voyage,
 }: {
   markers: Marker[];
   seaMarkers: SeaMarker[];
+  voyage: Layer3DProps['voyage'];
   overlayRef: RefObject<HTMLDivElement | null>;
   phase: Phase;
   timeUniform: { value: number };
@@ -341,6 +350,11 @@ function ProjectMarkers({
     for (const sm of seaMarkers) {
       const btn = el.querySelector<HTMLElement>(`[data-key="${sm.key}"]`);
       if (!btn) continue;
+      // During the trip the sea life is hidden (SeaLife): its markers go with it.
+      if (voyage?.state) {
+        btn.style.display = 'none';
+        continue;
+      }
 
       let mapX = sm.x;
       let mapY = sm.y;
@@ -409,6 +423,7 @@ export function Map3DLayer({
   onPick,
   command,
   onCameraRest,
+  voyage,
 }: Map3DLayerProps) {
   const reduced = useReducedMotion();
   const overlayRef = useRef<HTMLDivElement>(null);
@@ -494,6 +509,7 @@ export function Map3DLayer({
           markers={markers}
           overlayRef={overlayRef}
           enablePost={enablePost}
+          voyage={voyage}
           seaMarkers={seaMarkers}
         />
       </Canvas>

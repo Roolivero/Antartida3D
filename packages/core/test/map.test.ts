@@ -75,8 +75,8 @@ describe('clustering', () => {
   it('buildMarkers with identity projector matches standard 2D markers', () => {
     const size = { vw: 1440, vh: 900 };
     const geo = geometry(size);
-    const mStandard = buildMarkers(size, HOME, false);
-    const mProjector = buildMarkers(size, HOME, false, PTS, (x, y) => toScreen(geo, HOME, x, y));
+    const mStandard = buildMarkers(size, HOME, []);
+    const mProjector = buildMarkers(size, HOME, [], PTS, (x, y) => toScreen(geo, HOME, x, y));
     expect(mProjector).toEqual(mStandard);
   });
 
@@ -102,11 +102,11 @@ describe('clustering', () => {
 
   it('tapping a cluster zooms far enough to split it', () => {
     const size = { vw: 1440, vh: 900 };
-    const markers = buildMarkers(size, HOME, false);
+    const markers = buildMarkers(size, HOME, []);
     const cluster = markers.find((m) => m.kind === 'cluster');
     expect(cluster).toBeDefined();
     if (cluster?.kind !== 'cluster') return;
-    const after = buildMarkers(size, cluster.target, false);
+    const after = buildMarkers(size, cluster.target, []);
     const ids = cluster.key.slice(2).split(',');
     const stillGrouped = after.some((m) => m.kind === 'cluster' && ids.every((id) => m.key.includes(id)));
     expect(stillGrouped).toBe(false);
@@ -116,10 +116,10 @@ describe('clustering', () => {
 
 describe('markers and labels', () => {
   it('always labels the expedition point and hides B/C labels on a small map', () => {
-    const markers = buildMarkers({ vw: 1440, vh: 900 }, { k: 2.5, px: -400, py: -400 }, false);
+    const markers = buildMarkers({ vw: 1440, vh: 900 }, { k: 2.5, px: -400, py: -400 }, []);
     const a = markers.find((m) => m.kind === 'point' && m.point.tier === 'A');
     expect(a?.kind === 'point' && a.label).toBeTruthy();
-    const small = buildMarkers({ vw: 390, vh: 844 }, HOME, false);
+    const small = buildMarkers({ vw: 390, vh: 844 }, HOME, []);
     expect(
       small.every((m) => m.kind === 'cluster' || (m.kind === 'point' && m.point.tier === 'A') || m.label === null)
     ).toBe(true);
@@ -127,7 +127,7 @@ describe('markers and labels', () => {
 
   it('marks the explored point with a check and no pulse', () => {
     const size = { vw: 1440, vh: 900 };
-    const markers = buildMarkers(size, { k: MAX_K, px: -800, py: -1000 }, true);
+    const markers = buildMarkers(size, { k: MAX_K, px: -800, py: -1000 }, ['fosiles']);
     const a = markers.find((m) => m.key === 'fosiles');
     expect(a?.kind === 'point' && a.check && !a.pulse).toBe(true);
   });

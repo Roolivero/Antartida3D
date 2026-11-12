@@ -184,6 +184,7 @@ Bedmap3 termina en 60° S, así que el 3D no tenía tierra en Sudamérica: Ushua
 - **Precisión:** la simplificación de la malla conserva la costa, pero el relieve interior tiene un error de hasta unos 310 m (malla ancha) y 500 m (celular). Sirve para leer la forma del terreno, no para medir alturas.
 - **Cámara:** sobre esta región se puede acercar hasta 8 unidades (`FUEGIA_MIN_DISTANCE`); sobre la Antártida el mínimo sigue en 60.
 - **Regenerar:** bajar `IBCSO_v2_bed.tif` a `~/.cache/antartida3d/ibcso/` (o indicar la carpeta con `IBCSO_DIR`) y correr `pnpm --filter @antartida/core fuegia`.
+- **Perfil bajo el vuelo:** `packages/core/src/flight-ground.ts` guarda la altura máxima de la tierra bajo la ruta del avión sobre Tierra del Fuego (60 valores, uno cada 0,2 % del viaje, 0,8 unidades a cada lado). Sale del mismo `IBCSO_v2_bed.tif` con `pnpm --filter @antartida/core flight-ground`. El avión del viaje lo usa para pasar por encima del relieve. Hay que regenerarlo si cambia la ruta.
 - **El mapa 2D no cambia:** sigue con la costa de Natural Earth.
 
 ## Otros datos geográficos del mapa (ya existían)

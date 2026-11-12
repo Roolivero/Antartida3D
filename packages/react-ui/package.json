@@ -9,7 +9,8 @@
     "./expedition": "./src/expedition/Expedition.tsx"
   },
   "scripts": {
-    "typecheck": "tsc -p ."
+    "typecheck": "tsc -p .",
+    "test": "vitest run"
   },
   "dependencies": {
     "@antartida/core": "workspace:*",
@@ -28,6 +29,7 @@
     "@types/react-dom": "19.3.0",
     "@types/three": "0.187.0",
     "react": "19.3.1",
-    "react-dom": "19.3.1"
+    "react-dom": "19.3.1",
+    "vitest": "5.1.0"
   }
 }

@@ -1,188 +1,168 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
-import {
-   Color,
-  InstancedBufferAttribute,
-  InstancedMesh,
-  LinearFilter,
-  LinearMipmapLinearFilter,
-  PlaneGeometry,
-  RepeatWrapping,
-  ShaderMaterial,
-  SRGBColorSpace,
-  Texture,
-  TextureLoader,
-  Vector2,
-  Vector4,
-} from 'three';
+import type { BufferGeometry, Group, Mesh } from 'three';
 import {
   FOV,
-  IRIZAR_ROUTE_POLYLINE,
-  IRIZAR_ROUTE_SAMPLES,
-  SEA_ATLAS,
+  IRIZAR_DEFAULT_SPEED,
+  driftOffsetAtTime,
+  fractSin,
+  irizarStateAtTime,
+  voyageAt,
+  voyageHeading,
+  whaleCyclePosition,
+  whaleCycleState,
   type SeaLifeInstance,
-  type SeaSpriteId,
 } from '@antartida/core';
-import seaAtlasUrl from '@antartida/core/assets/sea-atlas.webp';
-import paper512Url from '@antartida/core/assets/paper-512.webp';
-import { FOG_COLOR_HEX } from './fog.glsl.ts';
-import { seaLifeFragmentShader, seaLifeVertexShader } from './seaLife.glsl.ts';
+import { buildSeaGeometry, buildSpoutGeometry, SEA_MODELS, type SeaModelId } from '../voyage/sightingModels.ts';
+import { heightOf } from '../voyage/Voyage3D.tsx';
+import type { VoyageBus } from '../voyage/useVoyage.ts';
+import { buildVehicleGeometry, vehicleMaterial } from '../voyage/vehicles.ts';
 import { useSeaTime, type SeaTimeUniform } from './useAnimationClock.ts';
 
-const ORDERED_SPRITES: readonly SeaSpriteId[] = [
-  'humpback-back',
-  'humpback-tail',
-  'humpback-spout',
-  'orca',
-  'minke',
-  'penguins-iceberg',
-  'leopard-seal',
-  'iceberg-lg',
-  'iceberg-sm',
-  'irizar',
-  'irizar-wake',
-];
+/** Length of a model on screen, in px at a 900 px tall viewport: they stay readable at any zoom. */
+const ANIMAL_PX = 50;
+const ICE_PX = 60;
+const VEHICLE_PX = 72;
+const REFERENCE_HEIGHT = 900;
+const FOV_TAN = Math.tan((FOV * Math.PI) / 360);
 
-export function SeaLife({
-  visible = true,
-  timeUniform,
-  instances,
-}: {
+/** The plane flies the round trip faster than the ship sails it, and out of step with it. */
+const HERCULES_SPEED = IRIZAR_DEFAULT_SPEED * 2.6;
+const HERCULES_PHASE = 0.62;
+
+/** Whale poses of `whaleCycleState`: breathing, back out of the water, tail up before the dive. */
+const POSE_SPOUT = 2;
+const POSE_TAIL = 1;
+/** How far a whale stays under the surface between breaths, and its pitch when it dives, in model units and radians. */
+const WHALE_FLOAT = 0.1;
+const DIVE_PITCH = -0.75;
+
+const modelOf = (inst: SeaLifeInstance): SeaModelId | null => {
+  if (inst.species === 'iceberg') return inst.sprite === 'iceberg-lg' ? 'iceberg-lg' : 'iceberg-sm';
+  return inst.species in SEA_MODELS ? (inst.species as SeaModelId) : null;
+};
+
+/**
+ * Sea life, ice and the two Argentine transports on the open map, as voxel models. Positions and
+ * cycles come from `@antartida/core` (the same ones the ink ripples of the ocean follow).
+ */
+export function SeaLife({ visible = true, timeUniform, instances, voyage }: {
   visible?: boolean;
   timeUniform?: SeaTimeUniform;
   instances: readonly SeaLifeInstance[];
+  /** During the trip from Ushuaia the map shows that trip's own vehicle and sightings instead. */
+  voyage?: VoyageBus | null;
 }) {
-  const meshRef = useRef<InstancedMesh>(null);
-  const invalidate = useThree((s) => s.invalidate);
+  const root = useRef<Group>(null);
   const size = useThree((s) => s.size);
   const contextTime = useSeaTime();
-  const effectiveTime = timeUniform || contextTime;
-
-  const [textures, setTextures] = useState<{
-    atlas: Texture;
-    paper: Texture;
-  } | null>(null);
-
-  useEffect(() => {
-    let alive = true;
-    const loader = new TextureLoader();
-    Promise.all([loader.loadAsync(seaAtlasUrl), loader.loadAsync(paper512Url)]).then(
-      ([atlas, paper]) => {
-        if (!alive) return;
-        atlas.colorSpace = SRGBColorSpace;
-        atlas.flipY = false;
-        atlas.minFilter = LinearMipmapLinearFilter;
-        atlas.magFilter = LinearFilter;
-        atlas.generateMipmaps = true;
-
-        paper.colorSpace = SRGBColorSpace;
-        paper.wrapS = RepeatWrapping;
-        paper.wrapT = RepeatWrapping;
-
-        setTextures({ atlas, paper });
-        invalidate();
-      }
-    );
-    return () => {
-      alive = false;
-    };
-  }, [invalidate]);
+  const clock = timeUniform || contextTime;
 
   const geometry = useMemo(() => {
-    const geo = new PlaneGeometry(1, 1, 1, 1);
-    const count = instances.length;
-
-    const centers = new Float32Array(count * 2);
-    const sprites = new Float32Array(count);
-    const kinds = new Float32Array(count);
-    const phases = new Float32Array(count);
-    const speeds = new Float32Array(count);
-    const radii = new Float32Array(count);
-    const scales = new Float32Array(count);
-    const seeds = new Float32Array(count);
-
-    for (let i = 0; i < count; i++) {
-      const inst = instances[i];
-      centers[i * 2] = inst.x;
-      centers[i * 2 + 1] = inst.y;
-      sprites[i] = inst.spriteIndex;
-      kinds[i] = inst.kindCode;
-      phases[i] = inst.phase;
-      speeds[i] = inst.speed;
-      radii[i] = inst.radius;
-      scales[i] = inst.scale;
-      seeds[i] = inst.seed;
-    }
-
-    geo.setAttribute('aCenter', new InstancedBufferAttribute(centers, 2));
-    geo.setAttribute('aSprite', new InstancedBufferAttribute(sprites, 1));
-    geo.setAttribute('aKind', new InstancedBufferAttribute(kinds, 1));
-    geo.setAttribute('aPhase', new InstancedBufferAttribute(phases, 1));
-    geo.setAttribute('aSpeed', new InstancedBufferAttribute(speeds, 1));
-    geo.setAttribute('aRadius', new InstancedBufferAttribute(radii, 1));
-    geo.setAttribute('aScale', new InstancedBufferAttribute(scales, 1));
-    geo.setAttribute('aSeed', new InstancedBufferAttribute(seeds, 1));
-
-    return geo;
-  }, [instances]);
-
-  const uniforms = useMemo(() => {
-    const spriteRects = ORDERED_SPRITES.map((id) => {
-      const s = SEA_ATLAS.sprites[id];
-      return new Vector4(s.u0, s.v0, s.u1, s.v1);
-    });
-    const spriteAnchors = ORDERED_SPRITES.map((id) => {
-      const s = SEA_ATLAS.sprites[id];
-      return new Vector2(s.anchorX, s.anchorY);
-    });
-    const routePoints = IRIZAR_ROUTE_POLYLINE.map((p) => new Vector2(p.x, p.y));
-
-    return {
-      uAtlas: { value: null as Texture | null },
-      uPaperTex: { value: null as Texture | null },
-      uTime: { value: 0 },
-      uViewportHeight: { value: 900 },
-      uFovTan: { value: Math.tan((FOV * Math.PI) / 360) },
-      uRoutePoints: { value: routePoints },
-      uSpriteRects: { value: spriteRects },
-      uSpriteAnchors: { value: spriteAnchors },
-      uFogColor: { value: new Color(FOG_COLOR_HEX) },
-      uFogDensity: { value: 0.35 },
-    };
+    const models = Object.fromEntries(
+      (Object.keys(SEA_MODELS) as SeaModelId[]).map((id) => [id, buildSeaGeometry(id)]),
+    ) as Record<SeaModelId, BufferGeometry>;
+    return { models, spout: buildSpoutGeometry(), irizar: buildVehicleGeometry('irizar'), hercules: buildVehicleGeometry('hercules') };
   }, []);
+  useEffect(() => () => {
+    Object.values(geometry.models).forEach((g) => g.dispose());
+    geometry.spout.dispose();
+    geometry.irizar.dispose();
+    geometry.hercules.dispose();
+  }, [geometry]);
 
-  useEffect(() => {
-    if (textures) {
-      uniforms.uAtlas.value = textures.atlas;
-      uniforms.uPaperTex.value = textures.paper;
-      invalidate();
-    }
-  }, [textures, uniforms, invalidate]);
+  // The wake sprite has no model: the ship is drawn alone.
+  const drawn = useMemo(() => instances.filter((inst) => inst.species === 'irizar' || modelOf(inst)), [instances]);
+  const groups = useRef<(Group | null)[]>([]);
+  const spouts = useRef<(Mesh | null)[]>([]);
+  const plane = useRef<Group>(null);
 
-  const material = useMemo(() => {
-    return new ShaderMaterial({
-      defines: { ROUTE_SAMPLES: IRIZAR_ROUTE_SAMPLES },
-      vertexShader: seaLifeVertexShader,
-      fragmentShader: seaLifeFragmentShader,
-      uniforms,
-      depthWrite: true,
-      depthTest: true,
-      transparent: true,
+  useFrame(({ camera }) => {
+    if (!root.current) return;
+    root.current.visible = visible && !voyage?.state;
+    if (!root.current.visible) return;
+    const time = clock.value;
+    // World units per px at distance 1.
+    const perPx = (2 * FOV_TAN) / Math.max(size.height, REFERENCE_HEIGHT / 2);
+    const sized = (g: Group, px: number) => {
+      const s = camera.position.distanceTo(g.position) * perPx * px;
+      g.scale.setScalar(s);
+      return s;
+    };
+
+    drawn.forEach((inst, i) => {
+      const g = groups.current[i];
+      if (!g) return;
+      if (inst.species === 'irizar') {
+        const ship = irizarStateAtTime(time, inst.speed, inst.phase);
+        g.position.set(ship.x - 500, 0, ship.y - 500);
+        const s = sized(g, VEHICLE_PX);
+        g.position.y = -s * 0.02 + Math.sin(time * 1.3) * 0.012 * s;
+        g.rotation.set(Math.sin(time * 1.1) * 0.04 * ship.speed, -ship.headingRad, 0, 'YZX');
+        return;
+      }
+      if (inst.species === 'humpback' || inst.species === 'minke' || inst.species === 'orca') {
+        const cycle = time * inst.speed + inst.phase;
+        const index = Math.floor(cycle);
+        const state = whaleCycleState(cycle - index, inst.species);
+        g.visible = state.alpha > 0.02;
+        if (!g.visible) return;
+        const seedMix = inst.species === 'minke' ? fractSin(inst.seed * 5.3 + index * 11.1) : fractSin(inst.seed * 7.13 + index * 3.7);
+        const dir = seedMix < 0.5 ? 1 : -1;
+        const at = inst.species === 'orca' ? { x: inst.x, y: inst.y } : whaleCyclePosition(inst.x, inst.y, inst.radius, inst.seed, index);
+        g.position.set(at.x + state.slideX * dir - 500, 0, at.y - 500);
+        const s = sized(g, ANIMAL_PX * inst.scale);
+        // It rises out of the water and sinks back instead of fading.
+        g.position.y = (WHALE_FLOAT + state.bobY - (1 - state.alpha) * 0.2) * s;
+        const diving = inst.species === 'humpback' && state.spriteIndex === POSE_TAIL;
+        g.rotation.set(0, dir > 0 ? 0 : Math.PI, diving ? DIVE_PITCH * state.alpha : state.rotAngle, 'YZX');
+        const spout = spouts.current[i];
+        if (spout) spout.visible = inst.species === 'humpback' && state.spriteIndex === POSE_SPOUT;
+        return;
+      }
+      // Ice, and the animals resting on it: a slow drift and a gentle rock.
+      const drift = driftOffsetAtTime(time, inst.speed, inst.phase, inst.radius);
+      g.position.set(inst.x + drift.dx - 500, 0, inst.y + drift.dy - 500);
+      sized(g, (inst.species === 'iceberg' ? ICE_PX : ANIMAL_PX) * inst.scale);
+      const sway = time * (inst.species === 'iceberg' ? 0.4 : 1.15) + inst.phase * Math.PI * 2;
+      g.rotation.set(Math.sin(sway) * 0.03, inst.seed * 2.4, Math.sin(sway * 1.2) * 0.02, 'YZX');
     });
-  }, [uniforms]);
 
-  useFrame(() => {
-    uniforms.uTime.value = effectiveTime.value;
-    uniforms.uViewportHeight.value = size.height;
+    if (plane.current) {
+      const flight = irizarStateAtTime(time, HERCULES_SPEED, HERCULES_PHASE);
+      const p = voyageAt('plane', flight.routeT);
+      const g = plane.current;
+      g.position.set(p.x - 500, 0, p.y - 500);
+      const s = sized(g, VEHICLE_PX);
+      g.position.y = heightOf('plane', flight.routeT, s);
+      const heading = voyageHeading('plane', flight.routeT) + (flight.dirSign < 0 ? Math.PI : 0);
+      g.rotation.set(Math.sin(time * 0.9) * 0.05, -heading, 0, 'YZX');
+    }
   });
 
-  if (!textures || !visible || instances.length === 0) return null;
-
+  if (drawn.length === 0) return null;
   return (
-    <instancedMesh
-      ref={meshRef}
-      args={[geometry, material, instances.length]}
-      frustumCulled={false}
-    />
+    <group ref={root}>
+      {drawn.map((inst, i) => {
+        const model = modelOf(inst);
+        return (
+          <group key={inst.id} ref={(g) => void (groups.current[i] = g)}>
+            <mesh geometry={model ? geometry.models[model] : geometry.irizar} material={vehicleMaterial} />
+            {inst.species === 'humpback' && (
+              <mesh
+                ref={(m) => void (spouts.current[i] = m)}
+                geometry={geometry.spout}
+                material={vehicleMaterial}
+                position={[0.3, 0.1, 0]}
+                visible={false}
+              />
+            )}
+          </group>
+        );
+      })}
+      <group ref={plane}>
+        <mesh geometry={geometry.hercules} material={vehicleMaterial} />
+      </group>
+    </group>
   );
 }

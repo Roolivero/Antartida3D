@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 
 /**
- * Same acceptance flow for every stack: question -> dig -> compare -> conclusion -> return (log 1/1).
+ * Same acceptance flow for every stack: question -> dig -> compare -> conclusion -> return (log 1/2).
  * Selectors are roles and visible texts from the handoff, so every app must expose the same accessible DOM.
  */
 
@@ -54,7 +54,7 @@ test.beforeEach(async ({ page }) => {
   await page.goto('/');
   await page.evaluate(() => localStorage.clear());
   await page.reload();
-  await expect(log(page)).toContainText('0/1');
+  await expect(log(page)).toContainText('0/2');
 });
 
 test.afterEach(() => {
@@ -88,11 +88,11 @@ test('completes the expedition with pointer and persists the log', async ({ page
   await expect(page.getByText('Paso 5 de 5 · Regreso')).toBeVisible();
   await primary(page).click();
 
-  await expect(log(page)).toContainText('1/1');
-  await expect(page.locator('.toast')).toHaveText('Fósiles quedó explorado. Registro de exploración: 1/1');
+  await expect(log(page)).toContainText('1/2');
+  await expect(page.locator('.toast')).toHaveText('Fósiles quedó explorado. Registro de exploración: 1/2');
 
   await page.reload();
-  await expect(log(page)).toContainText('1/1');
+  await expect(log(page)).toContainText('1/2');
 });
 
 test('completes the expedition with the keyboard only', async ({ page }) => {
@@ -137,7 +137,7 @@ test('completes the expedition with the keyboard only', async ({ page }) => {
 
   await expect(primary(page)).toBeFocused();
   await page.keyboard.press('Enter');
-  await expect(log(page)).toContainText('1/1');
+  await expect(log(page)).toContainText('1/2');
 });
 
 test('dialogs close with Escape and return focus to their trigger', async ({ page }) => {
