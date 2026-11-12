@@ -12,9 +12,9 @@
    - edificio: techo, puerta o ventanas.
 4. Medidas comunes: una unidad es el largo (o el ancho) del modelo; el frente mira a `+x` en vehículos y animales, y a `+z` en edificios; `y` es arriba y la base apoya en `y = 0`.
 5. Usa los colores ya definidos en esos archivos. Un color nuevo se agrega como constante con nombre, no suelto en una caja.
-6. Los modelos de escena del mapa abierto (fauna, témpanos, Irízar, Hércules, Ushuaia, Orcadas) tienen un **tamaño fijo y exagerado en el mundo**: el que tendrían en pantalla a `MODEL_REFERENCE_DISTANCE` (`@antartida/core`). Así, al alejarse se achican y dan sensación de lejanía. Cuando miden menos de `MODEL_MIN_PX` en pantalla (`screenPx`) se ocultan. Solo lo que la cámara sigue en una expedición (vehículo, avistajes) se escala con la distancia. No es un dato: los modelos son ilustraciones con tamaño exagerado.
-   - No: `g.scale.setScalar(distance * k)` en un modelo del mapa abierto.
-   - Sí: una constante de tamaño y `g.visible = screenPx(size, distance, height) >= MODEL_MIN_PX`.
+6. Los modelos de escena del mapa abierto (fauna, témpanos, Irízar, Hércules, Ushuaia, Orcadas) mantienen su tamaño en pantalla hasta una distancia de cámara de `MODEL_REFERENCE_DISTANCE` (`placeModelSize` y `seaModelSize`, en `@antartida/core`), para no tapar el mapa al acercarse. Más lejos tienen un **tamaño fijo y exagerado en el mundo**: así, al alejarse se achican y dan sensación de lejanía. Cuando miden menos de `MODEL_MIN_PX` en pantalla (`screenPx`) se ocultan. Solo lo que la cámara sigue en una expedición (vehículo, avistajes) se escala con la distancia. No es un dato: los modelos son ilustraciones con tamaño exagerado.
+   - No: `g.scale.setScalar(distance * k)` sin tope, o un tamaño fijo que de cerca llena la pantalla.
+   - Sí: `const size = seaModelSize(px, distance)` (o `placeModelSize`) y `g.visible = screenPx(size, distance, height) >= MODEL_MIN_PX`.
 7. Todo modelo nuevo se registra en `VEHICLE_MODELS` o `SCENE_MODELS`, para que la prueba de detalle lo cubra.
 8. Los efectos (humo, soplido de ballena, estela) no son modelos y no tienen mínimo, pero también se hacen con cajas.
 

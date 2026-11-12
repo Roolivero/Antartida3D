@@ -4,6 +4,7 @@ import {
   geometry,
   screenPx,
   placeModelSize,
+  seaModelSize,
   MODEL_REFERENCE_DISTANCE,
   poseFromView,
   viewFromPose,
@@ -123,6 +124,21 @@ describe('screenPx', () => {
   it('fills the viewport height with the frustum height at that distance', () => {
     const frustum = 2 * 500 * Math.tan((FOV * Math.PI) / 360);
     expect(screenPx(frustum, 500, 844)).toBeCloseTo(844, 6);
+  });
+});
+
+describe('seaModelSize', () => {
+  it('keeps a sea model at its size in px up close, instead of filling the screen (#51)', () => {
+    // Around Tierra del Fuego the camera gets as close as 8: a 72 px ship must still be about 72 px.
+    for (const distance of [8, 15, 60, MODEL_REFERENCE_DISTANCE]) {
+      expect(screenPx(seaModelSize(72, distance), distance, 900)).toBeCloseTo(72, 6);
+    }
+  });
+
+  it('stops growing beyond the reference distance, so it shrinks on screen', () => {
+    const fixed = seaModelSize(72, MODEL_REFERENCE_DISTANCE);
+    expect(seaModelSize(72, MODEL_REFERENCE_DISTANCE * 4)).toBe(fixed);
+    expect(screenPx(fixed, MODEL_REFERENCE_DISTANCE * 4, 900)).toBeCloseTo(18, 6);
   });
 });
 
