@@ -8,6 +8,10 @@ import {
   MIN_ICEBERG_SCREEN_PX,
   SEA_ATLAS,
   SEA_POINTS,
+  SEA_HINT_MIN_PX,
+  homePose3D,
+  screenPx,
+  toWorld,
   computeWhaleRipples,
   depthAt,
   driftOffsetAtTime,
@@ -271,8 +275,8 @@ describe('sea (fauna, icebergs, and ARA Almirante Irizar)', () => {
   });
 
   describe('sea points of interest (SEA_POINTS)', () => {
-    it('has 4 sea points of interest with verified sources or pending tag', () => {
-      expect(SEA_POINTS).toHaveLength(4);
+    it('has 5 sea points of interest with verified sources or pending tag', () => {
+      expect(SEA_POINTS).toHaveLength(5);
 
       for (const p of SEA_POINTS) {
         expect(p.id).toMatch(/^sea-/);
@@ -287,8 +291,23 @@ describe('sea (fauna, icebergs, and ARA Almirante Irizar)', () => {
             expect(s.org.length).toBeGreaterThan(0);
             expect(s.label.length).toBeGreaterThan(0);
             expect(s.url).toMatch(/^https?:\/\//);
-            expect(s.consulted).toBe('2026-11-11');
+            expect(s.consulted).toMatch(/^2026-11-\d{2}$/);
           }
+        }
+      }
+    });
+
+    it('hides the hints over something drawn in homePose3D at 1440 and 390 px, where they would crowd the expeditions', () => {
+      const hints = SEA_POINTS.filter((sp) => sp.over);
+      expect(hints.map((sp) => sp.id)).toEqual(['sea-drake']);
+      // The first sea marker is one that shows in the home view: tests and keyboard users reach it first.
+      expect(SEA_POINTS[0].over).toBeUndefined();
+      for (const [vw, vh] of [[1440, 900], [390, 844]]) {
+        const { pos } = homePose3D(vw / vh);
+        for (const sp of hints) {
+          const at = toWorld(sp.fallbackX, sp.fallbackY, sp.over!.height);
+          const distance = Math.hypot(pos.x - at.x, pos.y - at.y, pos.z - at.z);
+          expect(screenPx(sp.over!.width, distance, vh), `${sp.id} at ${vw}x${vh}`).toBeLessThan(SEA_HINT_MIN_PX);
         }
       }
     });
@@ -297,7 +316,8 @@ describe('sea (fauna, icebergs, and ARA Almirante Irizar)', () => {
       for (const mobile of [false, true]) {
         const instances = generateSeaLifeInstances({ seed: 202611, mobile });
         const [vw, vh] = mobile ? [390, 844] : [1440, 900];
-        const fixedSeaPoints = SEA_POINTS.filter((sp) => sp.id !== 'sea-irizar');
+        // A hint over something drawn is not in the home view: it shows only from closer (checked below).
+        const fixedSeaPoints = SEA_POINTS.filter((sp) => sp.id !== 'sea-irizar' && !sp.over);
 
         for (const sp of fixedSeaPoints) {
           const matchingInst = instances.filter((i) => i.species === sp.targetSpecies);

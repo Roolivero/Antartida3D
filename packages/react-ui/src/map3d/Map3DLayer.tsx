@@ -23,6 +23,8 @@ import {
   worldHeight,
   fromWorld,
   minCameraDistance,
+  SEA_HINT_MIN_PX,
+  screenPx,
   FUEGIA_MIN_DISTANCE,
   irizarStateAtTime,
   SEA_POINTS,
@@ -407,11 +409,14 @@ function ProjectMarkers({
         }
       }
 
-      const wPos = toWorld(mapX, mapY, 0.4);
+      const { over } = sm.point;
+      const wPos = toWorld(mapX, mapY, over?.height ?? 0.4);
       const p = new Vector3(wPos.x, wPos.y, wPos.z);
+      // A hint over something drawn goes away with it: from afar it would point at nothing.
+      const shown = !over || screenPx(over.width, camera.position.distanceTo(p), size.height) >= SEA_HINT_MIN_PX;
       p.project(camera);
 
-      const visible = p.z < 1.0 && p.x >= -1.1 && p.x <= 1.1 && p.y >= -1.1 && p.y <= 1.1;
+      const visible = shown && p.z < 1.0 && p.x >= -1.1 && p.x <= 1.1 && p.y >= -1.1 && p.y <= 1.1;
       if (!visible) {
         btn.style.display = 'none';
         continue;
@@ -480,8 +485,8 @@ export function Map3DLayer({
         x: sp.fallbackX,
         y: sp.fallbackY,
         point: sp,
-        cls: 'mk tsea',
-        aria: `${sp.title}, ${sp.place}. Vida en el mar. Ver ficha.`,
+        cls: sp.hint ? 'mk tsea labelled' : 'mk tsea',
+        aria: `${sp.title}, ${sp.place}. ${sp.tag ?? 'Vida en el mar'}. Ver ficha.`,
         label: {
           title: sp.title,
           sub: sp.place,

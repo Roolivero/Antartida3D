@@ -39,6 +39,9 @@ export function seaModelSize(px: number, distance: number): number {
   return placeModelSize(distance, perDistance, SEA_MODEL_MIN_SIZE);
 }
 
+/** A sea marker that floats over something drawn shows only while that thing is at least this wide on screen. */
+export const SEA_HINT_MIN_PX = 70;
+
 /** On-screen height in px of a world length seen at a distance, for the vertical FOV. */
 export function screenPx(worldSize: number, distance: number, viewportHeight: number): number {
   return (worldSize * viewportHeight) / (2 * Math.max(distance, 1e-6) * Math.tan((FOV * Math.PI) / 360));

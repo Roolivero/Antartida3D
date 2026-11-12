@@ -1,3 +1,6 @@
+import { DRAKE_STORM } from '../storm.ts';
+import { VOYAGE_SOURCES, VOYAGE_SOURCES_CONSULTED, type VoyageSourceCode } from './ushuaia.ts';
+
 export interface Source {
   label: string;
   url?: string;
@@ -17,7 +20,19 @@ export interface SeaPoint {
   /** Fallback map position in [0..1000] space if no sea life instance is active. */
   fallbackX: number;
   fallbackY: number;
+  /** Tag of the card. Without it the point is sea life. */
+  tag?: string;
+  /** The label stays in view, as a hint to open the card; the others show theirs on hover. */
+  hint?: boolean;
+  /** The marker floats over something drawn: at this world height, and only while that thing is this wide (map units) and big enough on screen. */
+  over?: { height: number; width: number };
 }
+
+/** A source of the trip from Ushuaia, as a source of a sea point: the catalogue stays in one place. */
+const voyageSource = (code: VoyageSourceCode): Source => {
+  const source: { org: string; title: string; url: string; consulted?: string } = VOYAGE_SOURCES[code];
+  return { label: source.title, url: source.url, org: source.org, consulted: source.consulted ?? VOYAGE_SOURCES_CONSULTED };
+};
 
 export const SEA_POINTS: readonly SeaPoint[] = [
   {
@@ -99,5 +114,19 @@ export const SEA_POINTS: readonly SeaPoint[] = [
         consulted: '2026-11-11',
       },
     ],
+  },
+  // Last, on purpose: it is hidden in the home view, and the first sea marker has to be one that shows there.
+  {
+    id: 'sea-drake',
+    title: 'Pasaje de Drake',
+    place: '¿Por qué hay tormenta?',
+    // Same facts as the Drake milestone of the trip from Ushuaia (sources O46 and I6).
+    desc: 'Unos 800 km de mar abierto entre el Cabo de Hornos y las islas Shetland del Sur. Tiene fama de ser uno de los mares más bravos del planeta: es famoso por sus temporales. Acá se registraron vientos de más de 50 nudos y olas de 10 metros. La tormenta dibujada en el mapa es ilustrativa: no muestra el tiempo de hoy ni el lugar exacto de un temporal.',
+    tag: 'Mar y clima',
+    hint: true,
+    over: { height: DRAKE_STORM.cloudBase + 4, width: 2 * DRAKE_STORM.radius },
+    fallbackX: DRAKE_STORM.x,
+    fallbackY: DRAKE_STORM.y,
+    sources: [voyageSource('O46'), voyageSource('I6')],
   },
 ];

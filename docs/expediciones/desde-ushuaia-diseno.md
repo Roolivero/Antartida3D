@@ -182,3 +182,18 @@ Pedido de quien lleva el issue: la tormenta tiene que llegar más al sur y ocupa
 - **Barco entre las olas, más marcado** (12-11-2026): con el oleaje nuevo del océano el movimiento del barco casi no se notaba. Ahora cabecea hasta 0,24 rad (antes 0,16), rola hasta 0,22 (antes 0,2) y sube y baja 0,1 esloras (antes 0,07). El rocío pasa de 5 a 12 cajas, más grandes, y nace por encima de la cubierta: antes quedaba bajo el agua, porque estalla justo cuando la proa se hunde. Está en `Voyage3D.tsx`. Verificado en 12 cuadros seguidos a 1440 px y a 390 px.
 - **No se hace:** dibujar la tormenta en el mapa 2D. Decisión de quien lleva el issue (12-11-2026).
 - **Verificación:** capturas con el navegador en 1440 px, en el mapa abierto y en cada hito del viaje en barco, sin errores de consola. La suavidad del movimiento se miró en una secuencia de cuadros, no en video.
+
+### Pista del Pasaje de Drake en el mapa abierto (12-11-2026)
+
+Pedido de quien lleva el issue: con la vista del mapa, una pista sobre la tormenta para obtener información del Pasaje de Drake.
+
+- **Qué es:** un quinto punto del mar, `sea-drake`, en `core/src/content/sea.ts`. Se ve como los demás marcadores del mar (círculo con el ícono de olas), pero con la etiqueta siempre a la vista: «Pasaje de Drake · ¿Por qué hay tormenta?». Al tocarlo abre la ficha común (`PointSheet`).
+- **Dónde flota:** sobre el centro de la tormenta, 4 unidades por encima de la base de las nubes. La posición sale de `DRAKE_STORM`.
+- **Cuándo se ve:** solo en el mapa 3D abierto y solo cuando la tormenta mide al menos 70 px de ancho en pantalla (`SEA_HINT_MIN_PX`, en `core/src/camera.ts`). En la vista inicial no aparece, ni en escritorio ni en celular: ahí la tormenta es chica y la pista taparía los marcadores de las expediciones. Una prueba lo verifica. Durante el viaje se oculta, como todos los marcadores del mar: ahí la ficha del hito ya lo explica.
+- **Texto de la ficha:** los mismos datos del hito «Pasaje de Drake» (`[O46]` e `[I6]`), más la línea que dice que la tormenta dibujada es ilustrativa. Las fuentes se toman del catálogo del viaje (`VOYAGE_SOURCES`), no se copian.
+- **Etiqueta de la ficha:** «Mar y clima», no «Vida en el mar». Para eso `SeaPoint` tiene tres campos opcionales nuevos: `tag`, `hint` (etiqueta siempre visible) y `over` (altura a la que flota y ancho de lo que tiene debajo).
+- **Clase CSS:** `.mk.tsea.labelled`. No se llama `hint` porque ya existe una clase `.hint` (el cartel «arrastrá para mover») que anula los toques.
+- **Orden:** `sea-drake` va último en `SEA_POINTS`. Las pruebas e2e y el teclado toman el primer marcador del mar, y tiene que ser uno visible en la vista inicial.
+- **Prueba compartida cambiada:** `core/test/sea.test.ts` ahora espera 5 puntos, acepta cualquier fecha de consulta de noviembre de 2026 (la fuente `[O46]` se leyó el 12) y deja fuera de la prueba de superposición a los puntos con `over`, que no se ven en la vista inicial.
+- **Limitación conocida:** la pista está en el centro de la tormenta. Si la cámara mira solo una punta de la franja, la pista queda fuera de pantalla.
+- **Verificación:** capturas a 1440 px y a 390 px con la pista visible y la ficha abierta con un toque real.
