@@ -68,6 +68,10 @@ const MAX_PITCH = 0.4;
 /** A place farther than this from the vehicle, in map units, is out of view: the camera goes to it while its card is open. */
 const VISIT_DISTANCE = 6;
 
+/** How far from the start of the route the vehicle waits, in vehicle lengths, and the trip fraction over which it joins it. */
+const DOCK_ASIDE = 0.8;
+const DOCK_SPAN = 0.012;
+
 const routeMaterial = new LineDashedMaterial({ color: 0x1f2a36, dashSize: 0.8, gapSize: 0.6, transparent: true, opacity: 0.75 });
 
 /** The vehicle travelling on the live map, its path and the camera, which stays centered on it. */
@@ -167,7 +171,14 @@ export function Voyage3D({ bus, reduced, overlay }: {
       ? { roll: Math.sin(time * 0.9) * 0.05, pitch: Math.sin(time * 0.7) * 0.015, lift: Math.sin(time * 1.4) * 0.035 }
       : { roll: Math.sin(time * 1.1) * 0.04, pitch: Math.sin(time * 0.8) * 0.025, lift: Math.sin(time * 1.3) * 0.012 };
 
-    g.position.set(p.x - 500, height + sway.lift * size, p.y - 500);
+    // At the start the vehicle waits beside the town, towards the open water, and joins the route as it leaves.
+    const aside = DOCK_ASIDE * size * (1 - Math.min(1, s.t / DOCK_SPAN)) ** 2;
+    const fromPole = Math.hypot(p.x - 500, p.y - 500);
+    g.position.set(
+      p.x - 500 + ((500 - p.x) / fromPole) * aside,
+      height + sway.lift * size,
+      p.y - 500 + ((500 - p.y) / fromPole) * aside,
+    );
     g.rotation.set(sway.roll, -heading, pitch + sway.pitch, 'YZX');
     g.scale.setScalar(size);
 

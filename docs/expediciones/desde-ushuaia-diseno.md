@@ -33,7 +33,8 @@ El turismo se menciona como una línea de contexto: no es un transporte jugable 
 - `Town3D.tsx` dibuja un pueblo voxel (casas de colores con techo de chapa, chimeneas con humo) y el cartel «Ushuaia». No es un botón ni tiene ficha.
 - En el centro va la iglesia amarilla y roja con torre, que se ve desde toda la ciudad: es lo que la distingue de un pueblo cualquiera. Se modeló a partir de una foto de referencia que aportó quien lleva el issue; no se usa la foto en la aplicación.
 - El resto es una ilustración de una ciudad, no un mapa de sus edificios. El tamaño está exagerado, igual que el de los vehículos.
-- **Posición aproximada:** el relieve se dibuja diez veces más alto que el real, y el sitio real de la ciudad queda dentro de una ladera. El pueblo se ubica en el terreno más bajo al norte de la bahía, a menos de 1,6 unidades de mapa (unos 13 km).
+- **Posición:** la tierra más cercana al punto de partida del viaje (68,30° O, 54,81° S). El pueblo es chico para que el relieve, dibujado diez veces más alto que el real, no lo tape ni haga falta levantarlo sobre un bloque.
+- Al inicio el vehículo espera corrido hacia el agua, al costado del pueblo, y se une a la ruta en el primer 1,2 % del viaje. Es solo dibujo: la ruta y los hitos no cambian.
 - El humo pide cuadros solo con la cámara cerca y se queda quieto con movimiento reducido.
 
 ## Avistajes (mapa vivo)
