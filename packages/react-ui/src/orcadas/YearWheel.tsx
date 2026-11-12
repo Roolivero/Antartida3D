@@ -72,7 +72,6 @@ export function YearWheel({
   const daylight = dayLengthHours(ORCADAS_LAT, doy);
   const sunElev = solarElevationDeg(ORCADAS_LAT, doy, hour);
   const iceFraction = seaIceAt(normMonth);
-  const icePct = Math.round(iceFraction * 100);
   const climate = ORCADAS_CLIMATE[normMonth - 1] ?? ORCADAS_CLIMATE[0];
   const readerSource = useMemo(
     () => ORCADAS_SOURCES.find((s) => s.id === 'reader'),
@@ -416,7 +415,7 @@ export function YearWheel({
               fontWeight="700"
               fill="#A4471F"
             >
-              {formatSignedTemp(climate.tempMeanC)} °C · {icePct} %
+              {formatSignedTemp(climate.tempMeanC)} °C
             </text>
           </svg>
         </div>
@@ -462,7 +461,7 @@ export function YearWheel({
             <li>
               <span className="orc-swatch orc-swatch-ice" aria-hidden="true" />
               <span>
-                <strong>Anillo bahía:</strong> {icePct} % hielo marino
+                <strong>Anillo bahía:</strong> {seaIceDescription(iceFraction)}
               </span>
             </li>
             <li>
@@ -528,7 +527,7 @@ export function YearWheel({
             <span className="orc-reading-kicker">Bahía Scotia y costa</span>
           </div>
           <p className="orc-reading-main">
-            Hielo marino: <strong>{icePct} % cubierto</strong> · {seaIceDescription(iceFraction)}
+            Hielo marino: <strong>{seaIceDescription(iceFraction)}</strong>
           </p>
           <div className="orc-fauna-tags" aria-label={`Fauna presente en ${monthName}`}>
             {activeFauna.map((animal) => (

@@ -114,9 +114,9 @@ export const ORCADAS_FACTS: readonly OrcadasFact[] = [
     id: 'arrival-antiguedad',
     chapter: 'arrival',
     kind: 'real',
-    title: 'Presencia humana continua',
-    text: 'Es la presencia humana estable más antigua de la Antártida.',
-    sourceIds: ['cancilleria'],
+    title: 'La base más antigua',
+    text: 'Es la presencia humana estable más antigua de la Antártida y la más antigua de todas sus bases.',
+    sourceIds: ['cancilleria', 'armada'],
   },
   {
     id: 'arrival-coordenadas',
@@ -124,14 +124,6 @@ export const ORCADAS_FACTS: readonly OrcadasFact[] = [
     kind: 'real',
     title: 'Coordenadas',
     text: 'Coordenadas 60° 45′ S, 44° 43′ O.',
-    sourceIds: ['armada'],
-  },
-  {
-    id: 'arrival-base-mas-antigua',
-    chapter: 'arrival',
-    kind: 'real',
-    title: 'La base más antigua',
-    text: 'La describe como la más antigua de todas las bases de la Antártida.',
     sourceIds: ['armada'],
   },
   {
@@ -147,8 +139,8 @@ export const ORCADAS_FACTS: readonly OrcadasFact[] = [
     chapter: 'arrival',
     kind: 'real',
     title: 'Elevación',
-    text: 'La base está a 8 m sobre el nivel del mar.',
-    sourceIds: ['comnap'],
+    text: 'La base está a 8 m sobre el nivel del mar, y el barómetro de la estación meteorológica, a 12 m.',
+    sourceIds: ['comnap', 'oscar'],
   },
   {
     id: 'arrival-diorama',
@@ -207,8 +199,16 @@ export const ORCADAS_FACTS: readonly OrcadasFact[] = [
     chapter: 'year',
     kind: 'sim',
     title: 'Hielo en la bahía',
-    text: 'El hielo de la bahía por mes es una simulación ilustrativa.',
+    text: 'Cuánto hielo cubre la bahía cada mes es una simulación ilustrativa, no una medición.',
     sourceIds: [],
+  },
+  {
+    id: 'year-hielo-octubre',
+    chapter: 'year',
+    kind: 'real',
+    title: 'Deshielo',
+    text: 'El hielo marino frente a la estación se rompe en octubre.',
+    sourceIds: ['comnap'],
   },
   {
     id: 'year-fauna-meses',
@@ -369,6 +369,8 @@ export type EraId = 'omond' | 'traspaso' | 'moneta' | 'radio' | 'navy' | 'today'
 export interface OrcadasEra {
   id: EraId;
   fromYear: number;
+  /** True when `fromYear` is only an illustrative boundary without a source: the UI hides the year. */
+  illustrativeStart?: boolean;
   title: string;
   summary: string;
   buildings: readonly BuildingId[];
@@ -419,13 +421,15 @@ export const ORCADAS_ERAS: readonly OrcadasEra[] = [
     factIds: ['eras-traspaso-armada'],
   },
   {
-    // The year 2000 is an illustrative boundary for the modern scientific era.
+    // No sourced date was found for LABORC or the current modules (Cancillería, COMNAP, Nov 2026):
+    // 2000 is only the internal boundary of the era and is never shown as a date.
     id: 'today',
     fromYear: 2000,
-    title: 'Bases científicas modernas',
+    illustrativeStart: true,
+    title: 'Hoy',
     summary: 'Investigación multidisciplinaria en el laboratorio LABORC y monitoreo ambiental.',
     buildings: ['omond', 'flag', 'windMast', 'moneta', 'radioMast', 'modern'],
-    factIds: ['done-laborc-actual', 'done-monumento-hsm42'],
+    factIds: [],
   },
 ] as const;
 

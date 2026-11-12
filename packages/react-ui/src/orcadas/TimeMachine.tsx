@@ -94,6 +94,7 @@ export function TimeMachine({
         id: era.id,
         fromYear: era.fromYear,
         title: era.title,
+        illustrativeStart: era.illustrativeStart,
         x1,
         x2,
         width: Math.max(2, x2 - x1),
@@ -268,7 +269,7 @@ export function TimeMachine({
                   fontWeight="800"
                   fill={isActive ? '#A4471F' : '#1F2A36'}
                 >
-                  {sp.fromYear}
+                  {sp.illustrativeStart ? sp.title : sp.fromYear}
                 </text>
               </g>
             );
@@ -362,7 +363,7 @@ export function TimeMachine({
               aria-pressed={active}
               onClick={() => onYear(era.fromYear)}
             >
-              <span>{era.fromYear}</span>
+              <span>{era.illustrativeStart ? era.title : era.fromYear}</span>
             </button>
           );
         })}
@@ -372,8 +373,12 @@ export function TimeMachine({
       <article className="orc-era-card" aria-live="polite">
         <div className="orc-era-head">
           <div className="orc-era-head-top">
-            <span className="orc-era-from hand">Desde {currentEra.fromYear}</span>
-            {eraFacts.length === 0 ? (
+            <span className="orc-era-from hand">
+              {currentEra.illustrativeStart ? currentEra.title : `Desde ${currentEra.fromYear}`}
+            </span>
+            {currentEra.illustrativeStart ? (
+              <KindChip kind="recon" label="Fecha ilustrativa" />
+            ) : eraFacts.length === 0 ? (
               <KindChip kind="recon" label="Reconstrucción" />
             ) : (
               <KindChip kind="recon" label="Diorama de época" />

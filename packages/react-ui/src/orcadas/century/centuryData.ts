@@ -8,12 +8,13 @@ import {
   decadeMeans,
   eraAt,
   factsFor,
-  linearTrend,
   movingAverage,
+  segmentedTrend,
   sourcesOf,
   type OrcadasEra,
   type OrcadasSource,
   type YearValue,
+  ORCADAS_TREND_SPLIT_YEAR,
 } from '@antartida/core';
 
 export type CenturyViewId = 'annual' | 'stripes' | 'month';
@@ -28,7 +29,7 @@ export const CENTURY_VIEWS: readonly CenturyViewSpec[] = [
   {
     id: 'annual',
     label: 'Año por año',
-    shortDesc: 'Media anual con huecos visibles, media móvil de 11 años en acuarela y tendencia lineal.',
+    shortDesc: 'Media anual con huecos visibles, media móvil de 11 años en acuarela y tendencia en dos tramos.',
   },
   {
     id: 'stripes',
@@ -153,6 +154,14 @@ export function stripeColorForAnomaly(anomaly: number): { color: string; bucket:
   return { color: STRIPE_COLORS[8], bucket: 4 };
 }
 
+export function formatSlope(slopePerDecade: number): string {
+  const absVal = Math.abs(slopePerDecade);
+  const formatted = absVal.toFixed(2).replace('.', ',');
+  if (slopePerDecade > 0) return `+${formatted} °C por década`;
+  if (slopePerDecade < 0) return `−${formatted} °C por década`;
+  return `0,00 °C por década`;
+}
+
 export function formatTempC(val: number, decimals = 1, signed = false): string {
   const fixed = val.toFixed(decimals);
   const clean = fixed === '-0.0' || fixed === '-0.00' ? (0).toFixed(decimals) : fixed;
@@ -196,7 +205,7 @@ export function computeCenturyDataset(month: number) {
       : -4.2;
 
   const ma11Series = movingAverage(ORCADAS_ANNUAL_TEMP, 11);
-  const trend = linearTrend(ORCADAS_ANNUAL_TEMP);
+  const trendSegments = segmentedTrend(ORCADAS_ANNUAL_TEMP, ORCADAS_TREND_SPLIT_YEAR);
   const decades = decadeMeans(ORCADAS_ANNUAL_TEMP);
 
   let coldestAnnual = validAnnual[0] ?? { year: 1945, value: -7.06 };
@@ -259,7 +268,7 @@ export function computeCenturyDataset(month: number) {
     totalYears: ORCADAS_ANNUAL_TEMP.length,
     seriesMean,
     ma11Series,
-    trend,
+    trendSegments,
     decades,
     coldestAnnual,
     warmestAnnual,

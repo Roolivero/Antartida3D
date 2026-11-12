@@ -481,6 +481,37 @@ export function linearTrend(
   };
 }
 
+export interface TrendSegment {
+  fromYear: number;
+  toYear: number;
+  slopePerDecade: number;
+  intercept: number;
+  n: number;
+}
+
+/**
+ * Least-squares trend of two segments split after `splitYear`: [first year, splitYear] and
+ * [splitYear + 1, last year with a value]. A segment with fewer than two values is left out.
+ */
+export function segmentedTrend(series: readonly YearValue[], splitYear: number): TrendSegment[] {
+  const valid = series.filter((p) => p.value !== null && Number.isFinite(p.value));
+  if (valid.length === 0) return [];
+  const parts = [
+    valid.filter((p) => p.year <= splitYear),
+    valid.filter((p) => p.year > splitYear),
+  ];
+  const out: TrendSegment[] = [];
+  for (const part of parts) {
+    const t = linearTrend(part);
+    if (!t) continue;
+    out.push({ fromYear: part[0].year, toYear: part[part.length - 1].year, ...t });
+  }
+  return out;
+}
+
+/** Split year of the two-segment trend: Zazulie, Rusticucci y Solomon (2010) find no significant trend up to 1950. */
+export const ORCADAS_TREND_SPLIT_YEAR = 1950;
+
 export function movingAverage(series: readonly YearValue[], window: number): YearValue[] {
   const w = Math.max(1, Math.trunc(window));
   const halfLeft = Math.floor((w - 1) / 2);

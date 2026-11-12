@@ -3,6 +3,7 @@ import { ORCADAS_ANNUAL_TEMP } from '@antartida/core';
 import {
   buildMissingSpans,
   buildSegmentedPaths,
+  formatSlope,
   formatTempC,
   stripeColorForAnomaly,
   type CenturyViewId,
@@ -85,7 +86,7 @@ export function CenturySvg({
 
   const ariaLabel =
     view === 'annual'
-      ? `Gráfico año por año de temperatura media anual en Orcadas (${data.firstYear} a ${data.lastYear}), con media móvil de 11 años y recta de tendencia.`
+      ? `Gráfico año por año de temperatura media anual en Orcadas (${data.firstYear} a ${data.lastYear}), con media móvil de 11 años y tendencia en dos tramos.`
       : view === 'stripes'
         ? `Gráfico de franjas climáticas de Orcadas (${data.firstYear} a ${data.lastYear}) según la anomalía respecto de la media del siglo.`
         : `Gráfico histórico del mes de ${data.monthName} en Orcadas (${data.firstYear} a ${data.lastYear}), con récords de frío y calor${hasUserTemp ? ' y tu observación simulada separada' : ''}.`;
@@ -216,22 +217,44 @@ export function CenturySvg({
               </g>
             ))}
 
-            {/* Linear trend line across the series */}
-            {data.trend && (
+            {/* Segmented trend lines across the series */}
+            {data.trendSegments.length > 0 && (
               <g className="orc-layer-trend">
-                <line
-                  x1={xOfYear(data.firstYear)}
-                  y1={yOfAnnual(
-                    data.trend.intercept + (data.trend.slopePerDecade / 10) * data.firstYear
-                  )}
-                  x2={xOfYear(data.lastYear)}
-                  y2={yOfAnnual(
-                    data.trend.intercept + (data.trend.slopePerDecade / 10) * data.lastYear
-                  )}
-                  stroke="#A4471F"
-                  strokeWidth="1.7"
-                  strokeDasharray="5 3.5"
-                />
+                {data.trendSegments.map((seg, idx) => {
+                  const x1 = xOfYear(seg.fromYear);
+                  const y1 = yOfAnnual(
+                    seg.intercept + (seg.slopePerDecade / 10) * seg.fromYear
+                  );
+                  const x2 = xOfYear(seg.toYear);
+                  const y2 = yOfAnnual(
+                    seg.intercept + (seg.slopePerDecade / 10) * seg.toYear
+                  );
+                  const midX = (x1 + x2) / 2;
+                  const midY = (y1 + y2) / 2;
+                  return (
+                    <g key={`trend-seg-${idx}`}>
+                      <line
+                        x1={x1}
+                        y1={y1}
+                        x2={x2}
+                        y2={y2}
+                        stroke="#A4471F"
+                        strokeWidth="1.7"
+                        strokeDasharray="5 3.5"
+                      />
+                      <text
+                        x={midX}
+                        y={midY - 6}
+                        textAnchor="middle"
+                        fontSize="8.5"
+                        fontWeight="700"
+                        fill="#A4471F"
+                      >
+                        {formatSlope(seg.slopePerDecade)}
+                      </text>
+                    </g>
+                  );
+                })}
               </g>
             )}
 

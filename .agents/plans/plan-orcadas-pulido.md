@@ -195,6 +195,8 @@ Cada bug sigue el mismo orden: prueba que falla, arreglo, prueba en verde.
 
 **Verificación:** la base, más abrir cada fuente nueva y confirmar que dice lo que afirma la ficha (lo pide `AGENTS.md` para la revisión).
 
+> Enmienda (12 nov 2026): fase 2 hecha. C5: 8 m confirmado por COMNAP y OSCAR (API, elevación 8, barómetro 12). C2: sin fecha con fuente para LABORC; la era pasa a «Hoy» con «Fecha ilustrativa». C4: ficha nueva `year-hielo-octubre` (COMNAP, «Sea Ice Break Up: October»); cría de pingüinos `[Fuente a definir]`. La e2e de fuentes no verificadas deja de buscar «Zazulie»: esa fuente está verificada y ahora se cita en el gráfico. Verificación: `pnpm test` y `pnpm typecheck` en verde; e2e 57 de 58, la que falla es `ocean3d` «seaTime advances» (#41, inestable y ajena a Orcadas).
+
 ---
 
 ## Fase 3 · Recorrido de 4 capítulos · Issue C

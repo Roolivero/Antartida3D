@@ -76,7 +76,13 @@ test('switches between the three century views with keyboard, moves the year cur
   const tabMonth = page.getByRole('tab', { name: /Tu mes/ });
 
   await expect(tabAnnual).toHaveAttribute('aria-selected', 'true');
-  await expect(page.getByText(/Recta de tendencia:/)).toBeVisible();
+  const trendBanner = page.locator('.orc-century-trend-banner');
+  await expect(trendBanner).toBeVisible();
+  await expect(trendBanner).toContainText('Cálculo sobre la serie');
+  await expect(trendBanner).toContainText('−0,02 °C por década');
+  await expect(trendBanner).toContainText('+0,13 °C por década');
+  const bannerText = await trendBanner.innerText();
+  expect(bannerText.match(/por década/g)?.length).toBe(2);
   await expect(page.getByText(/Media móvil 11 años/)).toBeVisible();
   await page.screenshot({ path: `${SHOTS_DIR}/${prefix}-century-annual.png` });
 
@@ -116,14 +122,14 @@ test('switches between the three century views with keyboard, moves the year cur
   const cursorCard = page.getByTestId('orc-century-cursor-card');
   await expect(cursorCard).toContainText('2016');
   await expect(cursorCard).toContainText('-3.0 °C');
-  await expect(cursorCard).toContainText('Bases científicas modernas');
+  await expect(cursorCard).toContainText('Hoy');
 
   await page.keyboard.press('ArrowLeft');
   await expect(slider).toHaveAttribute('aria-valuenow', '2015');
   await expect(slider).toHaveAttribute('aria-valuetext', /2015 · Media anual: -3\.8 °C/);
   await expect(cursorCard).toContainText('2015');
   await expect(cursorCard).toContainText('-3.8 °C');
-  await expect(cursorCard).toContainText('Bases científicas modernas');
+  await expect(cursorCard).toContainText('Hoy');
 
   // Jump to beginning of archive (1903, Casa Omond, incomplete year)
   await page.keyboard.press('Home');

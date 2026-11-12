@@ -84,7 +84,7 @@ test('YearWheel: rotates month with keyboard, announces month name, moves solar 
   // Verify exact reading for June + climate + sea ice
   await expect(page.getByText('En junio el día dura 5 h 40 min')).toBeVisible();
   await expect(page.getByRole('status').getByText(/-9,0 °C/)).toBeVisible();
-  await expect(page.getByText(/70 % cubierto/)).toBeVisible();
+  await expect(page.getByRole('status').getByText(/hielo suelto/)).toBeVisible();
   await page.screenshot({ path: `${SHOTS_DIR}/${viewportTag(page)}-year-junio.png` });
 
   // Move the sun slider to midnight (Home -> 00:00 h) and verify night state, then advance hour
@@ -148,7 +148,7 @@ test('TimeMachine: traverses all eras with buttons, updates era title and contin
     { year: '1905', title: 'Casa Moneta', span: 'Registro desde 1903: 2 años, 1 de ellos completos' },
     { year: '1927', title: 'Primera estación de radio', span: 'Registro desde 1903: 24 años, 23 de ellos completos' },
     { year: '1951', title: 'Destacamento Naval', span: 'Registro desde 1903: 48 años, 47 de ellos completos' },
-    { year: '2000', title: 'Bases científicas modernas', span: 'Registro desde 1903: 97 años, 96 de ellos completos' },
+    { year: '2000', title: 'Hoy', span: 'Registro desde 1903: 97 años, 96 de ellos completos' },
   ];
 
   for (const era of expectedForwardEras) {
@@ -163,7 +163,14 @@ test('TimeMachine: traverses all eras with buttons, updates era title and contin
     }
   }
 
-  // At the latest era (2000), both hotspots exist (B2)
+  // At the latest era (Hoy), verify illustrative start chip and absence of 2000 in era card
+  const eraCard = page.locator('.orc-era-card');
+  await expect(eraCard).toContainText('Fecha ilustrativa');
+  await expect(eraCard).not.toContainText('2000');
+  await expect(page.getByRole('button', { name: 'Hoy' })).toBeVisible();
+  await expect(page.getByRole('button', { name: '2000' })).toHaveCount(0);
+
+  // At the latest era, both hotspots exist (B2)
   await expect(flagHotspot).toBeVisible();
   await expect(windMastHotspot).toBeVisible();
 

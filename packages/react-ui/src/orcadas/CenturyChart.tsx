@@ -5,6 +5,7 @@ import { CenturySvg } from './century/CenturySvg.tsx';
 import {
   CENTURY_VIEWS,
   computeCenturyDataset,
+  formatSlope,
   formatTempC,
   type CenturyViewId,
 } from './century/centuryData.ts';
@@ -157,17 +158,19 @@ export function CenturyChart({
               </span>
             </div>
 
-            {data.trend && (
+            {data.trendSegments.length > 0 && (
               <div className="orc-century-trend-banner">
                 <KindChip kind="calc" label="Cálculo sobre la serie" />
                 <div className="orc-century-trend-copy">
                   <strong>
-                    Recta de tendencia: {formatTempC(data.trend.slopePerDecade, 2, true)} por
-                    década
+                    Recta de tendencia:{' '}
+                    {data.trendSegments
+                      .map((seg) => `${seg.fromYear}–${seg.toYear}: ${formatSlope(seg.slopePerDecade)}`)
+                      .join(' · ')}
                   </strong>
                   <span>
-                    Calculada sobre los {data.trend.n} años completos entre {data.firstYear} y{' '}
-                    {data.lastYear} (media del siglo: {formatTempC(data.seriesMean)}).
+                    Si la tendencia es significativa lo dice el estudio citado (Zazulie,
+                    Rusticucci y Solomon, 2010), no este cálculo.
                   </span>
                 </div>
               </div>
@@ -289,7 +292,9 @@ export function CenturyChart({
           </div>
           <div className="orc-cursor-era-row">
             <span className="orc-cursor-era-tag hand">
-              Etapa desde {selectedRecord.era.fromYear}: {selectedRecord.era.title}
+              {selectedRecord.era.illustrativeStart
+                ? `Etapa: ${selectedRecord.era.title}`
+                : `Etapa desde ${selectedRecord.era.fromYear}: ${selectedRecord.era.title}`}
             </span>
             <p className="orc-cursor-era-desc">{selectedRecord.era.summary}</p>
           </div>

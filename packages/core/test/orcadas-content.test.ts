@@ -20,7 +20,7 @@ import {
   ORCADAS_CLIMATE,
   ORCADAS_MONTHLY_TEMP,
 } from '../src/content/orcadas-series.ts';
-import { CHAPTERS } from '../src/orcadas.ts';
+import { CHAPTERS, ORCADAS_TREND_SPLIT_YEAR, segmentedTrend } from '../src/orcadas.ts';
 
 describe('orcadas content and sources', () => {
   it('has unique ids in sources and facts', () => {
@@ -129,6 +129,47 @@ describe('orcadas content and sources', () => {
     }
     expect(MONTH_NAMES).toHaveLength(12);
     expect(ORCADAS_FAUNA.length).toBeGreaterThan(0);
+  });
+});
+
+describe('orcadas content without repetition (C3)', () => {
+  it('lists each era fact once, only in eras, and never a closing fact', () => {
+    const seen = new Set<string>();
+    for (const era of ORCADAS_ERAS) {
+      for (const id of era.factIds) {
+        expect(seen.has(id), `${id} in two eras`).toBe(false);
+        seen.add(id);
+        expect(ORCADAS_FACTS.find((f) => f.id === id)?.chapter).toBe('eras');
+      }
+    }
+  });
+
+  it('merges the two «oldest base» facts into one with both sources', () => {
+    expect(ORCADAS_FACTS.some((f) => f.id === 'arrival-base-mas-antigua')).toBe(false);
+    expect(ORCADAS_FACTS.find((f) => f.id === 'arrival-antiguedad')?.sourceIds).toEqual([
+      'cancilleria',
+      'armada',
+    ]);
+  });
+
+  it('marks the today era start as illustrative (C2)', () => {
+    const today = ORCADAS_ERAS[ORCADAS_ERAS.length - 1];
+    expect(today.illustrativeStart).toBe(true);
+    expect(ORCADAS_ERAS.filter((e) => e.illustrativeStart)).toEqual([today]);
+  });
+});
+
+describe('orcadas two-segment trend (C1)', () => {
+  it('matches the control slopes of 1903-1950 and 1951-2025', () => {
+    const [early, late] = segmentedTrend(ORCADAS_ANNUAL_TEMP, ORCADAS_TREND_SPLIT_YEAR);
+    expect(early.fromYear).toBe(1904);
+    expect(early.toYear).toBe(1950);
+    expect(early.n).toBe(47);
+    expect(early.slopePerDecade).toBeCloseTo(-0.022, 3);
+    expect(late.fromYear).toBe(1951);
+    expect(late.toYear).toBe(2025);
+    expect(late.n).toBe(66);
+    expect(late.slopePerDecade).toBeCloseTo(0.129, 3);
   });
 });
 

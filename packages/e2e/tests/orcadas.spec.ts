@@ -94,7 +94,7 @@ test('completes all chapters of Orcadas with the keyboard only, opens Sources, a
 
   // Chapter 4: Máquina del tiempo
   await expectFocused(page, 'Máquina del tiempo');
-  await expect(page.getByRole('heading', { name: 'Bases científicas modernas' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Hoy' })).toBeVisible();
   await tabTo(page, /^Ver el siglo en datos$/);
   await page.keyboard.press('Enter');
 
@@ -232,7 +232,6 @@ test('never renders facts from unverified sources in any chapter', async ({ page
   const unverifiedSnippets = [
     'número OMM 88968',
     'El registro de hielo de la bahía Scotia empieza en 1903',
-    'Zazulie',
   ];
 
   const stepNames = [
