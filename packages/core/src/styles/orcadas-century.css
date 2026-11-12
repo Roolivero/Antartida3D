@@ -6,69 +6,7 @@
   gap: 10px;
 }
 
-.orc-century-summary {
-  margin: 0;
-  font-size: 13px;
-  line-height: 1.38;
-  color: var(--ink);
-}
-
-/* Accessible view tabs (tablist + 44px touch targets) */
-.orc-century-tabs {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 5px;
-  background: var(--paper);
-  padding: 4px;
-  border-radius: 10px;
-  border: 1.5px solid rgba(31, 42, 54, 0.38);
-}
-
-.orc-century-tab {
-  min-height: 44px;
-  padding: 4px 6px;
-  border-radius: 7px;
-  border: 1.5px solid transparent;
-  background: transparent;
-  color: var(--ink);
-  font-family: inherit;
-  font-size: 12.5px;
-  font-weight: 700;
-  line-height: 1.15;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 1px;
-  cursor: pointer;
-  transition: background-color 0.15s ease, transform 0.12s ease;
-}
-
-.orc-century-tab:hover {
-  background: rgba(255, 255, 255, 0.65);
-}
-
-.orc-century-tab.is-active {
-  background: var(--ink);
-  color: var(--ice);
-  border-color: var(--ink);
-  box-shadow: 1px 2px 0 rgba(31, 42, 54, 0.2);
-}
-
-.orc-century-tab:focus-visible {
-  outline: 2.5px solid var(--ocre);
-  outline-offset: 1px;
-}
-
-.orc-century-tab-sub {
-  font-size: 10.5px;
-  font-weight: 600;
-  opacity: 0.88;
-  text-transform: capitalize;
-}
-
-/* Tabpanel & SVG chart plate */
-.orc-century-panel {
+.orc-century-chart-block {
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -80,6 +18,11 @@
   border-radius: 8px 14px 10px 12px;
   padding: 6px 6px 4px;
   box-shadow: inset 0 1px 4px rgba(31, 42, 54, 0.08);
+}
+
+.orc-century-svg-wrap:focus-visible {
+  outline: 2px solid var(--deep);
+  outline-offset: 2px;
 }
 
 .orc-century-svg {
@@ -98,61 +41,13 @@
 }
 
 .orc-svg-cursor-year {
-  font-size: 9.5px;
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 10.5px;
   font-weight: 700;
   fill: var(--ice);
 }
 
-.orc-svg-callout-txt {
-  font-size: 9.2px;
-  font-weight: 700;
-  fill: var(--ink);
-  paint-order: stroke;
-  stroke: #FAF4E8;
-  stroke-width: 3px;
-  stroke-linejoin: round;
-}
-
-.orc-svg-callout-txt.is-cold {
-  fill: var(--deep);
-}
-
-.orc-svg-callout-txt.is-warm {
-  fill: var(--oxide);
-}
-
-.orc-svg-sim-lbl {
-  font-size: 8.5px;
-  font-weight: 700;
-  fill: var(--deep);
-}
-
-.orc-svg-sim-val {
-  font-size: 9.5px;
-  font-weight: 700;
-  fill: var(--ink);
-  paint-order: stroke;
-  stroke: #FAF4E8;
-  stroke-width: 2.5px;
-}
-
-/* Line-drawing entry animation */
-@keyframes orc-century-draw {
-  from {
-    stroke-dashoffset: 1;
-  }
-  to {
-    stroke-dashoffset: 0;
-  }
-}
-
-.orc-century-draw-path {
-  stroke-dasharray: 1;
-  stroke-dashoffset: 0;
-  animation: orc-century-draw 0.95s cubic-bezier(0.22, 0.61, 0.36, 1) both;
-}
-
-/* Legends & trend banners */
+/* Legend block */
 .orc-century-legend-block {
   display: flex;
   flex-direction: column;
@@ -162,7 +57,7 @@
 .orc-century-legend-items {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px 10px;
+  gap: 6px 12px;
   font-size: 11.5px;
   color: var(--ink);
 }
@@ -171,72 +66,46 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font-weight: 600;
 }
 
 .orc-swatch {
   display: inline-block;
-  width: 16px;
-  height: 10px;
-  flex: none;
-  border-radius: 2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  border: 1px solid rgba(31, 42, 54, 0.4);
+  vertical-align: middle;
 }
 
 .orc-swatch-annual {
-  height: 2px;
-  background: var(--ink);
-  position: relative;
-}
-
-.orc-swatch-annual::after {
-  content: '';
-  position: absolute;
-  left: 5px;
-  top: -2px;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
   background: var(--ink);
 }
 
 .orc-swatch-ma11 {
-  height: 7px;
-  background: var(--glacier);
-  border: 1.5px solid var(--deep);
-  border-radius: 4px;
+  background: #7FA8C4;
+  border-color: #1E3E5C;
 }
 
 .orc-swatch-trend {
-  height: 0;
-  border-top: 2px dashed var(--oxide);
+  background: #A4471F;
 }
 
 .orc-swatch-gap {
   background: repeating-linear-gradient(
-    -45deg,
+    45deg,
     #E8E1D3,
     #E8E1D3 2px,
-    var(--pencil) 2px,
-    var(--pencil) 3.5px
+    #5E656C 2px,
+    #5E656C 4px
   );
-  border: 1px solid var(--pencil);
 }
 
-.orc-swatch-cold {
-  background: linear-gradient(90deg, #132B43, var(--glacier));
-  border: 1px solid var(--ink);
-}
-
-.orc-swatch-warm {
-  background: linear-gradient(90deg, var(--ocre), var(--oxide));
-  border: 1px solid var(--ink);
-}
-
+/* Trend Banner */
 .orc-century-trend-banner {
   background: var(--paper);
-  border: 1px solid rgba(31, 42, 54, 0.35);
+  border: 1px solid rgba(31, 42, 54, 0.32);
   border-radius: 8px;
-  padding: 6px 9px;
+  padding: 6px 8px;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -263,272 +132,8 @@
   line-height: 1.3;
 }
 
-/* Month view extremes */
-.orc-century-extremes-row {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 5px;
-}
-
-.orc-extreme-pill {
-  background: var(--paper);
-  border: 1px solid rgba(31, 42, 54, 0.32);
-  border-radius: 7px;
-  padding: 5px 7px;
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-}
-
-.orc-extreme-pill.is-cold {
-  border-left: 3px solid var(--deep);
-}
-
-.orc-extreme-pill.is-warm {
-  border-left: 3px solid var(--oxide);
-}
-
-.orc-extreme-pill small {
-  font-size: 10.5px;
-  color: #2B3640;
-  line-height: 1.15;
-}
-
-.orc-extreme-pill strong {
-  font-family: 'Fraunces', Georgia, serif;
-  font-size: 12.5px;
-  color: var(--ink);
-}
-
-.orc-user-obs-note.is-empty {
-  opacity: 0.92;
-}
-
-/* Year Cursor Slider & Live Inspection Card */
-.orc-century-cursor-box {
-  background: var(--paper);
-  border: 1.5px solid rgba(31, 42, 54, 0.42);
-  border-radius: 9px;
-  padding: 7px 9px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.orc-century-range {
-  min-height: 44px;
-  margin: 0;
-}
-
-.orc-century-range:focus-visible {
-  outline: 2px solid var(--deep);
-  outline-offset: 2px;
-  border-radius: 6px;
-}
-
-.orc-century-cursor-card {
-  background: #FBF4E6;
-  border: 1px solid rgba(31, 42, 54, 0.32);
-  border-radius: 7px;
-  padding: 6px 8px;
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-
-.orc-cursor-card-top {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px;
-}
-
-.orc-cursor-year-badge {
-  background: var(--ink);
-  color: var(--ice);
-  font-family: 'Fraunces', Georgia, serif;
-  font-size: 13px;
-  font-weight: 700;
-  padding: 1px 7px;
-  border-radius: 5px;
-}
-
-.orc-cursor-temp-val {
-  font-size: 12.5px;
-  color: var(--ink);
-}
-
-.orc-cursor-era-row {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-}
-
-.orc-cursor-era-tag {
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--deep);
-  line-height: 1.15;
-}
-
-.orc-cursor-era-desc {
-  margin: 0;
-  font-size: 11.5px;
-  line-height: 1.3;
-  color: #2B3640;
-}
-
-/* Secondary reading: Decade Means */
-.orc-century-decades {
-  background: var(--paper);
-  border: 1px solid rgba(31, 42, 54, 0.32);
-  border-radius: 8px;
-  padding: 7px 9px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.orc-century-decades-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 6px;
-}
-
-.orc-decades-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
-  gap: 4px;
-}
-
-.orc-decade-chip {
-  background: #FBF4E6;
-  border: 1px solid rgba(31, 42, 54, 0.25);
-  border-radius: 6px;
-  padding: 3px 5px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-}
-
-.orc-decade-chip.is-current {
-  border-color: var(--deep);
-  background: #E5EFF4;
-  box-shadow: 0 0 0 1px var(--deep);
-}
-
-.orc-decade-name {
-  font-size: 10.5px;
-  font-weight: 700;
-  color: #2B3640;
-}
-
-.orc-decade-val {
-  font-family: 'Fraunces', Georgia, serif;
-  font-size: 12px;
-  color: var(--ink);
-}
-
-.orc-decade-n {
-  font-size: 9.5px;
-  color: var(--pencil);
-}
-
-/* Accessible Folded Data Table */
-.orc-century-details {
-  background: var(--paper);
-  border: 1.5px solid rgba(31, 42, 54, 0.38);
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.orc-century-details-summary {
-  min-height: 44px;
-  padding: 0 10px;
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--ink);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  user-select: none;
-}
-
-.orc-century-details-summary:hover {
-  background: rgba(255, 255, 255, 0.5);
-}
-
-.orc-century-details-summary:focus-visible {
-  outline: 2px solid var(--deep);
-  outline-offset: -2px;
-}
-
-.orc-century-table-wrap {
-  max-height: 190px;
-  overflow-y: auto;
-  border-top: 1px solid rgba(31, 42, 54, 0.25);
-  background: #FBF4E6;
-}
-
-.orc-century-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 12px;
-  text-align: left;
-}
-
-.orc-century-table caption {
-  padding: 6px 8px;
-  font-size: 11px;
-  font-weight: 700;
-  color: #2B3640;
-  text-align: left;
-  background: var(--paper);
-}
-
-.orc-century-table th,
-.orc-century-table td {
-  padding: 5px 8px;
-  border-bottom: 1px solid rgba(31, 42, 54, 0.14);
-}
-
-.orc-century-table thead th {
-  position: sticky;
-  top: 0;
-  background: var(--paper);
-  color: var(--ink);
-  font-weight: 700;
-  border-bottom: 1.5px solid var(--ink);
-}
-
-/* Source & License Footer */
-.orc-century-source-footer {
-  background: var(--paper);
-  border-top: 1px dashed rgba(31, 42, 54, 0.35);
-  padding-top: 6px;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.orc-century-source-line {
-  margin: 0;
-  font-size: 11.5px;
-  line-height: 1.3;
-  color: var(--ink);
-}
-
-.orc-century-source-meta {
-  font-size: 11px;
-  color: #2B3640;
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .orc-century-draw-path,
-  .orc-century-tab {
+  .orc-century-draw-path {
     animation: none;
     transition: none;
   }

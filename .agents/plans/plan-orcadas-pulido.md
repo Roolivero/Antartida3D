@@ -226,6 +226,8 @@ Es la fase que más suma en «Innovación» y «Comunicación». Detalle visual 
 
 **Verificación:** la base, más el recorrido completo a mano en 1440 y 390 px. Referencia: el recorrido central (llegar, una lectura, viajar a 1903 y a hoy, y responder) tiene que caber en unos 90 segundos del video de 3 minutos.
 
+> Enmienda (12 nov 2026): fase 3 hecha. La tira de meses (`MonthStrip`, F3) se hizo en esta fase porque reemplaza al capítulo «Un año»; la Fase 7 solo la pule. Las fichas del antiguo capítulo «Un año» pasan a `'months'` (el «Saber más» de la tira). Las fichas de «El siglo» se asignan a la era que corresponde (récord de 1930 en la era de 1927, Zazulie en la de 1951, promedios en «Hoy»), así `journeyFacts(year)` filtra por era. Se suma `sunsetHour` en core para la luz de atardecer de Responder. En el gráfico de Responder los puntos se distinguen en «igual de frío o más» y «más cálido». Verificación: `pnpm test` (182 core, 61 react-ui), `pnpm typecheck`, `pnpm build` y e2e de Orcadas (30) en verde.
+
 ---
 
 ## Fase 4 · Fichas, paneles y fuentes sin saturar · Issue D
@@ -492,7 +494,7 @@ Orden de prioridad, de lo que nunca se recorta a lo que se recorta primero:
 - [x] B1 a B8 con prueba en verde.
 - [ ] Ningún dato real sin fuente verificada; fuentes nuevas abiertas y comprobadas.
 - [ ] Disposición de la base respaldada por `docs/orcadas-emplazamiento.md`; ninguna planta se interseca; elementos sin fuente fuera de la escena.
-- [ ] 4 capítulos, pregunta guía en Llegar y respondida en Responder.
+- [x] 4 capítulos, pregunta guía en Llegar y respondida en Responder.
 - [ ] Como mucho 2 fichas a la vista por capítulo; una sola capa flotante por vez.
 - [ ] Celular: botones de 44 px o más, texto de 12 px o más (11 px en SVG), horizontal usable, instrumento y control a la vista juntos.
 - [ ] Pingüinera en grupos sobre piedra; hielo coherente con el mes.

@@ -1,6 +1,7 @@
 import { useMemo, useRef } from 'react';
 import {
   CHAPTERS,
+  CHAPTER_NAMES,
   factsFor,
   sourcesOf,
   type Chapter,
@@ -9,15 +10,6 @@ import {
 import { useFocusReturn } from '../hooks.ts';
 import { Icon } from '../ui.tsx';
 import { KindChip } from './KindChip.tsx';
-
-const CHAPTER_LABELS: Record<Chapter, string> = {
-  arrival: 'Llegada',
-  observation: 'Observación',
-  year: 'Un año',
-  eras: 'Máquina del tiempo',
-  century: 'El siglo',
-  done: 'Cierre',
-};
 
 export function SourcesPanel({
   chapter,
@@ -75,7 +67,7 @@ export function SourcesPanel({
       <div className="orc-sources-head">
         <div>
           <span className="orc-kicker hand">Registro documental</span>
-          <h3>Fuentes · {CHAPTER_LABELS[chapter]}</h3>
+          <h3>Fuentes · {CHAPTER_NAMES[chapter]}</h3>
         </div>
         <button
           type="button"

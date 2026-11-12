@@ -210,6 +210,7 @@ test.describe('Orcadas · observación', () => {
       page.locator('.orc-notebook-sim-note')
     ).toContainText('La observación del día es una simulación sorteada dentro del clima real del mes.');
     await expect(primary(page)).toBeEnabled();
+    await expect(primary(page)).toHaveText('Viajar en el tiempo');
 
     // No horizontal overflow at current viewport (390px mobile or 1440px desktop)
     const overflow = await page.evaluate(

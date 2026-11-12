@@ -20,6 +20,9 @@ import {
   observationFor,
   orcadasReducer as reduce,
   readingFor,
+  answerFor,
+  sameMonthSeries,
+  sunsetHour,
   recordSpan,
   recordSpanText,
   scoreObservation,
@@ -84,9 +87,9 @@ describe('chapters and state', () => {
     expect(observationDone(s)).toBe(true);
 
     s = run(Array.from({ length: CHAPTERS.length }, () => ({ type: 'next' }) as const), s);
-    expect(s.chapter).toBe('done');
+    expect(s.chapter).toBe('answer');
     expect(canAdvanceOrcadas(s)).toBe(false);
-    expect(reduce(s, { type: 'next' }).chapter).toBe('done');
+    expect(reduce(s, { type: 'next' }).chapter).toBe('answer');
     expect(s.visited).toEqual(CHAPTERS);
 
     const cleared = reduce(s, { type: 'clearGuesses' });
@@ -125,15 +128,15 @@ describe('chapters and state', () => {
 
     const jumped = run(
       [
-        { type: 'goto', chapter: 'eras' },
-        { type: 'goto', chapter: 'year' },
-        { type: 'goto', chapter: 'eras' },
+        { type: 'goto', chapter: 'answer' },
+        { type: 'goto', chapter: 'journey' },
+        { type: 'goto', chapter: 'answer' },
         { type: 'back' },
       ],
       init
     );
-    expect(jumped.chapter).toBe('year');
-    expect(jumped.visited).toEqual(['arrival', 'eras', 'year']);
+    expect(jumped.chapter).toBe('journey');
+    expect(jumped.visited).toEqual(['arrival', 'answer', 'journey']);
   });
 
   it('normalizes month circularly, clamps hour to 0..23 and year to [1903, maxYear]', () => {
@@ -348,6 +351,33 @@ describe('solar astronomy at Orcadas (60.74° S)', () => {
     // Morning in the East (~90°), afternoon in the West (~270°)
     expect(solarAzimuthDeg(ORCADAS_LAT, mar21, 6)).toBeCloseTo(90, 0);
     expect(solarAzimuthDeg(ORCADAS_LAT, mar21, 18)).toBeCloseTo(270, 0);
+  });
+});
+
+describe('answer to the guiding question', () => {
+  it('counts November years as cold as -3.0 °C in each segment (control values)', () => {
+    const [early, late] = answerFor(-3.0, 11);
+    expect(early).toEqual({ fromYear: early.fromYear, toYear: 1950, years: 48, asCold: 16 });
+    expect(early.fromYear).toBeLessThanOrEqual(1904);
+    expect(late.fromYear).toBe(1951);
+    expect(late.years).toBe(70);
+    expect(late.asCold).toBe(4);
+  });
+
+  it('returns the same month across years from the monthly series', () => {
+    const nov = sameMonthSeries(11);
+    expect(nov[0].year).toBe(1903);
+    expect(nov.filter((p) => p.value !== null).length).toBe(118);
+  });
+});
+
+describe('sunset hour', () => {
+  it('is later in summer than in winter and stays in 12..23', () => {
+    expect(sunsetHour(12)).toBeGreaterThan(sunsetHour(6));
+    for (let m = 1; m <= 12; m++) {
+      expect(sunsetHour(m)).toBeGreaterThanOrEqual(12);
+      expect(sunsetHour(m)).toBeLessThanOrEqual(23);
+    }
   });
 });
 

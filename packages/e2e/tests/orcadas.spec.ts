@@ -62,11 +62,11 @@ test('completes all chapters of Orcadas with the keyboard only, opens Sources, a
   );
   expect(overflow).toBeLessThanOrEqual(0);
 
-  // Chapter 1: Llegada -> Observación
+  // Chapter 1: Llegar -> Observar
   await tabTo(page, /^Hacer la observación$/);
   await page.keyboard.press('Enter');
 
-  // Chapter 2: Observación (focus moves to h2, primary button is enabled with "Seguir" and shows missing count)
+  // Chapter 2: Observar (focus moves to h2, primary button is enabled with "Seguir" and shows missing count)
   await expectFocused(page, 'Observación del día');
   await expect(primary(page)).toBeEnabled();
   await expect(primary(page)).toHaveText('Seguir');
@@ -82,30 +82,19 @@ test('completes all chapters of Orcadas with the keyboard only, opens Sources, a
   await page.keyboard.type('6');
 
   await expect(primary(page)).toBeEnabled();
-  await expect(primary(page)).toHaveText('Recorrer el año');
-  await tabTo(page, /^Recorrer el año$/);
-  await page.keyboard.press('Enter');
-
-  // Chapter 3: Un año
-  await expectFocused(page, 'Un año en Orcadas');
-  await expect(page.getByText(/h de luz/)).toBeVisible();
+  await expect(primary(page)).toHaveText('Viajar en el tiempo');
   await tabTo(page, /^Viajar en el tiempo$/);
   await page.keyboard.press('Enter');
 
-  // Chapter 4: Máquina del tiempo
-  await expectFocused(page, 'Máquina del tiempo');
-  await expect(page.getByRole('heading', { name: 'Hoy' })).toBeVisible();
-  await tabTo(page, /^Ver el siglo en datos$/);
+  // Chapter 3: Viajar
+  await expectFocused(page, 'Viaje en el tiempo');
+  await expect(page.getByRole('heading', { level: 3, name: 'Hoy' })).toBeVisible();
+  await tabTo(page, /^Ver la respuesta$/);
   await page.keyboard.press('Enter');
 
-  // Chapter 5: El siglo
-  await expectFocused(page, 'El siglo en datos');
-  await expect(page.getByText(/Serie histórica de temperatura media anual/)).toBeVisible();
-  await tabTo(page, /^Ir al cierre$/);
-  await page.keyboard.press('Enter');
-
-  // Chapter 6: Cierre
-  await expectFocused(page, 'Cierre de la expedición');
+  // Chapter 4: Responder
+  await expectFocused(page, 'La respuesta');
+  await expect(page.getByRole('img', { name: /Gráfico de puntos de temperatura/ })).toBeVisible();
 
   // Open Sources panel via keyboard and close with Escape
   await page.getByRole('button', { name: 'Fuentes' }).focus();
@@ -133,7 +122,7 @@ test('opens Orcadas from the 2D map, completes it, and updates the log', async (
   await openOrcadasFromMap(page);
   await page
     .getByRole('navigation', { name: 'Capítulos de la expedición' })
-    .getByRole('button', { name: /Cierre/ })
+    .getByRole('button', { name: /Responder/ })
     .click();
   await page.getByRole('button', { name: 'Terminar expedición' }).click();
 
@@ -235,12 +224,10 @@ test('never renders facts from unverified sources in any chapter', async ({ page
   ];
 
   const stepNames = [
-    'Llegada',
-    'Observación',
-    'Un año',
-    'Máquina del tiempo',
-    'El siglo',
-    'Cierre',
+    'Llegar',
+    'Observar',
+    'Viajar',
+    'Responder',
   ];
 
   for (const stepName of stepNames) {
@@ -315,7 +302,7 @@ test('B1: observation month stays fixed when changing scene month', async ({ pag
   // 1. Enter 4 readings in Observación
   await page
     .getByRole('navigation', { name: 'Capítulos de la expedición' })
-    .getByRole('button', { name: /Observación/ })
+    .getByRole('button', { name: /Observar/ })
     .click();
   await expect(page.getByRole('heading', { level: 2, name: 'Observación del día' })).toBeVisible();
 
@@ -328,37 +315,24 @@ test('B1: observation month stays fixed when changing scene month', async ({ pag
   await page.getByLabel(/^Cobertura de nubes/).focus();
   await page.keyboard.type('5');
 
-  // Check Cierre summary text before changing month
+  // Check Responder summary text before changing month
   await page
     .getByRole('navigation', { name: 'Capítulos de la expedición' })
-    .getByRole('button', { name: /Cierre/ })
+    .getByRole('button', { name: /Responder/ })
     .click();
-  await expect(page.getByRole('heading', { level: 2, name: 'Cierre de la expedición' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 2, name: 'La respuesta' })).toBeVisible();
   const summaryBefore = await page.locator('.orc-done-summary p').textContent();
   expect(summaryBefore).toContain('Tu observación de');
 
-  // 2. Go to "Un año", change month with the wheel slider
-  await page
-    .getByRole('navigation', { name: 'Capítulos de la expedición' })
-    .getByRole('button', { name: /Un año/ })
-    .click();
-  await expect(page.getByRole('heading', { level: 2, name: 'Un año en Orcadas' })).toBeVisible();
+  // 2. Change month via the month strip
+  const monthStrip = page.getByRole('group', { name: 'Mes en la estación' });
+  await expect(monthStrip).toBeVisible();
+  const janBtn = monthStrip.getByRole('button', { name: 'enero' });
+  await janBtn.click();
+  await expect(janBtn).toHaveAttribute('aria-pressed', 'true');
 
-  const wheelSlider = page.getByRole('slider', { name: /Rueda del año/i });
-  await wheelSlider.focus();
-  await page.keyboard.press('Home');
-  await expect(wheelSlider).toHaveAttribute('aria-valuenow', '1');
-  await expect(wheelSlider).toHaveAttribute('aria-valuetext', 'enero');
-
-  // 3. Go back to closing chapter
-  await page
-    .getByRole('navigation', { name: 'Capítulos de la expedición' })
-    .getByRole('button', { name: /Cierre/ })
-    .click();
-  await expect(page.getByRole('heading', { level: 2, name: 'Cierre de la expedición' })).toBeVisible();
+  // 3. In Responder, the text still names the original month and the score text is unchanged
   const summaryAfter = await page.locator('.orc-done-summary p').textContent();
-
-  // The text still names the original month and the score text is unchanged compared with before changing the month
   expect(summaryAfter).toBe(summaryBefore);
   const currentMonthIdx = new Date().getMonth();
   if (currentMonthIdx !== 0) {

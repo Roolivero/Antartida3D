@@ -5,7 +5,6 @@ import {
   layoutOf,
   sourcesOf,
   type BuildingId,
-  type Chapter,
   type OrcadasHotspotId,
 } from '@antartida/core';
 import { useFocusReturn } from '../hooks.ts';
@@ -34,7 +33,6 @@ export interface HotspotDef {
   worldPos: readonly [number, number, number];
   pose: CameraPose;
   fallbackPct: readonly [number, number];
-  chapters: readonly Chapter[];
 }
 
 /**
@@ -86,7 +84,6 @@ export const HOTSPOTS: readonly HotspotDef[] = [
       target: [-4.0, 1.8, 2.2],
     },
     fallbackPct: [33, 52],
-    chapters: ['observation', 'century'],
   },
   {
     id: 'mast',
@@ -103,7 +100,6 @@ export const HOTSPOTS: readonly HotspotDef[] = [
       target: [-6.8, 3.5, -1.2],
     },
     fallbackPct: [23, 38],
-    chapters: ['observation', 'arrival'],
   },
   {
     id: 'house',
@@ -120,7 +116,6 @@ export const HOTSPOTS: readonly HotspotDef[] = [
       target: [2.8, 2.1, -1.2],
     },
     fallbackPct: [55, 43],
-    chapters: ['eras', 'arrival'],
   },
   {
     id: 'flag',
@@ -137,7 +132,6 @@ export const HOTSPOTS: readonly HotspotDef[] = [
       target: [0.2, 3.6, 3.6],
     },
     fallbackPct: [45, 37],
-    chapters: ['arrival', 'eras'],
   },
   {
     id: 'bay',
@@ -150,7 +144,6 @@ export const HOTSPOTS: readonly HotspotDef[] = [
       target: [-1.5, 0.8, 11.0],
     },
     fallbackPct: [30, 66],
-    chapters: ['year', 'century'],
   },
   {
     id: 'colony',
@@ -163,7 +156,6 @@ export const HOTSPOTS: readonly HotspotDef[] = [
       target: [9.5, 2.2, 5.6],
     },
     fallbackPct: [74, 46],
-    chapters: ['year', 'arrival'],
   },
 ];
 

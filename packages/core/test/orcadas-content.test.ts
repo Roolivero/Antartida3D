@@ -2,7 +2,11 @@ import { describe, expect, it } from 'vitest';
 import {
   FACT_KIND_LABEL,
   MONTH_NAMES,
+  CHAPTER_HEADINGS,
+  CHAPTER_NAMES,
   ORCADAS_ERAS,
+  ORCADAS_GUIDING_QUESTION,
+  journeyFacts,
   ORCADAS_FACTS,
   ORCADAS_FAUNA,
   ORCADAS_HOTSPOT_FACTS,
@@ -115,11 +119,29 @@ describe('orcadas content and sources', () => {
     }
   });
 
-  it('has at least one publishable fact per chapter', () => {
+  it('has at least one publishable fact per chapter except observation, and for the month strip', () => {
     for (const chapter of CHAPTERS) {
-      const facts = factsFor(chapter);
-      expect(facts.length).toBeGreaterThan(0);
+      if (chapter === 'observation') continue;
+      expect(factsFor(chapter).length, chapter).toBeGreaterThan(0);
     }
+    expect(factsFor('months').length).toBeGreaterThan(0);
+  });
+
+  it('filters the journey facts by the active era', () => {
+    expect(journeyFacts(1903).map((f) => f.id)).toEqual(['eras-expedicion-bruce']);
+    expect(journeyFacts(1930).map((f) => f.id)).toContain('century-record-frio');
+    expect(journeyFacts(1903).map((f) => f.id)).not.toContain('century-record-frio');
+    const allJourney = new Set(factsFor('journey').map((f) => f.id));
+    const inEras = new Set(ORCADAS_ERAS.flatMap((e) => e.factIds));
+    expect(inEras).toEqual(allJourney);
+  });
+
+  it('names every chapter once and asks the guiding question', () => {
+    for (const chapter of CHAPTERS) {
+      expect(CHAPTER_NAMES[chapter].length).toBeGreaterThan(0);
+      expect(CHAPTER_HEADINGS[chapter].length).toBeGreaterThan(0);
+    }
+    expect(ORCADAS_GUIDING_QUESTION.endsWith('?')).toBe(true);
   });
 
   it('has consistent labels and metadata', () => {
@@ -139,7 +161,7 @@ describe('orcadas content without repetition (C3)', () => {
       for (const id of era.factIds) {
         expect(seen.has(id), `${id} in two eras`).toBe(false);
         seen.add(id);
-        expect(ORCADAS_FACTS.find((f) => f.id === id)?.chapter).toBe('eras');
+        expect(ORCADAS_FACTS.find((f) => f.id === id)?.chapter).toBe('journey');
       }
     }
   });

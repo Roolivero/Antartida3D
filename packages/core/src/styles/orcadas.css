@@ -400,6 +400,15 @@
   gap: 8px;
 }
 
+.orc-question {
+  margin: 0;
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--deep);
+}
+
 .orc-lead {
   margin: 0;
   font-size: 14px;
@@ -605,67 +614,138 @@
   cursor: pointer;
 }
 
-.orc-stats-cards {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 6px;
+/* MonthStrip */
+.orc-month-strip-wrap {
+  position: absolute;
+  top: 88px;
+  left: 8px;
+  right: 8px;
+  max-width: calc(100vw - 16px);
+  z-index: 5;
 }
 
-.orc-stat-box {
+.orc-month-strip {
+  display: flex;
+  align-items: stretch;
+  gap: 2px;
   background: var(--paper);
-  border: 1px solid rgba(31, 42, 54, 0.3);
+  border: 1.5px solid var(--ink);
   border-radius: 8px;
-  padding: 6px 8px;
+  padding: 3px;
+  box-shadow: 2px 3px 0 rgba(31, 42, 54, 0.12);
 }
 
-.orc-stat-box small {
-  display: block;
-  font-size: 11px;
-  color: #3B4651;
-}
-
-.orc-stat-box strong {
-  display: block;
-  font-family: 'Fraunces', Georgia, serif;
-  font-size: 14px;
+.orc-month-btn {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 38px;
+  padding: 2px 1px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 700;
   color: var(--ink);
+  position: relative;
 }
 
-.orc-stat-box span {
+.orc-month-btn:hover {
+  background: rgba(31, 42, 54, 0.08);
+}
+
+.orc-month-btn.is-active,
+.orc-month-btn[aria-pressed="true"] {
+  background: var(--ink);
+  color: var(--ice);
+}
+
+.orc-month-btn:focus-visible {
+  outline: 2px solid var(--deep);
+  outline-offset: 1px;
+}
+
+.orc-month-short {
   display: block;
-  font-size: 11px;
-  color: #2B3640;
+  line-height: 1.1;
 }
 
-.orc-fauna-box {
+.orc-month-daylight-bar {
+  display: block;
+  width: 100%;
+  height: 3px;
+  background: #E8A838;
+  border-radius: 1px;
+  margin-top: 1px;
+}
+
+.orc-month-btn[aria-pressed="true"] .orc-month-daylight-bar {
+  background: #FFD479;
+}
+
+.orc-month-ice-stripe {
+  display: block;
+  width: 100%;
+  height: 2.5px;
+  background: #7FA8C4;
+  border-radius: 1px;
+  margin-top: 1px;
+}
+
+.orc-month-btn[aria-pressed="true"] .orc-month-ice-stripe {
+  background: #A8D1ED;
+}
+
+.orc-month-details {
+  margin-top: 4px;
+  background: #FBF4E6;
+  border: 1.5px solid var(--ink);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 12px;
+  box-shadow: 2px 3px 0 rgba(31, 42, 54, 0.12);
+  max-height: 52dvh;
+  overflow-y: auto;
+}
+
+.orc-month-summary-toggle {
+  cursor: pointer;
+  font-weight: 700;
+  color: var(--deep);
+}
+
+.orc-month-summary-toggle:focus-visible {
+  outline: 2px solid var(--deep);
+  outline-offset: 2px;
+}
+
+.orc-month-details-body {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.orc-month-info-row {
   display: flex;
   flex-direction: column;
   gap: 4px;
-}
-
-.orc-sub-label {
-  font-size: 11px;
-  font-weight: 700;
-  color: #2B3640;
-}
-
-.orc-fauna-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-}
-
-.orc-fauna-pill {
-  font-size: 11px;
-  font-weight: 700;
-  padding: 2px 8px;
-  border-radius: 10px;
-  background: #E2EDF3;
-  border: 1px solid var(--deep);
+  font-size: 12px;
   color: var(--ink);
 }
 
-/* TimeMachine eras */
+.orc-month-ice-text {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Journey eras */
 .orc-era-pills {
   display: flex;
   flex-wrap: wrap;
@@ -711,7 +791,13 @@
   line-height: 1.35;
 }
 
-/* CenturyChart */
+/* Answer & Century Charts */
+.orc-answer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 .orc-century-summary {
   margin: 0;
   font-size: 13px;
@@ -728,26 +814,51 @@
 .orc-chart-svg {
   display: block;
   width: 100%;
-  height: 76px;
+  height: auto;
 }
 
-.orc-chart-axis {
-  display: flex;
-  justify-content: space-between;
-  font-size: 11px;
-  color: #3B4651;
-  margin-top: 2px;
-}
-
-.orc-user-obs-note {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  background: var(--paper);
-  border: 1px dashed var(--deep);
+.orc-answer-sentence-block {
+  background: #FBF4E6;
+  border: 1.5px solid var(--ink);
   border-radius: 8px;
-  padding: 5px 8px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.orc-answer-sentence {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.38;
+  color: var(--ink);
+}
+
+.orc-answer-cta-row {
+  margin: 2px 0;
+}
+
+.orc-btn-goto-obs {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--deep);
+  border: 1.5px solid var(--deep);
+  padding: 4px 10px;
+  border-radius: 6px;
+}
+
+.orc-swatch-dot {
+  background: #3D6B8E;
+  border-radius: 50%;
+}
+
+.orc-swatch-dot-warm {
+  background: #CE8F3A;
+  border-radius: 50%;
+}
+
+.orc-swatch-thresh {
+  background: #A4471F;
 }
 
 /* Done chapter */
@@ -956,6 +1067,14 @@
     left: 24px;
     top: auto;
     bottom: 24px;
+  }
+
+  .orc-month-strip-wrap {
+    top: 86px;
+    left: 24px;
+    right: auto;
+    width: 380px;
+    z-index: 5;
   }
 
   .orc-panel {

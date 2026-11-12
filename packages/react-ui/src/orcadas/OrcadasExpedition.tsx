@@ -1,61 +1,38 @@
 import { useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import {
   CHAPTERS,
-  MONTH_NAMES,
+  CHAPTER_HEADINGS,
+  CHAPTER_NAMES,
   ORCADAS_CLIMATE,
   ORCADAS_FAUNA,
-  SEAL_SVG,
+  ORCADAS_GUIDING_QUESTION,
+  READING_KINDS,
   chapterIndex,
   eraAt,
   factsFor,
   initialOrcadas,
   orcadasReducer,
-  READING_KINDS,
-  checkGuess,
   readingFor,
-  scoreObservation,
-  truthFor,
   seaIceAt,
-  sourcesOf,
+  sunsetHour,
   type Chapter,
-  type OrcadasFact,
 } from '@antartida/core';
 import { Icon } from '../ui.tsx';
-import { CenturyChart } from './CenturyChart.tsx';
-import { NOTEBOOK_LABELS, formatRecorded } from './observation/Notebook.tsx';
+import { Answer } from './Answer.tsx';
+import { FactList } from './FactList.tsx';
 import { Hotspots, type HotspotId } from './Hotspots.tsx';
+import { Journey } from './Journey.tsx';
 import { KindChip } from './KindChip.tsx';
+import { MonthStrip } from './MonthStrip.tsx';
 import { Observation } from './observation/Observation.tsx';
 import { SourcesPanel } from './SourcesPanel.tsx';
 import { StationScene } from './StationScene.tsx';
-import { TimeMachine } from './TimeMachine.tsx';
-import { YearWheel } from './YearWheel.tsx';
-
-export const CHAPTER_NAMES: Record<Chapter, string> = {
-  arrival: 'Llegada',
-  observation: 'Observación',
-  year: 'Un año',
-  eras: 'Máquina del tiempo',
-  century: 'El siglo',
-  done: 'Cierre',
-};
-
-const CHAPTER_HEADINGS: Record<Chapter, string> = {
-  arrival: 'Estación Orcadas',
-  observation: 'Observación del día',
-  year: 'Un año en Orcadas',
-  eras: 'Máquina del tiempo',
-  century: 'El siglo en datos',
-  done: 'Cierre de la expedición',
-};
 
 const CHAPTER_DEFAULT_FOCUS: Record<Chapter, HotspotId> = {
   arrival: 'overview',
   observation: 'screen',
-  year: 'overview',
-  eras: 'overview',
-  century: 'overview',
-  done: 'flag',
+  journey: 'overview',
+  answer: 'flag',
 };
 
 function primaryButtonText(chapter: Chapter, recorded: number): string {
@@ -63,41 +40,12 @@ function primaryButtonText(chapter: Chapter, recorded: number): string {
     case 'arrival':
       return 'Hacer la observación';
     case 'observation':
-      return recorded >= 4 ? 'Recorrer el año' : 'Seguir';
-    case 'year':
-      return 'Viajar en el tiempo';
-    case 'eras':
-      return 'Ver el siglo en datos';
-    case 'century':
-      return 'Ir al cierre';
-    case 'done':
+      return recorded >= 4 ? 'Viajar en el tiempo' : 'Seguir';
+    case 'journey':
+      return 'Ver la respuesta';
+    case 'answer':
       return 'Terminar expedición';
   }
-}
-
-function FactList({ facts }: { facts: readonly OrcadasFact[] }) {
-  if (facts.length === 0) return null;
-  return (
-    <div className="orc-facts-list">
-      {facts.map((fact) => {
-        const srcs = sourcesOf(fact);
-        return (
-          <article key={fact.id} className="orc-fact-card">
-            <div className="orc-fact-top">
-              <KindChip kind={fact.kind} />
-              {fact.title && <strong className="orc-fact-title">{fact.title}</strong>}
-            </div>
-            <p className="orc-fact-text">{fact.text}</p>
-            {srcs.length > 0 && (
-              <small className="orc-fact-src">
-                Fuente: {srcs.map((s) => s.org).join(' · ')}
-              </small>
-            )}
-          </article>
-        );
-      })}
-    </div>
-  );
 }
 
 export function OrcadasExpedition({
@@ -172,12 +120,11 @@ export function OrcadasExpedition({
       ? reading.cloudOktas
       : Math.round(climate?.cloudMeanOktas ?? 6);
   const sceneSeaIce = seaIceAt(s.month);
+  const sceneHour = s.chapter === 'answer' ? sunsetHour(s.month) : s.hour;
   const sceneBuildings =
-    s.chapter === 'eras' ? era.buildings : eraAt(s.maxYear).buildings;
+    s.chapter === 'journey' ? era.buildings : eraAt(s.maxYear).buildings;
 
   const idx = chapterIndex(s.chapter);
-  const monthName = MONTH_NAMES[(s.obsMonth - 1 + 12) % 12] ?? 'enero';
-  const obsScore = scoreObservation(s.guesses, reading);
   const recorded = READING_KINDS.filter((kind) => typeof s.guesses[kind] === 'number').length;
 
   return (
@@ -198,7 +145,7 @@ export function OrcadasExpedition({
       {/* Full-bleed 3D Diorama (or SVG fallback when WebGL is unavailable) */}
       <StationScene
         month={s.month}
-        hour={s.hour}
+        hour={sceneHour}
         windKmh={sceneWindKmh}
         windDirDeg={sceneWindDirDeg}
         cloudOktas={sceneCloudOktas}
@@ -208,6 +155,14 @@ export function OrcadasExpedition({
         focus={focus}
         reduced={reduced}
         overlayRef={hotspotsRef}
+      />
+
+      {/* Month strip fixed over scene */}
+      <MonthStrip
+        month={s.month}
+        hour={s.hour}
+        onMonth={(month) => dispatch({ type: 'month', month })}
+        onHour={(hour) => dispatch({ type: 'hour', hour })}
       />
 
       {/* Always-visible scene reconstruction label */}
@@ -249,7 +204,7 @@ export function OrcadasExpedition({
 
           <div className="orc-top-title">
             <strong>Estación Orcadas</strong>
-            <span>Isla Laurie · Un siglo mirando el cielo</span>
+            <span>{ORCADAS_GUIDING_QUESTION}</span>
           </div>
 
           <button
@@ -294,7 +249,7 @@ export function OrcadasExpedition({
         </nav>
       </header>
 
-      {/* Field Notebook Chapter Panel (bottom sheet on mobile <= 45% vh, side column on desktop) */}
+      {/* Field Notebook Chapter Panel */}
       <div className="orc-panel" role="region" aria-label={`Capítulo ${idx + 1}: ${CHAPTER_NAMES[s.chapter]}`}>
         <div className="orc-panel-scroll" ref={scrollRef}>
           <div className="orc-panel-head">
@@ -308,10 +263,9 @@ export function OrcadasExpedition({
 
           {s.chapter === 'arrival' && (
             <div className="orc-chapter-content">
+              <p className="orc-question">{ORCADAS_GUIDING_QUESTION}</p>
               <p className="orc-lead">
-                En un angosto istmo entre las bahías Scotia y Uruguay, en la isla Laurie, se mide el
-                tiempo sin pausa desde 1903. Explorá los puntos de la estación o avanzá para tomar
-                la observación del día.
+                En un angosto istmo entre las bahías Scotia y Uruguay se mide el tiempo sin pausa desde 1903. Explorá la estación o tomá la observación del día.
               </p>
               <FactList facts={chapterFacts} />
             </div>
@@ -330,90 +284,23 @@ export function OrcadasExpedition({
             </div>
           )}
 
-          {s.chapter === 'year' && (
+          {s.chapter === 'journey' && (
             <div className="orc-chapter-content">
-              <YearWheel
-                month={s.month}
-                hour={s.hour}
-                onMonth={(month) => dispatch({ type: 'month', month })}
-                onHour={(hour) => dispatch({ type: 'hour', hour })}
-              />
-              <FactList facts={chapterFacts} />
-            </div>
-          )}
-
-          {s.chapter === 'eras' && (
-            <div className="orc-chapter-content">
-              <TimeMachine
+              <Journey
                 year={s.year}
                 maxYear={s.maxYear}
                 onYear={(year) => dispatch({ type: 'year', year })}
               />
-              <FactList facts={chapterFacts} />
             </div>
           )}
 
-          {s.chapter === 'century' && (
-            <div className="orc-chapter-content">
-              <CenturyChart
-                userTempC={s.guesses.temp}
-                month={s.obsMonth}
-                untilYear={s.maxYear}
-              />
-              <FactList facts={chapterFacts} />
-            </div>
-          )}
-
-          {s.chapter === 'done' && (
-            <div className="orc-chapter-content orc-done">
-              <div className="orc-done-seal-row">
-                <svg
-                  className="orc-seal"
-                  viewBox="0 0 120 120"
-                  aria-hidden="true"
-                  dangerouslySetInnerHTML={{ __html: SEAL_SVG }}
-                />
-                <div className="orc-done-summary">
-                  <span className="orc-kicker hand">Bitácora sellada</span>
-                  <p>
-                    Recorriste el istmo de la isla Laurie y viajaste desde Omond House (1903) hasta
-                    la serie climática actual.{' '}
-                    {recorded === 0
-                      ? 'No anotaste la observación del día: podés volver al capítulo 2 antes de terminar.'
-                      : `Tu observación de ${monthName}: ${obsScore} de ${recorded} lecturas dentro del margen.`}
-                  </p>
-                </div>
-              </div>
-              {recorded > 0 && (
-                <div className="orc-done-sim">
-                  <KindChip kind="sim" />
-                  <span>El tiempo del día se sorteó dentro del clima real de {monthName}.</span>
-                </div>
-              )}
-              {recorded > 0 && (
-                <dl className="orc-done-readings" aria-label="Tu observación del día">
-                  {READING_KINDS.map((kind) => {
-                    const val = s.guesses[kind];
-                    if (typeof val !== 'number') return null;
-                    const status = checkGuess(kind, val, reading);
-                    return (
-                      <div key={kind}>
-                        <dt>{NOTEBOOK_LABELS[kind].title}</dt>
-                        <dd className="hand">{formatRecorded(kind, val, reading)}</dd>
-                        <small>
-                          {status === 'off'
-                            ? `Fuera del margen: el instrumento marcaba ${formatRecorded(kind, truthFor(kind, reading), reading)}.`
-                            : status === 'exact'
-                              ? 'Lectura exacta.'
-                              : 'Dentro del margen.'}
-                        </small>
-                      </div>
-                    );
-                  })}
-                </dl>
-              )}
-              <FactList facts={chapterFacts} />
-            </div>
+          {s.chapter === 'answer' && (
+            <Answer
+              guesses={s.guesses}
+              obsMonth={s.obsMonth}
+              reading={reading}
+              onGotoObservation={() => dispatch({ type: 'goto', chapter: 'observation' })}
+            />
           )}
         </div>
 
@@ -431,7 +318,7 @@ export function OrcadasExpedition({
             type="button"
             className="btn primary orc-btn-primary"
             onClick={() =>
-              s.chapter === 'done' ? onLeave(true) : dispatch({ type: 'next' })
+              s.chapter === 'answer' ? onLeave(true) : dispatch({ type: 'next' })
             }
           >
             {primaryButtonText(s.chapter, recorded)}
