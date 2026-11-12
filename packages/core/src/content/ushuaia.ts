@@ -420,5 +420,3 @@ export const sightingNote = (s: Sighting) => (s.place ? 'Posición aproximada en
 export const FAUNA_COUNT = SIGHTINGS.filter((s) => !s.place).length;
 export const PLACES_COUNT = SIGHTINGS.length - FAUNA_COUNT;
 
-/** Shown while travelling: the drawn path is not the real track of any ship or plane. */
-export const VOYAGE_ROUTE_NOTE = 'La ruta dibujada, el punto exacto donde aparece cada animal y sus movimientos son ilustrativos. Los vehículos, animales y lugares se ven con tamaño exagerado.';

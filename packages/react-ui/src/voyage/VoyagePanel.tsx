@@ -8,7 +8,6 @@ import {
   sightingNote,
   TRANSPORTS,
   VOYAGE_GEARS,
-  VOYAGE_ROUTE_NOTE,
   VOYAGE_SOURCES,
   VOYAGE_SOURCES_CONSULTED,
   VOYAGE_SOURCE_CODES,
@@ -112,7 +111,6 @@ function Picker({ onStart, onExit, onSource, preview, reduced }: {
         {transport.facts.map((f) => <Fact key={f.text} fact={f} onSource={onSource} />)}
         <Fact fact={VOYAGE_TOURISM_NOTE} onSource={onSource} />
       </ul>
-      <p className="vsmall">{VOYAGE_ROUTE_NOTE}</p>
       <div className="row vactions">
         <button type="button" className="btn primary" onClick={() => onStart(picked)}>
           {transport.kind === 'plane' ? 'Despegar' : 'Zarpar'}
