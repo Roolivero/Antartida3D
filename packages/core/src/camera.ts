@@ -6,9 +6,9 @@ import { MAX_K, clampView, type Size, type View, type Geometry } from './viewpor
 export const FOV = 40;
 
 /**
- * Scene models (fauna, icebergs, ships, towns, stations) have a fixed, exaggerated world size: the one
- * they had on screen at this camera distance, when they used to scale with the zoom. Closer they grow,
- * farther they shrink, which reads as distance.
+ * Scene models (fauna, icebergs, ships, towns, stations) keep their on-screen size up to this camera
+ * distance (placeModelSize, seaModelSize). Farther their exaggerated world size is fixed, the one they
+ * have at this distance, so they shrink, which reads as distance.
  */
 export const MODEL_REFERENCE_DISTANCE = 400;
 /** Below this on-screen size a fixed-size model is hidden instead of flickering as a loose dot. */
@@ -21,6 +21,22 @@ export const MODEL_MIN_PX = 3;
  */
 export function placeModelSize(distance: number, sizePerDistance: number, minSize: number): number {
   return Math.max(minSize, Math.min(MODEL_REFERENCE_DISTANCE, distance) * sizePerDistance);
+}
+
+/** Viewport height the sizes in px of the sea models are given for. */
+const SEA_MODEL_VIEWPORT = 900;
+/** Smallest world size of a sea model: closer than the camera ever gets it would be a speck. */
+const SEA_MODEL_MIN_SIZE = 0.1;
+
+/**
+ * World size of a model of the open sea (fauna, icebergs, the ship and the plane) that measures
+ * `px` on a 900 px tall viewport. Like a place model, it keeps that on-screen size up to
+ * MODEL_REFERENCE_DISTANCE and stays fixed beyond it: around Tierra del Fuego the camera gets
+ * 50 times closer than that, and a fixed size filled the screen.
+ */
+export function seaModelSize(px: number, distance: number): number {
+  const perDistance = (2 * Math.tan((FOV * Math.PI) / 360) * px) / SEA_MODEL_VIEWPORT;
+  return placeModelSize(distance, perDistance, SEA_MODEL_MIN_SIZE);
 }
 
 /** On-screen height in px of a world length seen at a distance, for the vertical FOV. */

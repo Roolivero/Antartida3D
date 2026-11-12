@@ -2,14 +2,13 @@ import { useEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import type { BufferGeometry, Group, Mesh } from 'three';
 import {
-  FOV,
   IRIZAR_DEFAULT_SPEED,
   MODEL_MIN_PX,
-  MODEL_REFERENCE_DISTANCE,
   driftOffsetAtTime,
   fractSin,
   irizarStateAtTime,
   screenPx,
+  seaModelSize,
   voyageAt,
   voyageHeading,
   whaleCyclePosition,
@@ -22,12 +21,10 @@ import type { VoyageBus } from '../voyage/useVoyage.ts';
 import { buildVehicleGeometry, vehicleMaterial } from '../voyage/vehicles.ts';
 import { useSeaTime, type SeaTimeUniform } from './useAnimationClock.ts';
 
-/** Reference on-screen length in px at a 900 px tall viewport at MODEL_REFERENCE_DISTANCE. */
+/** On-screen length in px at a 900 px tall viewport, up to MODEL_REFERENCE_DISTANCE (seaModelSize). */
 const ANIMAL_PX = 65;
 const ICE_PX = 78;
 const VEHICLE_PX = 72;
-const REFERENCE_HEIGHT = 900;
-const FOV_TAN = Math.tan((FOV * Math.PI) / 360);
 
 /** The plane flies the round trip faster than the ship sails it, and out of step with it. */
 const HERCULES_SPEED = IRIZAR_DEFAULT_SPEED * 2.6;
@@ -85,9 +82,9 @@ export function SeaLife({ visible = true, timeUniform, instances, voyage }: {
     if (!root.current.visible) return;
     const time = clock.value;
     const sized = (g: Group, px: number) => {
-      const s = MODEL_REFERENCE_DISTANCE * ((2 * FOV_TAN) / REFERENCE_HEIGHT) * px;
-      g.scale.setScalar(s);
       const distance = camera.position.distanceTo(g.position);
+      const s = seaModelSize(px, distance);
+      g.scale.setScalar(s);
       g.visible = screenPx(s, distance, size.height) >= MODEL_MIN_PX;
       return s;
     };

@@ -20,7 +20,7 @@ Una lista de cajas de color plano. No hay texturas, luces ni archivos de modelo:
 - **Viaje «Desde Ushuaia»:** el vehículo elegido, los avistajes, los lugares y Ushuaia. Durante el viaje se oculta la vida del océano del mapa abierto, para no ver dos veces el mismo barco o animal.
 
 ## Tamaño (12-11-2026, issue #42)
-- **Mapa abierto:** la fauna, los témpanos, el Irízar, el Hércules, Ushuaia y Orcadas tienen un tamaño fijo en el mundo. Es el que tenían en pantalla a una distancia de cámara de 400 (`MODEL_REFERENCE_DISTANCE`). De cerca se ven igual que antes. Al alejarse se achican, y con menos de 3 px (`MODEL_MIN_PX`) se ocultan. Antes ocupaban siempre lo mismo en pantalla y parecían agrandarse al alejar la cámara.
+- **Mapa abierto:** la fauna, los témpanos, el Irízar, el Hércules, Ushuaia y Orcadas mantienen su tamaño en pantalla hasta una distancia de cámara de 400 (`MODEL_REFERENCE_DISTANCE`), con `placeModelSize` (Ushuaia y Orcadas, #47) y `seaModelSize` (fauna, témpanos, Irízar y Hércules, #51). Antes de #51 el tamaño de estos últimos era fijo también de cerca, y junto a Tierra del Fuego, donde la cámara llega a 8, llenaban la pantalla. Más lejos de 400 el tamaño en el mundo queda fijo: al alejarse se achican, y con menos de 3 px (`MODEL_MIN_PX`) se ocultan. Antes ocupaban siempre lo mismo en pantalla y parecían agrandarse al alejar la cámara.
 - **Expediciones:** el vehículo y los avistajes siguen escalando con la distancia, porque la cámara los acompaña de cerca.
 - **Marcadores, etiquetas y retícula:** son interfaz y no cambian de tamaño en pantalla. Con ellos se encuentra cada cosa, también con teclado.
 
