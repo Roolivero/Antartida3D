@@ -66,9 +66,11 @@ test('completes all chapters of Orcadas with the keyboard only, opens Sources, a
   await tabTo(page, /^Hacer la observación$/);
   await page.keyboard.press('Enter');
 
-  // Chapter 2: Observación (focus moves to h2, primary button disabled until 4 readings entered)
+  // Chapter 2: Observación (focus moves to h2, primary button is enabled with "Seguir" and shows missing count)
   await expectFocused(page, 'Observación del día');
-  await expect(primary(page)).toBeDisabled();
+  await expect(primary(page)).toBeEnabled();
+  await expect(primary(page)).toHaveText('Seguir');
+  await expect(page.getByText(/Te faltan 4 lecturas/)).toBeVisible();
 
   await tabTo(page, /^Temperatura del abrigo/);
   await page.keyboard.type('-2.5');
@@ -80,6 +82,7 @@ test('completes all chapters of Orcadas with the keyboard only, opens Sources, a
   await page.keyboard.type('6');
 
   await expect(primary(page)).toBeEnabled();
+  await expect(primary(page)).toHaveText('Recorrer el año');
   await tabTo(page, /^Recorrer el año$/);
   await page.keyboard.press('Enter');
 
@@ -251,5 +254,115 @@ test('never renders facts from unverified sources in any chapter', async ({ page
     for (const snippet of unverifiedSnippets) {
       expect(bodyText).not.toContain(snippet);
     }
+  }
+});
+
+test('B4: resetting panel scroll on chapter change', async ({ page }) => {
+  await openOrcadasFromMap(page);
+  await expect(page.getByRole('heading', { level: 2, name: 'Estación Orcadas' })).toBeVisible();
+
+  // Scroll .orc-panel-scroll to the bottom
+  await page.evaluate(() => {
+    const scrollEl = document.querySelector('.orc-panel-scroll');
+    if (scrollEl) {
+      scrollEl.scrollTop = scrollEl.scrollHeight;
+    }
+  });
+
+  const scrolledTop = await page.evaluate(() => {
+    const scrollEl = document.querySelector('.orc-panel-scroll');
+    return scrollEl ? scrollEl.scrollTop : 0;
+  });
+  expect(scrolledTop).toBeGreaterThan(0);
+
+  // Advance to next chapter
+  await primary(page).click();
+  const nextHeading = page.getByRole('heading', { level: 2, name: 'Observación del día' });
+  await expect(nextHeading).toBeVisible();
+
+  // Assert scrollTop is 0 and h2 is in viewport
+  const nextScrollTop = await page.evaluate(() => {
+    const scrollEl = document.querySelector('.orc-panel-scroll');
+    return scrollEl ? scrollEl.scrollTop : -1;
+  });
+  expect(nextScrollTop).toBe(0);
+  await expect(nextHeading).toBeInViewport();
+});
+
+test('B7: opening Fuentes closes the hotspot dialog card and vice versa', async ({ page }) => {
+  await openOrcadasFromMap(page);
+
+  // Open hotspot card
+  const spotBtn = page.getByRole('button', { name: 'Punto de interés: Abrigo meteorológico' });
+  await spotBtn.click();
+  const spotDialog = page.getByRole('dialog', { name: 'Abrigo meteorológico' });
+  await expect(spotDialog).toBeVisible();
+
+  // Click "Fuentes": hotspot card is removed from DOM, sources panel is in DOM
+  await page.getByRole('button', { name: 'Fuentes' }).click();
+  await expect(spotDialog).toHaveCount(0);
+  const sourcesPanel = page.getByRole('dialog', { name: 'Fuentes' });
+  await expect(sourcesPanel).toBeVisible();
+
+  // Select a hotspot while sources panel is open: sources panel closes, hotspot dialog opens
+  await spotBtn.click();
+  await expect(sourcesPanel).toHaveCount(0);
+  await expect(page.getByRole('dialog', { name: 'Abrigo meteorológico' })).toBeVisible();
+});
+
+test('B1: observation month stays fixed when changing scene month', async ({ page }) => {
+  await openOrcadasFromMap(page);
+
+  // 1. Enter 4 readings in Observación
+  await page
+    .getByRole('navigation', { name: 'Capítulos de la expedición' })
+    .getByRole('button', { name: /Observación/ })
+    .click();
+  await expect(page.getByRole('heading', { level: 2, name: 'Observación del día' })).toBeVisible();
+
+  await page.getByLabel(/^Temperatura del abrigo/).focus();
+  await page.keyboard.type('-2.5');
+  await page.getByLabel(/^Presión atmosférica/).focus();
+  await page.keyboard.type('990');
+  await page.getByLabel(/^Velocidad del viento/).focus();
+  await page.keyboard.type('20');
+  await page.getByLabel(/^Cobertura de nubes/).focus();
+  await page.keyboard.type('5');
+
+  // Check Cierre summary text before changing month
+  await page
+    .getByRole('navigation', { name: 'Capítulos de la expedición' })
+    .getByRole('button', { name: /Cierre/ })
+    .click();
+  await expect(page.getByRole('heading', { level: 2, name: 'Cierre de la expedición' })).toBeVisible();
+  const summaryBefore = await page.locator('.orc-done-summary p').textContent();
+  expect(summaryBefore).toContain('Tu observación de');
+
+  // 2. Go to "Un año", change month with the wheel slider
+  await page
+    .getByRole('navigation', { name: 'Capítulos de la expedición' })
+    .getByRole('button', { name: /Un año/ })
+    .click();
+  await expect(page.getByRole('heading', { level: 2, name: 'Un año en Orcadas' })).toBeVisible();
+
+  const wheelSlider = page.getByRole('slider', { name: /Rueda del año/i });
+  await wheelSlider.focus();
+  await page.keyboard.press('Home');
+  await expect(wheelSlider).toHaveAttribute('aria-valuenow', '1');
+  await expect(wheelSlider).toHaveAttribute('aria-valuetext', 'enero');
+
+  // 3. Go back to closing chapter
+  await page
+    .getByRole('navigation', { name: 'Capítulos de la expedición' })
+    .getByRole('button', { name: /Cierre/ })
+    .click();
+  await expect(page.getByRole('heading', { level: 2, name: 'Cierre de la expedición' })).toBeVisible();
+  const summaryAfter = await page.locator('.orc-done-summary p').textContent();
+
+  // The text still names the original month and the score text is unchanged compared with before changing the month
+  expect(summaryAfter).toBe(summaryBefore);
+  const currentMonthIdx = new Date().getMonth();
+  if (currentMonthIdx !== 0) {
+    expect(summaryAfter).not.toContain('Tu observación de enero');
   }
 });

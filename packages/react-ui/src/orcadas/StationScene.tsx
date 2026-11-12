@@ -32,6 +32,7 @@ import { CameraControls, PerformanceMonitor } from '@react-three/drei';
 import { EffectComposer } from '@react-three/postprocessing';
 import {
   ORCADAS_LAT,
+  layoutOf,
   midMonthDayOfYear,
   shouldTick,
   solarAzimuthDeg,
@@ -61,6 +62,7 @@ import {
   WIND_CUPS_BOXES,
   WIND_MAST_BASE_BOXES,
   WIND_VANE_BOXES,
+  buildLaborcBoxes,
   buildModernModulesBoxes,
   buildMonetaBoxes,
   buildOmondBoxes,
@@ -420,6 +422,9 @@ function BayOcean({
   );
 }
 
+type EraBuildingId = 'omond' | 'moneta' | 'radioMast' | 'modern';
+const ERA_BUILDING_IDS: readonly EraBuildingId[] = ['omond', 'moneta', 'radioMast', 'modern'];
+
 function EraBuildings({
   buildings,
   isNight,
@@ -435,9 +440,10 @@ function EraBuildings({
   const monetaRef = useRef<Group>(null);
   const radioRef = useRef<Group>(null);
   const modernRef = useRef<Group>(null);
+  const laborcRef = useRef<Group>(null);
   const smokeRef = useRef<Group>(null);
 
-  const presences = useRef<Record<BuildingId, number>>({
+  const presences = useRef<Record<EraBuildingId, number>>({
     omond: buildings.includes('omond') ? 1 : 0,
     moneta: buildings.includes('moneta') ? 1 : 0,
     radioMast: buildings.includes('radioMast') ? 1 : 0,
@@ -448,17 +454,15 @@ function EraBuildings({
 
   useLayoutEffect(() => {
     if (reduced) {
-      presences.current.omond = buildings.includes('omond') ? 1 : 0;
-      presences.current.moneta = buildings.includes('moneta') ? 1 : 0;
-      presences.current.radioMast = buildings.includes('radioMast') ? 1 : 0;
-      presences.current.modern = buildings.includes('modern') ? 1 : 0;
+      for (const id of ERA_BUILDING_IDS) {
+        presences.current[id] = buildings.includes(id) ? 1 : 0;
+      }
     }
     invalidate();
   }, [buildings, reduced, invalidate]);
 
   useFrame(({ clock }, delta) => {
-    const ids: BuildingId[] = ['omond', 'moneta', 'radioMast', 'modern'];
-    const refs: Record<BuildingId, RefObject<Group | null>> = {
+    const refs: Record<EraBuildingId, RefObject<Group | null>> = {
       omond: omondRef,
       moneta: monetaRef,
       radioMast: radioRef,
@@ -466,7 +470,7 @@ function EraBuildings({
     };
 
     let moving = false;
-    for (const id of ids) {
+    for (const id of ERA_BUILDING_IDS) {
       const target = buildings.includes(id) ? 1 : 0;
       const cur = presences.current[id];
       const next = reduced
@@ -482,6 +486,14 @@ function EraBuildings({
         grp.visible = next > 0.01;
         const s = Math.max(0.001, next);
         grp.scale.set(s, s, s);
+      }
+      if (id === 'modern') {
+        const labGrp = laborcRef.current;
+        if (labGrp) {
+          labGrp.visible = next > 0.01;
+          const s = Math.max(0.001, next);
+          labGrp.scale.set(s, s, s);
+        }
       }
     }
 
@@ -509,6 +521,7 @@ function EraBuildings({
   const monetaGeo = useMemo(() => buildBoxGeometry(buildMonetaBoxes(isNight)), [isNight]);
   const radioGeo = useMemo(() => buildBoxGeometry(buildRadioMastsBoxes()), []);
   const modernGeo = useMemo(() => buildBoxGeometry(buildModernModulesBoxes(isNight)), [isNight]);
+  const laborcGeo = useMemo(() => buildBoxGeometry(buildLaborcBoxes(isNight)), [isNight]);
   const smokeGeo = useMemo(() => new BoxGeometry(1, 1, 1), []);
   const smokeMat = useMemo(
     () => new MeshBasicMaterial({ color: 0xf3ebdd, transparent: true, opacity: 0.55 }),
@@ -521,20 +534,29 @@ function EraBuildings({
       monetaGeo.dispose();
       radioGeo.dispose();
       modernGeo.dispose();
+      laborcGeo.dispose();
       smokeGeo.dispose();
       smokeMat.dispose();
     };
-  }, [omondGeo, monetaGeo, radioGeo, modernGeo, smokeGeo, smokeMat]);
+  }, [omondGeo, monetaGeo, radioGeo, modernGeo, laborcGeo, smokeGeo, smokeMat]);
 
   return (
     <group>
       {/* 1. Omond House (1903 stone cabin) */}
-      <group ref={omondRef} position={[-1.4, 1.45, -1.6]}>
+      <group
+        ref={omondRef}
+        position={layoutOf('omond').position}
+        rotation={[0, layoutOf('omond').rotationY, 0]}
+      >
         <mesh geometry={omondGeo} material={vehicleMaterial} />
       </group>
 
       {/* 2. Casa Moneta (1905 wooden house with smoking chimney) */}
-      <group ref={monetaRef} position={[2.6, 1.45, -1.5]}>
+      <group
+        ref={monetaRef}
+        position={layoutOf('moneta').position}
+        rotation={[0, layoutOf('moneta').rotationY, 0]}
+      >
         <mesh geometry={monetaGeo} material={vehicleMaterial} />
         {/* Chimney smoke puffs inclined by wind */}
         <group ref={smokeRef} position={[0.95, 2.95, -0.35]}>
@@ -554,13 +576,30 @@ function EraBuildings({
       </group>
 
       {/* 3. Radio Telegraphy Masts (1927 lattice towers + wire antenna) */}
-      <group ref={radioRef} position={[0, 1.45, -3.6]}>
+      <group
+        ref={radioRef}
+        position={layoutOf('radioMast').position}
+        rotation={[0, layoutOf('radioMast').rotationY, 0]}
+      >
         <mesh geometry={radioGeo} material={vehicleMaterial} />
       </group>
 
-      {/* 4. Modern Station Modules (pavilions + science lab) */}
-      <group ref={modernRef} position={[5.8, 1.45, 1.8]}>
+      {/* 4. Modern Station Modules (pavilions) */}
+      <group
+        ref={modernRef}
+        position={layoutOf('modern').position}
+        rotation={[0, layoutOf('modern').rotationY, 0]}
+      >
         <mesh geometry={modernGeo} material={vehicleMaterial} />
+      </group>
+
+      {/* 5. Science lab module (LABORC) */}
+      <group
+        ref={laborcRef}
+        position={layoutOf('laborc').position}
+        rotation={[0, layoutOf('laborc').rotationY, 0]}
+      >
+        <mesh geometry={laborcGeo} material={vehicleMaterial} />
       </group>
     </group>
   );
@@ -570,13 +609,24 @@ function StationInstruments({
   windKmh,
   windDirDeg,
   reduced,
+  buildings,
 }: {
   windKmh: number;
   windDirDeg: number;
   reduced: boolean;
+  buildings: readonly BuildingId[];
 }) {
   const cupsRef = useRef<Group>(null);
   const vaneRef = useRef<Group>(null);
+  const mastRef = useRef<Group>(null);
+  const flagRef = useRef<Group>(null);
+
+  const presences = useRef({
+    windMast: buildings.includes('windMast') ? 1 : 0,
+    flag: buildings.includes('flag') ? 1 : 0,
+  });
+
+  const invalidate = useThree((s) => s.invalidate);
 
   const screenGeo = useMemo(() => buildBoxGeometry(STEVENSON_SCREEN_BOXES), []);
   const mastBaseGeo = useMemo(() => buildBoxGeometry(WIND_MAST_BASE_BOXES), []);
@@ -640,28 +690,67 @@ function StationInstruments({
     if (vaneRef.current) {
       vaneRef.current.rotation.y = (-windDirDeg * Math.PI) / 180;
     }
-  }, [windKmh, windDirDeg, flagUniforms]);
+    if (reduced) {
+      presences.current.windMast = buildings.includes('windMast') ? 1 : 0;
+      presences.current.flag = buildings.includes('flag') ? 1 : 0;
+    }
+    invalidate();
+  }, [windKmh, windDirDeg, flagUniforms, buildings, reduced, invalidate]);
 
   useFrame(({ clock }, delta) => {
-    if (reduced) return;
-    flagUniforms.uTime.value = clock.getElapsedTime();
-    if (cupsRef.current) {
-      const spinRate = 0.6 + (windKmh / 15) * 3.2;
-      cupsRef.current.rotation.y += delta * spinRate;
+    if (!reduced) {
+      flagUniforms.uTime.value = clock.getElapsedTime();
+      if (cupsRef.current) {
+        const spinRate = 0.6 + (windKmh / 15) * 3.2;
+        cupsRef.current.rotation.y += delta * spinRate;
+      }
     }
+
+    const instRefs = [
+      ['windMast', mastRef],
+      ['flag', flagRef],
+    ] as const;
+
+    let moving = false;
+    for (const [id, ref] of instRefs) {
+      const target = buildings.includes(id) ? 1 : 0;
+      const cur = presences.current[id];
+      const next = reduced
+        ? target
+        : Math.abs(target - cur) < 0.005
+          ? target
+          : cur + (target - cur) * Math.min(1, delta * 6.5);
+      if (next !== cur) moving = true;
+      presences.current[id] = next;
+
+      const grp = ref.current;
+      if (grp) {
+        grp.visible = next > 0.01;
+        const s = Math.max(0.001, next);
+        grp.scale.set(s, s, s);
+      }
+    }
+    if (moving) invalidate();
   });
 
   const windToRad = ((-windDirDeg + 90) * Math.PI) / 180;
 
   return (
     <group>
-      {/* 1. Stevenson Meteorological Screen ('screen' hotspot at [-4.5, 1.45, 2.2]) */}
-      <group position={[-4.5, 1.45, 2.2]}>
+      {/* 1. Stevenson Meteorological Screen ('screen' hotspot) */}
+      <group
+        position={layoutOf('screen').position}
+        rotation={[0, layoutOf('screen').rotationY, 0]}
+      >
         <mesh geometry={screenGeo} material={vehicleMaterial} />
       </group>
 
-      {/* 2. Wind Mast with Vane & Spinning Cups ('mast' hotspot at [-7.2, 1.45, -1.2]) */}
-      <group position={[-7.2, 1.45, -1.2]}>
+      {/* 2. Wind Mast with Vane & Spinning Cups ('mast' hotspot) */}
+      <group
+        ref={mastRef}
+        position={layoutOf('windMast').position}
+        rotation={[0, layoutOf('windMast').rotationY, 0]}
+      >
         <mesh geometry={mastBaseGeo} material={vehicleMaterial} />
         {/* Wind direction vane */}
         <group ref={vaneRef} position={[0, 3.85, 0]}>
@@ -673,8 +762,12 @@ function StationInstruments({
         </group>
       </group>
 
-      {/* 3. Argentine Flagpole ('flag' hotspot at [0.2, 1.45, 3.6]) */}
-      <group position={[0.2, 1.45, 3.6]}>
+      {/* 3. Argentine Flagpole ('flag' hotspot) */}
+      <group
+        ref={flagRef}
+        position={layoutOf('flag').position}
+        rotation={[0, layoutOf('flag').rotationY, 0]}
+      >
         <mesh geometry={flagpoleGeo} material={vehicleMaterial} />
         {/* Waving flag cloth */}
         <mesh
@@ -686,12 +779,18 @@ function StationInstruments({
       </group>
 
       {/* 4. Historic supply crates beside Casa Moneta */}
-      <group position={[4.6, 1.45, -0.6]}>
+      <group
+        position={layoutOf('crates').position}
+        rotation={[0, layoutOf('crates').rotationY, 0]}
+      >
         <mesh geometry={cratesGeo} material={vehicleMaterial} />
       </group>
 
       {/* 5. Station whaleboat pulled onto Scotia Bay shore */}
-      <group position={[-2.8, 0.42, 8.2]} rotation={[0, 0.35, 0]}>
+      <group
+        position={layoutOf('boat').position}
+        rotation={[0, layoutOf('boat').rotationY, 0]}
+      >
         <mesh geometry={boatGeo} material={vehicleMaterial} />
       </group>
     </group>
@@ -1339,6 +1438,7 @@ export const StationScene = memo(function StationScene({
           windKmh={windKmh}
           windDirDeg={windDirDeg}
           reduced={reduced}
+          buildings={buildings}
         />
         <StationFauna animals={animals} reduced={reduced} />
         <SnowAndSpindrift

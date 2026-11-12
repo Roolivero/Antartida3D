@@ -257,7 +257,6 @@ export function computeCenturyDataset(month: number) {
     firstYear,
     lastYear,
     totalYears: ORCADAS_ANNUAL_TEMP.length,
-    validAnnualCount: validAnnual.length,
     seriesMean,
     ma11Series,
     trend,

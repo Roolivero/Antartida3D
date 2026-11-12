@@ -1,4 +1,5 @@
 import { createSeededRng } from './rng.ts';
+import { ORCADAS_ANNUAL_TEMP, ORCADAS_CLIMATE } from './content/orcadas-series.ts';
 
 export const CHAPTERS = ['arrival', 'observation', 'year', 'eras', 'century', 'done'] as const;
 export type Chapter = (typeof CHAPTERS)[number];
@@ -13,8 +14,10 @@ export interface OrcadasState {
   chapter: Chapter;
   visited: readonly Chapter[];
   guesses: Partial<Record<ReadingKind, number>>;
-  /** Month of the year (1..12). */
+  /** Month shown by the scene and the month controls (1..12). */
   month: number;
+  /** Month of the day's observation (1..12). Fixed at start: the scene month never changes the reading. */
+  obsMonth: number;
   /** Solar hour (0..23). */
   hour: number;
   year: number;
@@ -62,10 +65,9 @@ export function observationDone(s: OrcadasState): boolean {
   });
 }
 
+/** The observation is optional: the closing chapter covers a missing one. */
 export function canAdvanceOrcadas(s: OrcadasState): boolean {
-  if (s.chapter === 'done') return false;
-  if (s.chapter === 'observation') return observationDone(s);
-  return true;
+  return s.chapter !== 'done';
 }
 
 export function initialOrcadas(month: number, year: number): OrcadasState {
@@ -75,6 +77,7 @@ export function initialOrcadas(month: number, year: number): OrcadasState {
     visited: ['arrival'],
     guesses: {},
     month: normalizeMonth(month),
+    obsMonth: normalizeMonth(month),
     hour: 12,
     year: clampYear(year, maxYear),
     maxYear,
@@ -225,6 +228,16 @@ export function observationFor(seed: number, climate: MonthClimate): Reading {
     windDirDeg,
     cloudOktas,
   };
+}
+
+/** Monthly climate normals for `month` (1..12). */
+export function climateFor(month: number): MonthClimate {
+  return ORCADAS_CLIMATE[normalizeMonth(month) - 1] ?? ORCADAS_CLIMATE[0];
+}
+
+/** The day's simulated reading. Depends on `obsMonth` only, never on the scene month. */
+export function readingFor(s: OrcadasState, seed: number): Reading {
+  return observationFor(seed + s.obsMonth, climateFor(s.obsMonth));
 }
 
 export const TOLERANCE: Record<ReadingKind, number> = {
@@ -494,4 +507,23 @@ export function movingAverage(series: readonly YearValue[], window: number): Yea
     }
     return { year: item.year, value: sum / validCount };
   });
+}
+
+/** Years since the record started and how many of them have a complete annual mean. */
+export function recordSpan(untilYear: number): { years: number; completeYears: number } {
+  const last = Math.trunc(untilYear);
+  return {
+    years: Math.max(0, last - ORCADAS_FIRST_YEAR),
+    completeYears: ORCADAS_ANNUAL_TEMP.filter(
+      (p) => p.year < last && p.value !== null && Number.isFinite(p.value)
+    ).length,
+  };
+}
+
+/** One sentence for the record length, shared by every chapter that counts years. */
+export function recordSpanText(untilYear: number): string {
+  const { years, completeYears } = recordSpan(untilYear);
+  if (years === 0) return `Registro desde ${ORCADAS_FIRST_YEAR}: primer año`;
+  const yearsWord = years === 1 ? 'año' : 'años';
+  return `Registro desde ${ORCADAS_FIRST_YEAR}: ${years} ${yearsWord}, ${completeYears} de ellos completos`;
 }

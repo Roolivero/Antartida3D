@@ -19,3 +19,8 @@ Registro de todas las fuentes documentales, científicas e históricas utilizada
 ## Nota sobre datos meteorológicos
 
 Los datos de temperatura, presión y viento provienen del proyecto READER del Scientific Committee on Antarctic Research (SCAR) y el British Antarctic Survey (BAS). Están publicados bajo los términos de la Open Government Licence v3.0 con atribución al SCAR y al British Antarctic Survey.
+
+## Pendientes
+
+- **Mástil de viento en tierra (diorama, desde 1905):** [Fuente a definir]. Según Mossman (1907), en 1903 el anemómetro estaba en la cubierta del Scotia. No se encontró en qué año se instaló un anemómetro en tierra. El diorama lo muestra desde la era de 1905 como parte de la reconstrucción ilustrada, no como dato.
+- **Bandera desde 1904 (diorama):** se apoya en el traspaso del 22 de febrero de 1904 (Cancillería). La máquina del tiempo trabaja por años, así que la era «1904» la muestra todo ese año.

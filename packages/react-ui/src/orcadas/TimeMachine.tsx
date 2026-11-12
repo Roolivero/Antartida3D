@@ -5,6 +5,7 @@ import {
   ORCADAS_FIRST_YEAR,
   eraAt,
   isPublishable,
+  recordSpanText,
   sourcesOf,
   type OrcadasFact,
 } from '@antartida/core';
@@ -58,7 +59,6 @@ export function TimeMachine({
   const clampedYear = Math.max(ORCADAS_FIRST_YEAR, Math.min(safeMaxYear, Math.trunc(year)));
   const currentEra = eraAt(clampedYear);
   const eraIndex = ORCADAS_ERAS.findIndex((e) => e.id === currentEra.id);
-  const continuousYears = Math.max(0, clampedYear - ORCADAS_FIRST_YEAR);
 
   // Filter era facts through isPublishable
   const eraFacts = useMemo(() => {
@@ -70,7 +70,7 @@ export function TimeMachine({
 
   const rulerGeom = useMemo(() => {
     const w = 336;
-    const h = 74;
+    const h = 84;
     const padL = 18;
     const padR = 18;
     const plotW = w - padL - padR;
@@ -128,16 +128,8 @@ export function TimeMachine({
         <div className="orc-tm-record-box">
           <KindChip kind="calc" />
           <strong className="orc-tm-record-num">
-            {continuousYears === 0
-              ? 'Inicio del registro (1903)'
-              : `${continuousYears} ${
-                  continuousYears === 1 ? 'año' : 'años'
-                } de registro continuo`}
+            {recordSpanText(clampedYear)}
           </strong>
-          <span className="orc-tm-record-formula">
-            {clampedYear} − {ORCADAS_FIRST_YEAR} = {continuousYears}{' '}
-            {continuousYears === 1 ? 'año' : 'años'} sin pausa
-          </span>
         </div>
       </div>
 
@@ -252,8 +244,8 @@ export function TimeMachine({
           {/* Era milestone notches and labels */}
           {rulerGeom.eraSpans.map((sp, i) => {
             const isActive = sp.id === currentEra.id;
-            // 1905 sits two years after 1903: its label goes on a second row so they do not overlap.
-            const labelY = i === 1 ? 61 : 51;
+            // 1903, 1904 and 1905 sit a year apart: each one gets its own row so they do not overlap.
+            const labelY = 51 + (i <= 2 ? i : 0) * 10;
             return (
               <g key={sp.id}>
                 <line

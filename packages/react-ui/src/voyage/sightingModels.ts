@@ -1,6 +1,7 @@
 import type { BufferGeometry, Object3D } from 'three';
 import { createSeededRng, type Sighting } from '@antartida/core';
 import { buildBoxGeometry, type Box } from './vehicles.ts';
+import { buildLaborcBoxes } from '../orcadas/stationModels.ts';
 
 // Approximate colors. The models are illustrations, not portraits: one unit is about the length of the model.
 const BLACK = 0x1f2a36;
@@ -551,6 +552,7 @@ export const SCENE_MODELS: Readonly<Record<string, readonly Box[]>> = {
   ...Object.fromEntries(Object.entries(SEA_MODELS).map(([id, boxes]) => [`sea:${id}`, boxes])),
   ushuaia: TOWN,
   orcadas: ORCADAS_SITE,
+  laborc: buildLaborcBoxes(false),
 };
 
 export const buildSeaGeometry = (id: SeaModelId) => buildBoxGeometry(SEA_MODELS[id]);

@@ -5,7 +5,9 @@ import {
   ORCADAS_ERAS,
   ORCADAS_FACTS,
   ORCADAS_FAUNA,
+  ORCADAS_HOTSPOT_FACTS,
   ORCADAS_SOURCES,
+  hotspotFacts,
   eraAt,
   factsFor,
   isPublishable,
@@ -73,12 +75,36 @@ describe('orcadas content and sources', () => {
     }
 
     expect(eraAt(1903).id).toBe('omond');
-    expect(eraAt(1904).id).toBe('omond');
+    expect(eraAt(1904).id).toBe('traspaso');
     expect(eraAt(1905).id).toBe('moneta');
     expect(eraAt(1926).id).toBe('moneta');
     expect(eraAt(1927).id).toBe('radio');
     expect(eraAt(1951).id).toBe('navy');
     expect(eraAt(2026).id).toBe('today');
+  });
+
+  it('shows no flag nor land wind mast before the 1904 handover (B2)', () => {
+    expect(eraAt(1903).buildings).not.toContain('flag');
+    expect(eraAt(1903).buildings).not.toContain('windMast');
+    expect(eraAt(1904).buildings).toContain('flag');
+    expect(eraAt(2026).buildings).toEqual(
+      expect.arrayContaining(['omond', 'flag', 'windMast', 'moneta', 'radioMast', 'modern'])
+    );
+  });
+
+  it('gives each hotspot explicit publishable facts, never shared between hotspots (B5)', () => {
+    const seen = new Set<string>();
+    for (const [spot, ids] of Object.entries(ORCADAS_HOTSPOT_FACTS)) {
+      expect(ids.length).toBeGreaterThan(0);
+      for (const id of ids) {
+        const fact = ORCADAS_FACTS.find((f) => f.id === id);
+        expect(fact, `${spot}: ${id}`).toBeDefined();
+        expect(isPublishable(fact!)).toBe(true);
+        expect(seen.has(id), `${id} repeated`).toBe(false);
+        seen.add(id);
+      }
+      expect(hotspotFacts(spot as keyof typeof ORCADAS_HOTSPOT_FACTS)).toHaveLength(ids.length);
+    }
   });
 
   it('seaIceAt stays within 0..1 for months 1..12', () => {

@@ -5,15 +5,14 @@ import {
   ORCADAS_CLIMATE,
   ORCADAS_FAUNA,
   SEAL_SVG,
-  canAdvanceOrcadas,
   chapterIndex,
   eraAt,
   factsFor,
   initialOrcadas,
-  observationFor,
   orcadasReducer,
   READING_KINDS,
   checkGuess,
+  readingFor,
   scoreObservation,
   truthFor,
   seaIceAt,
@@ -59,12 +58,12 @@ const CHAPTER_DEFAULT_FOCUS: Record<Chapter, HotspotId> = {
   done: 'flag',
 };
 
-function primaryButtonText(chapter: Chapter, canAdvance: boolean): string {
+function primaryButtonText(chapter: Chapter, recorded: number): string {
   switch (chapter) {
     case 'arrival':
       return 'Hacer la observación';
     case 'observation':
-      return canAdvance ? 'Recorrer el año' : 'Completá las 4 lecturas';
+      return recorded >= 4 ? 'Recorrer el año' : 'Seguir';
     case 'year':
       return 'Viajar en el tiempo';
     case 'eras':
@@ -130,6 +129,7 @@ export function OrcadasExpedition({
   const [openSpot, setOpenSpot] = useState<Exclude<HotspotId, 'overview'> | null>(null);
 
   const headingRef = useRef<HTMLHeadingElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const sourcesBtnRef = useRef<HTMLButtonElement>(null);
   const hotspotsRef = useRef<HTMLDivElement>(null);
 
@@ -137,7 +137,10 @@ export function OrcadasExpedition({
   useEffect(() => {
     setOpenSpot(null);
     setFocus(CHAPTER_DEFAULT_FOCUS[s.chapter]);
-    headingRef.current?.focus();
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = 0;
+    }
+    headingRef.current?.focus({ preventScroll: true });
   }, [s.chapter]);
 
   const climate = useMemo(
@@ -146,8 +149,8 @@ export function OrcadasExpedition({
   );
 
   const reading = useMemo(
-    () => observationFor(initDate.seed + s.month, climate),
-    [initDate.seed, s.month, climate]
+    () => readingFor(s, initDate.seed),
+    [initDate.seed, s.obsMonth]
   );
 
   const chapterFacts = useMemo(() => factsFor(s.chapter), [s.chapter]);
@@ -173,8 +176,7 @@ export function OrcadasExpedition({
     s.chapter === 'eras' ? era.buildings : eraAt(s.maxYear).buildings;
 
   const idx = chapterIndex(s.chapter);
-  const canAdvance = canAdvanceOrcadas(s);
-  const monthName = MONTH_NAMES[(s.month - 1 + 12) % 12] ?? 'enero';
+  const monthName = MONTH_NAMES[(s.obsMonth - 1 + 12) % 12] ?? 'enero';
   const obsScore = scoreObservation(s.guesses, reading);
   const recorded = READING_KINDS.filter((kind) => typeof s.guesses[kind] === 'number').length;
 
@@ -218,7 +220,11 @@ export function OrcadasExpedition({
         overlayRef={hotspotsRef}
         activeSpot={focus}
         openCardSpot={openSpot}
+        buildings={sceneBuildings}
         onSelectSpot={(id) => {
+          if (s.panel) {
+            dispatch({ type: 'closePanel' });
+          }
           setFocus(id);
           setOpenSpot(id);
         }}
@@ -250,7 +256,12 @@ export function OrcadasExpedition({
             type="button"
             className="pill orc-top-btn"
             ref={sourcesBtnRef}
-            onClick={() => dispatch({ type: 'togglePanel' })}
+            onClick={() => {
+              if (openSpot) {
+                setOpenSpot(null);
+              }
+              dispatch({ type: 'togglePanel' });
+            }}
             aria-expanded={s.panel}
             aria-controls="orc-sources-panel"
           >
@@ -285,7 +296,7 @@ export function OrcadasExpedition({
 
       {/* Field Notebook Chapter Panel (bottom sheet on mobile <= 45% vh, side column on desktop) */}
       <div className="orc-panel" role="region" aria-label={`Capítulo ${idx + 1}: ${CHAPTER_NAMES[s.chapter]}`}>
-        <div className="orc-panel-scroll">
+        <div className="orc-panel-scroll" ref={scrollRef}>
           <div className="orc-panel-head">
             <span className="orc-kicker hand">
               Capítulo {idx + 1} de {CHAPTERS.length} · {CHAPTER_NAMES[s.chapter]}
@@ -313,7 +324,7 @@ export function OrcadasExpedition({
                 guesses={s.guesses}
                 onGuess={(kind, value) => dispatch({ type: 'guess', kind, value })}
                 onClear={() => dispatch({ type: 'clearGuesses' })}
-                month={s.month}
+                month={s.obsMonth}
               />
               <FactList facts={chapterFacts} />
             </div>
@@ -344,7 +355,11 @@ export function OrcadasExpedition({
 
           {s.chapter === 'century' && (
             <div className="orc-chapter-content">
-              <CenturyChart userTempC={s.guesses.temp} month={s.month} />
+              <CenturyChart
+                userTempC={s.guesses.temp}
+                month={s.obsMonth}
+                untilYear={s.maxYear}
+              />
               <FactList facts={chapterFacts} />
             </div>
           )}
@@ -415,14 +430,20 @@ export function OrcadasExpedition({
           <button
             type="button"
             className="btn primary orc-btn-primary"
-            disabled={s.chapter !== 'done' && !canAdvance}
             onClick={() =>
               s.chapter === 'done' ? onLeave(true) : dispatch({ type: 'next' })
             }
           >
-            {primaryButtonText(s.chapter, canAdvance)}
+            {primaryButtonText(s.chapter, recorded)}
           </button>
         </div>
+        {s.chapter === 'observation' && recorded < 4 && (
+          <small className="orc-obs-status" role="status">
+            {4 - recorded === 1
+              ? 'Te falta 1 lectura, podés volver después.'
+              : `Te faltan ${4 - recorded} lecturas, podés volver después.`}
+          </small>
+        )}
       </div>
 
       {s.panel && (

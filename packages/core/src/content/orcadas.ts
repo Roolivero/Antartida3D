@@ -363,8 +363,8 @@ export function sourcesOf(fact: OrcadasFact): OrcadasSource[] {
     .filter((src): src is OrcadasSource => src !== undefined);
 }
 
-export type BuildingId = 'omond' | 'moneta' | 'radioMast' | 'modern';
-export type EraId = 'omond' | 'moneta' | 'radio' | 'navy' | 'today';
+export type BuildingId = 'omond' | 'flag' | 'windMast' | 'moneta' | 'radioMast' | 'modern';
+export type EraId = 'omond' | 'traspaso' | 'moneta' | 'radio' | 'navy' | 'today';
 
 export interface OrcadasEra {
   id: EraId;
@@ -381,15 +381,25 @@ export const ORCADAS_ERAS: readonly OrcadasEra[] = [
     fromYear: 1903,
     title: 'Casa Omond',
     summary: 'Observatorio meteorológico de piedra inaugurado por la expedición escocesa de Bruce.',
+    // In 1903 the anemometer stood on the Scotia's deck, not on land (Mossman 1907), and no flag flew yet.
     buildings: ['omond'],
-    factIds: ['eras-expedicion-bruce', 'eras-decreto-1904', 'eras-traspaso-1904', 'eras-hugo-acuna'],
+    factIds: ['eras-expedicion-bruce'],
+  },
+  {
+    id: 'traspaso',
+    fromYear: 1904,
+    title: 'Traspaso a la Argentina',
+    summary: 'El observatorio pasa a manos argentinas y se iza la bandera.',
+    buildings: ['omond', 'flag'],
+    factIds: ['eras-decreto-1904', 'eras-traspaso-1904', 'eras-hugo-acuna'],
   },
   {
     id: 'moneta',
     fromYear: 1905,
     title: 'Casa Moneta',
     summary: 'Se suma la casa de madera principal junto al observatorio de piedra.',
-    buildings: ['omond', 'moneta'],
+    // The land wind mast from 1905 is a reconstruction: its start year is [Fuente a definir].
+    buildings: ['omond', 'flag', 'windMast', 'moneta'],
     factIds: ['eras-casa-moneta-1905'],
   },
   {
@@ -397,7 +407,7 @@ export const ORCADAS_ERAS: readonly OrcadasEra[] = [
     fromYear: 1927,
     title: 'Primera estación de radio',
     summary: 'Primera estación radiotelegráfica antártica y dotación de argentinos nativos.',
-    buildings: ['omond', 'moneta', 'radioMast'],
+    buildings: ['omond', 'flag', 'windMast', 'moneta', 'radioMast'],
     factIds: ['eras-radio-1927', 'eras-dotacion-nativa-1927', 'eras-jose-moneta', 'eras-unica-base'],
   },
   {
@@ -405,7 +415,7 @@ export const ORCADAS_ERAS: readonly OrcadasEra[] = [
     fromYear: 1951,
     title: 'Destacamento Naval',
     summary: 'El observatorio pasa a jurisdicción de la Armada Argentina.',
-    buildings: ['omond', 'moneta', 'radioMast'],
+    buildings: ['omond', 'flag', 'windMast', 'moneta', 'radioMast'],
     factIds: ['eras-traspaso-armada'],
   },
   {
@@ -414,10 +424,35 @@ export const ORCADAS_ERAS: readonly OrcadasEra[] = [
     fromYear: 2000,
     title: 'Bases científicas modernas',
     summary: 'Investigación multidisciplinaria en el laboratorio LABORC y monitoreo ambiental.',
-    buildings: ['omond', 'moneta', 'radioMast', 'modern'],
+    buildings: ['omond', 'flag', 'windMast', 'moneta', 'radioMast', 'modern'],
     factIds: ['done-laborc-actual', 'done-monumento-hsm42'],
   },
 ] as const;
+
+export type OrcadasHotspotId = 'screen' | 'mast' | 'house' | 'flag' | 'bay' | 'colony';
+
+/** Facts shown on each scene hotspot card. Explicit ids: one fact never appears on two hotspots. */
+export const ORCADAS_HOTSPOT_FACTS: Record<OrcadasHotspotId, readonly string[]> = {
+  screen: ['obs-instrumental-1903'],
+  mast: ['obs-estacion-centenaria'],
+  house: ['eras-casa-moneta-1905'],
+  flag: ['eras-traspaso-1904'],
+  bay: ['year-hielo-bahia'],
+  colony: ['arrival-fauna'],
+};
+
+/** Publishable facts of a hotspot, in declared order. */
+export function hotspotFacts(id: OrcadasHotspotId): OrcadasFact[] {
+  return ORCADAS_HOTSPOT_FACTS[id]
+    .map((factId) => ORCADAS_FACTS.find((f) => f.id === factId))
+    .filter((f): f is OrcadasFact => f !== undefined && isPublishable(f));
+}
+
+/** Scene element a hotspot points at, when that element depends on the era. */
+export const HOTSPOT_BUILDING: Partial<Record<OrcadasHotspotId, BuildingId>> = {
+  flag: 'flag',
+  mast: 'windMast',
+};
 
 export function eraAt(year: number): OrcadasEra {
   for (let i = ORCADAS_ERAS.length - 1; i >= 0; i--) {

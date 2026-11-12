@@ -20,6 +20,8 @@ export const BUILDING_LABELS: Record<BuildingId, string> = {
   moneta: 'Casa Moneta (madera, 1905)',
   radioMast: 'Torres de radio (1927)',
   modern: 'Laboratorio LABORC y pabellones',
+  flag: 'Pabellón nacional',
+  windMast: 'Mástil de viento',
 };
 
 export function seasonForMonth(month: number): string {

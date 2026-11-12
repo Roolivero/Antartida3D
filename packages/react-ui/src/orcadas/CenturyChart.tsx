@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
+import { recordSpanText } from '@antartida/core';
 import { KindChip } from './KindChip.tsx';
 import { CenturySvg } from './century/CenturySvg.tsx';
 import {
@@ -11,9 +12,11 @@ import {
 export function CenturyChart({
   userTempC,
   month,
+  untilYear,
 }: {
   userTempC?: number;
   month: number;
+  untilYear?: number;
 }) {
   const data = useMemo(() => computeCenturyDataset(month), [month]);
   const [view, setView] = useState<CenturyViewId>('annual');
@@ -79,9 +82,7 @@ export function CenturyChart({
 
       {/* Kid-friendly explanation (10 years old & adults) preserving required phrase */}
       <p className="orc-century-summary">
-        <strong>Serie histórica de temperatura media anual</strong> con{' '}
-        <strong>{data.totalYears} años</strong> ({data.firstYear}–{data.lastYear},{' '}
-        {data.validAnnualCount} años completos en el archivo SCAR READER). Un termómetro de un solo
+        <strong>Serie histórica de temperatura media anual</strong>. {recordSpanText(untilYear ?? data.lastYear)} (archivo SCAR READER). Un termómetro de un solo
         día muestra el tiempo de esa tarde; más de cien años anotados sin pausa dejan ver cómo
         cambia el clima de la isla Laurie a lo largo de un siglo.
       </p>

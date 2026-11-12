@@ -152,7 +152,8 @@ test.describe('Orcadas · observación', () => {
     const reading = currentExpectedReading();
     const windBf = beaufort(reading.windKmh);
 
-    await expect(primary(page)).toBeDisabled();
+    await expect(primary(page)).toBeEnabled();
+    await expect(primary(page)).toHaveText('Seguir');
     await expect(page.getByText('Observación registrada')).toHaveCount(0);
 
     // 1. Thermometer (keyboard only: Tab to tab, Enter, Tab to slider, arrows to exact tempC, Enter)
@@ -220,6 +221,7 @@ test.describe('Orcadas · observación', () => {
     await tabTo(page, /^Empezar de nuevo$/);
     await page.keyboard.press('Enter');
     await expect(page.getByText('Observación registrada')).toHaveCount(0);
-    await expect(primary(page)).toBeDisabled();
+    await expect(primary(page)).toBeEnabled();
+    await expect(primary(page)).toHaveText('Seguir');
   });
 });

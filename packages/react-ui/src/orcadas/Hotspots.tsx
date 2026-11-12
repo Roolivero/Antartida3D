@@ -1,10 +1,12 @@
-import { useMemo, useRef, type RefObject } from 'react';
+import { useEffect, useMemo, useRef, type RefObject } from 'react';
 import {
-  CHAPTERS,
-  factsFor,
+  HOTSPOT_BUILDING,
+  hotspotFacts,
+  layoutOf,
   sourcesOf,
+  type BuildingId,
   type Chapter,
-  type OrcadasFact,
+  type OrcadasHotspotId,
 } from '@antartida/core';
 import { useFocusReturn } from '../hooks.ts';
 import { Icon } from '../ui.tsx';
@@ -33,7 +35,6 @@ export interface HotspotDef {
   pose: CameraPose;
   fallbackPct: readonly [number, number];
   chapters: readonly Chapter[];
-  keywords: readonly string[];
 }
 
 /**
@@ -64,62 +65,79 @@ function mobilePose(pose: CameraPose): CameraPose {
   return { pos: [tx + dx, ty + dy, tz + dz], target: [tx, ty - drop, tz] };
 }
 
+const screenLayout = layoutOf('screen');
+const mastLayout = layoutOf('windMast');
+const houseLayout = layoutOf('moneta');
+const flagLayout = layoutOf('flag');
+
 export const HOTSPOTS: readonly HotspotDef[] = [
   {
     id: 'screen',
     label: 'Abrigo meteorológico',
     shortLabel: 'Abrigo',
     subtitle: 'Termómetros e higrómetro al resguardo del sol y del viento',
-    worldPos: [-4.5, 2.4, 2.6],
+    worldPos: [
+      screenLayout.position[0],
+      screenLayout.position[1] + 0.95,
+      screenLayout.position[2] + 0.4,
+    ],
     pose: {
       pos: [-9.2, 4.6, 8.8],
       target: [-4.0, 1.8, 2.2],
     },
     fallbackPct: [33, 52],
     chapters: ['observation', 'century'],
-    keywords: ['termómetro', 'abrigo', 'temperatura', 'observación', 'presión'],
   },
   {
     id: 'mast',
     label: 'Mástil de viento',
     shortLabel: 'Anemómetro',
     subtitle: 'Veleta de rumbo y cazoletas que giran con las ráfagas del mar de Scotia',
-    worldPos: [-6.8, 5.4, -1.2],
+    worldPos: [
+      mastLayout.position[0] + 0.4,
+      mastLayout.position[1] + 3.95,
+      mastLayout.position[2],
+    ],
     pose: {
       pos: [-13.2, 6.4, 5.2],
       target: [-6.8, 3.5, -1.2],
     },
     fallbackPct: [23, 38],
     chapters: ['observation', 'arrival'],
-    keywords: ['viento', 'anemómetro', 'temporal', 'nubes', 'observación'],
   },
   {
     id: 'house',
     label: 'Casas históricas',
     shortLabel: 'Estación',
     subtitle: 'De la pirca de piedra de Omond House a Casa Moneta y los módulos actuales',
-    worldPos: [3.8, 3.4, -1.4],
+    worldPos: [
+      houseLayout.position[0] + 1.2,
+      houseLayout.position[1] + 1.95,
+      houseLayout.position[2] + 0.1,
+    ],
     pose: {
       pos: [9.5, 6.0, 8.8],
       target: [2.8, 2.1, -1.2],
     },
     fallbackPct: [55, 43],
     chapters: ['eras', 'arrival'],
-    keywords: ['omond', 'moneta', 'bruce', 'scotia', '1903', '1904', '1905', 'radio'],
   },
   {
     id: 'flag',
     label: 'Mástil y pabellón',
     shortLabel: 'Pabellón',
     subtitle: 'Permanencia ininterrumpida en el istmo de la isla Laurie desde 1904',
-    worldPos: [-0.4, 6.2, 3.8],
+    worldPos: [
+      flagLayout.position[0] - 0.6,
+      flagLayout.position[1] + 4.75,
+      flagLayout.position[2] + 0.2,
+    ],
     pose: {
       pos: [4.8, 5.8, 11.2],
       target: [0.2, 3.6, 3.6],
     },
     fallbackPct: [45, 37],
     chapters: ['arrival', 'eras'],
-    keywords: ['1904', 'bandera', 'correo', 'acuña', 'soberanía', 'orcadas'],
   },
   {
     id: 'bay',
@@ -133,7 +151,6 @@ export const HOTSPOTS: readonly HotspotDef[] = [
     },
     fallbackPct: [30, 66],
     chapters: ['year', 'century'],
-    keywords: ['hielo', 'bahía', 'mar', 'invierno', 'foca', 'weddell'],
   },
   {
     id: 'colony',
@@ -147,7 +164,6 @@ export const HOTSPOTS: readonly HotspotDef[] = [
     },
     fallbackPct: [74, 46],
     chapters: ['year', 'arrival'],
-    keywords: ['pingüino', 'adelia', 'barbijo', 'fauna', 'foca', 'petrel'],
   },
 ];
 
@@ -160,42 +176,42 @@ export function poseForHotspot(focus: HotspotId | null, mobile: boolean): Camera
   return mobile ? mobilePose(found.pose) : found.pose;
 }
 
-function factsForHotspot(spot: HotspotDef): OrcadasFact[] {
-  const allPublishable = CHAPTERS.flatMap((c) => factsFor(c));
-  const keywordMatches = allPublishable.filter((f) => {
-    const hay = `${f.title ?? ''} ${f.text}`.toLowerCase();
-    return spot.keywords.some((kw) => hay.includes(kw));
-  });
-  if (keywordMatches.length > 0) {
-    return keywordMatches.slice(0, 2);
-  }
-  const chapterMatches = spot.chapters.flatMap((c) => factsFor(c));
-  if (chapterMatches.length > 0) {
-    return chapterMatches.slice(0, 2);
-  }
-  return allPublishable.slice(0, 2);
-}
-
 export function Hotspots({
   overlayRef,
   activeSpot,
   openCardSpot,
+  buildings,
   onSelectSpot,
   onCloseCard,
 }: {
   overlayRef: RefObject<HTMLDivElement | null>;
   activeSpot: HotspotId | null;
   openCardSpot: Exclude<HotspotId, 'overview'> | null;
+  buildings?: readonly BuildingId[];
   onSelectSpot: (id: Exclude<HotspotId, 'overview'>) => void;
   onCloseCard: () => void;
 }) {
   const cardRef = useRef<HTMLElement>(null);
+  const visibleHotspots = useMemo(() => {
+    if (!buildings) return HOTSPOTS;
+    return HOTSPOTS.filter((spot) => {
+      const req = HOTSPOT_BUILDING[spot.id as OrcadasHotspotId];
+      return !req || buildings.includes(req);
+    });
+  }, [buildings]);
+
+  useEffect(() => {
+    if (openCardSpot && !visibleHotspots.some((h) => h.id === openCardSpot)) {
+      onCloseCard();
+    }
+  }, [openCardSpot, visibleHotspots, onCloseCard]);
+
   const selectedDef = useMemo(
-    () => (openCardSpot ? HOTSPOTS.find((h) => h.id === openCardSpot) ?? null : null),
-    [openCardSpot]
+    () => (openCardSpot ? visibleHotspots.find((h) => h.id === openCardSpot) ?? null : null),
+    [openCardSpot, visibleHotspots]
   );
   const relatedFacts = useMemo(
-    () => (selectedDef ? factsForHotspot(selectedDef) : []),
+    () => (selectedDef ? hotspotFacts(selectedDef.id) : []),
     [selectedDef]
   );
 
@@ -217,7 +233,7 @@ export function Hotspots({
          role="group"
         aria-label="Puntos de interés en la estación"
       >
-        {HOTSPOTS.map((spot) => {
+        {visibleHotspots.map((spot) => {
           const isSelected = activeSpot === spot.id;
           return (
             <button

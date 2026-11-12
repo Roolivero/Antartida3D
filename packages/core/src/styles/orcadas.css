@@ -839,6 +839,16 @@
   padding: 0 14px;
 }
 
+.orc-panel .orc-obs-status {
+  display: block;
+  padding: 0 14px 8px;
+  background: var(--paper);
+  font-size: 12px;
+  text-align: center;
+  color: var(--ink);
+  opacity: 0.8;
+}
+
 /* Sources dialog panel */
 .orc-sources {
   position: absolute;

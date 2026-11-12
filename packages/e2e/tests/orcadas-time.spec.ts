@@ -127,7 +127,14 @@ test('TimeMachine: traverses all eras with buttons, updates era title and contin
   await page.keyboard.press('Home');
   await expect(rulerSlider).toHaveAttribute('aria-valuenow', '1903');
   await expect(page.getByRole('heading', { level: 3, name: 'Casa Omond' })).toBeVisible();
-  await expect(page.getByText('1903 − 1903 = 0 años sin pausa')).toBeVisible();
+  await expect(page.getByText('Registro desde 1903: primer año')).toBeVisible();
+
+  // Flag and wind mast hotspots are absent in 1903 (B2)
+  const flagHotspot = page.getByRole('button', { name: 'Punto de interés: Mástil y pabellón' });
+  const windMastHotspot = page.getByRole('button', { name: 'Punto de interés: Mástil de viento' });
+  await expect(flagHotspot).toHaveCount(0);
+  await expect(windMastHotspot).toHaveCount(0);
+
   await page.screenshot({ path: `${SHOTS_DIR}/${viewportTag(page)}-eras-1903.png` });
 
   const nextEraBtn = page.getByRole('button', { name: /Era siguiente/i });
@@ -137,23 +144,28 @@ test('TimeMachine: traverses all eras with buttons, updates era title and contin
 
   // Traverse forward through all remaining eras
   const expectedForwardEras = [
-    { year: '1905', title: 'Casa Moneta', diff: '1905 − 1903 = 2 años sin pausa' },
-    { year: '1927', title: 'Primera estación de radio', diff: '1927 − 1903 = 24 años sin pausa' },
-    { year: '1951', title: 'Destacamento Naval', diff: '1951 − 1903 = 48 años sin pausa' },
-    { year: '2000', title: 'Bases científicas modernas', diff: '2000 − 1903 = 97 años sin pausa' },
+    { year: '1904', title: 'Traspaso a la Argentina', span: 'Registro desde 1903: 1 año, 0 de ellos completos' },
+    { year: '1905', title: 'Casa Moneta', span: 'Registro desde 1903: 2 años, 1 de ellos completos' },
+    { year: '1927', title: 'Primera estación de radio', span: 'Registro desde 1903: 24 años, 23 de ellos completos' },
+    { year: '1951', title: 'Destacamento Naval', span: 'Registro desde 1903: 48 años, 47 de ellos completos' },
+    { year: '2000', title: 'Bases científicas modernas', span: 'Registro desde 1903: 97 años, 96 de ellos completos' },
   ];
 
   for (const era of expectedForwardEras) {
     await nextEraBtn.click();
     await expect(rulerSlider).toHaveAttribute('aria-valuenow', era.year);
     await expect(page.getByRole('heading', { level: 3, name: era.title })).toBeVisible();
-    await expect(page.getByText(era.diff)).toBeVisible();
+    await expect(page.getByText(era.span)).toBeVisible();
 
     const domText = await page.locator('.orc').innerText();
     for (const snippet of UNPUBLISHABLE_SNIPPETS) {
       expect(domText).not.toContain(snippet);
     }
   }
+
+  // At the latest era (2000), both hotspots exist (B2)
+  await expect(flagHotspot).toBeVisible();
+  await expect(windMastHotspot).toBeVisible();
 
   await expect(nextEraBtn).toBeDisabled();
   await page.screenshot({ path: `${SHOTS_DIR}/${viewportTag(page)}-eras-2000.png` });

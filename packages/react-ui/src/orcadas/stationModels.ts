@@ -545,8 +545,8 @@ export function buildRadioMastsBoxes(): Box[] {
 }
 
 /**
- * 4. Modern Station Modules (2000+ red-orange pavilion, ochre science lab, stilts, radome, lit windows).
- * 52 boxes.
+ * 4. Modern Station Modules (2000+ red-orange pavilion, stilts, radome, lit windows).
+ * 33 boxes.
  */
 export function buildModernModulesBoxes(isNight: boolean): Box[] {
   const winCol = isNight ? LAMP : WINDOW_DAY;
@@ -589,33 +589,43 @@ export function buildModernModulesBoxes(isNight: boolean): Box[] {
     [-2.25, 0.40, 0.25, 0.52, 0.08, 0.72, ZINC],
     [-2.25, 0.20, 0.72, 0.48, 0.28, 0.42, ZINC],
     [-2.48, 0.68, 0.25, 0.05, 0.54, 0.72, BLACK],
-    // Covered utilidor bridge running north (-z) to secondary lab module
-    [-0.95, 0.78, -2.25, 0.76, 0.78, 2.40, ZINC],
-    [-0.95, 1.20, -2.25, 0.84, 0.08, 2.46, NAVY_ROOF],
-    // Secondary ochre-gold science laboratory module (LABORC) at [-1.2, y, -4.4]
-    [-1.2, 0.16, -4.4, 2.95, 0.32, 1.95, ROCK_DARK],
-    [-1.2, 0.88, -4.4, 2.84, 1.14, 1.84, ORANGE],
-    [-1.2, 0.42, -4.4, 2.90, 0.10, 1.90, BROWN],
-    [-1.2, 1.50, -4.4, 3.04, 0.16, 2.04, NAVY_ROOF],
-    [-1.2, 1.62, -4.4, 2.80, 0.08, 1.80, 0x162f47],
-    // Structural ribs on secondary module
-    [-2.58, 0.88, -4.4, 0.08, 1.16, 1.88, BROWN],
-    [0.18, 0.88, -4.4, 0.08, 1.16, 1.88, BROWN],
-    // Windows on secondary lab module (+z and -z)
-    [-1.85, 0.94, -3.47, 0.46, 0.42, 0.05, BLACK],
-    [-1.85, 0.94, -3.45, 0.36, 0.32, 0.05, winCol],
-    [-0.55, 0.94, -3.47, 0.46, 0.42, 0.05, BLACK],
-    [-0.55, 0.94, -3.45, 0.36, 0.32, 0.05, winCol],
-    [-1.85, 0.94, -5.33, 0.46, 0.42, 0.05, BLACK],
-    [-1.85, 0.94, -5.35, 0.36, 0.32, 0.05, winCol],
-    [-0.55, 0.94, -5.33, 0.46, 0.42, 0.05, BLACK],
-    [-0.55, 0.94, -5.35, 0.36, 0.32, 0.05, winCol],
-    // Solar panel & exhaust stack on lab module
-    [-1.95, 1.72, -4.4, 0.72, 0.08, 0.92, BLACK],
-    [-0.35, 1.82, -4.7, 0.18, 0.42, 0.18, ZINC],
     // Fuel tank beside modern module
     [2.45, 0.62, -0.4, 0.68, 0.68, 1.25, RED_DARK],
     [2.45, 0.20, -0.4, 0.56, 0.28, 1.10, ZINC],
+  ];
+}
+
+/**
+ * Secondary ochre-gold science laboratory module (LABORC), centered on its own origin.
+ * 17 boxes, voxel minimum passed (boxes >= 12, colors >= 2, windows present).
+ */
+export function buildLaborcBoxes(isNight: boolean): Box[] {
+  const winCol = isNight ? LAMP : WINDOW_DAY;
+  return [
+    // Foundation supports
+    [0, 0.16, 0, 2.95, 0.32, 1.95, ROCK_DARK],
+    // Main container body & base trim
+    [0, 0.88, 0, 2.84, 1.14, 1.84, ORANGE],
+    [0, 0.42, 0, 2.90, 0.10, 1.90, BROWN],
+    // Roof & cap
+    [0, 1.50, 0, 3.04, 0.16, 2.04, NAVY_ROOF],
+    [0, 1.62, 0, 2.80, 0.08, 1.80, 0x162f47],
+    // Structural ribs
+    [-1.38, 0.88, 0, 0.08, 1.16, 1.88, BROWN],
+    [1.38, 0.88, 0, 0.08, 1.16, 1.88, BROWN],
+    // Windows (+z)
+    [-0.65, 0.94, 0.93, 0.46, 0.42, 0.05, BLACK],
+    [-0.65, 0.94, 0.95, 0.36, 0.32, 0.05, winCol],
+    [0.65, 0.94, 0.93, 0.46, 0.42, 0.05, BLACK],
+    [0.65, 0.94, 0.95, 0.36, 0.32, 0.05, winCol],
+    // Windows (-z)
+    [-0.65, 0.94, -0.93, 0.46, 0.42, 0.05, BLACK],
+    [-0.65, 0.94, -0.95, 0.36, 0.32, 0.05, winCol],
+    [0.65, 0.94, -0.93, 0.46, 0.42, 0.05, BLACK],
+    [0.65, 0.94, -0.95, 0.36, 0.32, 0.05, winCol],
+    // Solar panel & exhaust stack
+    [-0.75, 1.72, 0, 0.72, 0.08, 0.92, BLACK],
+    [0.85, 1.82, -0.3, 0.18, 0.42, 0.18, ZINC],
   ];
 }
 
@@ -866,8 +876,16 @@ export const STATION_BOAT_BOXES: readonly Box[] = [
  * 10. Voxel Icebergs (reused from sightingModels SEA_MODELS)
  * and Sea-Ice Floe slabs (16 boxes).
  */
-export const ICEBERG_TABULAR_BOXES: readonly Box[] = SEA_MODELS['iceberg-lg'];
-export const ICEBERG_PINNACLE_BOXES: readonly Box[] = SEA_MODELS['iceberg-sm'];
+export const ICEBERG_TABULAR_BOXES: readonly Box[] = new Proxy([] as unknown as Box[], {
+  get(_target, prop) {
+    return (SEA_MODELS['iceberg-lg'] as unknown as Record<string | symbol, unknown>)[prop];
+  },
+});
+export const ICEBERG_PINNACLE_BOXES: readonly Box[] = new Proxy([] as unknown as Box[], {
+  get(_target, prop) {
+    return (SEA_MODELS['iceberg-sm'] as unknown as Record<string | symbol, unknown>)[prop];
+  },
+});
 
 /**
  * Faceted voxel sea-ice floe (bandejón de hielo marino) with pressure-ridge rim. (16 boxes)
