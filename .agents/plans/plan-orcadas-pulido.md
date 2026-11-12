@@ -322,6 +322,8 @@ El agente, con internet en tu PC, arma `docs/orcadas-emplazamiento.md`. Fuentes 
 
 **Puerta de calidad:** el agente se detiene al terminar G1 y te muestra la tabla. No se modela nada hasta que la apruebes. Un elemento sin fuente queda afuera o como `[Fuente a definir]`, y no se ubica «a ojo».
 
+> Enmienda (12 nov 2026): G1 hecho como borrador en `docs/orcadas-emplazamiento.md`. Confirmado por fuentes primarias: elementos del HSM 42 (Casa Omond, Casa Moneta, cementerio de 12 tumbas), coordenadas, 8 m, 2101 m² bajo techo (COMNAP). No hay fuente primaria con posiciones, plantas ni orientación de cada edificio: el HSM 42 no tiene plan de gestión con mapa y los informes de inspección revisados no describen Orcadas. G2 a G6 quedan en espera de la aprobación de Lk y de una imagen o plano de referencia. Las fases 6 y 7 avanzan sobre las posiciones provisorias de B8.
+
 ### G2. Escala y terreno
 
 1. Definir en `core` una constante `STATION_METERS_PER_UNIT` y convertir la tabla de G1 a unidades del mundo. Así `STATION_LAYOUT` (creado en B8) guarda metros reales y la escena convierte.
