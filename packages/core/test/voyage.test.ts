@@ -5,6 +5,8 @@ import {
   FLIGHT_CRUISE,
   FUEGIA_LAND_MASK,
   GEAR_TAP_MS,
+  ROUTE_LENGTH,
+  SHIP_HEAD_START,
   MILESTONES,
   EXPEDITION,
   SIGHTINGS,
@@ -25,6 +27,7 @@ import {
   nextGear,
   quizScore,
   retreatVoyage,
+  routeAt,
   sightingsInView,
   parseTerrainMesh,
   project,
@@ -92,10 +95,8 @@ describe('voyage content', () => {
 });
 
 describe.each(['ship', 'plane'] as const)('voyage path (%s)', (kind) => {
-  it('goes from Ushuaia to Marambio', () => {
-    const start = voyageAt(kind, 0);
+  it('ends in Marambio', () => {
     const end = voyageAt(kind, 1);
-    expect(Math.hypot(start.x - USHUAIA.x, start.y - USHUAIA.y)).toBeLessThan(0.01);
     expect(Math.hypot(end.x - MARAMBIO.x, end.y - MARAMBIO.y)).toBeLessThan(0.01);
   });
 
@@ -120,6 +121,19 @@ describe.each(['ship', 'plane'] as const)('voyage path (%s)', (kind) => {
 });
 
 describe('voyage path', () => {
+  it('starts in Ushuaia by plane', () => {
+    const start = voyageAt('plane', 0);
+    expect(Math.hypot(start.x - USHUAIA.x, start.y - USHUAIA.y)).toBeLessThan(0.01);
+  });
+
+  it('starts a ship on the sea route, out in the bay, clear of the town at its first point', () => {
+    const start = voyageAt('ship', 0);
+    expect(start).toEqual(routeAt(SHIP_HEAD_START / ROUTE_LENGTH));
+    const fromTown = Math.hypot(start.x - USHUAIA.x, start.y - USHUAIA.y);
+    expect(fromTown).toBeGreaterThan(1);
+    expect(fromTown).toBeLessThanOrEqual(SHIP_HEAD_START);
+  });
+
   it('skips the sea-only milestones on the plane', () => {
     const ids = voyageStops('plane').map((s) => s.milestone.id);
     expect(ids).toEqual(['beagle', 'drake', 'convergencia', 'paralelo-60', 'marambio']);
@@ -274,7 +288,8 @@ describe('sightings', () => {
       expect(spots[i].from).toBeGreaterThan(0);
       expect(spots[i].to).toBeLessThan(1);
       expect(spots[i].to - spots[i].from).toBeGreaterThan(SIGHTING_WINDOW_BRIEF * 0.6);
-      if (i > 0) expect(spots[i].from).toBeGreaterThan(spots[i - 1].from);
+      // The ship starts out in the bay: the first ones can already be in view at departure, together.
+      if (i > 0) expect(spots[i].from).toBeGreaterThanOrEqual(spots[i - 1].from);
     }
   });
 

@@ -4,11 +4,9 @@ import { useFrame, useThree } from '@react-three/fiber';
 import type { CameraControls } from '@react-three/drei';
 import {
   TRANSPORTS,
-  VOYAGE_POINT,
   flightClearance,
   heightAt,
   sightingsInView,
-  toWorld,
   voyageAt,
   voyageHeading,
   voyageLength,
@@ -21,7 +19,6 @@ import {
 import { buildPinGeometry, pinMaterial } from './pins.ts';
 import { buildVehicleGeometry, vehicleMaterial } from './vehicles.ts';
 import { Sighting3D } from './Sighting3D.tsx';
-import { Town3D } from './Town3D.tsx';
 import { buildTrailGeometry, trailMaterial, updateTrail } from './trail.ts';
 import { NARROW_PX, type VoyageBus } from './useVoyage.ts';
 
@@ -143,8 +140,6 @@ export function Voyage3D({ bus, reduced, overlay }: {
   const pinGeometry = useMemo(buildPinGeometry, []);
   useEffect(() => () => Object.values(pinGeometry).forEach((g) => g.dispose()), [pinGeometry]);
 
-  const takeoff = useMemo(() => toWorld(VOYAGE_POINT.x, VOYAGE_POINT.y), []);
-
   useFrame(({ camera }) => {
     const s = bus.state;
     const g = group.current;
@@ -194,7 +189,8 @@ export function Voyage3D({ bus, reduced, overlay }: {
     if (controls) {
       const departing = s.t === 0 && (drawn.current.t !== 0 || drawn.current.transport !== s.transport);
       if (departing) {
-        void controls.setLookAt(takeoff.x + DEPARTURE_OFFSET.x, DEPARTURE_OFFSET.y, takeoff.z + DEPARTURE_OFFSET.z, takeoff.x, 0, takeoff.z, !reduced);
+        // At the vehicle, so the camera does not jump to it when the trip starts moving.
+        void controls.setLookAt(p.x - 500 + DEPARTURE_OFFSET.x, DEPARTURE_OFFSET.y, p.y - 500 + DEPARTURE_OFFSET.z, p.x - 500, 0, p.y - 500, !reduced);
       } else {
         const open = bus.open ? voyageSightings(s.kind).find((v) => v.sighting.id === bus.open) : undefined;
         const far = open?.sighting.place && Math.hypot(open.x - p.x, open.y - p.y) > VISIT_DISTANCE ? open : null;
@@ -233,7 +229,6 @@ export function Voyage3D({ bus, reduced, overlay }: {
           overlay={overlay}
         />
       ))}
-      <Town3D reduced={reduced} wide={wide} overlay={overlay} />
       <primitive object={route} />
       {pins.map((_, i) => (
         <group key={i} ref={(g) => void (pinGroups.current[i] = g)}>

@@ -41,6 +41,7 @@ import { Fuegia } from './Fuegia.tsx';
 import { Graticule3D } from './Graticule3D.tsx';
 import { InkEffect } from './InkEffect.ts';
 import { SeaTimeContext, useAnimationClock } from './useAnimationClock.ts';
+import { Town3D } from '../voyage/Town3D.tsx';
 import { Voyage3D } from '../voyage/Voyage3D.tsx';
 
 function SceneContent({
@@ -115,6 +116,7 @@ function SceneContent({
       <Fuegia wide={wide} />
       <Graticule3D />
       <SeaLife visible={phase !== 'dive'} timeUniform={seaTime} instances={seaLifeInstances} voyage={voyage} />
+      <Town3D reduced={reduced} wide={wide} overlay={overlayRef} />
       {voyage && <Voyage3D bus={voyage} reduced={reduced} overlay={overlayRef} />}
       {enablePost && (
         <EffectComposer multisampling={0}>

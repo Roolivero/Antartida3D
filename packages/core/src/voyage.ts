@@ -7,7 +7,7 @@ import { FLIGHT_GROUND_STEP, flightAt } from './flight-path.ts';
 import { fuegiaWorldHeight } from './fuegia.ts';
 import { project, unproject } from './projection.ts';
 import { worldHeight } from './relief.ts';
-import { routeAt } from './route.ts';
+import { ROUTE_LENGTH, routeAt } from './route.ts';
 import { heightAt, type TerrainMesh } from './terrain.ts';
 
 type Point = { x: number; y: number };
@@ -81,9 +81,17 @@ export function flightClearance(t: number, mesh?: TerrainMesh): number {
   return runway + (Math.max(clear, cruise) - runway) * airborne;
 }
 
-/** Position in map space at fraction `t` of the trip (0 = Ushuaia, 1 = Marambio). */
+/**
+ * A ship starts its trip this many map units (about 10 km) into the sea route, out in the bay:
+ * Ushuaia is drawn where the route begins, and a ship waiting there would cover it. The route
+ * itself keeps its two ends.
+ */
+export const SHIP_HEAD_START = 1.3;
+const SHIP_START = SHIP_HEAD_START / ROUTE_LENGTH;
+
+/** Position in map space at fraction `t` of the trip (0 = departure from Ushuaia, 1 = Marambio). */
 export function voyageAt(kind: TransportKind, t: number): Point {
-  return kind === 'plane' ? flightAt(clamp01(t)) : routeAt(t);
+  return kind === 'plane' ? flightAt(clamp01(t)) : routeAt(SHIP_START + clamp01(t) * (1 - SHIP_START));
 }
 
 const PATH_SAMPLES = 400;
@@ -161,11 +169,11 @@ const SPOTS: SightingSpot[] = SIGHTINGS.map((sighting) => {
   let at = 0;
   let best = Infinity;
   for (let i = 0; i <= STOP_SAMPLES; i++) {
-    const p = routeAt(i / STOP_SAMPLES);
+    const p = voyageAt('ship', i / STOP_SAMPLES);
     const d = Math.hypot(p.x - target.x, p.y - target.y);
     if (d < best) [best, at] = [d, i / STOP_SAMPLES];
   }
-  const p = routeAt(at);
+  const p = voyageAt('ship', at);
   const heading = voyageHeading('ship', at);
   const half = (sighting.brief ? SIGHTING_WINDOW_BRIEF : SIGHTING_WINDOW) / 2;
   return {

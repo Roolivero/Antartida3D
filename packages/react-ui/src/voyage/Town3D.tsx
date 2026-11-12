@@ -9,20 +9,19 @@ import { vehicleMaterial } from './vehicles.ts';
 /** The bay the trip leaves from, where the real town is. */
 const BAY = project(-68.3, -54.81);
 /**
- * The vehicle waits at that point, so the town is drawn beside it: on the land closest to a point
- * BESIDE map units along the shore, to the left of the vehicle as the departure camera sees it.
- * Land is looked for SEARCH map units around.
+ * The town stands on the low shore next to that point (about 2 km away), where the ground is under
+ * 20 m high. The slopes start right inland: there the town would be lifted onto the mountains.
  */
-const BESIDE = { x: -0.85, y: 0.25 };
-const SEARCH = 0.6;
-const SEARCH_STEP = 0.05;
+const SITE = { x: BAY.x + 0.2, y: BAY.y + 0.15 };
 
-/** Width of the town as a fraction of its distance to the camera, between a size that reads from the bay and one that does not cover the island. */
+/** Width of the town as a fraction of its distance to the camera: small beside the vehicle, still readable on the open map. */
 const SIZE_PER_DISTANCE = 0.036;
 const MIN_SIZE = 0.25;
-const MAX_SIZE = 0.8;
+const MAX_SIZE = 30;
 /** Ground is measured this far around the center, in town widths. */
 const FOOTING = 0.4;
+/** ...but no farther than this, in map units: from far away the town is as wide as the island. */
+const MAX_FOOTING = 0.4;
 
 /**
  * Highest land of the relief within `radius` map units of (x, y), as a world height. The town
@@ -43,6 +42,8 @@ function highestGround(mesh: TerrainMesh, x: number, y: number, radius: number):
 
 /** Beyond this distance from the camera the smoke is too small to see: it stops asking for frames. */
 const SMOKE_REACH = 60;
+/** From farther than this the town is a dot: its name would only crowd the labels of the open map. */
+const LABEL_REACH = 70;
 
 const PUFFS_PER_CHIMNEY = 3;
 /** Seconds a puff takes to rise and fade. */
@@ -50,20 +51,7 @@ const PUFF_SECONDS = 3.2;
 const puffGeometry = new BoxGeometry(1, 1, 1);
 const puffMaterial = new MeshBasicMaterial({ color: 0xf7fafb, transparent: true, opacity: 0.8 });
 
-/** Land closest to the point beside the vehicle, in map space; that point itself if there is none. */
-function findSite(mesh: TerrainMesh): { x: number; y: number } {
-  const [cx, cy] = [BAY.x + BESIDE.x, BAY.y + BESIDE.y];
-  let best = { x: cx, y: cy, far: Infinity };
-  for (let dx = -SEARCH; dx <= SEARCH; dx += SEARCH_STEP) {
-    for (let dy = -SEARCH; dy <= SEARCH; dy += SEARCH_STEP) {
-      const far = Math.hypot(dx, dy);
-      if (far < best.far && highestGround(mesh, cx + dx, cy + dy, SEARCH_STEP) > 0) best = { x: cx + dx, y: cy + dy, far };
-    }
-  }
-  return best;
-}
-
-/** Ushuaia at the start of the trip: houses, smoke from the chimneys and its name. Not a button. */
+/** Ushuaia on the map, in the trip and outside it: houses, smoke from the chimneys and its name. Not a button. */
 export function Town3D({ reduced, wide, overlay }: {
   reduced: boolean;
   /** Same detail of the relief as the map draws, so the town stands on what is seen. */
@@ -72,12 +60,12 @@ export function Town3D({ reduced, wide, overlay }: {
 }) {
   const group = useRef<Group>(null);
   const puffs = useRef<(Mesh | null)[]>([]);
+  const label = useRef<HTMLSpanElement>(null);
   const geometry = useMemo(buildTownGeometry, []);
   useEffect(() => () => geometry.dispose(), [geometry]);
 
   // The town stands on the relief of Tierra del Fuego, a separate mesh that loads after the map.
   const [relief, setRelief] = useState<TerrainMesh | null>(null);
-  const site = useMemo(() => (relief ? findSite(relief) : null), [relief]);
   useEffect(() => {
     let alive = true;
     // Without the relief there is no ground to stand on: no town.
@@ -89,14 +77,14 @@ export function Town3D({ reduced, wide, overlay }: {
 
   useFrame(({ camera, invalidate }) => {
     const g = group.current;
-    if (!g || !site || !relief) return;
-    const distance = Math.hypot(camera.position.x - (site.x - 500), camera.position.y, camera.position.z - (site.y - 500));
+    if (!g || !relief) return;
+    const distance = Math.hypot(camera.position.x - (SITE.x - 500), camera.position.y, camera.position.z - (SITE.y - 500));
     const size = Math.min(MAX_SIZE, Math.max(MIN_SIZE, distance * SIZE_PER_DISTANCE));
     const f = footing.current;
     if (f.relief !== relief || Math.abs(size - f.size) > f.size * 0.03) {
-      footing.current = { size, relief, ground: highestGround(relief, site.x, site.y, size * FOOTING) };
+      footing.current = { size, relief, ground: highestGround(relief, SITE.x, SITE.y, Math.min(MAX_FOOTING, size * FOOTING)) };
     }
-    g.position.set(site.x - 500, footing.current.ground, site.y - 500);
+    g.position.set(SITE.x - 500, footing.current.ground, SITE.y - 500);
     g.scale.setScalar(size);
     const time = reduced ? 0 : performance.now() / 1000;
     puffs.current.forEach((puff, i) => {
@@ -107,13 +95,14 @@ export function Town3D({ reduced, wide, overlay }: {
       // Grows as it rises, then thins out.
       puff.scale.setScalar(0.035 + 0.075 * Math.sin(Math.PI * Math.min(1, age * 1.15)));
     });
+    if (label.current) label.current.hidden = distance > LABEL_REACH;
     if (!reduced && distance < SMOKE_REACH) invalidate();
   });
 
-  if (!site) return null;
+  if (!relief) return null;
   return (
     // The houses look south, at the water.
-    <group ref={group} rotation-y={Math.atan2(500 - site.x, 500 - site.y)}>
+    <group ref={group} rotation-y={Math.atan2(500 - SITE.x, 500 - SITE.y)}>
       <mesh geometry={geometry} material={vehicleMaterial} />
       {TOWN_CHIMNEYS.flatMap((_, c) => Array.from({ length: PUFFS_PER_CHIMNEY }, (_, i) => (
         <mesh
@@ -124,7 +113,7 @@ export function Town3D({ reduced, wide, overlay }: {
         />
       )))}
       <Html position={[0, 1.08, 0]} center portal={overlay as RefObject<HTMLElement>} zIndexRange={[3, 3]}>
-        <span className="vtown">Ushuaia</span>
+        <span ref={label} className="vtown">Ushuaia</span>
       </Html>
     </group>
   );

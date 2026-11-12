@@ -86,9 +86,12 @@ const CUMULATIVE = DENSE.reduce<number[]>((acc, p, i) => {
   return acc;
 }, []);
 
+/** Length of the route in map units. */
+export const ROUTE_LENGTH = CUMULATIVE[CUMULATIVE.length - 1];
+
 /** Point on the route at fraction `t` (0 = Ushuaia, 1 = Marambio) of its length, in map space. */
 export function routeAt(t: number): Point {
-  const target = Math.min(1, Math.max(0, t)) * CUMULATIVE[CUMULATIVE.length - 1];
+  const target = Math.min(1, Math.max(0, t)) * ROUTE_LENGTH;
   let hi = 1;
   while (hi < CUMULATIVE.length - 1 && CUMULATIVE[hi] < target) hi++;
   const lo = hi - 1;
