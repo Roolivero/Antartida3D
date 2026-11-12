@@ -89,4 +89,6 @@
 /* Phones: the zoom buttons give way to the trip panel; pinching still zooms. */
 @media (max-width:820px){
   .stage.voyaging .zoom{display:none}
+  /* A milestone card with a question is long: it scrolls inside the lower half, so the vehicle stays in view above it. */
+  .sheet.voyage{max-height:54%}
 }
