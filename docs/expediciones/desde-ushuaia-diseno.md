@@ -37,6 +37,11 @@ El turismo se menciona como una línea de contexto: no es un transporte jugable 
 - **El barco no tapa el pueblo:** el viaje en barco arranca unos 10 km adentro de su propia ruta (`SHIP_HEAD_START` en `core/src/voyage.ts`), ya en la bahía. La ruta no cambia: el mapa 2D la dibuja completa desde Ushuaia y el avión sale del punto de siempre. La cámara de salida apunta al vehículo.
 - El humo pide cuadros solo con la cámara cerca y se queda quieto con movimiento reducido.
 
+## Pista de velocidad
+
+- Si alguien mantiene «avanzar» 4 segundos seguidos sin haber usado una marcha rápida, aparece sobre la barra el cartel «¿Sabías? Tocá el botón dos veces seguidas y mantenelo apretado para ir más rápido.».
+- Se muestra una sola vez por visita. Se va al usar una marcha rápida o a los 9 segundos.
+
 ## Avistajes (mapa vivo)
 
 - Los avistajes cercanos a Ushuaia (cormorán, faro Les Éclaireurs, lobos marinos, pingüinera) ya están a la vista al empezar el viaje (`SIGHTING_AT_DEPARTURE` en `core/src/voyage.ts`). Antes aparecían de golpe apenas se avanzaba.

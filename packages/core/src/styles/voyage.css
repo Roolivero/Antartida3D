@@ -32,6 +32,9 @@
 .vcount{display:inline-flex;align-items:center;gap:4px;flex:none;font-weight:700;font-size:14px;color:var(--deep)}
 .vcount svg{width:18px;height:18px}
 /* A compact single row: on a phone the panel must leave the map and the vehicle in view. */
+/* Tip above the bar; empty until it is needed, so screen readers announce it when it appears. */
+.vhint{position:absolute;left:0;right:0;bottom:100%;margin:0 0 8px;padding:8px 12px;background:var(--paper);border:2px solid var(--ink);border-left:6px solid var(--ocre);border-radius:8px 14px 10px 12px;font-size:14px;line-height:1.3;pointer-events:none}
+.vhint:empty{display:none}
 .vbar .row{margin-top:8px;flex-wrap:nowrap;gap:8px}
 .vbar .btn{padding:0 12px;white-space:nowrap}
 .vbar .vhold{flex:1;white-space:nowrap}

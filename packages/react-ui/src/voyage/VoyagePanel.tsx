@@ -260,6 +260,12 @@ function MilestoneCard({ voyage, animated, onExit, onSource }: {
   );
 }
 
+/** Holding "advance" this long without a faster gear shows the tip about the gears, and how long it stays. */
+const SPEED_HINT_HOLD_MS = 4000;
+const SPEED_HINT_SHOWN_MS = 9000;
+/** Shown once per visit: a tip repeated on every leg is noise. */
+let speedHintShown = false;
+
 function TravelBar({ voyage, animated, onExit }: { voyage: VoyageController; animated: boolean; onExit: () => void }) {
   const state = voyage.state!;
   const bar = useRef<HTMLElement>(null);
@@ -277,17 +283,47 @@ function TravelBar({ voyage, animated, onExit }: { voyage: VoyageController; ani
     return () => void bus.listeners.delete(paint);
   }, [bus]);
 
+  const [hint, setHint] = useState(false);
+  const hintTimer = useRef(0);
+  const gear = useRef(voyage.gear);
+  gear.current = voyage.gear;
+  useEffect(() => () => window.clearTimeout(hintTimer.current), []);
+  // The tip goes away once it is followed, or after a while.
+  useEffect(() => {
+    if (!hint) return;
+    if (voyage.gear > 0) return setHint(false);
+    const timer = window.setTimeout(() => setHint(false), SPEED_HINT_SHOWN_MS);
+    return () => window.clearTimeout(timer);
+  }, [hint, voyage.gear]);
+
   const next = voyageStops(state.kind)[state.reached].milestone;
   /** Handlers of a press-and-hold button that moves the trip forward or back. */
   const holdProps = (back: boolean) => {
+    const press = () => {
+      voyage.hold(true, back);
+      // Someone who keeps "advance" held for a while does not know the faster gears: tell them once.
+      window.clearTimeout(hintTimer.current);
+      if (!back && !speedHintShown) {
+        hintTimer.current = window.setTimeout(() => {
+          if (gear.current > 0) return;
+          speedHintShown = true;
+          setHint(true);
+        }, SPEED_HINT_HOLD_MS);
+      }
+    };
+    const release = () => {
+      window.clearTimeout(hintTimer.current);
+      voyage.hold(false, back);
+    };
     const key = (on: boolean) => (e: KeyboardEvent) => {
       if (e.key !== ' ' && e.key !== 'Enter') return;
       e.preventDefault();
-      if (!e.repeat) voyage.hold(on, back);
+      if (e.repeat) return;
+      if (on) press();
+      else release();
     };
-    const release = () => voyage.hold(false, back);
     return {
-      onPointerDown: () => voyage.hold(true, back),
+      onPointerDown: press,
       onPointerUp: release,
       onPointerLeave: release,
       onPointerCancel: release,
@@ -299,6 +335,9 @@ function TravelBar({ voyage, animated, onExit }: { voyage: VoyageController; ani
   };
   return (
     <div className="vbar" role="group" aria-label="Controles del viaje">
+      <p className="vhint" role="status">
+        {hint && <><strong>¿Sabías?</strong> Tocá el botón dos veces seguidas y mantenelo apretado para ir más rápido.</>}
+      </p>
       <div className="vprog" aria-hidden="true"><i ref={bar} /></div>
       <p className="vnext">
         <span>Próximo hito: <strong>{next.title}</strong></span>
