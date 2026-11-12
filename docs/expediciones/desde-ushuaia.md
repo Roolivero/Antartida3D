@@ -201,6 +201,45 @@ Lugares que se pueden abrir durante el viaje en barco, igual que los avistajes d
 
 No se publica (las fuentes leídas no lo dicen): la relación del faro San Juan de Salvamento con la novela de Julio Verne, el año en que dejó de funcionar, y los pingüinos papúa de Isla Martillo.
 
+## 8 ter. Cómo funciona la expedición (logística y preguntas)
+
+El issue #4 pide que el usuario descubra el trabajo necesario para trasladar personas, instrumentos y suministros. Por eso algunos hitos suman datos de logística, y algunos hacen antes una pregunta de tres opciones. Fuentes O41 a O45 consultadas el 11-11-2026.
+
+Cada dato depende del vehículo elegido. Hay tres alcances: todos los vehículos, solo barcos (Irízar y Puerto Argentino comparten), solo avión. Además el Irízar tiene datos propios. Una prueba de `packages/core` controla que en el Hércules no aparezca nada sobre el rompehielos, buques o lanchas.
+
+| Hito | Alcance | Dato | Fuente |
+|---|---|---|---|
+| Ushuaia y el Canal Beagle | todos | El personal se entrena antes en Caviahue, Neuquén: esquí, supervivencia, refugios, búsqueda y rescate, vehículos antárticos | [O44] |
+| | Irízar | Tres etapas de campaña; la segunda sale de Ushuaia, llega a Belgrano II y vuelve | [O1] |
+| | Puerto Argentino | Tareas de Buque de Estación desde Ushuaia | [O7] |
+| | avión | Los Hércules C-130 son el único medio aéreo que mantiene el puente todo el año | [O10] [O45] |
+| Mar abierto | barcos | Carga: combustible, víveres, materiales de construcción, maquinaria, material científico | [O43] |
+| | Irízar | 565 toneladas de carga y más de 630.000 litros de gasoil antártico en una etapa (2022-23) | [O41] |
+| Pasaje de Drake | Irízar | Más de 600 traslados de personal científico y militar en una etapa | [O41] |
+| | avión | Pasajeros, víveres, equipos, maquinaria y evacuaciones sanitarias | [O45] |
+| Paralelo 60° Sur | todos | Protocolo de Madrid: «reserva natural dedicada a la paz y a la ciencia» | [I2] |
+| | todos | Los residuos salen de la Antártida y los retira quien los generó | [I3] |
+| Shetland del Sur | barcos | Lanchas de desembarco y «Grupo Playa» en bases sin muelle | [O43] |
+| | Irízar | Las cargas pesadas van en helicóptero Sea King | [O43] |
+| Base Marambio | todos | 70 personas en invierno y 170 en verano | [O45] |
+| | todos | 227 personas invernaron en 2022 en las siete bases permanentes (179 varones, 31 mujeres, 17 niños) | [O42] |
+| | Irízar | Carga y personal pasan a la base en helicóptero Sea King | [O24] |
+| | barcos | Los residuos vuelven a Ushuaia para reciclaje o disposición final | [O41] |
+| | avión | Pista de 1.200 m por 35 m, abierta por 21 hombres con barretas, picos y palas | [O45] |
+
+Preguntas (la respuesta correcta sale de los datos del mismo hito):
+
+| Hito | Pregunta | Respuesta | Se pregunta en |
+|---|---|---|---|
+| Ushuaia y el Canal Beagle | ¿Dónde se entrena el personal antes de pasar un año en la Antártida? | En la cordillera de Neuquén | todos |
+| Paralelo 60° Sur | ¿Qué se hace con la basura que produce una base antártica? | Se saca de la Antártida | todos |
+| Shetland del Sur | ¿Cómo llega la carga de un buque a una base que no tiene muelle? | En lanchas de desembarco | barcos (el avión no pasa por ese hito) |
+| Base Marambio | ¿Cuánta gente vive en la Base Marambio durante el invierno? | Unas 70 personas | todos |
+
+No hay puntaje durante el viaje. La primera respuesta queda fija, se muestra si era correcta y recién después aparecen los datos. La tarjeta de llegada dice cuántas preguntas se acertaron.
+
+Límites conocidos: [O44] describe el curso del personal de las Fuerzas Armadas, no el de los científicos. El dato de 227 personas es de la invernada 2022. Las cifras de carga son de una etapa de la campaña 2022-23, no un promedio.
+
 ## 9. Pendiente: no se publica hasta tener fuente
 
 - Duración del vuelo del C-130 desde Ushuaia (hay 3,5 h desde Río Gallegos `[O14]`).

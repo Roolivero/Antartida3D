@@ -21,6 +21,13 @@ El turismo se menciona como una línea de contexto: no es un transporte jugable 
 - Cada medio llega a su destino real. El vehículo queda estacionado en el mapa.
 - El mapa principal sugiere la siguiente expedición (por ejemplo Orcadas) y avisa: «si quedaste con curiosidad por otro medio, volvé a hacer la expedición». Esa sugerencia es una **pieza global del mapa**: se coordina en #2 o en un issue aparte, no se implementa desde #4.
 
+## Logística y preguntas
+
+- Contenido en `EXPEDITION` (`core/src/content/ushuaia.ts`), por id de hito. Cada nota vale para todos, para un tipo de vehículo (`kind`) o para un vehículo (`only`).
+- `expeditionAt(hito, vehículo)` filtra notas y pregunta; `quizScore(vehículo, respuestas)` cuenta aciertos. Las dos son puras y tienen pruebas.
+- `useVoyage` guarda la opción elegida por id de hito y la borra al empezar o salir del viaje. La primera respuesta queda fija.
+- La tarjeta del hito muestra la pregunta, después los datos; la última tarjeta muestra «acertaste X de Y». Detalle del contenido en `desde-ushuaia.md`, sección 8 ter.
+
 ## Avistajes (mapa vivo)
 
 - Durante el viaje aparecen animales cerca del vehículo. Se pueden tocar un rato para abrir una ficha con nombre, un dato curioso y su fuente.

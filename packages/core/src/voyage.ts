@@ -1,4 +1,7 @@
-import { MILESTONES, SIGHTINGS, TRANSPORTS, type Milestone, type Sighting, type TransportId, type TransportKind } from './content/ushuaia.ts';
+import {
+  EXPEDITION, MILESTONES, SIGHTINGS, TRANSPORTS,
+  type Milestone, type Sighting, type TransportId, type TransportKind, type VoyageFact, type VoyageQuestion,
+} from './content/ushuaia.ts';
 import { FLIGHT_GROUND_M } from './flight-ground.ts';
 import { FLIGHT_GROUND_STEP, flightAt } from './flight-path.ts';
 import { fuegiaWorldHeight } from './fuegia.ts';
@@ -183,6 +186,30 @@ export function voyageSightings(kind: TransportKind): readonly SightingSpot[] {
 /** Sightings in view at fraction `t`, spotted or not. */
 export function sightingsInView(kind: TransportKind, t: number): SightingSpot[] {
   return voyageSightings(kind).filter((s) => t >= s.from && t <= s.to);
+}
+
+const kindOf = (transport: TransportId) => TRANSPORTS.find((v) => v.id === transport)!.kind;
+
+/**
+ * «Así funciona la expedición» at a milestone for the chosen transport: only the notes that hold
+ * for it (nothing about the icebreaker on the plane), and the question if it is asked on it.
+ */
+export function expeditionAt(milestoneId: string, transport: TransportId): { notes: VoyageFact[]; question: VoyageQuestion | null } {
+  const stop = EXPEDITION[milestoneId];
+  const kind = kindOf(transport);
+  const notes = (stop?.notes ?? [])
+    .filter((n) => (!n.kind || n.kind === kind) && (!n.only || n.only === transport))
+    .map((n) => n.fact);
+  const question = stop?.question && (!stop.question.kind || stop.question.kind === kind) ? stop.question : null;
+  return { notes, question };
+}
+
+/** How many questions of the trip were answered right. `answers` holds the option chosen at each milestone id. */
+export function quizScore(transport: TransportId, answers: Readonly<Record<string, number>>): { right: number; total: number } {
+  const asked = voyageStops(kindOf(transport))
+    .map((stop) => ({ id: stop.milestone.id, question: expeditionAt(stop.milestone.id, transport).question }))
+    .filter((q) => q.question);
+  return { right: asked.filter((q) => answers[q.id] === q.question!.answer).length, total: asked.length };
 }
 
 /** Seconds the whole trip takes while the user keeps advancing. Not a real duration. */

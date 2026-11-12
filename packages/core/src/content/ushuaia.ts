@@ -26,6 +26,7 @@ export const VOYAGE_SOURCES = {
   U3: { org: 'Morgavi, Cohen y Vereda (UNTDF y CONICET)', title: '«Competitividad de Ushuaia como puerta de entrada…», Aportes y Transferencias 18(1), 2020', url: 'https://eco.mdp.edu.ar/revistas/index.php/aportes/article/download/291/265/638' },
   U4: { org: 'Vereda, Jensen (UNTDF) y Fontana (IAA)', title: '«La evolución del turismo antártico y su relación con las políticas públicas nacionales y provinciales», Registros 15(2), 2019', url: 'https://revistasfaud.mdp.edu.ar/registros/article/download/329/217/2090' },
   U7: { org: 'Boy, C. C. (FCEN-UBA)', title: 'Crecimiento en el delfín austral, tesis de licenciatura, 1999', url: 'https://bibliotecadigital.exactas.uba.ar/download/seminario/seminario_nBIO000645_Boy.pdf' },
+  O1: { org: 'Armada Argentina', title: 'Campaña Antártica (etapas del rompehielos)', url: 'https://www.argentina.gob.ar/armada/antartida/campana-antartica' },
   O2: { org: 'Armada Argentina', title: 'Bases antárticas permanentes', url: 'https://www.argentina.gob.ar/armada/antartida/bases-permanentes' },
   O5: { org: 'Armada Argentina', title: 'Ficha del rompehielos ARA «Almirante Irízar» (Q-5)', url: 'https://www.argentina.gob.ar/armada/superficie/unidades/rompehielos/rompehielos-ara-almirante-irizar-q-5' },
   O6: { org: 'Armada Argentina', title: 'Ficha del aviso ARA «Puerto Argentino» (A-21)', url: 'https://www.argentina.gob.ar/armada/superficie/unidades/avisos/aviso-ara-puerto-argentino-21' },
@@ -45,7 +46,14 @@ export const VOYAGE_SOURCES = {
   O38: { org: 'Daneri, Negri, Coria, Negrete, Libertelli y Corbalán (MACN-CONICET e Instituto Antártico Argentino)', title: '«Fish prey of Weddell seals, Leptonychotes weddellii, at Hope Bay, Antarctic Peninsula, during the late summer», Polar Biology, 2018', url: 'https://ri.conicet.gov.ar/handle/11336/93207' },
   O39: { org: 'CONICET (CADIC-CONICET)', title: '«Pingüinos en plan de ahorro de energía» (28-11-2012)', url: 'https://www.conicet.gov.ar/pinguinos-en-plan-de-ahorro-de-energia/' },
   O40: { org: 'Armada Argentina', title: '«Día Nacional de la Isla de los Estados» (10-08-2022)', url: 'https://www.argentina.gob.ar/node/331249' },
+  O41: { org: 'Ministerio de Defensa', title: '«El rompehielos ARA "Almirante Irízar" finalizó la 2da etapa de la Campaña Antártica de Verano 2022/23» (16-03-2023)', url: 'https://www.argentina.gob.ar/noticias/el-rompehielos-ara-almirante-irizar-finalizo-la-2da-etapa-de-la-campana-antartica-de-verano' },
+  O42: { org: 'Ministerio de Defensa', title: '«Taiana supervisó el operativo de cambio de domicilio de quienes invernarán en la Antártida Argentina durante 2022» (13-10-2021)', url: 'https://www.argentina.gob.ar/noticias/taiana-superviso-el-operativo-de-cambio-de-domicilio-de-quienes-invernaran-en-la-antartida' },
+  O43: { org: 'Armada Argentina', title: '«Despliegue de dotaciones de trabajo e invernada y descarga de materiales en la Antártida» (17-01-2023)', url: 'https://www.argentina.gob.ar/noticias/despliegue-de-dotaciones-de-trabajo-e-invernada-y-descarga-de-materiales-en-la-antartida' },
+  O44: { org: 'Armada Argentina', title: '«Personal de la Armada que invernará en la Antártida se adiestró en Neuquén» (04-10-2023)', url: 'https://www.argentina.gob.ar/noticias/personal-de-la-armada-que-invernara-en-la-antartida-se-adiestro-en-neuquen' },
+  O45: { org: 'Fuerza Aérea Argentina', title: '«51° Aniversario de la Base Marambio: más de medio siglo de soberanía en el Continente Antártico» (31-10-2020)', url: 'https://www.argentina.gob.ar/noticias/51deg-aniversario-de-la-base-marambio-mas-de-medio-siglo-de-soberania-en-el-continente' },
   I1: { org: 'Secretaría del Tratado Antártico', title: 'Tratado Antártico (1959), art. VI', url: 'https://documents.ats.aq/keydocs/vol_1/vol1_2_AT_Antarctic_Treaty_e.pdf' },
+  I2: { org: 'Secretaría del Tratado Antártico', title: 'Protocolo al Tratado Antártico sobre Protección del Medio Ambiente (Protocolo de Madrid)', url: 'https://www.ats.aq/s/protocol.html' },
+  I3: { org: 'Secretaría del Tratado Antártico', title: 'Anexo III del Protocolo de Madrid: eliminación y tratamiento de residuos', url: 'https://documents.ats.aq/recatt/Att010_s.pdf' },
   I5: { org: 'NASA Earth Observatory', title: '«Cape Horn: A Mariner\'s Nightmare» (24-12-2017)', url: 'https://science.nasa.gov/earth/earth-observatory/cape-horn-a-mariners-nightmare-91472/' },
   I6: { org: 'Eos / AGU', title: '«Notorious ocean current is far stronger than previously thought» (27-12-2016)', url: 'https://eos.org/research-spotlights/notorious-ocean-current-is-far-stronger-than-previously-thought' },
   I7: { org: 'NSIDC', title: 'Antarctic polar front', url: 'https://nsidc.org/learn/cryosphere-glossary/antarctic-polar-front' },
@@ -243,6 +251,100 @@ export const VOYAGE_TOURISM_NOTE: VoyageFact = {
   text: 'Por Ushuaia también pasa entre el 85 % y el 90 % del turismo antártico. Acá viajás en los medios de la ciencia.',
   kind: 'real',
   sources: ['U3'],
+};
+
+/** A fact about how the expedition works. Without `kind` or `only` it holds for every transport. */
+export interface ExpeditionNote {
+  fact: VoyageFact;
+  /** Only for ships or only for planes. */
+  kind?: TransportKind;
+  /** Only for this transport: what one says about the Irízar is not shown on the Hércules. */
+  only?: TransportId;
+}
+
+/** A question asked before the notes that answer it. No score: the trip only says at the end how many were right. */
+export interface VoyageQuestion {
+  prompt: string;
+  options: readonly string[];
+  /** Index of the right option. */
+  answer: number;
+  /** Asked only on ships or only on planes; on every transport that passes the milestone otherwise. */
+  kind?: TransportKind;
+}
+
+export interface ExpeditionStop {
+  notes: readonly ExpeditionNote[];
+  question?: VoyageQuestion;
+}
+
+const real = (text: string, ...sources: VoyageSourceCode[]): VoyageFact => ({ text, kind: 'real', sources });
+
+/**
+ * «Así funciona la expedición»: what it takes to move people, instruments and supplies and to keep
+ * a scientific mission going, told along the trip. Keyed by milestone id.
+ */
+export const EXPEDITION: Readonly<Record<string, ExpeditionStop>> = {
+  beagle: {
+    question: {
+      prompt: '¿Dónde se entrena el personal antes de pasar un año en la Antártida?',
+      options: ['En la cordillera de Neuquén', 'En la propia Antártida', 'En Ushuaia'],
+      answer: 0,
+    },
+    notes: [
+      { fact: real('El personal que va a las bases se entrena antes en Caviahue, Neuquén, donde el clima y el terreno se parecen a los antárticos. Practica esquí, supervivencia, construcción de refugios, búsqueda y rescate y manejo de vehículos antárticos.', 'O44') },
+      { only: 'irizar', fact: real('En una campaña antártica tradicional el Irízar hace tres etapas. La segunda sale de Ushuaia, llega hasta la base Belgrano II y vuelve a Ushuaia.', 'O1') },
+      { only: 'puerto-argentino', fact: real('Este buque cumple tareas de Buque de Estación desde Ushuaia: patrulla, mantiene balizas y abastece bases.', 'O7') },
+      { kind: 'plane', fact: real('Los Hércules C-130 unen Río Gallegos o Ushuaia con la Base Marambio. Son el único medio aéreo que mantiene todo el año el puente entre los dos continentes.', 'O10', 'O45') },
+    ],
+  },
+  'mar-abierto': {
+    notes: [
+      { kind: 'ship', fact: real('A las bases se les lleva por mar combustible, víveres, materiales de construcción, repuestos, maquinaria y material científico.', 'O43') },
+      { only: 'irizar', fact: real('En una sola etapa de la campaña 2022-23 el Irízar movió 565 toneladas de carga y más de 630.000 litros de gasoil antártico.', 'O41') },
+    ],
+  },
+  drake: {
+    notes: [
+      { only: 'irizar', fact: real('El rompehielos también mueve gente: en una etapa de campaña hubo más de 600 traslados de científicos y militares entre las bases.', 'O41') },
+      { kind: 'plane', fact: real('Los aviones llevan pasajeros, víveres, equipos y maquinaria. En una emergencia también sirven para evacuar a un enfermo o un herido.', 'O45') },
+    ],
+  },
+  'paralelo-60': {
+    question: {
+      prompt: '¿Qué se hace con la basura que produce una base antártica?',
+      options: ['Se entierra en el hielo', 'Se saca de la Antártida', 'Se deja en la base para siempre'],
+      answer: 1,
+    },
+    notes: [
+      { fact: real('Al sur de esta línea rige también el Protocolo de Madrid, que declara a la Antártida «reserva natural dedicada a la paz y a la ciencia».', 'I2') },
+      { fact: real('Los residuos tienen que salir de la Antártida y los retira quien los generó. La lista incluye baterías, combustibles, aceites y plásticos.', 'I3') },
+    ],
+  },
+  shetland: {
+    question: {
+      prompt: '¿Cómo llega la carga de un buque a una base que no tiene muelle?',
+      options: ['En lanchas de desembarco', 'El buque se apoya en la playa', 'Por un puente flotante'],
+      answer: 0,
+    },
+    notes: [
+      { kind: 'ship', fact: real('En las bases sin muelle la carga baja en lanchas de desembarco. Un «Grupo Playa» va a tierra y descarga junto con la gente de la base.', 'O43') },
+      { only: 'irizar', fact: real('Las cargas más pesadas las lleva un helicóptero Sea King del rompehielos.', 'O43') },
+    ],
+  },
+  marambio: {
+    question: {
+      prompt: '¿Cuánta gente vive en la Base Marambio durante el invierno?',
+      options: ['Unas 70 personas', 'Unas 700 personas', 'Nadie: la base se cierra'],
+      answer: 0,
+    },
+    notes: [
+      { fact: real('En Marambio viven en promedio 70 personas en invierno y 170 en verano, cuando se suman los campamentos científicos.', 'O45') },
+      { fact: real('En 2022, 227 personas pasaron un año entero en las siete bases permanentes argentinas: 179 varones, 31 mujeres y 17 niños.', 'O42') },
+      { only: 'irizar', fact: real('Marambio está sobre una meseta: la carga y el personal pasan del rompehielos a la base en un helicóptero Sea King.', 'O24') },
+      { kind: 'ship', fact: real('Los residuos de las bases vuelven en barco a Ushuaia, donde se tratan para reciclarlos o para su disposición final.', 'O41') },
+      { kind: 'plane', fact: real('La pista mide 1.200 m de largo por 35 m de ancho. La abrieron 21 hombres con barretas, picos y palas.', 'O45') },
+    ],
+  },
 };
 
 export type SightingIcon = 'bird' | 'penguin' | 'whale' | 'dolphin' | 'seal' | 'lighthouse';

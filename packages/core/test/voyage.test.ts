@@ -6,6 +6,7 @@ import {
   FUEGIA_LAND_MASK,
   GEAR_TAP_MS,
   MILESTONES,
+  EXPEDITION,
   SIGHTINGS,
   SIGHTING_WINDOW_BRIEF,
   TRANSPORTS,
@@ -20,7 +21,9 @@ import {
   flightClearance,
   fuegiaWorldHeight,
   heightAt,
+  expeditionAt,
   nextGear,
+  quizScore,
   retreatVoyage,
   sightingsInView,
   parseTerrainMesh,
@@ -45,6 +48,7 @@ const facts: VoyageFact[] = [
   ...TRANSPORTS.flatMap((v) => v.facts),
   ...MILESTONES.flatMap((m) => [m.essential, ...m.more]),
   ...SIGHTINGS.map((s) => s.fact),
+  ...Object.values(EXPEDITION).flatMap((stop) => stop.notes.map((n) => n.fact)),
 ];
 
 describe('voyage content', () => {
@@ -210,6 +214,48 @@ describe('flight altitude', () => {
     for (let i = 130; i < 250; i++) {
       expect(flightClearance((i + 1) / 1000, terrain), `t=${i / 1000}`).toBeGreaterThanOrEqual(flightClearance(i / 1000, terrain));
     }
+  });
+});
+
+describe('how the expedition works', () => {
+  it('belongs to milestones of the trip', () => {
+    const ids = MILESTONES.map((m) => m.id);
+    for (const id of Object.keys(EXPEDITION)) expect(ids).toContain(id);
+  });
+
+  it('never tells about one transport on another', () => {
+    for (const transport of TRANSPORTS) {
+      for (const id of Object.keys(EXPEDITION)) {
+        const shown = expeditionAt(id, transport.id).notes;
+        for (const note of EXPEDITION[id].notes) {
+          const fits = (!note.kind || note.kind === transport.kind) && (!note.only || note.only === transport.id);
+          expect(shown.includes(note.fact), `${transport.id} at ${id}: ${note.fact.text}`).toBe(fits);
+        }
+      }
+    }
+    const plane = Object.keys(EXPEDITION).flatMap((id) => expeditionAt(id, 'hercules').notes.map((f) => f.text)).join(' ');
+    expect(plane).not.toMatch(/Irízar|rompehielos|buque|lancha/i);
+  });
+
+  it('has something to tell at every stop that has an entry, and a valid question', () => {
+    for (const transport of TRANSPORTS) {
+      for (const stop of voyageStops(transport.kind)) {
+        const { notes, question } = expeditionAt(stop.milestone.id, transport.id);
+        if (question) {
+          expect(notes.length, `${transport.id} at ${stop.milestone.id}`).toBeGreaterThan(0);
+          expect(question.options.length).toBe(3);
+          expect(question.options[question.answer]).toBeDefined();
+        }
+      }
+    }
+  });
+
+  it('counts the questions answered right', () => {
+    expect(quizScore('irizar', {})).toEqual({ right: 0, total: 4 });
+    expect(quizScore('hercules', {})).toEqual({ right: 0, total: 3 });
+    expect(quizScore('irizar', { beagle: 0, 'paralelo-60': 1, shetland: 2, marambio: 0 })).toEqual({ right: 3, total: 4 });
+    // The Shetland question is not asked on the plane: its answer does not count there.
+    expect(quizScore('hercules', { beagle: 0, 'paralelo-60': 1, shetland: 0, marambio: 0 })).toEqual({ right: 3, total: 3 });
   });
 });
 

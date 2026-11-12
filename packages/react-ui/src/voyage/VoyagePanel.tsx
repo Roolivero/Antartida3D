@@ -1,6 +1,8 @@
 import { lazy, Suspense, useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import {
   SIGHTINGS,
+  expeditionAt,
+  quizScore,
   FAUNA_COUNT,
   PLACES_COUNT,
   sightingNote,
@@ -194,6 +196,10 @@ function MilestoneCard({ voyage, animated, onExit, onSource }: {
   const [more, setMore] = useState(false);
   useFocusReturn(true, ref, '.btn.primary');
   const { milestone } = voyageStops(state.kind)[state.card];
+  const { notes, question } = expeditionAt(milestone.id, state.transport);
+  const chosen = voyage.answers[milestone.id];
+  const answered = chosen !== undefined;
+  const score = quizScore(state.transport, voyage.answers);
   const last = voyageArrived(state);
   const next = () => (last ? onExit(true) : voyage.closeCard());
   return (
@@ -211,6 +217,39 @@ function MilestoneCard({ voyage, animated, onExit, onSource }: {
         <Fact fact={milestone.essential} onSource={onSource} />
         {more && milestone.more.map((f) => <Fact key={f.text} fact={f} onSource={onSource} />)}
       </ul>
+      {notes.length > 0 && (
+        <div className="vexp" role="group" aria-label="Cómo funciona la expedición">
+          {question && (
+            <fieldset className="vquiz">
+              <legend>{question.prompt}</legend>
+              {question.options.map((option, i) => (
+                <button
+                  key={option}
+                  type="button"
+                  className={'btn' + (answered && i === question.answer ? ' right' : answered && i === chosen ? ' wrong' : '')}
+                  aria-pressed={i === chosen}
+                  disabled={answered}
+                  onClick={() => voyage.answer(milestone.id, i)}
+                >
+                  {option}
+                </button>
+              ))}
+              <p className="vsmall" role="status">
+                {answered && (chosen === question.answer ? 'Correcto.' : `No era esa. La respuesta es: ${question.options[question.answer]}.`)}
+              </p>
+            </fieldset>
+          )}
+          {/* The notes answer the question: they wait for it. */}
+          {(!question || answered) && (
+            <ul className="vfacts">{notes.map((f) => <Fact key={f.text} fact={f} onSource={onSource} />)}</ul>
+          )}
+        </div>
+      )}
+      {last && score.total > 0 && (
+        <p>
+          <strong>Preguntas del viaje:</strong> acertaste {score.right} de {score.total}.{score.right === score.total ? ' ¡Todas!' : ''}
+        </p>
+      )}
       {last && voyageSightings(state.kind).length > 0 && <Notebook voyage={voyage} animated={animated} />}
       {last && <p className="anno">Si te quedó curiosidad por otro medio, volvé a hacer la expedición.</p>}
       <div className="row vactions">

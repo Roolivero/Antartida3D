@@ -51,6 +51,9 @@ export interface VoyageController {
   /** The open card is next to the animal on the map, not in the panel. */
   popover: boolean;
   openSighting: (id: string, beside?: boolean) => void;
+  /** Option chosen for the question of each milestone, by milestone id. */
+  answers: Readonly<Record<string, number>>;
+  answer: (milestoneId: string, option: number) => void;
   closeSighting: () => void;
   reset: () => void;
 }
@@ -64,6 +67,7 @@ export function useVoyage(): VoyageController {
 
   const [seen, setSeen] = useState<readonly string[]>([]);
   const [sighting, setSighting] = useState<{ id: string; beside: boolean } | null>(null);
+  const [answers, setAnswers] = useState<Readonly<Record<string, number>>>({});
 
   const notify = () => bus.listeners.forEach((fn) => fn());
   const commit = (next: VoyageState | null) => {
@@ -132,6 +136,7 @@ export function useVoyage(): VoyageController {
     bus.beside = null;
     bus.open = null;
     setSighting(null);
+    setAnswers({});
   };
 
   return {
@@ -143,6 +148,9 @@ export function useVoyage(): VoyageController {
     popover: sighting?.beside ?? false,
     openSighting,
     closeSighting: bus.closeSighting,
+    answers,
+    // The first answer stands: the notes that follow give it away.
+    answer: (id, option) => setAnswers((a) => (id in a ? a : { ...a, [id]: option })),
     start: (transport) => {
       bus.back = false;
       clearSightings();

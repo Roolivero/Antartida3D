@@ -59,6 +59,16 @@
 .vsighting{display:flex;align-items:center;gap:10px}
 .vsighting svg{width:34px;height:34px;flex:none;color:var(--deep)}
 .vlatin{margin:0;font-style:italic;color:var(--pencil)}
+/* How the expedition works: the question and the notes that answer it. */
+.vexp{margin:10px 0;padding:10px 12px;border:1.5px dashed var(--pencil);border-radius:8px 14px 10px 12px}
+.vquiz{margin:0;padding:0;border:0;display:flex;flex-direction:column;gap:6px}
+.vquiz legend{padding:0;margin-bottom:6px;font-weight:700}
+.vquiz .btn{width:100%;min-height:48px;height:auto;padding:8px 14px;justify-content:flex-start;text-align:left;white-space:normal}
+.vquiz .btn:disabled{opacity:1;cursor:default}
+.vquiz .btn.right{background:color-mix(in srgb,var(--glacier) 45%,var(--paper));border-color:var(--deep)}
+.vquiz .btn.right::after{content:' ✓';font-weight:700}
+.vquiz .btn.wrong{background:color-mix(in srgb,var(--oxide) 22%,var(--paper));border-color:var(--oxide)}
+.vquiz .vsmall{margin:2px 0 0;min-height:1.2em}
 .vnotebook{margin:10px 0;padding:10px 12px;border:1.5px dashed var(--pencil);border-radius:8px 14px 10px 12px}
 .vnotebook p{margin:0 0 8px}
 .vnotebook ul{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:6px}
