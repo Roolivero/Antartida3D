@@ -1,12 +1,15 @@
 import { useEffect, useMemo, useRef } from 'react';
-import { useFrame, useThree } from '@react-three/fiber';
+import { useFrame } from '@react-three/fiber';
 import type { BufferGeometry, Group, Mesh } from 'three';
 import {
   FOV,
   IRIZAR_DEFAULT_SPEED,
+  MODEL_MIN_PX,
+  MODEL_REFERENCE_DISTANCE,
   driftOffsetAtTime,
   fractSin,
   irizarStateAtTime,
+  screenPx,
   voyageAt,
   voyageHeading,
   whaleCyclePosition,
@@ -19,9 +22,9 @@ import type { VoyageBus } from '../voyage/useVoyage.ts';
 import { buildVehicleGeometry, vehicleMaterial } from '../voyage/vehicles.ts';
 import { useSeaTime, type SeaTimeUniform } from './useAnimationClock.ts';
 
-/** Length of a model on screen, in px at a 900 px tall viewport: they stay readable at any zoom. */
-const ANIMAL_PX = 50;
-const ICE_PX = 60;
+/** Reference on-screen length in px at a 900 px tall viewport at MODEL_REFERENCE_DISTANCE. */
+const ANIMAL_PX = 65;
+const ICE_PX = 78;
 const VEHICLE_PX = 72;
 const REFERENCE_HEIGHT = 900;
 const FOV_TAN = Math.tan((FOV * Math.PI) / 360);
@@ -54,7 +57,6 @@ export function SeaLife({ visible = true, timeUniform, instances, voyage }: {
   voyage?: VoyageBus | null;
 }) {
   const root = useRef<Group>(null);
-  const size = useThree((s) => s.size);
   const contextTime = useSeaTime();
   const clock = timeUniform || contextTime;
 
@@ -77,16 +79,16 @@ export function SeaLife({ visible = true, timeUniform, instances, voyage }: {
   const spouts = useRef<(Mesh | null)[]>([]);
   const plane = useRef<Group>(null);
 
-  useFrame(({ camera }) => {
+  useFrame(({ camera, size }) => {
     if (!root.current) return;
     root.current.visible = visible && !voyage?.state;
     if (!root.current.visible) return;
     const time = clock.value;
-    // World units per px at distance 1.
-    const perPx = (2 * FOV_TAN) / Math.max(size.height, REFERENCE_HEIGHT / 2);
     const sized = (g: Group, px: number) => {
-      const s = camera.position.distanceTo(g.position) * perPx * px;
+      const s = MODEL_REFERENCE_DISTANCE * ((2 * FOV_TAN) / REFERENCE_HEIGHT) * px;
       g.scale.setScalar(s);
+      const distance = camera.position.distanceTo(g.position);
+      g.visible = screenPx(s, distance, size.height) >= MODEL_MIN_PX;
       return s;
     };
 
@@ -105,8 +107,10 @@ export function SeaLife({ visible = true, timeUniform, instances, voyage }: {
         const cycle = time * inst.speed + inst.phase;
         const index = Math.floor(cycle);
         const state = whaleCycleState(cycle - index, inst.species);
-        g.visible = state.alpha > 0.02;
-        if (!g.visible) return;
+        if (state.alpha <= 0.02) {
+          g.visible = false;
+          return;
+        }
         const seedMix = inst.species === 'minke' ? fractSin(inst.seed * 5.3 + index * 11.1) : fractSin(inst.seed * 7.13 + index * 3.7);
         const dir = seedMix < 0.5 ? 1 : -1;
         const at = inst.species === 'orca' ? { x: inst.x, y: inst.y } : whaleCyclePosition(inst.x, inst.y, inst.radius, inst.seed, index);

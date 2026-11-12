@@ -1,19 +1,25 @@
 import { useEffect, useMemo, useRef } from 'react';
 import type { Group } from 'three';
 import { useFrame } from '@react-three/fiber';
-import { ORCADAS_POINT, heightAt, toWorld, worldHeight } from '@antartida/core';
+import {
+  MODEL_MIN_PX,
+  MODEL_REFERENCE_DISTANCE,
+  ORCADAS_POINT,
+  heightAt,
+  screenPx,
+  toWorld,
+  worldHeight,
+} from '@antartida/core';
 import { buildBoxGeometry, vehicleMaterial } from '../voyage/vehicles.ts';
 import { ORCADAS_SITE } from '../voyage/sightingModels.ts';
 
 export const buildOrcadasSiteGeometry = () => buildBoxGeometry(ORCADAS_SITE);
 
 const SIZE_PER_DISTANCE = 0.028;
-const MIN_SIZE = 0.2;
-const MAX_SIZE = 24;
+const SITE_SIZE = MODEL_REFERENCE_DISTANCE * SIZE_PER_DISTANCE;
 
 /**
- * Minimal voxel maqueta of Estación Orcadas on Laurie Island.
- * Scales with camera distance so it reads clearly at any zoom level,
+ * Minimal voxel maqueta of Estación Orcadas on Laurie Island,
  * positioned on ground relief without covering or interfering with the HTML map marker.
  */
 export function OrcadasSite({ reduced }: { reduced?: boolean }) {
@@ -27,7 +33,7 @@ export function OrcadasSite({ reduced }: { reduced?: boolean }) {
   // Base world coordinates on the 3D map
   const wPos = toWorld(ORCADAS_POINT.x, ORCADAS_POINT.y, groundH);
 
-  useFrame(({ camera, invalidate }) => {
+  useFrame(({ camera, size, invalidate }) => {
     const g = group.current;
     if (!g) return;
 
@@ -36,10 +42,10 @@ export function OrcadasSite({ reduced }: { reduced?: boolean }) {
       camera.position.y - wPos.y,
       camera.position.z - wPos.z
     );
-    const size = Math.min(MAX_SIZE, Math.max(MIN_SIZE, distance * SIZE_PER_DISTANCE));
+    g.visible = screenPx(SITE_SIZE, distance, size.height) >= MODEL_MIN_PX;
 
     g.position.set(wPos.x, groundH, wPos.z);
-    g.scale.setScalar(size);
+    g.scale.setScalar(SITE_SIZE);
 
     if (!reduced && distance < 80) {
       invalidate();

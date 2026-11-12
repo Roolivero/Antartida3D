@@ -48,6 +48,8 @@ uniform float uIsobarsStrength;    // 7. Pencil isobaths every 500 m and 2000 m 
 uniform float uFoamStrength;       // 8. Animated coastal & ice-shelf barrier surf foam
 uniform float uPaperGrainStrength; // 9. Screen-space paper grain overlay
 uniform vec4 uWhaleRipples[8];     // Up to 8 whale emergence positions (xy = worldXZ, z = speed, w = phase)
+uniform float uFadeStart;
+uniform float uFadeEnd;
 
 ${fogParsChunk}
 ${periodicLineChunk}
@@ -326,6 +328,7 @@ void main() {
 
   float fog = computeFogFactor(vWorldPos);
   vec3 finalCol = mix(waterLinear, uFogColor, fog);
+  finalCol = mix(finalCol, uFogColor, smoothstep(uFadeStart, uFadeEnd, length(vWorldPos.xz)));
 
   gl_FragColor = vec4(finalCol, 1.0);
   // Shading is done in linear space (sRGB textures decode on sampling). Encode for the screen

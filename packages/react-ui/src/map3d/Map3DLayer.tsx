@@ -41,6 +41,7 @@ import type { Layer3DProps, Phase } from '../map/MapView.tsx';
 import { Ocean } from './Ocean.tsx';
 import { SeaLife } from './SeaLife.tsx';
 import { Terrain } from './Terrain.tsx';
+import { SouthernLands } from './SouthernLands.tsx';
 import { Fuegia } from './Fuegia.tsx';
 import { Graticule3D } from './Graticule3D.tsx';
 import { InkEffect } from './InkEffect.ts';
@@ -120,6 +121,7 @@ function SceneContent({
     <SeaTimeContext.Provider value={seaTime}>
       <Ocean wide={wide} timeUniform={seaTime} instances={seaLifeInstances} />
       <Terrain wide={wide} />
+      <SouthernLands />
       <Fuegia wide={wide} />
       <Graticule3D />
       <SeaLife visible={phase !== 'dive'} timeUniform={seaTime} instances={seaLifeInstances} voyage={voyage} />
@@ -157,9 +159,10 @@ export type Map3DLayerProps = Layer3DProps;
 
 // Zoom range of the orbit camera, as a distance to its target (the overview is ~800 on desktop
 // and ~2250 on a phone). Closer than MIN_DISTANCE the camera would graze the 4 km plateau
-// (25 world units high at x50); farther than MAX_DISTANCE the continent is a speck in the fog.
+// (25 world units high at x50); farther than MAX_DISTANCE the view would be mostly the paper
+// beyond the faded southern lands (WORLD_FADE_END).
 const MIN_DISTANCE = 60;
-const MAX_DISTANCE = 5000;
+const MAX_DISTANCE = 3600;
 // The camera only gets closer than MIN_DISTANCE around Tierra del Fuego; there the near plane must
 // come in too, or the land in front of the target would be clipped.
 const NEAR = 10;

@@ -187,6 +187,25 @@ Bedmap3 termina en 60° S, así que el 3D no tenía tierra en Sudamérica: Ushua
 - **Perfil bajo el vuelo:** `packages/core/src/flight-ground.ts` guarda la altura máxima de la tierra bajo la ruta del avión sobre Tierra del Fuego (60 valores, uno cada 0,2 % del viaje, 0,8 unidades a cada lado). Sale del mismo `IBCSO_v2_bed.tif` con `pnpm --filter @antartida/core flight-ground`. El avión del viaje lo usa para pasar por encima del relieve. Hay que regenerarlo si cambia la ruta.
 - **El mapa 2D no cambia:** sigue con la costa de Natural Earth.
 
+## Resto del hemisferio sur en 3D: siluetas y color del suelo (#42)
+
+Fuera de la Antártida y de la zona de IBCSO, la vista 3D muestra Sudamérica, la punta de África, Australia y Nueva Zelanda como **siluetas planas, sin relieve**. Son contexto geográfico, no datos científicos.
+
+- **Siluetas:** Natural Earth `ne_50m_land`, la misma fuente que la costa 2D. Están en `packages/core/src/southern-lands.ts` y se generan con `pnpm coastline`, recortadas a 80° del polo (unos 10° S).
+- **Color del suelo:** Natural Earth II con relieve sombreado, versión de 50 m (`NE2_50M_SR`, v3.2.0). Es una cobertura del suelo idealizada: bosque, estepa, desierto y hielo, con sombreado de relieve. Es una ilustración cartográfica, no una imagen satelital.
+
+| Dato | Valor |
+|---|---|
+| Organismo / autores | Natural Earth (Tom Patterson y Nathaniel Vaughn Kelso) |
+| Licencia | Dominio público: «All versions of Natural Earth raster + vector map data found on this website are in the public domain.» https://www.naturalearthdata.com/about/terms-of-use/ |
+| Página de descarga | https://www.naturalearthdata.com/downloads/50m-raster-data/50m-natural-earth-2/ |
+| Archivo | https://naturalearth.s3.amazonaws.com/50m_raster/NE2_50M_SR.zip (40 MB, sin cuenta) |
+| Formato | GeoTIFF RGB de 10 800 × 5 400 píxeles, equirectangular de todo el mundo |
+| Fecha de consulta | 12 de noviembre de 2026 |
+
+- **Dónde está:** `~/.cache/antartida3d/natural-earth-2/NE2_50M_SR/NE2_50M_SR.tif`, fuera del repo. Se puede usar otra carpeta con la variable `NE2_DIR`.
+- **Archivo generado (va al repo):** `packages/core/src/assets/southern-lands-color.webp`. Es el raster reproyectado a la estereográfica polar del mapa. Se regenera con `pnpm --filter @antartida/core southern-lands-color`.
+
 ## Otros datos geográficos del mapa (ya existían)
 
 - **Costa, islas y barreras de hielo en 2D:** Natural Earth (`ne_50m_land`, `ne_50m_antarctic_ice_shelves_polys`), dominio público, https://www.naturalearthdata.com/. Están en `packages/core/src/coastline.ts`, y se regeneran con `pnpm coastline`. Natural Earth corta el continente y la barrera de Ross sobre el antimeridiano (la línea de 180°). En 2D ese corte se tapa con un trazo. En la vista 3D se reemplazó por la máscara de Bedmap3 (F8).

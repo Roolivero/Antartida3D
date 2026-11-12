@@ -13,6 +13,7 @@
   },
   "scripts": {
     "coastline": "tsx scripts/build-coastline.ts",
+    "southern-lands-color": "tsx scripts/build-southern-lands-color.ts",
     "terrain": "tsx scripts/build-terrain.ts",
     "bathymetry": "tsx scripts/build-bathymetry.ts",
     "orcadas-series": "tsx scripts/build-orcadas-series.ts",
