@@ -2,7 +2,16 @@ import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import { BoxGeometry, MeshBasicMaterial, type Group, type Mesh } from 'three';
 import { useFrame } from '@react-three/fiber';
 import { Html } from '@react-three/drei';
-import { FUEGIA_LAND_MASK, fuegiaWorldHeight, loadFuegiaMesh, project, type TerrainMesh } from '@antartida/core';
+import {
+  FUEGIA_LAND_MASK,
+  MODEL_MIN_PX,
+  MODEL_REFERENCE_DISTANCE,
+  fuegiaWorldHeight,
+  loadFuegiaMesh,
+  project,
+  screenPx,
+  type TerrainMesh,
+} from '@antartida/core';
 import { TOWN_CHIMNEYS, buildTownGeometry } from './sightingModels.ts';
 import { vehicleMaterial } from './vehicles.ts';
 
@@ -14,13 +23,12 @@ const BAY = project(-68.3, -54.81);
  */
 const SITE = { x: BAY.x + 0.2, y: BAY.y + 0.15 };
 
-/** Width of the town as a fraction of its distance to the camera: small beside the vehicle, still readable on the open map. */
+/** Reference width factor of the town at MODEL_REFERENCE_DISTANCE. */
 const SIZE_PER_DISTANCE = 0.036;
-const MIN_SIZE = 0.25;
-const MAX_SIZE = 30;
+const TOWN_SIZE = MODEL_REFERENCE_DISTANCE * SIZE_PER_DISTANCE;
 /** Ground is measured this far around the center, in town widths. */
 const FOOTING = 0.4;
-/** ...but no farther than this, in map units: from far away the town is as wide as the island. */
+/** Maximum footing radius in map units so the ground query stays local. */
 const MAX_FOOTING = 0.4;
 
 /**
@@ -72,20 +80,20 @@ export function Town3D({ reduced, wide, overlay }: {
     loadFuegiaMesh(wide ? 'hi' : 'lo').then((mesh) => alive && setRelief(mesh)).catch(() => {});
     return () => void (alive = false);
   }, [wide]);
-  // Ground under the town at the size it was last measured for: the footprint grows with the camera distance.
-  const footing = useRef({ size: 0, relief, ground: 0 });
+  // Ground under the town cached for the current relief mesh.
+  const footing = useRef<{ relief: TerrainMesh | null; ground: number }>({ relief, ground: 0 });
 
-  useFrame(({ camera, invalidate }) => {
+  useFrame(({ camera, size, invalidate }) => {
     const g = group.current;
     if (!g || !relief) return;
     const distance = Math.hypot(camera.position.x - (SITE.x - 500), camera.position.y, camera.position.z - (SITE.y - 500));
-    const size = Math.min(MAX_SIZE, Math.max(MIN_SIZE, distance * SIZE_PER_DISTANCE));
+    g.visible = screenPx(TOWN_SIZE, distance, size.height) >= MODEL_MIN_PX;
     const f = footing.current;
-    if (f.relief !== relief || Math.abs(size - f.size) > f.size * 0.03) {
-      footing.current = { size, relief, ground: highestGround(relief, SITE.x, SITE.y, Math.min(MAX_FOOTING, size * FOOTING)) };
+    if (f.relief !== relief) {
+      footing.current = { relief, ground: highestGround(relief, SITE.x, SITE.y, Math.min(MAX_FOOTING, TOWN_SIZE * FOOTING)) };
     }
     g.position.set(SITE.x - 500, footing.current.ground, SITE.y - 500);
-    g.scale.setScalar(size);
+    g.scale.setScalar(TOWN_SIZE);
     const time = reduced ? 0 : performance.now() / 1000;
     puffs.current.forEach((puff, i) => {
       if (!puff) return;

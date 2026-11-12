@@ -13,7 +13,7 @@ export function Legend({ open, onToggle, mode = '2d' }: { open: boolean; onToggl
           {mode === '3d' && (
             <>
               <li className="leg-note" style={{ fontStyle: 'italic', fontSize: '0.82em', opacity: 0.9 }}>
-                Relieve real: Bedmap3 (BAS) ×{VERTICAL_EXAGGERATION}, curvas cada {CONTOUR_M} m · Tierra del Fuego y Malvinas: IBCSO v2 ×{FUEGIA_VERTICAL_EXAGGERATION}, color según altura · Profundidad: IBCSO v2 (SCAR)
+                Relieve real: Bedmap3 (BAS) ×{VERTICAL_EXAGGERATION}, curvas cada {CONTOUR_M} m · Tierra del Fuego y Malvinas: IBCSO v2 ×{FUEGIA_VERTICAL_EXAGGERATION}, color según altura · Profundidad: IBCSO v2 (SCAR) · Resto del hemisferio sur: Natural Earth II, plano y sin relieve
               </li>
               <li className="leg-note" style={{ fontStyle: 'italic', fontSize: '0.82em', opacity: 0.9 }}>
                 Fauna y témpanos: ilustración, no posiciones reales

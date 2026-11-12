@@ -10,7 +10,7 @@ import {
   TextureLoader,
   Vector3,
 } from 'three';
-import { useFrame } from '@react-three/fiber';
+import { useFrame, useThree } from '@react-three/fiber';
 import {
   CONTOUR_M,
   DEPTH_ABSORB,
@@ -31,15 +31,21 @@ import {
 import paper512Url from '@antartida/core/assets/paper-512.webp';
 import { FOG_COLOR_HEX } from './fog.glsl.ts';
 import { fuegiaFragmentShader, fuegiaVertexShader } from './fuegia.glsl.ts';
+import { farLandUniforms, loadFarLandTexture } from './SouthernLands.tsx';
 
 /** Map-space distance from the pole of a parallel (the projection is polar, so it is a circle). */
 const radiusOfLatitude = (lat: number) => 500 - project(0, lat).y;
+/** Degrees of latitude before the data edge over which the land tint turns into the flat southern lands. */
+const FAR_LAND_TINT_DEG = 2.5;
 
 /** Relief of Tierra del Fuego, southern Patagonia and the Malvinas with its near-shore water, fetched once the camera gets near it. */
 export function Fuegia({ wide }: { wide: boolean }) {
+  const invalidate = useThree((s) => s.invalidate);
   const [near, setNear] = useState(false);
   const [meshData, setMeshData] = useState<TerrainMesh | null>(null);
   const [paper, setPaper] = useState<Texture | null>(null);
+  // Natural Earth II color the relief turns into at its northern edge, shared with SouthernLands.
+  const farLand = useMemo(() => farLandUniforms(), []);
   const center = useMemo(() => {
     const c = toWorld(FUEGIA_CENTER.x, FUEGIA_CENTER.y);
     return new Vector3(c.x, c.y, c.z);
@@ -63,10 +69,18 @@ export function Fuegia({ wide }: { wide: boolean }) {
       t.wrapT = RepeatWrapping;
       setPaper(t);
     });
+    let farTex: Texture | null = null;
+    loadFarLandTexture(farLand)
+      .then((t) => {
+        farTex = t;
+        if (alive) invalidate();
+      })
+      .catch((e: unknown) => console.warn('Fuegia edge color unavailable', e));
     return () => {
       alive = false;
+      farTex?.dispose();
     };
-  }, [near, wide]);
+  }, [near, wide, farLand, invalidate]);
 
   const geometry = useMemo(() => {
     if (!meshData) return null;
@@ -115,13 +129,15 @@ export function Fuegia({ wide }: { wide: boolean }) {
         uContour: { value: CONTOUR_M },
         uEdgeStart: { value: radiusOfLatitude(FUEGIA_DATA_LIMIT_LAT - FUEGIA_EDGE_FADE_DEG) },
         uEdgeEnd: { value: radiusOfLatitude(FUEGIA_DATA_LIMIT_LAT) },
+        uTintStart: { value: radiusOfLatitude(FUEGIA_DATA_LIMIT_LAT - FUEGIA_EDGE_FADE_DEG - FAR_LAND_TINT_DEG) },
+        ...farLand,
         uAbsorb: { value: DEPTH_ABSORB },
         uWaterFade: { value: FUEGIA_WATER_FADE },
         uFogColor: { value: new Color(FOG_COLOR_HEX) },
         uFogDensity: { value: 0.35 },
       },
     });
-  }, [paper]);
+  }, [paper, farLand]);
 
   useEffect(() => () => geometry?.dispose(), [geometry]);
   useEffect(() => () => material?.dispose(), [material]);

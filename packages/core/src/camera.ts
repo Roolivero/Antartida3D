@@ -5,6 +5,20 @@ import { MAX_K, clampView, type Size, type View, type Geometry } from './viewpor
 
 export const FOV = 40;
 
+/**
+ * Scene models (fauna, icebergs, ships, towns, stations) have a fixed, exaggerated world size: the one
+ * they had on screen at this camera distance, when they used to scale with the zoom. Closer they grow,
+ * farther they shrink, which reads as distance.
+ */
+export const MODEL_REFERENCE_DISTANCE = 400;
+/** Below this on-screen size a fixed-size model is hidden instead of flickering as a loose dot. */
+export const MODEL_MIN_PX = 3;
+
+/** On-screen height in px of a world length seen at a distance, for the vertical FOV. */
+export function screenPx(worldSize: number, distance: number, viewportHeight: number): number {
+  return (worldSize * viewportHeight) / (2 * Math.max(distance, 1e-6) * Math.tan((FOV * Math.PI) / 360));
+}
+
 export interface Vector3Like {
   x: number;
   y: number;

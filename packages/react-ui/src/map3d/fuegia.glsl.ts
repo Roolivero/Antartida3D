@@ -1,4 +1,5 @@
 import { fogParsChunk, periodicLineChunk } from './fog.glsl.ts';
+import { farLandChunk } from './southernLands.glsl.ts';
 
 export const fuegiaVertexShader = /* glsl */ `
 attribute float aHeight; // land height or, on water, depth (m)
@@ -11,13 +12,19 @@ varying float vShore;
 varying vec3 vNormal;
 varying vec3 vWorldPos;
 
+uniform float uEdgeStart;
+uniform float uEdgeEnd;
+
 void main() {
   vHeight = aHeight;
   vLand = aLand;
   vShore = aShore;
   vNormal = normal;
-  vWorldPos = (modelMatrix * vec4(position, 1.0)).xyz;
-  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  // Where the data ends the relief sinks to sea level, so it meets the flat southern lands without a step.
+  vec3 p = position;
+  p.y *= 1.0 - smoothstep(uEdgeStart, uEdgeEnd, length(p.xz));
+  vWorldPos = (modelMatrix * vec4(p, 1.0)).xyz;
+  gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
 }
 `;
 
@@ -35,10 +42,12 @@ uniform vec3 uSunDir;
 uniform float uContour;
 uniform float uEdgeStart; // map-space radius from the pole where the data starts to end
 uniform float uEdgeEnd;
+uniform float uTintStart; // radius where the land tint starts turning into the southern lands color
 uniform float uAbsorb;
 uniform float uWaterFade; // outer fraction of the painted water that fades out
 
 ${fogParsChunk}
+${farLandChunk}
 
 varying float vHeight;
 varying float vLand;
@@ -80,6 +89,10 @@ void main() {
     float bare = max(smoothstep(450.0, 750.0, vHeight), smoothstep(0.45, 0.75, 1.0 - normal.y) * smoothstep(150.0, 400.0, vHeight));
     col = mix(col, ROCK, bare);
     col = mix(col, SNOW, smoothstep(900.0, 1300.0, vHeight));
+    // Toward the end of the data the tint turns into the Natural Earth II color of the southern lands it meets.
+    if (uHasFarLand > 0.5) {
+      col = mix(col, farLandColor(vWorldPos.xz), smoothstep(uTintStart, uEdgeStart, length(vWorldPos.xz)));
+    }
 
     // Same raking NW sun and soft fills as the Antarctic terrain, relative to flat ground.
     vec3 fillW = normalize(vec3(-0.82, 0.57, 0.0));

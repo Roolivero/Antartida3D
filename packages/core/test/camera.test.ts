@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
+  FOV,
   geometry,
+  screenPx,
   poseFromView,
   viewFromPose,
   HOME,
@@ -106,5 +108,18 @@ describe('camera', () => {
     expect(pose.pos.y).toBeGreaterThan(pose.target.y);
     expect(pose.target).toEqual(DIVE_3D.target);
     expect(pose.pos).toEqual(DIVE_3D.pos);
+  });
+});
+
+describe('screenPx', () => {
+  it('halves when the distance doubles and grows with the viewport', () => {
+    const near = screenPx(10, 400, 900);
+    expect(screenPx(10, 800, 900)).toBeCloseTo(near / 2, 6);
+    expect(screenPx(10, 400, 1800)).toBeCloseTo(near * 2, 6);
+  });
+
+  it('fills the viewport height with the frustum height at that distance', () => {
+    const frustum = 2 * 500 * Math.tan((FOV * Math.PI) / 360);
+    expect(screenPx(frustum, 500, 844)).toBeCloseTo(844, 6);
   });
 });

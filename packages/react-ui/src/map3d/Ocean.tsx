@@ -17,6 +17,8 @@ import {
   DEPTH_ABSORB,
   MAX_WHALE_RIPPLES,
   OCEAN_SIZE,
+  WORLD_FADE_END,
+  WORLD_FADE_START,
   computeWhaleRipples,
   sunDirection,
   type SeaLifeInstance,
@@ -122,6 +124,8 @@ export function Ocean({
       uFoamStrength: { value: 0.90 },
       uPaperGrainStrength: { value: 0.24 },
       uWhaleRipples: { value: initialRipples },
+      uFadeStart: { value: WORLD_FADE_START },
+      uFadeEnd: { value: WORLD_FADE_END },
       uFogColor: { value: new Color(FOG_COLOR_HEX) },
       uFogDensity: { value: 0.35 },
     };

@@ -93,7 +93,7 @@ test.describe('Ocean 3D animation efficiency', () => {
     expect(shot1.equals(shot2)).toBe(true);
   });
 
-  test('corner pixel in tilted 3D view is water or haze color, not raw paper or black (1440 and 390 px)', async ({ page }) => {
+  test('open sea in the tilted 3D view is water color, and the far corner fades to paper, never black (1440 and 390 px)', async ({ page }) => {
     await page.goto('/');
 
     const toggle = page.getByRole('group', { name: 'Modo de vista' });
@@ -104,27 +104,41 @@ test.describe('Ocean 3D animation efficiency', () => {
     // Settle scene and terrain
     await page.waitForTimeout(1200);
 
-    const corner = await page.evaluate(() => {
+    const samples = await page.evaluate(() => {
       const c = document.querySelector('canvas');
-      if (!c) return null;
+      const cc = (window as any).__cameraControls;
+      if (!c || !cc) return null;
       const c2d = document.createElement('canvas');
       c2d.width = 1;
       c2d.height = 1;
       const ctx = c2d.getContext('2d');
       if (!ctx) return null;
-      ctx.drawImage(c, 10, 10, 1, 1, 0, 0, 1, 1);
-      const [r, g, b, a] = ctx.getImageData(0, 0, 1, 1).data;
-      return { r, g, b, a };
+      const rect = c.getBoundingClientRect();
+      const pixel = (cssX: number, cssY: number) => {
+        const sx = (cssX / rect.width) * c.width;
+        const sy = (cssY / rect.height) * c.height;
+        ctx.drawImage(c, sx, sy, 1, 1, 0, 0, 1, 1);
+        const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
+        return { r, g, b };
+      };
+      // Open sea at 0° E, 55° S (Weddell / Scotia side, away from land and markers), in the
+      // polar stereographic map space (scale 1590, centered on 500, 500): world = map - 500.
+      const r = 1590 * Math.tan(((90 - 55) / 2) * (Math.PI / 180));
+      const V = cc.camera.position.constructor;
+      const p = new V(0, 0, -r).project(cc.camera);
+      return {
+        sea: pixel(((p.x + 1) / 2) * rect.width, ((1 - p.y) / 2) * rect.height),
+        corner: pixel(10, 10),
+      };
     });
 
-    expect(corner).not.toBeNull();
-    // Not pure black (r=0, g=0, b=0)
-    expect(corner!.r + corner!.g + corner!.b).toBeGreaterThan(30);
-    // Not raw paper background (#FBF4E6 / #F3EBDD -> r > 230 && g > 220 && b > 200)
-    const isPlainPaper = corner!.r > 220 && corner!.g > 210 && corner!.b > 190;
-    expect(isPlainPaper).toBe(false);
-    // Ocean or haze tone: bluish (b >= r)
-    expect(corner!.b).toBeGreaterThanOrEqual(corner!.r);
+    expect(samples).not.toBeNull();
+    const { sea, corner } = samples!;
+    // The sea is drawn: bluish water, not the raw paper background.
+    expect(sea.b).toBeGreaterThanOrEqual(sea.r);
+    expect(sea.r > 220 && sea.g > 210 && sea.b > 190).toBe(false);
+    // Far away the world fades into paper (#42), but the canvas never shows black there.
+    expect(corner.r + corner.g + corner.b).toBeGreaterThan(30);
   });
 
   test('ARA Almirante Irizar marker exists, can be focused with Tab, and opens a card with verified source (1440 and 390 px)', async ({ page }) => {
