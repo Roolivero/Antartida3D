@@ -39,8 +39,14 @@ const DEPARTURE_OFFSET = new Vector3(3, 9, 12);
 /** In the storm the camera comes down to this world height: under the clouds, so they do not cover the vehicle. */
 const STORM_CAMERA_HEIGHT = DRAKE_STORM.cloudBase - 2;
 
-/** Spray thrown up at the bow when it digs into a wave: [x, z] in ship lengths, in the order it rises. */
-const SPRAY: readonly (readonly [number, number])[] = [[0.5, 0.05], [0.47, -0.07], [0.54, -0.01], [0.44, 0.09], [0.5, -0.11]];
+/**
+ * Spray thrown up when the bow digs into a wave: [x, z] in ship lengths, in the order it rises.
+ * The first ones burst at the bow; the rest run back along both sides, as the wave washes the hull.
+ */
+const SPRAY: readonly (readonly [number, number])[] = [
+  [0.5, 0.05], [0.47, -0.07], [0.54, -0.01], [0.44, 0.09], [0.5, -0.11], [0.57, 0.04],
+  [0.36, 0.13], [0.36, -0.13], [0.26, 0.15], [0.26, -0.15], [0.14, 0.16], [0.14, -0.16],
+];
 const sprayGeometry = new BoxGeometry(1, 1, 1);
 const sprayMaterial = new MeshBasicMaterial({ color: 0xf7fafb, transparent: true, opacity: 0.9 });
 
@@ -183,17 +189,20 @@ export function Voyage3D({ bus, reduced, overlay }: {
       sway.roll += rough * Math.sin(time * 3.1) * 0.07;
       sway.lift += rough * Math.sin(time * 4.3) * 0.03;
     } else {
-      sway.pitch += rough * Math.sin(wave) * 0.16;
-      sway.roll += rough * Math.sin(wave * 0.63 + 1) * 0.2;
-      sway.lift += rough * Math.sin(wave - 0.9) * 0.07;
+      sway.pitch += rough * Math.sin(wave) * 0.24;
+      sway.roll += rough * Math.sin(wave * 0.63 + 1) * 0.22;
+      sway.lift += rough * Math.sin(wave - 0.9) * 0.1;
     }
     // Spray bursts when the bow comes down into the water.
     const burst = s.kind === 'ship' ? rough * Math.max(0, -Math.sin(wave + 0.5)) ** 2 : 0;
     spray.current.forEach((drop, i) => {
       if (!drop) return;
       const [x, z] = SPRAY[i];
-      drop.position.set(x + burst * 0.04 * i, 0.06 + burst * (0.1 + 0.035 * i), z * (1 + burst));
-      drop.scale.setScalar(burst * (0.07 - 0.008 * i));
+      // Each one a little higher and wider than the one before; big enough to read from the trip camera.
+      const reach = i % 6;
+      // Started above the deck: the bow is under the water when the spray bursts.
+      drop.position.set(x + burst * 0.04 * reach, 0.17 + burst * (0.12 + 0.05 * reach), z * (1 + 0.8 * burst));
+      drop.scale.setScalar(burst * (0.11 - 0.011 * reach));
     });
 
     g.position.set(p.x - 500, height + sway.lift * size, p.y - 500);
