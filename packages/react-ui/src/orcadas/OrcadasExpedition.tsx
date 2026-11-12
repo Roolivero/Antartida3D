@@ -49,8 +49,8 @@ const CHAPTER_HEADINGS: Record<Chapter, string> = {
 const CHAPTER_DEFAULT_FOCUS: Record<Chapter, HotspotId> = {
   arrival: 'overview',
   observation: 'screen',
-  year: 'bay',
-  eras: 'house',
+  year: 'overview',
+  eras: 'overview',
   century: 'overview',
   done: 'flag',
 };

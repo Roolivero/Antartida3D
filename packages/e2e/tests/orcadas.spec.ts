@@ -57,7 +57,7 @@ test.beforeEach(async ({ page }) => {
   await page.goto('/');
   await page.evaluate(() => localStorage.clear());
   await page.reload();
-  await expect(log(page)).toContainText('0/2');
+  await expect(log(page)).toContainText('0/3');
 });
 
 test.afterEach(() => {
@@ -65,6 +65,9 @@ test.afterEach(() => {
 });
 
 test('completes all chapters of Orcadas with the keyboard only, opens Sources, and updates the log', async ({ page }) => {
+  // Long keyboard-only flow with several camera flights. Without a GPU (CI, headless) each frame of a
+  // 1440 px flight is drawn in software: measured 40 s on desktop against 14 s on mobile, with no step stuck.
+  test.setTimeout(90_000);
   await openOrcadasFromMap(page);
   await expect(page.getByText('Reconstrucción ilustrada').first()).toBeVisible();
   await expectFocused(page, 'Estación Orcadas');
@@ -130,13 +133,13 @@ test('completes all chapters of Orcadas with the keyboard only, opens Sources, a
   await tabTo(page, /^Terminar expedición$/);
   await page.keyboard.press('Enter');
 
-  await expect(log(page)).toContainText('1/2');
+  await expect(log(page)).toContainText('1/3');
   await expect(page.locator('.toast')).toHaveText(
-    'Estación Orcadas quedó explorado. Registro de exploración: 1/2'
+    'Estación Orcadas quedó explorado. Registro de exploración: 1/3'
   );
 });
 
-test('opens Orcadas from the 2D map, completes it, and reaches 2/2 after Fósiles', async ({ page }) => {
+test('opens Orcadas from the 2D map, completes it, and reaches 2/3 after Fósiles', async ({ page }) => {
   await openOrcadasFromMap(page);
   await page
     .getByRole('navigation', { name: 'Capítulos de la expedición' })
@@ -144,9 +147,9 @@ test('opens Orcadas from the 2D map, completes it, and reaches 2/2 after Fósile
     .click();
   await page.getByRole('button', { name: 'Terminar expedición' }).click();
 
-  await expect(log(page)).toContainText('1/2');
+  await expect(log(page)).toContainText('1/3');
   await expect(page.locator('.toast')).toHaveText(
-    'Estación Orcadas quedó explorado. Registro de exploración: 1/2'
+    'Estación Orcadas quedó explorado. Registro de exploración: 1/3'
   );
   await expect(page.locator('.stage.ret')).toHaveCount(0);
 
@@ -162,8 +165,8 @@ test('opens Orcadas from the 2D map, completes it, and reaches 2/2 after Fósile
   await primary(page).click();
   await primary(page).click();
 
-  await expect(log(page)).toContainText('2/2');
-  await expect(page.locator('.toast')).toHaveText('Fósiles quedó explorado. Registro de exploración: 2/2');
+  await expect(log(page)).toContainText('2/3');
+  await expect(page.locator('.toast')).toHaveText('Fósiles quedó explorado. Registro de exploración: 2/3');
 });
 
 test('respects reducedMotion, opens hotspot cards, and keeps mobile sheet within 45% height', async ({ page }) => {

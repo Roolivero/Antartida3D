@@ -1,4 +1,5 @@
 import {
+  memo,
   useEffect,
   useLayoutEffect,
   useMemo,
@@ -12,15 +13,11 @@ import {
   BoxGeometry,
   BufferAttribute,
   BufferGeometry,
-  CapsuleGeometry,
   Color,
-  ConeGeometry,
-  CylinderGeometry,
   DoubleSide,
-  DodecahedronGeometry,
   Group,
   InstancedMesh,
-  MeshStandardMaterial,
+  MeshBasicMaterial,
   Object3D,
   PlaneGeometry,
   Points,
@@ -42,9 +39,32 @@ import {
   type BuildingId,
 } from '@antartida/core';
 import { InkEffect } from '../map3d/InkEffect.ts';
+import { buildBoxGeometry, vehicleMaterial, type Box } from '../voyage/vehicles.ts';
 import { HOTSPOTS, poseForHotspot, type HotspotId } from './Hotspots.tsx';
 import { StationFallback } from './StationFallback.tsx';
 import {
+  ADELIE_PENGUIN_BOXES,
+  BIRD_WING_ROOT,
+  CHINSTRAP_PENGUIN_BOXES,
+  ELEPHANT_SEAL_BOXES,
+  FLAGPOLE_BASE_BOXES,
+  ICEBERG_PINNACLE_BOXES,
+  ICEBERG_TABULAR_BOXES,
+  SEA_ICE_FLOE_BOXES,
+  SKUA_MODEL,
+  SLIDING_PENGUIN_BOXES,
+  SNOW_PETREL_MODEL,
+  STATION_BOAT_BOXES,
+  STEVENSON_SCREEN_BOXES,
+  SUPPLY_CRATES_BOXES,
+  WEDDELL_SEAL_BOXES,
+  WIND_CUPS_BOXES,
+  WIND_MAST_BASE_BOXES,
+  WIND_VANE_BOXES,
+  buildModernModulesBoxes,
+  buildMonetaBoxes,
+  buildOmondBoxes,
+  buildRadioMastsBoxes,
   createIsthmusTerrainGeometry,
   generateIcebergs,
   generatePenguinColony,
@@ -119,14 +139,12 @@ function SkyAndLighting({
   cloudOktas,
   windVec,
   reduced,
-  lowQuality,
 }: {
   sunDir: Vector3;
   sunElevationDeg: number;
   cloudOktas: number;
   windVec: Vector2;
   reduced: boolean;
-  lowQuality: boolean;
 }) {
   const skyGeo = useMemo(() => new SphereGeometry(96, 32, 20), []);
   const uniforms = useMemo(
@@ -198,15 +216,6 @@ function SkyAndLighting({
         position={lightPos}
         intensity={dirIntensity}
         color={sunElevationDeg < 6 ? '#E8A864' : '#FFF7E8'}
-        castShadow={!lowQuality && !reduced}
-        shadow-mapSize-width={1024}
-        shadow-mapSize-height={1024}
-        shadow-camera-near={5}
-        shadow-camera-far={95}
-        shadow-camera-left={-28}
-        shadow-camera-right={28}
-        shadow-camera-top={28}
-        shadow-camera-bottom={-28}
       />
     </>
   );
@@ -295,31 +304,22 @@ function BayOcean({
   );
 
   const plates = useMemo(() => generateSeaIcePlates(190406), []);
-  const plateGeo = useMemo(() => new CylinderGeometry(1, 1.08, 0.18, 6), []);
-  const plateMat = useMemo(
-    () =>
-      new MeshStandardMaterial({
-        color: '#F2F7FA',
-        roughness: 0.75,
-        metalness: 0.05,
-      }),
-    []
-  );
+  const plateGeo = useMemo(() => buildBoxGeometry(SEA_ICE_FLOE_BOXES), []);
   const platesRef = useRef<InstancedMesh>(null);
 
   const icebergs = useMemo(() => generateIcebergs(190409), []);
-  const bergGeo = useMemo(() => new DodecahedronGeometry(1.6, 0), []);
-  const bergMat = useMemo(
-    () =>
-      new MeshStandardMaterial({
-        color: '#E3F0F7',
-        roughness: 0.55,
-        metalness: 0.05,
-        flatShading: true,
-      }),
-    []
+  const tabularBergs = useMemo(
+    () => icebergs.filter((b) => b.variant === 'tabular'),
+    [icebergs]
   );
-  const bergsRef = useRef<InstancedMesh>(null);
+  const pinnacleBergs = useMemo(
+    () => icebergs.filter((b) => b.variant === 'pinnacle'),
+    [icebergs]
+  );
+  const tabularGeo = useMemo(() => buildBoxGeometry(ICEBERG_TABULAR_BOXES), []);
+  const pinnacleGeo = useMemo(() => buildBoxGeometry(ICEBERG_PINNACLE_BOXES), []);
+  const tabularRef = useRef<InstancedMesh>(null);
+  const pinnacleRef = useRef<InstancedMesh>(null);
   const dummy = useMemo(() => new Object3D(), []);
 
   useEffect(() => {
@@ -327,11 +327,10 @@ function BayOcean({
       waterGeo.dispose();
       waterMat.dispose();
       plateGeo.dispose();
-      plateMat.dispose();
-      bergGeo.dispose();
-      bergMat.dispose();
+      tabularGeo.dispose();
+      pinnacleGeo.dispose();
     };
-  }, [waterGeo, waterMat, plateGeo, plateMat, bergGeo, bergMat]);
+  }, [waterGeo, waterMat, plateGeo, tabularGeo, pinnacleGeo]);
 
   useLayoutEffect(() => {
     uniforms.uSunDir.value.copy(sunDir);
@@ -359,30 +358,34 @@ function BayOcean({
 
   // Update icebergs initially and bob in useFrame when !reduced
   useLayoutEffect(() => {
-    const mesh = bergsRef.current;
-    if (!mesh) return;
-    for (let i = 0; i < icebergs.length; i++) {
-      const b = icebergs[i];
-      dummy.position.set(b.x, 0.35, b.z);
-      dummy.rotation.set(0.08, b.rotY, -0.05);
-      dummy.scale.set(b.scaleX, b.scaleY, b.scaleZ);
-      dummy.updateMatrix();
-      mesh.setMatrixAt(i, dummy.matrix);
-    }
-    mesh.instanceMatrix.needsUpdate = true;
-  }, [icebergs, dummy]);
+    const initBergs = (mesh: InstancedMesh | null, list: typeof tabularBergs) => {
+      if (!mesh) return;
+      for (let i = 0; i < list.length; i++) {
+        const b = list[i];
+        dummy.position.set(b.x, 0.35, b.z);
+        dummy.rotation.set(0.08, b.rotY, -0.05);
+        dummy.scale.set(b.scaleX, b.scaleY, b.scaleZ);
+        dummy.updateMatrix();
+        mesh.setMatrixAt(i, dummy.matrix);
+      }
+      mesh.instanceMatrix.needsUpdate = true;
+    };
+    initBergs(tabularRef.current, tabularBergs);
+    initBergs(pinnacleRef.current, pinnacleBergs);
+  }, [tabularBergs, pinnacleBergs, dummy]);
 
   useFrame(({ clock }) => {
     if (reduced) return;
     const t = clock.getElapsedTime();
     uniforms.uTime.value = t;
 
-    const mesh = bergsRef.current;
-    if (mesh) {
-      for (let i = 0; i < icebergs.length; i++) {
-        const b = icebergs[i];
-        const bob = Math.sin(t * 1.1 + b.phase) * 0.08 * (1 - seaIce * 0.7);
-        const tilt = Math.cos(t * 0.9 + b.phase) * 0.04 * (1 - seaIce * 0.7);
+    const damp = 1 - seaIce * 0.7;
+    const updateBergs = (mesh: InstancedMesh | null, list: typeof tabularBergs) => {
+      if (!mesh) return;
+      for (let i = 0; i < list.length; i++) {
+        const b = list[i];
+        const bob = Math.sin(t * 1.1 + b.phase) * 0.08 * damp;
+        const tilt = Math.cos(t * 0.9 + b.phase) * 0.04 * damp;
         dummy.position.set(b.x, 0.35 + bob, b.z);
         dummy.rotation.set(0.06 + tilt, b.rotY, -0.04 + tilt);
         dummy.scale.set(b.scaleX, b.scaleY, b.scaleZ);
@@ -390,7 +393,9 @@ function BayOcean({
         mesh.setMatrixAt(i, dummy.matrix);
       }
       mesh.instanceMatrix.needsUpdate = true;
-    }
+    };
+    updateBergs(tabularRef.current, tabularBergs);
+    updateBergs(pinnacleRef.current, pinnacleBergs);
   });
 
   return (
@@ -398,12 +403,17 @@ function BayOcean({
       <mesh geometry={waterGeo} material={waterMat} position={[0, 0, 0]} />
       <instancedMesh
         ref={platesRef}
-        args={[plateGeo, plateMat, plates.length]}
+        args={[plateGeo, vehicleMaterial, plates.length]}
         frustumCulled={false}
       />
       <instancedMesh
-        ref={bergsRef}
-        args={[bergGeo, bergMat, icebergs.length]}
+        ref={tabularRef}
+        args={[tabularGeo, vehicleMaterial, tabularBergs.length]}
+        frustumCulled={false}
+      />
+      <instancedMesh
+        ref={pinnacleRef}
+        args={[pinnacleGeo, vehicleMaterial, pinnacleBergs.length]}
         frustumCulled={false}
       />
     </group>
@@ -495,142 +505,39 @@ function EraBuildings({
     if (moving) invalidate();
   });
 
-  const windowColor = isNight ? '#F8CB66' : '#CFE2EE';
-  const windowEmissive = isNight ? '#E59A28' : '#000000';
-
-  const bldgGeos = useMemo(
-    () => ({
-      omondWall: new BoxGeometry(2.3, 1.1, 1.7),
-      omondRoof: new ConeGeometry(1.65, 0.75, 4),
-      omondPorch: new BoxGeometry(0.72, 0.84, 0.45),
-      monetaBody: new BoxGeometry(3.4, 1.55, 2.2),
-      monetaRoof: new ConeGeometry(2.0, 0.95, 4),
-      monetaChimney: new BoxGeometry(0.32, 0.85, 0.32),
-      smokePuff: new DodecahedronGeometry(1, 0),
-      monetaWindow: new BoxGeometry(0.52, 0.48, 0.06),
-      radioMast: new CylinderGeometry(0.08, 0.28, 6.4, 4),
-      radioCross: new BoxGeometry(1.1, 0.08, 0.08),
-      radioWire: new CylinderGeometry(0.025, 0.025, 12.8, 6),
-      modernMain: new BoxGeometry(3.8, 1.35, 2.1),
-      modernRoof: new BoxGeometry(4.0, 0.18, 2.3),
-      modernLab: new BoxGeometry(2.8, 1.15, 1.8),
-      modernWindow: new BoxGeometry(0.46, 0.42, 0.05),
-    }),
+  const omondGeo = useMemo(() => buildBoxGeometry(buildOmondBoxes(isNight)), [isNight]);
+  const monetaGeo = useMemo(() => buildBoxGeometry(buildMonetaBoxes(isNight)), [isNight]);
+  const radioGeo = useMemo(() => buildBoxGeometry(buildRadioMastsBoxes()), []);
+  const modernGeo = useMemo(() => buildBoxGeometry(buildModernModulesBoxes(isNight)), [isNight]);
+  const smokeGeo = useMemo(() => new BoxGeometry(1, 1, 1), []);
+  const smokeMat = useMemo(
+    () => new MeshBasicMaterial({ color: 0xf3ebdd, transparent: true, opacity: 0.55 }),
     []
-  );
-
-  const bldgMats = useMemo(
-    () => ({
-      omondWall: new MeshStandardMaterial({ color: '#766E65', roughness: 0.92 }),
-      omondRoof: new MeshStandardMaterial({ color: '#4E3E30', roughness: 0.85 }),
-      omondPorch: new MeshStandardMaterial({ color: '#5C4938', roughness: 0.88 }),
-      monetaBody: new MeshStandardMaterial({ color: '#C89B6E', roughness: 0.78 }),
-      monetaRoof: new MeshStandardMaterial({ color: '#9C4320', roughness: 0.72 }),
-      monetaChimney: new MeshStandardMaterial({ color: '#6E3520', roughness: 0.85 }),
-      smokePuff: new MeshStandardMaterial({
-        color: '#F3EBDD',
-        transparent: true,
-        opacity: 0.45,
-        roughness: 1,
-      }),
-      radioMast: new MeshStandardMaterial({
-        color: '#3B4651',
-        roughness: 0.6,
-        metalness: 0.35,
-      }),
-      darkSteel: new MeshStandardMaterial({ color: '#1F2A36' }),
-      modernMain: new MeshStandardMaterial({ color: '#B84622', roughness: 0.65 }),
-      modernRoof: new MeshStandardMaterial({ color: '#1E3E5C', roughness: 0.6 }),
-      modernLab: new MeshStandardMaterial({ color: '#C0862F', roughness: 0.68 }),
-    }),
-    []
-  );
-
-  const monetaWindowMat = useMemo(
-    () =>
-      new MeshStandardMaterial({
-        color: windowColor,
-        emissive: windowEmissive,
-        emissiveIntensity: isNight ? 0.85 : 0,
-      }),
-    [windowColor, windowEmissive, isNight]
-  );
-  const modernWindowMat = useMemo(
-    () =>
-      new MeshStandardMaterial({
-        color: windowColor,
-        emissive: windowEmissive,
-        emissiveIntensity: isNight ? 0.95 : 0,
-      }),
-    [windowColor, windowEmissive, isNight]
   );
 
   useEffect(() => {
     return () => {
-      Object.values(bldgGeos).forEach((g) => g.dispose());
-      Object.values(bldgMats).forEach((m) => m.dispose());
-      monetaWindowMat.dispose();
-      modernWindowMat.dispose();
+      omondGeo.dispose();
+      monetaGeo.dispose();
+      radioGeo.dispose();
+      modernGeo.dispose();
+      smokeGeo.dispose();
+      smokeMat.dispose();
     };
-  }, [bldgGeos, bldgMats, monetaWindowMat, modernWindowMat]);
+  }, [omondGeo, monetaGeo, radioGeo, modernGeo, smokeGeo, smokeMat]);
 
   return (
     <group>
       {/* 1. Omond House (1903 stone cabin) */}
       <group ref={omondRef} position={[-1.4, 1.45, -1.6]}>
-        {/* Dry-stone walls */}
-        <mesh
-          position={[0, 0.55, 0]}
-          geometry={bldgGeos.omondWall}
-          material={bldgMats.omondWall}
-          castShadow
-          receiveShadow
-        />
-        {/* Pitched timber roof */}
-        <mesh
-          position={[0, 1.32, 0]}
-          rotation={[0, Math.PI / 4, 0]}
-          geometry={bldgGeos.omondRoof}
-          material={bldgMats.omondRoof}
-          castShadow
-        />
-        {/* Small wooden entrance porch */}
-        <mesh
-          position={[0, 0.42, 0.95]}
-          geometry={bldgGeos.omondPorch}
-          material={bldgMats.omondPorch}
-          castShadow
-        />
+        <mesh geometry={omondGeo} material={vehicleMaterial} />
       </group>
 
-      {/* 2. Casa Moneta (1905 wooden gable house with smoking chimney) */}
+      {/* 2. Casa Moneta (1905 wooden house with smoking chimney) */}
       <group ref={monetaRef} position={[2.6, 1.45, -1.5]}>
-        {/* Main wooden body */}
-        <mesh
-          position={[0, 0.78, 0]}
-          geometry={bldgGeos.monetaBody}
-          material={bldgMats.monetaBody}
-          castShadow
-          receiveShadow
-        />
-        {/* Gable roof */}
-        <mesh
-          position={[0, 1.92, 0]}
-          rotation={[0, Math.PI / 4, 0]}
-          scale={[1.35, 1, 0.92]}
-          geometry={bldgGeos.monetaRoof}
-          material={bldgMats.monetaRoof}
-          castShadow
-        />
-        {/* Chimney */}
-        <mesh
-          position={[0.9, 2.25, -0.3]}
-          geometry={bldgGeos.monetaChimney}
-          material={bldgMats.monetaChimney}
-          castShadow
-        />
-        {/* Chimney smoke puffs */}
-        <group ref={smokeRef} position={[0.9, 2.75, -0.3]}>
+        <mesh geometry={monetaGeo} material={vehicleMaterial} />
+        {/* Chimney smoke puffs inclined by wind */}
+        <group ref={smokeRef} position={[0.95, 2.95, -0.35]}>
           {[0, 1, 2, 3].map((i) => {
             const sc = 0.16 + i * 0.06;
             return (
@@ -638,83 +545,22 @@ function EraBuildings({
                 key={i}
                 position={[i * 0.14, i * 0.36, 0]}
                 scale={[sc, sc, sc]}
-                geometry={bldgGeos.smokePuff}
-                material={bldgMats.smokePuff}
+                geometry={smokeGeo}
+                material={smokeMat}
               />
             );
           })}
         </group>
-        {/* Windows */}
-        {[-0.85, 0.85].map((wx) => (
-          <mesh
-            key={wx}
-            position={[wx, 0.85, 1.12]}
-            geometry={bldgGeos.monetaWindow}
-            material={monetaWindowMat}
-          />
-        ))}
       </group>
 
       {/* 3. Radio Telegraphy Masts (1927 lattice towers + wire antenna) */}
       <group ref={radioRef} position={[0, 1.45, -3.6]}>
-        {[-5.6, 7.2].map((mx) => (
-          <group key={mx} position={[mx, 0, 0]}>
-            <mesh
-              position={[0, 3.2, 0]}
-              geometry={bldgGeos.radioMast}
-              material={bldgMats.radioMast}
-              castShadow
-            />
-            <mesh
-              position={[0, 6.1, 0]}
-              geometry={bldgGeos.radioCross}
-              material={bldgMats.darkSteel}
-            />
-          </group>
-        ))}
-        {/* Horizontal antenna wire between the two masts */}
-        <mesh
-          position={[0.8, 6.0, 0]}
-          rotation={[0, 0, Math.PI / 2]}
-          geometry={bldgGeos.radioWire}
-          material={bldgMats.darkSteel}
-        />
+        <mesh geometry={radioGeo} material={vehicleMaterial} />
       </group>
 
-      {/* 4. Modern Station Modules (vivid orange-red pavilions with lit windows at night) */}
+      {/* 4. Modern Station Modules (pavilions + science lab) */}
       <group ref={modernRef} position={[5.8, 1.45, 1.8]}>
-        {/* Main modern pavilion */}
-        <mesh
-          position={[0, 0.85, 0]}
-          geometry={bldgGeos.modernMain}
-          material={bldgMats.modernMain}
-          castShadow
-          receiveShadow
-        />
-        {/* Dark roof cap */}
-        <mesh
-          position={[0, 1.58, 0]}
-          geometry={bldgGeos.modernRoof}
-          material={bldgMats.modernRoof}
-          castShadow
-        />
-        {/* Secondary lab module */}
-        <mesh
-          position={[-1.4, 0.72, -4.8]}
-          geometry={bldgGeos.modernLab}
-          material={bldgMats.modernLab}
-          castShadow
-          receiveShadow
-        />
-        {/* Lit windows */}
-        {[-1.2, -0.4, 0.4, 1.2].map((wx) => (
-          <mesh
-            key={wx}
-            position={[wx, 0.92, 1.06]}
-            geometry={bldgGeos.modernWindow}
-            material={modernWindowMat}
-          />
-        ))}
+        <mesh geometry={modernGeo} material={vehicleMaterial} />
       </group>
     </group>
   );
@@ -732,46 +578,13 @@ function StationInstruments({
   const cupsRef = useRef<Group>(null);
   const vaneRef = useRef<Group>(null);
 
-  const instGeos = useMemo(
-    () => ({
-      screenLeg: new BoxGeometry(0.09, 0.9, 0.09),
-      screenBox: new BoxGeometry(1.05, 0.82, 0.88),
-      screenRoof: new BoxGeometry(1.18, 0.1, 1.02),
-      screenStep: new BoxGeometry(0.62, 0.42, 0.42),
-      mast: new CylinderGeometry(0.07, 0.11, 4.2, 8),
-      vanePole: new CylinderGeometry(0.025, 0.025, 0.95, 6),
-      vaneCone: new ConeGeometry(0.12, 0.28, 4),
-      vaneTail: new BoxGeometry(0.24, 0.18, 0.03),
-      cupArm: new CylinderGeometry(0.018, 0.018, 0.52, 6),
-      cup: new SphereGeometry(0.09, 8, 8),
-      cairn: new CylinderGeometry(0.45, 0.58, 0.5, 8),
-      pole: new CylinderGeometry(0.055, 0.09, 4.6, 8),
-    }),
-    []
-  );
-
-  const instMats = useMemo(
-    () => ({
-      screenLeg: new MeshStandardMaterial({ color: '#E6ECEF', roughness: 0.7 }),
-      screenBox: new MeshStandardMaterial({ color: '#F7FAFB', roughness: 0.65 }),
-      screenRoof: new MeshStandardMaterial({ color: '#DCE6EC', roughness: 0.65 }),
-      screenStep: new MeshStandardMaterial({ color: '#8A6E53', roughness: 0.85 }),
-      mast: new MeshStandardMaterial({ color: '#2B3640', metalness: 0.4, roughness: 0.5 }),
-      darkSteel: new MeshStandardMaterial({ color: '#1F2A36' }),
-      gold: new MeshStandardMaterial({ color: '#C0862F' }),
-      cup: new MeshStandardMaterial({ color: '#A4471F' }),
-      cairn: new MeshStandardMaterial({ color: '#6E665E', roughness: 0.9 }),
-      pole: new MeshStandardMaterial({ color: '#F7FAFB', roughness: 0.5 }),
-    }),
-    []
-  );
-
-  useEffect(() => {
-    return () => {
-      Object.values(instGeos).forEach((g) => g.dispose());
-      Object.values(instMats).forEach((m) => m.dispose());
-    };
-  }, [instGeos, instMats]);
+  const screenGeo = useMemo(() => buildBoxGeometry(STEVENSON_SCREEN_BOXES), []);
+  const mastBaseGeo = useMemo(() => buildBoxGeometry(WIND_MAST_BASE_BOXES), []);
+  const vaneGeo = useMemo(() => buildBoxGeometry(WIND_VANE_BOXES), []);
+  const cupsGeo = useMemo(() => buildBoxGeometry(WIND_CUPS_BOXES), []);
+  const flagpoleGeo = useMemo(() => buildBoxGeometry(FLAGPOLE_BASE_BOXES), []);
+  const cratesGeo = useMemo(() => buildBoxGeometry(SUPPLY_CRATES_BOXES), []);
+  const boatGeo = useMemo(() => buildBoxGeometry(STATION_BOAT_BOXES), []);
 
   const flagGeo = useMemo(() => {
     const g = new PlaneGeometry(1.75, 1.05, 16, 8);
@@ -800,10 +613,27 @@ function StationInstruments({
 
   useEffect(() => {
     return () => {
+      screenGeo.dispose();
+      mastBaseGeo.dispose();
+      vaneGeo.dispose();
+      cupsGeo.dispose();
+      flagpoleGeo.dispose();
+      cratesGeo.dispose();
+      boatGeo.dispose();
       flagGeo.dispose();
       flagMat.dispose();
     };
-  }, [flagGeo, flagMat]);
+  }, [
+    screenGeo,
+    mastBaseGeo,
+    vaneGeo,
+    cupsGeo,
+    flagpoleGeo,
+    cratesGeo,
+    boatGeo,
+    flagGeo,
+    flagMat,
+  ]);
 
   useLayoutEffect(() => {
     flagUniforms.uWindSpeed.value = windKmh;
@@ -827,111 +657,25 @@ function StationInstruments({
     <group>
       {/* 1. Stevenson Meteorological Screen ('screen' hotspot at [-4.5, 1.45, 2.2]) */}
       <group position={[-4.5, 1.45, 2.2]}>
-        {/* Four support legs */}
-        {[
-          [-0.42, -0.35],
-          [0.42, -0.35],
-          [-0.42, 0.35],
-          [0.42, 0.35],
-        ].map(([lx, lz], i) => (
-          <mesh
-            key={i}
-            position={[lx, 0.45, lz]}
-            geometry={instGeos.screenLeg}
-            material={instMats.screenLeg}
-            castShadow
-          />
-        ))}
-        {/* Louvered white box */}
-        <mesh
-          position={[0, 1.15, 0]}
-          geometry={instGeos.screenBox}
-          material={instMats.screenBox}
-          castShadow
-        />
-        {/* Sloped roof */}
-        <mesh
-          position={[0, 1.62, 0]}
-          rotation={[0.08, 0, 0]}
-          geometry={instGeos.screenRoof}
-          material={instMats.screenRoof}
-          castShadow
-        />
-        {/* Front wooden steps */}
-        <mesh
-          position={[0, 0.22, 0.65]}
-          geometry={instGeos.screenStep}
-          material={instMats.screenStep}
-          castShadow
-        />
+        <mesh geometry={screenGeo} material={vehicleMaterial} />
       </group>
 
       {/* 2. Wind Mast with Vane & Spinning Cups ('mast' hotspot at [-7.2, 1.45, -1.2]) */}
       <group position={[-7.2, 1.45, -1.2]}>
-        <mesh
-          position={[0, 2.1, 0]}
-          geometry={instGeos.mast}
-          material={instMats.mast}
-          castShadow
-        />
+        <mesh geometry={mastBaseGeo} material={vehicleMaterial} />
         {/* Wind direction vane */}
         <group ref={vaneRef} position={[0, 3.85, 0]}>
-          <mesh
-            rotation={[0, 0, Math.PI / 2]}
-            geometry={instGeos.vanePole}
-            material={instMats.darkSteel}
-          />
-          <mesh
-            position={[0.45, 0, 0]}
-            rotation={[0, 0, -Math.PI / 2]}
-            geometry={instGeos.vaneCone}
-            material={instMats.gold}
-          />
-          <mesh
-            position={[-0.42, 0, 0]}
-            geometry={instGeos.vaneTail}
-            material={instMats.darkSteel}
-          />
+          <mesh geometry={vaneGeo} material={vehicleMaterial} />
         </group>
         {/* 3-cup anemometer rotor */}
         <group ref={cupsRef} position={[0, 4.25, 0]}>
-          {[0, 1, 2].map((idx) => {
-            const ang = (idx * Math.PI * 2) / 3;
-            return (
-              <group key={idx} rotation={[0, ang, 0]}>
-                <mesh
-                  position={[0.26, 0, 0]}
-                  rotation={[0, 0, Math.PI / 2]}
-                  geometry={instGeos.cupArm}
-                  material={instMats.darkSteel}
-                />
-                <mesh
-                  position={[0.52, 0, 0]}
-                  geometry={instGeos.cup}
-                  material={instMats.cup}
-                />
-              </group>
-            );
-          })}
+          <mesh geometry={cupsGeo} material={vehicleMaterial} />
         </group>
       </group>
 
       {/* 3. Argentine Flagpole ('flag' hotspot at [0.2, 1.45, 3.6]) */}
       <group position={[0.2, 1.45, 3.6]}>
-        {/* Stone cairn base */}
-        <mesh
-          position={[0, 0.25, 0]}
-          geometry={instGeos.cairn}
-          material={instMats.cairn}
-          castShadow
-        />
-        {/* White mast */}
-        <mesh
-          position={[0, 2.3, 0]}
-          geometry={instGeos.pole}
-          material={instMats.pole}
-          castShadow
-        />
+        <mesh geometry={flagpoleGeo} material={vehicleMaterial} />
         {/* Waving flag cloth */}
         <mesh
           position={[0, 3.95, 0]}
@@ -939,6 +683,16 @@ function StationInstruments({
           geometry={flagGeo}
           material={flagMat}
         />
+      </group>
+
+      {/* 4. Historic supply crates beside Casa Moneta */}
+      <group position={[4.6, 1.45, -0.6]}>
+        <mesh geometry={cratesGeo} material={vehicleMaterial} />
+      </group>
+
+      {/* 5. Station whaleboat pulled onto Scotia Bay shore */}
+      <group position={[-2.8, 0.42, 8.2]} rotation={[0, 0.35, 0]}>
+        <mesh geometry={boatGeo} material={vehicleMaterial} />
       </group>
     </group>
   );
@@ -963,37 +717,51 @@ function StationFauna({
   const birdsGroupRef = useRef<Group>(null);
   const sealsGroupRef = useRef<Group>(null);
 
-  const faunaGeos = useMemo(
-    () => ({
-      penguinBody: new CapsuleGeometry(0.14, 0.26, 4, 8),
-      penguinBelly: new CapsuleGeometry(0.11, 0.22, 4, 8),
-      penguinBeak: new ConeGeometry(0.04, 0.12, 4),
-      sealBody: new CapsuleGeometry(0.26, 0.68, 4, 8),
-      sealHead: new SphereGeometry(0.2, 8, 8),
-      bird: new BoxGeometry(1.1, 0.4, 0.6),
-    }),
-    []
-  );
+  const adelieGeo = useMemo(() => buildBoxGeometry(ADELIE_PENGUIN_BOXES), []);
+  const chinstrapGeo = useMemo(() => buildBoxGeometry(CHINSTRAP_PENGUIN_BOXES), []);
+  const slideGeo = useMemo(() => buildBoxGeometry(SLIDING_PENGUIN_BOXES), []);
 
-  const faunaMats = useMemo(
-    () => ({
-      penguinBody: new MeshStandardMaterial({ color: '#1F2A36', roughness: 0.75 }),
-      penguinBelly: new MeshStandardMaterial({ color: '#F7FAFB', roughness: 0.7 }),
-      penguinBeak: new MeshStandardMaterial({ color: '#C0862F' }),
-      sealBody: new MeshStandardMaterial({ color: '#4D545C', roughness: 0.82 }),
-      sealHead: new MeshStandardMaterial({ color: '#596068', roughness: 0.8 }),
-      birdPetrel: new MeshStandardMaterial({ color: '#F7FAFB', roughness: 0.7 }),
-      birdSkua: new MeshStandardMaterial({ color: '#4E4339', roughness: 0.7 }),
-    }),
-    []
-  );
+  const weddellGeo = useMemo(() => buildBoxGeometry(WEDDELL_SEAL_BOXES), []);
+  const elephantGeo = useMemo(() => buildBoxGeometry(ELEPHANT_SEAL_BOXES), []);
+
+  const mirrorZ = (boxes: readonly Box[]): Box[] =>
+    boxes.map(([x, y, z, ...rest]) => [x, y, -z, ...rest]);
+
+  const skuaBodyGeo = useMemo(() => buildBoxGeometry(SKUA_MODEL.body), []);
+  const skuaRightWingGeo = useMemo(() => buildBoxGeometry(SKUA_MODEL.wing), []);
+  const skuaLeftWingGeo = useMemo(() => buildBoxGeometry(mirrorZ(SKUA_MODEL.wing)), []);
+
+  const petrelBodyGeo = useMemo(() => buildBoxGeometry(SNOW_PETREL_MODEL.body), []);
+  const petrelRightWingGeo = useMemo(() => buildBoxGeometry(SNOW_PETREL_MODEL.wing), []);
+  const petrelLeftWingGeo = useMemo(() => buildBoxGeometry(mirrorZ(SNOW_PETREL_MODEL.wing)), []);
 
   useEffect(() => {
     return () => {
-      Object.values(faunaGeos).forEach((g) => g.dispose());
-      Object.values(faunaMats).forEach((m) => m.dispose());
+      adelieGeo.dispose();
+      chinstrapGeo.dispose();
+      slideGeo.dispose();
+      weddellGeo.dispose();
+      elephantGeo.dispose();
+      skuaBodyGeo.dispose();
+      skuaRightWingGeo.dispose();
+      skuaLeftWingGeo.dispose();
+      petrelBodyGeo.dispose();
+      petrelRightWingGeo.dispose();
+      petrelLeftWingGeo.dispose();
     };
-  }, [faunaGeos, faunaMats]);
+  }, [
+    adelieGeo,
+    chinstrapGeo,
+    slideGeo,
+    weddellGeo,
+    elephantGeo,
+    skuaBodyGeo,
+    skuaRightWingGeo,
+    skuaLeftWingGeo,
+    petrelBodyGeo,
+    petrelRightWingGeo,
+    petrelLeftWingGeo,
+  ]);
 
   useFrame(({ clock }) => {
     if (reduced) return;
@@ -1013,12 +781,12 @@ function StationFauna({
           node.rotation.set(0, p.rotY + waddle * 0.5, waddle);
         } else {
           // Belly tobogganing down the snow slope
-          const slideProgress = ((t * 0.38 * p.speed + p.phase) % 1);
+          const slideProgress = (t * 0.38 * p.speed + p.phase) % 1;
           const sx = p.x + slideProgress * 1.4;
           const sz = p.z + slideProgress * 2.2;
           const sy = Math.max(0.25, p.y - slideProgress * 0.85);
           node.position.set(sx, sy, sz);
-          node.rotation.set(Math.PI / 2.2, p.rotY, 0);
+          node.rotation.set(0.22, p.rotY, 0);
         }
       }
     }
@@ -1027,6 +795,8 @@ function StationFauna({
       const nodes = birdsGroupRef.current.children;
       for (let i = 0; i < nodes.length; i++) {
         const bird = nodes[i];
+        const isPetrel = animals.includes('snowPetrel') && i % 2 === 0;
+        const model = isPetrel ? SNOW_PETREL_MODEL : SKUA_MODEL;
         const ang = t * (0.45 + i * 0.06) + i * 1.3;
         const radius = 12 + (i % 3) * 4.5;
         bird.position.set(
@@ -1034,7 +804,12 @@ function StationFauna({
           8.5 + (i % 2) * 2.2 + Math.sin(t * 1.5 + i) * 0.6,
           Math.sin(ang) * radius
         );
-        bird.rotation.set(0, -ang, Math.sin(t * 2.2 + i) * 0.18);
+        bird.rotation.set(0.08, -ang - Math.PI / 2, Math.sin(t * 1.8 + i) * 0.14, 'YXZ');
+
+        const [reach, speed] = model.flap;
+        const lift = 0.08 + Math.sin(t * speed + i * 1.2) * reach;
+        if (bird.children[1]) bird.children[1].rotation.x = -lift;
+        if (bird.children[2]) bird.children[2].rotation.x = lift;
       }
     }
 
@@ -1042,7 +817,8 @@ function StationFauna({
       const nodes = sealsGroupRef.current.children;
       for (let i = 0; i < nodes.length; i++) {
         const seal = nodes[i];
-        seal.scale.y = 1 + Math.sin(t * 1.6 + i * 2) * 0.04;
+        const breath = Math.sin(t * 1.6 + i * 2) * 0.04;
+        seal.scale.set(1 + breath * 0.3, 1 + breath, 1 + breath * 0.3);
       }
     }
   });
@@ -1052,34 +828,23 @@ function StationFauna({
       {/* Penguin colony on the eastern rookery terrace */}
       {showPenguins && (
         <group ref={penguinGroupRef}>
-          {penguins.map((p, i) => (
-            <group
-              key={i}
-              position={[p.x, p.y, p.z]}
-              rotation={[p.mode === 'slide' ? Math.PI / 2.2 : 0, p.rotY, 0]}
-            >
-              {/* Dark back & body */}
-              <mesh
-                position={[0, 0.28, 0]}
-                geometry={faunaGeos.penguinBody}
-                material={faunaMats.penguinBody}
-                castShadow
-              />
-              {/* White belly */}
-              <mesh
-                position={[0, 0.26, 0.06]}
-                geometry={faunaGeos.penguinBelly}
-                material={faunaMats.penguinBelly}
-              />
-              {/* Beak */}
-              <mesh
-                position={[0, 0.44, 0.16]}
-                rotation={[Math.PI / 2, 0, 0]}
-                geometry={faunaGeos.penguinBeak}
-                material={faunaMats.penguinBeak}
-              />
-            </group>
-          ))}
+          {penguins.map((p, i) => {
+            const geo =
+              p.mode === 'slide'
+                ? slideGeo
+                : p.species === 'adelie'
+                  ? adelieGeo
+                  : chinstrapGeo;
+            return (
+              <group
+                key={i}
+                position={[p.x, p.y, p.z]}
+                rotation={[p.mode === 'slide' ? 0.22 : 0, p.rotY, 0]}
+              >
+                <mesh geometry={geo} material={vehicleMaterial} />
+              </group>
+            );
+          })}
         </group>
       )}
 
@@ -1087,25 +852,19 @@ function StationFauna({
       {showSeals && (
         <group ref={sealsGroupRef}>
           {[
-            { pos: [-3.4, 0.42, 9.2] as const, rot: 0.4 },
-            { pos: [-1.6, 0.38, 9.6] as const, rot: -0.25 },
-            { pos: [1.1, 0.44, 9.1] as const, rot: 0.75 },
-          ].map((s, i) => (
-            <group key={i} position={s.pos} rotation={[0, s.rot, 0]}>
-              <mesh
-                rotation={[0, 0, Math.PI / 2]}
-                scale={[1.4, 0.85, 0.85]}
-                geometry={faunaGeos.sealBody}
-                material={faunaMats.sealBody}
-                castShadow
-              />
-              <mesh
-                position={[0.58, 0.16, 0]}
-                geometry={faunaGeos.sealHead}
-                material={faunaMats.sealHead}
-              />
-            </group>
-          ))}
+            { pos: [-3.4, 0.42, 9.2] as const, rot: 0.4, type: 'weddell' as const },
+            { pos: [-1.6, 0.38, 9.6] as const, rot: -0.25, type: 'elephant' as const },
+            { pos: [1.1, 0.44, 9.1] as const, rot: 0.75, type: 'weddell' as const },
+          ].map((s, i) => {
+            const isElephant =
+              s.type === 'elephant' && animals.includes('elephant');
+            const geo = isElephant ? elephantGeo : weddellGeo;
+            return (
+              <group key={i} position={s.pos} rotation={[0, s.rot, 0]}>
+                <mesh geometry={geo} material={vehicleMaterial} />
+              </group>
+            );
+          })}
         </group>
       )}
 
@@ -1114,17 +873,30 @@ function StationFauna({
         <group ref={birdsGroupRef}>
           {[0, 1, 2, 3, 4].map((i) => {
             const isPetrel = animals.includes('snowPetrel') && i % 2 === 0;
-            const mat = isPetrel ? faunaMats.birdPetrel : faunaMats.birdSkua;
+            const bodyGeo = isPetrel ? petrelBodyGeo : skuaBodyGeo;
+            const rightWingGeo = isPetrel ? petrelRightWingGeo : skuaRightWingGeo;
+            const leftWingGeo = isPetrel ? petrelLeftWingGeo : skuaLeftWingGeo;
             return (
               <group
                 key={i}
                 position={[Math.cos(i) * 12, 9 + (i % 2) * 2, Math.sin(i) * 12]}
               >
-                <mesh
-                  scale={[0.9, 0.12, 0.28]}
-                  geometry={faunaGeos.bird}
-                  material={mat}
-                />
+                {/* 0: Body */}
+                <mesh geometry={bodyGeo} material={vehicleMaterial} />
+                {/* 1: Right wing */}
+                <group position={BIRD_WING_ROOT}>
+                  <mesh geometry={rightWingGeo} material={vehicleMaterial} />
+                </group>
+                {/* 2: Left wing */}
+                <group
+                  position={[
+                    BIRD_WING_ROOT[0],
+                    BIRD_WING_ROOT[1],
+                    -BIRD_WING_ROOT[2],
+                  ]}
+                >
+                  <mesh geometry={leftWingGeo} material={vehicleMaterial} />
+                </group>
               </group>
             );
           })}
@@ -1159,7 +931,7 @@ function SnowAndSpindrift({
     () =>
       new PointsMaterial({
         color: new Color('#F7FAFB'),
-        size: 0.28,
+        size: 0.085,
         transparent: true,
         opacity: 0.78,
         depthWrite: false,
@@ -1245,11 +1017,11 @@ function StationCameraAndProjection({
     if (!cc) return;
     (window as unknown as { __orcadasCamera?: CameraControls }).__orcadasCamera = cc;
     cc.minPolarAngle = 0.14;
-    cc.maxPolarAngle = Math.PI * 0.44;
-    cc.minDistance = 5.5;
-    cc.maxDistance = 56;
+    cc.maxPolarAngle = Math.PI * 0.47;
+    cc.minDistance = 4.5;
+    cc.maxDistance = 75;
     cc.smoothTime = 0.32;
-    cc.setBoundary(new Box3(new Vector3(-28, 0.2, -28), new Vector3(28, 24, 28)));
+    cc.setBoundary(new Box3(new Vector3(-55, -15, -55), new Vector3(55, 45, 65)));
 
     const pose = poseForHotspot(focus, mobile);
     if (!initializedRef.current) {
@@ -1390,12 +1162,14 @@ function StationCameraAndProjection({
       projVec.set(spot.worldPos[0], spot.worldPos[1], spot.worldPos[2]);
       projVec.project(camera);
 
+      const xBound = size.width >= 900 ? 1.08 : 1.45;
+      const yBound = size.width >= 900 ? 1.08 : 1.45;
       const visible =
         projVec.z < 1.0 &&
-        projVec.x >= -1.08 &&
-        projVec.x <= 1.08 &&
-        projVec.y >= -1.08 &&
-        projVec.y <= 1.08;
+        projVec.x >= -xBound &&
+        projVec.x <= xBound &&
+        projVec.y >= -yBound &&
+        projVec.y <= yBound;
 
       if (!visible) {
         btn.style.opacity = '0';
@@ -1420,7 +1194,7 @@ function StationCameraAndProjection({
   return <CameraControls ref={controlsRef} makeDefault dollyToCursor />;
 }
 
-export function StationScene({
+export const StationScene = memo(function StationScene({
   month,
   hour,
   windKmh,
@@ -1472,8 +1246,9 @@ export function StationScene({
           background: 'var(--paper, #F3EBDD)',
         }}
         frameloop="demand"
-        dpr={1}
-        shadows={!lowQuality && !reduced}
+        // Low quality also renders fewer pixels: the sky and ink passes cost per pixel.
+        dpr={lowQuality ? 0.7 : 1}
+        shadows={false}
         gl={{
           antialias: true,
           powerPreference: 'high-performance',
@@ -1517,7 +1292,6 @@ export function StationScene({
           cloudOktas={cloudOktas}
           windVec={windVec}
           reduced={reduced}
-          lowQuality={lowQuality}
         />
         <IsthmusTerrain sunDir={sunDir} sunElevationDeg={sunElevationDeg} />
         <BayOcean
@@ -1559,4 +1333,4 @@ export function StationScene({
       </Canvas>
     </div>
   );
-}
+});

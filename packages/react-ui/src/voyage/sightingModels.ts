@@ -18,6 +18,10 @@ const WHALE_GREY = 0x55606b;
 const LAMP = 0xf2c14e;
 const ZINC = 0x7d868c;
 const SKY = 0x7fb6dc;
+const RED_DARK = 0x96351e;
+const NAVY_ROOF = 0x1e3e5c;
+const ROCK_DARK = 0x656a68;
+const WOOD_LIGHT = 0xc49a6c;
 
 interface Model {
   body: readonly Box[];
@@ -158,7 +162,7 @@ type PenguinFace = 'strap' | 'ring' | 'band';
  * A penguin standing at (x, z), `k` times the full size. The face tells the species apart:
  * chinstrap (white face, thin black strap), Adélie (white ring around the eye), Magellanic (white band).
  */
-const penguinAt = (x: number, z: number, k: number, face: PenguinFace): Box[] => {
+export const penguinAt = (x: number, z: number, k: number, face: PenguinFace): Box[] => {
   const at = (cx: number, cy: number, cz: number, sx: number, sy: number, sz: number, color: number): Box =>
     [x + cx * k, 0.04 + cy * k, z + cz * k, sx * k, sy * k, sz * k, color];
   const marks: Box[] = face === 'strap'
@@ -370,36 +374,79 @@ const SPOUT: Box[] = [
 
 const ICE_SHADE = 0xc5dbe6;
 
-/** Tabular iceberg: flat top, sheer walls, a blue line where the water wears it. */
+/** Pale turquoise of the ice seen through shallow water: the foot that spreads under an iceberg. */
+const ICE_SUBMERGED = 0x9fd6dc;
+/** Deep blue of a crevasse, where the ice is dense and old. */
+const ICE_DEEP = 0x7fb0cc;
+/** Wall of an iceberg: bluer than snow, so the baked face shading reads as ice and not as grey stone. */
+const ICE_WALL = 0xcfe8f5;
+
+/**
+ * Tabular iceberg: a wide, low slab that broke off an ice shelf. Overlapping slabs of one height
+ * give it a ragged outline with sheer walls; the top is one flat snow field (no stacked block, which
+ * reads as a roof), one end has collapsed into a lower step, and crevasses run down the walls.
+ */
 const ICEBERG_TABULAR: Box[] = [
-  [0, 0.01, 0, 1, 0.04, 0.66, ICE_SHADE],
-  [0, 0.12, 0, 0.94, 0.2, 0.6, ICE],
-  [0.05, 0.24, 0.02, 0.8, 0.06, 0.5, WHITE],
-  [-0.2, 0.29, -0.05, 0.4, 0.05, 0.34, WHITE],
-  [0.47, 0.1, 0.1, 0.06, 0.14, 0.3, ICE_SHADE],
-  [-0.47, 0.08, -0.12, 0.06, 0.1, 0.26, ICE_SHADE],
-  [0.2, 0.1, 0.31, 0.3, 0.14, 0.04, ICE_SHADE],
-  [-0.25, 0.09, -0.31, 0.26, 0.12, 0.04, ICE_SHADE],
-  [0.3, 0.275, 0.12, 0.16, 0.012, 0.03, SKY],
-  [-0.1, 0.275, 0.18, 0.1, 0.012, 0.03, SKY],
-  [0.58, 0.02, -0.2, 0.14, 0.05, 0.14, ICE],
-  [-0.6, 0.02, 0.22, 0.1, 0.04, 0.1, ICE],
+  // Submerged foot, wider than the walls
+  [0, 0.006, 0, 1.06, 0.012, 0.74, ICE_SUBMERGED],
+  [0.14, 0.006, 0.08, 0.84, 0.012, 0.8, ICE_SUBMERGED],
+  // Wave-cut band at the waterline
+  [-0.05, 0.025, 0, 0.8, 0.03, 0.52, ICE_SHADE],
+  [0.22, 0.025, 0.06, 0.52, 0.03, 0.56, ICE_SHADE],
+  [-0.3, 0.025, -0.08, 0.38, 0.03, 0.46, ICE_SHADE],
+  // Walls: slabs of the same height, shifted to break the rectangle
+  [-0.05, 0.09, 0, 0.78, 0.16, 0.5, ICE_WALL],
+  [0.22, 0.09, 0.06, 0.5, 0.16, 0.54, ICE_WALL],
+  [-0.3, 0.09, -0.08, 0.36, 0.16, 0.44, ICE_WALL],
+  [0.05, 0.09, -0.2, 0.5, 0.16, 0.2, ICE_WALL],
+  // Collapsed ends, lower than the plateau
+  [-0.52, 0.06, 0.04, 0.12, 0.1, 0.3, ICE_WALL],
+  [0.5, 0.075, -0.05, 0.08, 0.13, 0.3, ICE_WALL],
+  // Snow on the plateau: follows the outline of the walls
+  [-0.05, 0.18, 0, 0.75, 0.02, 0.47, WHITE],
+  [0.22, 0.18, 0.06, 0.47, 0.02, 0.51, WHITE],
+  [-0.3, 0.18, -0.08, 0.33, 0.02, 0.41, WHITE],
+  [0.05, 0.18, -0.2, 0.47, 0.02, 0.17, WHITE],
+  [-0.52, 0.116, 0.04, 0.1, 0.012, 0.27, WHITE],
+  [0.5, 0.146, -0.05, 0.065, 0.012, 0.27, WHITE],
+  // Crevasses: thin and tall, unevenly spaced
+  [0.12, 0.12, 0.331, 0.014, 0.1, 0.006, ICE_DEEP],
+  [0.34, 0.1, 0.331, 0.012, 0.14, 0.006, ICE_DEEP],
+  [-0.25, 0.11, 0.251, 0.012, 0.12, 0.006, ICE_DEEP],
+  [0.1, 0.11, -0.301, 0.012, 0.12, 0.006, ICE_DEEP],
+  [-0.36, 0.1, -0.301, 0.012, 0.1, 0.006, ICE_DEEP],
+  // Calved fragments drifting next to it
+  [0.66, 0.02, 0.24, 0.1, 0.05, 0.08, ICE_WALL],
+  [0.72, 0.012, 0.12, 0.05, 0.03, 0.05, WHITE],
+  [-0.66, 0.018, -0.22, 0.08, 0.045, 0.1, ICE_WALL],
 ];
 
-/** Small iceberg worn into peaks. */
+/**
+ * Small weathered iceberg: a wedge. One side is a sheer cliff, the other a ramp of melted steps
+ * (all steps share the cliff edge, so it never reads as a tower), with a low second peak past a notch.
+ */
 const ICEBERG_PEAKS: Box[] = [
-  [0, 0.01, 0, 0.8, 0.04, 0.56, ICE_SHADE],
-  [0, 0.08, 0, 0.66, 0.12, 0.44, ICE],
-  [-0.14, 0.2, 0.02, 0.3, 0.14, 0.26, ICE],
-  [-0.16, 0.33, 0.02, 0.2, 0.12, 0.18, WHITE],
-  [-0.17, 0.44, 0.02, 0.1, 0.1, 0.1, WHITE],
-  [0.2, 0.18, -0.04, 0.22, 0.1, 0.2, ICE],
-  [0.21, 0.27, -0.04, 0.12, 0.08, 0.12, WHITE],
-  [0.02, 0.16, 0.16, 0.14, 0.05, 0.08, ICE_SHADE],
-  [0.32, 0.09, 0.2, 0.06, 0.1, 0.04, ICE_SHADE],
-  [-0.33, 0.09, -0.2, 0.06, 0.1, 0.04, ICE_SHADE],
-  [-0.05, 0.215, 0.152, 0.1, 0.012, 0.01, SKY],
-  [0.5, 0.02, 0.1, 0.12, 0.05, 0.1, ICE],
+  [0.02, 0.006, 0, 0.86, 0.012, 0.6, ICE_SUBMERGED],
+  [0, 0.025, 0, 0.7, 0.03, 0.48, ICE_SHADE],
+  // Ramp: every step starts at the cliff (x = -0.33) and is shorter than the one below
+  [0, 0.07, 0, 0.66, 0.08, 0.44, ICE_WALL],
+  [-0.08, 0.14, -0.02, 0.5, 0.08, 0.38, ICE_WALL],
+  [-0.15, 0.21, 0.01, 0.36, 0.08, 0.3, ICE_WALL],
+  [-0.21, 0.28, -0.02, 0.24, 0.08, 0.22, WHITE],
+  [-0.26, 0.35, 0, 0.14, 0.08, 0.14, WHITE],
+  [-0.295, 0.41, -0.01, 0.07, 0.06, 0.08, WHITE],
+  // Snow lying on the lower steps
+  [0.2, 0.113, 0, 0.24, 0.008, 0.36, WHITE],
+  [0.06, 0.183, -0.02, 0.2, 0.008, 0.3, WHITE],
+  // Second, lower peak
+  [0.27, 0.15, 0.12, 0.12, 0.08, 0.14, ICE_WALL],
+  [0.28, 0.21, 0.12, 0.07, 0.05, 0.08, WHITE],
+  // Crevasse down the cliff
+  [-0.331, 0.17, 0.04, 0.006, 0.2, 0.012, ICE_DEEP],
+  [-0.331, 0.1, -0.1, 0.006, 0.1, 0.01, ICE_DEEP],
+  // Calved fragments
+  [0.5, 0.018, -0.16, 0.09, 0.045, 0.08, ICE_WALL],
+  [-0.48, 0.012, 0.2, 0.05, 0.03, 0.05, WHITE],
 ];
 
 /** Penguins on a floe of sea ice. */
@@ -425,11 +472,45 @@ export const SEA_MODELS = {
 } as const satisfies Record<string, readonly Box[]>;
 export type SeaModelId = keyof typeof SEA_MODELS;
 
+/**
+ * Minimal block model of Estación Orcadas on Laurie Island:
+ * two houses (Casa Moneta and modern orange module), Argentine flagpole with waving flag,
+ * and a pair of Adélie & Chinstrap penguins on the terrace. (42 boxes, 12 colors).
+ */
+export const ORCADAS_SITE: Box[] = [
+  // Ground footing / rock terrace on Laurie Island isthmus
+  [0, 0.02, 0, 1.4, 0.04, 1.1, ROCK],
+  [-0.1, 0.05, 0.1, 0.8, 0.04, 0.6, ICE],
+  // House 1: Casa Moneta (historic timber cabin, stepped red roof, chimney, window)
+  [-0.32, 0.16, 0.08, 0.44, 0.22, 0.3, WOOD_LIGHT],
+  [-0.32, 0.29, 0.08, 0.48, 0.06, 0.34, RED],
+  [-0.32, 0.34, 0.08, 0.44, 0.04, 0.22, RED_DARK],
+  [-0.32, 0.38, 0.08, 0.44, 0.04, 0.1, RED],
+  [-0.18, 0.41, 0.02, 0.05, 0.12, 0.05, BLACK],
+  [-0.32, 0.16, 0.235, 0.07, 0.08, 0.01, LAMP],
+  // House 2: Modern orange container pavilion (orange walls, dark navy roof, radome, window)
+  [0.32, 0.15, -0.12, 0.42, 0.2, 0.26, ORANGE],
+  [0.32, 0.26, -0.12, 0.46, 0.05, 0.3, NAVY_ROOF],
+  [0.32, 0.15, 0.015, 0.07, 0.07, 0.01, LAMP],
+  [0.38, 0.31, -0.12, 0.08, 0.07, 0.08, WHITE],
+  // Argentine flagpole (stone cairn base, white mast, waving flag with Sol de Mayo)
+  [0.08, 0.1, 0.28, 0.14, 0.14, 0.14, ROCK_DARK],
+  [0.08, 0.38, 0.28, 0.02, 0.44, 0.02, WHITE],
+  [0.17, 0.54, 0.28, 0.16, 0.04, 0.01, SKY],
+  [0.17, 0.5, 0.28, 0.16, 0.04, 0.01, WHITE],
+  [0.17, 0.46, 0.28, 0.16, 0.04, 0.01, SKY],
+  [0.15, 0.5, 0.28, 0.04, 0.04, 0.012, LAMP],
+  // Two penguins standing on the rock terrace (Adélie and Chinstrap)
+  ...penguinAt(-0.15, 0.35, 0.32, 'ring'),
+  ...penguinAt(0.12, -0.32, 0.32, 'strap'),
+];
+
 /** Every model of this file by name, for the test of least detail. */
 export const SCENE_MODELS: Readonly<Record<string, readonly Box[]>> = {
   ...Object.fromEntries(Object.entries(MODELS).map(([id, m]) => [id, [...m.body, ...(m.wing ?? []), ...(m.wing ?? [])]])),
   ...Object.fromEntries(Object.entries(SEA_MODELS).map(([id, boxes]) => [`sea:${id}`, boxes])),
   ushuaia: TOWN,
+  orcadas: ORCADAS_SITE,
 };
 
 export const buildSeaGeometry = (id: SeaModelId) => buildBoxGeometry(SEA_MODELS[id]);

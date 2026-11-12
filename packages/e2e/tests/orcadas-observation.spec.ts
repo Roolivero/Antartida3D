@@ -57,14 +57,18 @@ async function adjustSliderWithArrows(
     if (Math.abs(diff) < step / 2) return;
 
     const tenStep = step * 10;
-    if (diff >= tenStep - 1e-6) {
-      await page.keyboard.press('PageUp');
-    } else if (diff <= -tenStep + 1e-6) {
-      await page.keyboard.press('PageDown');
-    } else if (diff > 0) {
-      await page.keyboard.press('ArrowRight');
+    const pageSteps = Math.floor(Math.abs(diff) / tenStep);
+    if (pageSteps > 0) {
+      const key = diff > 0 ? 'PageUp' : 'PageDown';
+      for (let p = 0; p < pageSteps; p++) {
+        await page.keyboard.press(key);
+      }
     } else {
-      await page.keyboard.press('ArrowLeft');
+      const arrowSteps = Math.max(1, Math.floor(Math.abs(diff) / step));
+      const key = diff > 0 ? 'ArrowRight' : 'ArrowLeft';
+      for (let a = 0; a < arrowSteps; a++) {
+        await page.keyboard.press(key);
+      }
     }
   }
 }
@@ -141,6 +145,9 @@ test.describe('Orcadas · observación', () => {
   test('completes all four readings with the keyboard only, shows the animated seal in the notebook, and resets on Empezar de nuevo', async ({
     page,
   }) => {
+    // Long keyboard-only flow with several camera flights. Without a GPU (CI, headless) each frame of a
+    // 1440 px flight is drawn in software: measured 40 s on desktop against 14 s on mobile, with no step stuck.
+    test.setTimeout(90_000);
     await openOrcadasObservation(page);
     const reading = currentExpectedReading();
     const windBf = beaufort(reading.windKmh);

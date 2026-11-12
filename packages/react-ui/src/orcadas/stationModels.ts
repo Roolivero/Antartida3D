@@ -1,6 +1,7 @@
 import { BufferAttribute, BufferGeometry, PlaneGeometry } from 'three';
 import { createSeededRng } from '@antartida/core';
-import { buildBoxGeometry, type Box } from './boxModels.ts';
+import { buildBoxGeometry, type Box } from '../voyage/vehicles.ts';
+import { SEA_MODELS } from '../voyage/sightingModels.ts';
 
 // Shared muted palette matching voyage/sightingModels.ts and voyage/vehicles.ts
 export const VOXEL_PALETTE = {
@@ -862,71 +863,11 @@ export const STATION_BOAT_BOXES: readonly Box[] = [
 ];
 
 /**
- * 10. Faceted Voxel Icebergs (tabular & pinnacle variants, 22 boxes each)
+ * 10. Voxel Icebergs (reused from sightingModels SEA_MODELS)
  * and Sea-Ice Floe slabs (16 boxes).
  */
-export const ICEBERG_TABULAR_BOXES: readonly Box[] = [
-  // Cyan-blue submerged/waterline plinth
-  [0, -0.08, 0, 2.75, 0.24, 2.15, SKY],
-  [0.12, 0.06, -0.06, 2.55, 0.22, 1.98, ICE_BLUE],
-  // Stepped glacial cliff walls
-  [-0.08, 0.34, 0.04, 2.36, 0.42, 1.82, ICE],
-  [0.18, 0.64, -0.08, 2.12, 0.44, 1.62, WHITE],
-  [-0.22, 0.88, 0.12, 1.84, 0.38, 1.42, ICE],
-  [0.10, 1.08, -0.04, 1.56, 0.28, 1.18, WHITE],
-  // Flat snow-covered tabular summit terraces
-  [-0.12, 1.24, 0.06, 1.28, 0.16, 0.96, WHITE],
-  [0.28, 1.18, -0.18, 0.96, 0.18, 0.82, WHITE],
-  [-0.46, 0.98, 0.22, 0.82, 0.22, 0.76, WHITE],
-  // Flanking faceted buttresses & wave-cut ledges
-  [-1.08, 0.28, 0.24, 0.56, 0.44, 1.12, ICE_BLUE],
-  [1.04, 0.32, -0.18, 0.52, 0.52, 1.08, ICE],
-  [0.24, 0.24, 0.88, 1.12, 0.36, 0.44, ICE_BLUE],
-  [-0.32, 0.26, -0.84, 1.04, 0.38, 0.42, ICE],
-  [-0.82, 0.62, -0.34, 0.64, 0.46, 0.78, ICE],
-  [0.78, 0.72, 0.28, 0.62, 0.44, 0.74, WHITE],
-  // Deep blue vertical crevasse accents
-  [-0.18, 0.66, 0.88, 0.12, 0.62, 0.12, SKY],
-  [0.42, 0.58, 0.84, 0.10, 0.52, 0.12, SEA_GREY],
-  [-0.36, 0.62, -0.82, 0.12, 0.58, 0.12, SKY],
-  // Calved corner blocks at waterline
-  [-1.32, 0.08, -0.58, 0.44, 0.22, 0.48, ICE],
-  [1.28, 0.08, 0.54, 0.48, 0.20, 0.44, WHITE],
-  [0.64, 0.06, 1.06, 0.42, 0.18, 0.36, ICE_BLUE],
-  [-0.68, 0.06, -1.04, 0.46, 0.18, 0.38, ICE],
-];
-
-export const ICEBERG_PINNACLE_BOXES: readonly Box[] = [
-  // Waterline base
-  [0, -0.08, 0, 2.50, 0.24, 2.05, SKY],
-  [-0.06, 0.08, 0.04, 2.28, 0.24, 1.84, ICE_BLUE],
-  [0.08, 0.32, -0.04, 1.96, 0.38, 1.56, ICE],
-  // Twin spires rising to faceted peaks
-  [-0.42, 0.68, 0.08, 1.04, 0.56, 1.08, ICE],
-  [-0.46, 1.12, 0.06, 0.82, 0.48, 0.84, WHITE],
-  [-0.48, 1.48, 0.04, 0.56, 0.38, 0.58, WHITE],
-  [-0.50, 1.74, 0.04, 0.32, 0.26, 0.34, WHITE],
-  // Secondary eastern pinnacle
-  [0.54, 0.58, -0.10, 0.92, 0.48, 0.96, ICE_BLUE],
-  [0.58, 0.94, -0.10, 0.68, 0.42, 0.72, ICE],
-  [0.60, 1.24, -0.08, 0.44, 0.32, 0.46, WHITE],
-  // Saddle arch between spires
-  [0.06, 0.52, 0, 0.54, 0.34, 0.88, SKY],
-  [0.06, 0.76, 0, 0.48, 0.20, 0.76, ICE],
-  // Stepped terraces & ledges
-  [-0.98, 0.34, -0.22, 0.54, 0.38, 0.86, ICE_BLUE],
-  [0.98, 0.28, 0.24, 0.48, 0.32, 0.82, ICE],
-  [0, 0.26, 0.84, 0.96, 0.32, 0.44, ICE_BLUE],
-  [0, 0.26, -0.82, 0.92, 0.32, 0.42, ICE],
-  // Blue ice veins
-  [-0.44, 0.88, 0.52, 0.14, 0.64, 0.10, SKY],
-  [0.56, 0.76, 0.36, 0.12, 0.52, 0.10, SKY],
-  // Floating brash blocks around base
-  [-1.22, 0.06, 0.52, 0.38, 0.18, 0.42, WHITE],
-  [1.18, 0.06, -0.48, 0.42, 0.18, 0.38, ICE],
-  [0.36, 0.05, 1.02, 0.36, 0.16, 0.34, WHITE],
-  [-0.38, 0.05, -0.98, 0.40, 0.16, 0.34, ICE_BLUE],
-];
+export const ICEBERG_TABULAR_BOXES: readonly Box[] = SEA_MODELS['iceberg-lg'];
+export const ICEBERG_PINNACLE_BOXES: readonly Box[] = SEA_MODELS['iceberg-sm'];
 
 /**
  * Faceted voxel sea-ice floe (bandejón de hielo marino) with pressure-ridge rim. (16 boxes)

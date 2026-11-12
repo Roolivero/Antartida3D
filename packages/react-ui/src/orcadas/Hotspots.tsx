@@ -36,15 +36,33 @@ export interface HotspotDef {
   keywords: readonly string[];
 }
 
+/**
+ * Low, near-horizontal overview: the sky, the sea horizon and the glaciers stay in frame.
+ * On desktop the target sits right of the station so it clears the side panel.
+ */
 export const OVERVIEW_POSE_DESKTOP: CameraPose = {
-  pos: [-6.0, 14.8, 31.5],
-  target: [4.6, 1.4, 1.2],
+  pos: [-10.5, 7.6, 25],
+  target: [4.2, 2.3, -1],
 };
 
+/** On a phone the target sits below the ground so the station lands above the bottom sheet. */
 export const OVERVIEW_POSE_MOBILE: CameraPose = {
-  pos: [-7.5, 18.2, 36.5],
-  target: [1.5, 0.0, 2.8],
+  pos: [-12, 11.5, 41],
+  target: [0.6, -5.2, 0],
 };
+
+/** How far a hotspot framing pulls back on a phone, and how much its target drops (per unit of distance). */
+const MOBILE_PULL_BACK = 1.9;
+const MOBILE_TARGET_DROP = 0.16;
+
+/** A portrait screen is narrow and its lower half is covered: pull back and aim lower. */
+function mobilePose(pose: CameraPose): CameraPose {
+  const [px, py, pz] = pose.pos;
+  const [tx, ty, tz] = pose.target;
+  const dx = (px - tx) * MOBILE_PULL_BACK, dy = (py - ty) * MOBILE_PULL_BACK, dz = (pz - tz) * MOBILE_PULL_BACK;
+  const drop = Math.hypot(dx, dy, dz) * MOBILE_TARGET_DROP;
+  return { pos: [tx + dx, ty + dy, tz + dz], target: [tx, ty - drop, tz] };
+}
 
 export const HOTSPOTS: readonly HotspotDef[] = [
   {
@@ -138,7 +156,8 @@ export function poseForHotspot(focus: HotspotId | null, mobile: boolean): Camera
     return mobile ? OVERVIEW_POSE_MOBILE : OVERVIEW_POSE_DESKTOP;
   }
   const found = HOTSPOTS.find((h) => h.id === focus);
-  return found ? found.pose : mobile ? OVERVIEW_POSE_MOBILE : OVERVIEW_POSE_DESKTOP;
+  if (!found) return mobile ? OVERVIEW_POSE_MOBILE : OVERVIEW_POSE_DESKTOP;
+  return mobile ? mobilePose(found.pose) : found.pose;
 }
 
 function factsForHotspot(spot: HotspotDef): OrcadasFact[] {
