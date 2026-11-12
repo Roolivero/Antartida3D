@@ -13,6 +13,14 @@ const NAVY_GREY = 0x8e989f;
 const LIGHT_GREY = 0xc9d0d4;
 const PLANE_GREY = 0x9aa3a8;
 const PLANE_DARK = 0x6f787e;
+const LIFEBOAT = 0xd9822b;
+
+/**
+ * Least detail of every model of the app (docs/diseno/estilo-voxel.md): enough boxes and colors
+ * to tell what it is. A test checks every registered model against it.
+ */
+export const VOXEL_MIN_BOXES = 12;
+export const VOXEL_MIN_COLORS = 2;
 
 /** One unit is the length of the vehicle. */
 const MODELS: Record<TransportId, readonly Box[]> = {
@@ -28,6 +36,15 @@ const MODELS: Record<TransportId, readonly Box[]> = {
     [0.04, 0.25, 0, 0.07, 0.02, 0.08, BLACK],
     [-0.12, 0.115, 0, 0.16, 0.07, 0.16, CREAM],
     [-0.33, 0.085, 0, 0.24, 0.012, 0.19, DECK],
+    // Bridge windows, lifeboats on both sides, helicopter on the flight deck.
+    [0.282, 0.2, 0, 0.006, 0.025, 0.17, BLACK],
+    [0.2, 0.2, 0.096, 0.13, 0.02, 0.004, BLACK],
+    [0.2, 0.2, -0.096, 0.13, 0.02, 0.004, BLACK],
+    [0.08, 0.13, 0.095, 0.09, 0.03, 0.03, LIFEBOAT],
+    [0.08, 0.13, -0.095, 0.09, 0.03, 0.03, LIFEBOAT],
+    [-0.33, 0.11, 0, 0.1, 0.035, 0.04, LIFEBOAT],
+    [-0.4, 0.115, 0, 0.07, 0.012, 0.012, LIFEBOAT],
+    [-0.32, 0.135, 0, 0.14, 0.004, 0.012, BLACK],
   ],
   // Antarctic service ship: superstructure on the forward third, long low work deck aft, crane.
   'puerto-argentino': [
@@ -42,6 +59,14 @@ const MODELS: Record<TransportId, readonly Box[]> = {
     [-0.02, 0.12, 0.06, 0.025, 0.1, 0.025, DECK],
     [-0.14, 0.175, 0.06, 0.26, 0.015, 0.02, DECK],
     [-0.25, 0.075, 0, 0.4, 0.01, 0.19, DECK],
+    // Bridge windows, a lifeboat on each side, cargo on the work deck.
+    [0.352, 0.185, 0, 0.006, 0.02, 0.16, BLACK],
+    [0.27, 0.185, 0.091, 0.1, 0.018, 0.004, BLACK],
+    [0.27, 0.185, -0.091, 0.1, 0.018, 0.004, BLACK],
+    [0.2, 0.12, 0.092, 0.07, 0.028, 0.028, LIFEBOAT],
+    [0.2, 0.12, -0.092, 0.07, 0.028, 0.028, LIFEBOAT],
+    [-0.2, 0.1, -0.03, 0.09, 0.04, 0.07, HULL_RED],
+    [-0.34, 0.095, 0.03, 0.07, 0.03, 0.06, CREAM],
   ],
   // C-130: high straight wing, four engines, conventional tail, blunt nose.
   hercules: [
@@ -60,6 +85,9 @@ const MODELS: Record<TransportId, readonly Box[]> = {
     [0.16, 0.045, -0.2, 0.006, 0.11, 0.11, BLACK],
     [0.16, 0.045, 0.4, 0.006, 0.11, 0.11, BLACK],
     [0.16, 0.045, -0.4, 0.006, 0.11, 0.11, BLACK],
+    // Cockpit windows and the dark belly of the cargo hold.
+    [0.4, 0.025, 0, 0.05, 0.022, 0.092, BLACK],
+    [-0.02, -0.06, 0, 0.5, 0.012, 0.09, PLANE_DARK],
   ],
 };
 
@@ -75,6 +103,8 @@ const FACES: readonly { corners: readonly (readonly [number, number, number])[];
   { corners: [[-1, -1, 1], [1, -1, 1], [1, 1, 1], [-1, 1, 1]], shade: 0.9 },
   { corners: [[1, -1, -1], [-1, -1, -1], [-1, 1, -1], [1, 1, -1]], shade: 0.62 },
 ];
+
+export const VEHICLE_MODELS: Readonly<Record<string, readonly Box[]>> = MODELS;
 
 /** Voxel-style vehicle. */
 export const buildVehicleGeometry = (id: TransportId) => buildBoxGeometry(MODELS[id]);

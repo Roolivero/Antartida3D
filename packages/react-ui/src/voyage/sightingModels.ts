@@ -338,6 +338,103 @@ const TOWN: Box[] = [
 
 export const buildTownGeometry = () => buildBoxGeometry(TOWN);
 
+/** Antarctic minke whale: slimmer than the humpback, pointed head, small fin far back, white band on the flipper. */
+const MINKE: Box[] = [
+  [0.02, 0, 0, 0.4, 0.17, 0.17, 0x3d4852],
+  [0.28, -0.01, 0, 0.16, 0.15, 0.15, 0x3d4852],
+  [0.41, -0.03, 0, 0.12, 0.11, 0.12, 0x3d4852],
+  [0.5, -0.045, 0, 0.08, 0.07, 0.08, 0x3d4852],
+  [-0.24, 0.01, 0, 0.18, 0.14, 0.13, 0x3d4852],
+  [-0.4, 0.02, 0, 0.16, 0.09, 0.08, 0x3d4852],
+  [-0.52, 0.03, 0, 0.1, 0.05, 0.05, 0x3d4852],
+  [-0.59, 0.035, 0.08, 0.09, 0.025, 0.14, 0x3d4852],
+  [-0.59, 0.035, -0.08, 0.09, 0.025, 0.14, 0x3d4852],
+  [-0.22, 0.1, 0, 0.07, 0.06, 0.03, 0x3d4852],
+  [0.18, -0.06, 0.12, 0.1, 0.025, 0.1, 0x3d4852],
+  [0.18, -0.06, -0.12, 0.1, 0.025, 0.1, 0x3d4852],
+  [0.18, -0.06, 0.15, 0.05, 0.027, 0.04, WHITE],
+  [0.18, -0.06, -0.15, 0.05, 0.027, 0.04, WHITE],
+  [0.16, -0.085, 0, 0.56, 0.03, 0.14, WHITE],
+  [0.43, 0.005, 0.062, 0.03, 0.03, 0.01, BLACK],
+  [0.43, 0.005, -0.062, 0.03, 0.03, 0.01, BLACK],
+];
+
+/** The blow of a whale: a low, bushy cloud, shown only while it breathes. An effect, not a model. */
+const SPOUT: Box[] = [
+  [0, 0.04, 0, 0.05, 0.08, 0.05, WHITE],
+  [0.01, 0.12, 0.03, 0.07, 0.08, 0.07, WHITE],
+  [-0.01, 0.12, -0.03, 0.07, 0.08, 0.07, WHITE],
+  [0.02, 0.2, 0.06, 0.06, 0.06, 0.06, WHITE],
+  [-0.02, 0.2, -0.06, 0.06, 0.06, 0.06, WHITE],
+];
+
+const ICE_SHADE = 0xc5dbe6;
+
+/** Tabular iceberg: flat top, sheer walls, a blue line where the water wears it. */
+const ICEBERG_TABULAR: Box[] = [
+  [0, 0.01, 0, 1, 0.04, 0.66, ICE_SHADE],
+  [0, 0.12, 0, 0.94, 0.2, 0.6, ICE],
+  [0.05, 0.24, 0.02, 0.8, 0.06, 0.5, WHITE],
+  [-0.2, 0.29, -0.05, 0.4, 0.05, 0.34, WHITE],
+  [0.47, 0.1, 0.1, 0.06, 0.14, 0.3, ICE_SHADE],
+  [-0.47, 0.08, -0.12, 0.06, 0.1, 0.26, ICE_SHADE],
+  [0.2, 0.1, 0.31, 0.3, 0.14, 0.04, ICE_SHADE],
+  [-0.25, 0.09, -0.31, 0.26, 0.12, 0.04, ICE_SHADE],
+  [0.3, 0.275, 0.12, 0.16, 0.012, 0.03, SKY],
+  [-0.1, 0.275, 0.18, 0.1, 0.012, 0.03, SKY],
+  [0.58, 0.02, -0.2, 0.14, 0.05, 0.14, ICE],
+  [-0.6, 0.02, 0.22, 0.1, 0.04, 0.1, ICE],
+];
+
+/** Small iceberg worn into peaks. */
+const ICEBERG_PEAKS: Box[] = [
+  [0, 0.01, 0, 0.8, 0.04, 0.56, ICE_SHADE],
+  [0, 0.08, 0, 0.66, 0.12, 0.44, ICE],
+  [-0.14, 0.2, 0.02, 0.3, 0.14, 0.26, ICE],
+  [-0.16, 0.33, 0.02, 0.2, 0.12, 0.18, WHITE],
+  [-0.17, 0.44, 0.02, 0.1, 0.1, 0.1, WHITE],
+  [0.2, 0.18, -0.04, 0.22, 0.1, 0.2, ICE],
+  [0.21, 0.27, -0.04, 0.12, 0.08, 0.12, WHITE],
+  [0.02, 0.16, 0.16, 0.14, 0.05, 0.08, ICE_SHADE],
+  [0.32, 0.09, 0.2, 0.06, 0.1, 0.04, ICE_SHADE],
+  [-0.33, 0.09, -0.2, 0.06, 0.1, 0.04, ICE_SHADE],
+  [-0.05, 0.215, 0.152, 0.1, 0.012, 0.01, SKY],
+  [0.5, 0.02, 0.1, 0.12, 0.05, 0.1, ICE],
+];
+
+/** Penguins on a floe of sea ice. */
+const FLOE_PENGUINS: Box[] = [
+  [0, 0, 0, 1, 0.08, 0.7, ICE],
+  [0.05, 0.045, 0.02, 0.8, 0.03, 0.5, WHITE],
+  [-0.42, 0.01, 0.3, 0.26, 0.06, 0.2, ICE_SHADE],
+  ...penguinAt(-0.22, -0.1, 0.55, 'ring'), ...penguinAt(0.08, 0.12, 0.55, 'ring'), ...penguinAt(0.3, -0.12, 0.55, 'ring'),
+];
+
+/**
+ * Models of the sea life and ice that live on the map outside the trip. Every model of the app is
+ * built this way (see docs/diseno/estilo-voxel.md): boxes, flat colors, no textures.
+ */
+export const SEA_MODELS = {
+  humpback: WHALE,
+  orca: ORCA,
+  minke: MINKE,
+  penguins: FLOE_PENGUINS,
+  seal: seal(SEA_GREY, 0xc9d0d4, ICE).body,
+  'iceberg-lg': ICEBERG_TABULAR,
+  'iceberg-sm': ICEBERG_PEAKS,
+} as const satisfies Record<string, readonly Box[]>;
+export type SeaModelId = keyof typeof SEA_MODELS;
+
+/** Every model of this file by name, for the test of least detail. */
+export const SCENE_MODELS: Readonly<Record<string, readonly Box[]>> = {
+  ...Object.fromEntries(Object.entries(MODELS).map(([id, m]) => [id, [...m.body, ...(m.wing ?? []), ...(m.wing ?? [])]])),
+  ...Object.fromEntries(Object.entries(SEA_MODELS).map(([id, boxes]) => [`sea:${id}`, boxes])),
+  ushuaia: TOWN,
+};
+
+export const buildSeaGeometry = (id: SeaModelId) => buildBoxGeometry(SEA_MODELS[id]);
+export const buildSpoutGeometry = () => buildBoxGeometry(SPOUT);
+
 export interface SightingGeometry {
   body: BufferGeometry;
   /** Right and left wing, each measured from its root. */

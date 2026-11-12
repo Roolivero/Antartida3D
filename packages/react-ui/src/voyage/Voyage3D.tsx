@@ -56,7 +56,7 @@ function clearanceAt(t: number): number {
  * World height of the vehicle at `t`. A plane flies over the relief under its path, and higher the
  * farther the camera is, to stay readable; a ship sits slightly into the water.
  */
-function heightOf(kind: TransportKind, t: number, size: number): number {
+export function heightOf(kind: TransportKind, t: number, size: number): number {
   if (kind === 'ship') return -size * 0.02;
   return Math.max(clearanceAt(t), Math.sin(Math.PI * Math.min(1, Math.max(0, t))) ** 0.6 * size * 0.9) + size * 0.07;
 }

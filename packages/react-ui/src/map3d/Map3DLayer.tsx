@@ -114,7 +114,7 @@ function SceneContent({
       <Terrain wide={wide} />
       <Fuegia wide={wide} />
       <Graticule3D />
-      <SeaLife visible={phase !== 'dive'} timeUniform={seaTime} instances={seaLifeInstances} />
+      <SeaLife visible={phase !== 'dive'} timeUniform={seaTime} instances={seaLifeInstances} voyage={voyage} />
       {voyage && <Voyage3D bus={voyage} reduced={reduced} overlay={overlayRef} />}
       {enablePost && (
         <EffectComposer multisampling={0}>

@@ -97,7 +97,7 @@ export interface RoutePoint {
 /**
  * Position `(x, y)` and unit tangent `(tx, ty)` on the route at `t` in [0, 1]
  * (0 = Ushuaia, 1 = Marambio), by linear interpolation of IRIZAR_ROUTE_POLYLINE.
- * Mirrors `evalRoute` in `seaLife.glsl.ts`.
+ * Read by the sea life of the 3D map (`SeaLife.tsx`).
  */
 export function routePointAt(t: number): RoutePoint {
   const last = IRIZAR_ROUTE_SAMPLES - 1;
@@ -140,7 +140,7 @@ export interface IrizarState {
  * - [0.40, 0.50): moored at Marambio (t=1, speed=0, no wake);
  * - [0.50, 0.90): returns from Marambio (t=1) to Ushuaia (t=0) with bow oriented in reverse;
  * - [0.90, 1.00): moored at Ushuaia (t=0, speed=0, no wake).
- * Evaluated identically in `seaLife.glsl.ts`.
+ * Drives the ship of the 3D map (`SeaLife.tsx`).
  */
 export function irizarStateAtTime(
   uTime: number,
@@ -448,7 +448,7 @@ export interface WhaleCycleState {
  * - Emerges rising from the water (`bobY` from negative to crest) with alpha fade-in,
  *   and disappears sinking into the water with alpha fade-out;
  * - Pose changes occur strictly while `alpha === 0` so there are no sprite or scale pops;
- * - Evaluated identically in `seaLife.glsl.ts` and `ocean.glsl.ts`.
+ * - Evaluated by `SeaLife.tsx` and, for the ripples, identically in `ocean.glsl.ts`.
  */
 export function whaleCycleState(
   cyclePhase: number,
@@ -530,7 +530,7 @@ export function driftOffsetAtTime(
 
 /**
  * Pure function computing a whale's map-space surfacing position `(x, y)` during cycle `cycleIndex`.
- * Used both in `seaLife.glsl.ts` (vertex shader) and on CPU when updating ocean ink ripples.
+ * Used both by `SeaLife.tsx` and when updating ocean ink ripples.
  */
 export function whaleCyclePosition(
   centerX: number,

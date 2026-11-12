@@ -5,6 +5,7 @@
 ## Reglas del proyecto (`.agents/rules/project/`)
 - `00-convenciones-del-proyecto.md`: Flujo de issues, ramas, idioma, fuentes verificadas y arquitectura S1.
 - `20-web.md`: Estándares de frontend, accesibilidad, estados de UI, teclado y pruebas E2E.
+- `30-estilo-voxel.md`: Un solo estilo visual: modelos de bloques (voxel) con un mínimo de detalle común.
 
 ## Reglas centrales (`.agents/rules/core/`)
 - `00-agent-workflow.md`: Flujo de trabajo, exploración previa y definición de terminado.
