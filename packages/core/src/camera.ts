@@ -14,6 +14,15 @@ export const MODEL_REFERENCE_DISTANCE = 400;
 /** Below this on-screen size a fixed-size model is hidden instead of flickering as a loose dot. */
 export const MODEL_MIN_PX = 3;
 
+/**
+ * World size of a place model (town, station) that the camera also visits up close: up to
+ * MODEL_REFERENCE_DISTANCE it keeps a constant on-screen size (sizePerDistance of the distance), so
+ * it never covers what is around it; farther it stays fixed and shrinks with the distance.
+ */
+export function placeModelSize(distance: number, sizePerDistance: number, minSize: number): number {
+  return Math.max(minSize, Math.min(MODEL_REFERENCE_DISTANCE, distance) * sizePerDistance);
+}
+
 /** On-screen height in px of a world length seen at a distance, for the vertical FOV. */
 export function screenPx(worldSize: number, distance: number, viewportHeight: number): number {
   return (worldSize * viewportHeight) / (2 * Math.max(distance, 1e-6) * Math.tan((FOV * Math.PI) / 360));

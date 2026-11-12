@@ -5,7 +5,7 @@ import { Html } from '@react-three/drei';
 import {
   FUEGIA_LAND_MASK,
   MODEL_MIN_PX,
-  MODEL_REFERENCE_DISTANCE,
+  placeModelSize,
   fuegiaWorldHeight,
   loadFuegiaMesh,
   project,
@@ -23,9 +23,12 @@ const BAY = project(-68.3, -54.81);
  */
 const SITE = { x: BAY.x + 0.2, y: BAY.y + 0.15 };
 
-/** Reference width factor of the town at MODEL_REFERENCE_DISTANCE. */
+/**
+ * Width of the town as a fraction of its distance to the camera (placeModelSize): up close, where the
+ * trip starts, it stays small beside the ship and the Beagle Channel (#47); from far away it shrinks.
+ */
 const SIZE_PER_DISTANCE = 0.036;
-const TOWN_SIZE = MODEL_REFERENCE_DISTANCE * SIZE_PER_DISTANCE;
+const MIN_SIZE = 0.25;
 /** Ground is measured this far around the center, in town widths. */
 const FOOTING = 0.4;
 /** Maximum footing radius in map units so the ground query stays local. */
@@ -81,19 +84,21 @@ export function Town3D({ reduced, wide, overlay }: {
     return () => void (alive = false);
   }, [wide]);
   // Ground under the town cached for the current relief mesh.
-  const footing = useRef<{ relief: TerrainMesh | null; ground: number }>({ relief, ground: 0 });
+  const footing = useRef<{ size: number; relief: TerrainMesh | null; ground: number }>({ size: 0, relief, ground: 0 });
 
   useFrame(({ camera, size, invalidate }) => {
     const g = group.current;
     if (!g || !relief) return;
     const distance = Math.hypot(camera.position.x - (SITE.x - 500), camera.position.y, camera.position.z - (SITE.y - 500));
-    g.visible = screenPx(TOWN_SIZE, distance, size.height) >= MODEL_MIN_PX;
+    const townSize = placeModelSize(distance, SIZE_PER_DISTANCE, MIN_SIZE);
+    g.visible = screenPx(townSize, distance, size.height) >= MODEL_MIN_PX;
     const f = footing.current;
-    if (f.relief !== relief) {
-      footing.current = { relief, ground: highestGround(relief, SITE.x, SITE.y, Math.min(MAX_FOOTING, TOWN_SIZE * FOOTING)) };
+    // The footprint changes with the size: measure the ground again when it moves more than 3 %.
+    if (f.relief !== relief || Math.abs(townSize - f.size) > f.size * 0.03) {
+      footing.current = { size: townSize, relief, ground: highestGround(relief, SITE.x, SITE.y, Math.min(MAX_FOOTING, townSize * FOOTING)) };
     }
     g.position.set(SITE.x - 500, footing.current.ground, SITE.y - 500);
-    g.scale.setScalar(TOWN_SIZE);
+    g.scale.setScalar(townSize);
     const time = reduced ? 0 : performance.now() / 1000;
     puffs.current.forEach((puff, i) => {
       if (!puff) return;

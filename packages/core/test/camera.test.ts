@@ -3,6 +3,8 @@ import {
   FOV,
   geometry,
   screenPx,
+  placeModelSize,
+  MODEL_REFERENCE_DISTANCE,
   poseFromView,
   viewFromPose,
   HOME,
@@ -121,5 +123,18 @@ describe('screenPx', () => {
   it('fills the viewport height with the frustum height at that distance', () => {
     const frustum = 2 * 500 * Math.tan((FOV * Math.PI) / 360);
     expect(screenPx(frustum, 500, 844)).toBeCloseTo(844, 6);
+  });
+});
+
+describe('placeModelSize', () => {
+  it('stays small up close, where a trip starts (#47)', () => {
+    // The Ushuaia trip starts with the camera at about 15: the town must not cover the channel.
+    expect(placeModelSize(15, 0.036, 0.25)).toBeCloseTo(0.54, 6);
+    expect(placeModelSize(1, 0.036, 0.25)).toBe(0.25);
+  });
+
+  it('stops growing beyond the reference distance, so it shrinks on screen', () => {
+    const fixed = placeModelSize(MODEL_REFERENCE_DISTANCE, 0.036, 0.25);
+    expect(placeModelSize(MODEL_REFERENCE_DISTANCE * 4, 0.036, 0.25)).toBe(fixed);
   });
 });
