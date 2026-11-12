@@ -44,6 +44,11 @@ const DETAIL_MIN_PX = 5;
 /** World length of a streak of rain at the camera of the trip. */
 const STREAK_LENGTH = 0.5;
 
+/** Height of a cloud against its drawn shape: thin sheets, so the bank does not read as a solid block. */
+const CLOUD_THICKNESS = 0.45;
+/** See-through, so the sea and the vehicle show under the bank from afar. */
+const CLOUD_OPACITY = 0.5;
+
 /** One cloud, one unit wide, its base at y = 0. */
 const CLOUD: readonly (readonly [number, number, number, number, number, number, number])[] = [
   [0, 0.08, 0, 1, 0.16, 0.62, CLOUD_DARK],
@@ -91,7 +96,7 @@ function layOut(): Layout {
   const spots = Array.from({ length: CLOUDS }, (_, i) => [...inBand(RADIUS - 4), 9 + rng() * 5, CLOUD_BASE + (i % 3) * 0.9] as const);
   return {
     clouds: spots.flatMap(([x, z, width, base]) =>
-      CLOUD.map(([cx, cy, cz, sx, sy, sz, color]): Box => [x + cx * width, base + cy * width, z + cz * width, sx * width, sy * width, sz * width, color])),
+      CLOUD.map(([cx, cy, cz, sx, sy, sz, color]): Box => [x + cx * width, base + cy * width * CLOUD_THICKNESS, z + cz * width, sx * width, sy * width * CLOUD_THICKNESS, sz * width, color])),
     bolts: BOLT_CLOUDS.map((i) => [spots[i][0], spots[i][1], spots[i][3]] as const),
     streaks: Array.from({ length: STREAKS }, () => [...inBand(), rng()] as const),
     caps: Array.from({ length: WHITECAPS }, () => [...inBand(), 0.25 + rng() * 0.35, rng() * Math.PI * 2] as const),
@@ -99,7 +104,7 @@ function layOut(): Layout {
   };
 }
 
-const cloudMaterial = new MeshBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.88, depthWrite: false });
+const cloudMaterial = new MeshBasicMaterial({ vertexColors: true, transparent: true, opacity: CLOUD_OPACITY, depthWrite: false });
 const boltMaterial = new MeshBasicMaterial({ vertexColors: true });
 const rainMaterial = new MeshBasicMaterial({ color: RAIN, transparent: true, opacity: 0.7, depthWrite: false });
 const foamMaterial = new MeshBasicMaterial({ color: FOAM, transparent: true, opacity: 0.85 });
