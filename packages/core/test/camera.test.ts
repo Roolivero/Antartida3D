@@ -6,10 +6,13 @@ import {
   HOME,
   homePose3D,
   DIVE_3D,
+  divePose3D,
   fromWorld,
+  toWorld,
   heightAt,
   worldHeight,
   EXPEDITION_POINT,
+  ORCADAS_POINT,
   homeDistance3D,
   kFromDistance3D,
   distanceFromK3D,
@@ -75,5 +78,15 @@ describe('camera', () => {
     // Camera position y must be strictly above target.y
     expect(DIVE_3D.pos.y).toBeGreaterThan(DIVE_3D.target.y);
     expect(DIVE_3D.pos.y).toBeGreaterThan(worldHeight(marambioH));
+  });
+
+  it('divePose3D for Orcadas looks at Orcadas and differs from Fósiles', () => {
+    const pose = divePose3D(ORCADAS_POINT);
+    const expected = toWorld(208, 205);
+    expect(pose.target.x).toBeCloseTo(expected.x, 4);
+    expect(pose.target.z).toBeCloseTo(expected.z, 4);
+    expect(pose.pos.y).toBeGreaterThan(pose.target.y);
+    expect(pose.target).not.toEqual(DIVE_3D.target);
+    expect(pose.pos).not.toEqual(DIVE_3D.pos);
   });
 });

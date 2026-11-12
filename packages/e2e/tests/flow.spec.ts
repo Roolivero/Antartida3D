@@ -151,9 +151,9 @@ test('dialogs close with Escape and return focus to their trigger', async ({ pag
 
   await page.keyboard.press('Enter');
   await expectFocused(page, 'Ver mapa');
-  await tabTo(page, /^Estación Orcadas/);
+  await tabTo(page, /^Océano/);
   await page.keyboard.press('Enter');
-  const sheet = page.getByRole('dialog', { name: 'Estación Orcadas' });
+  const sheet = page.getByRole('dialog', { name: 'Océano' });
   await expect(sheet).toContainText('[Pregunta provisional]');
   await expectFocused(page, 'Cerrar ficha');
   await page.keyboard.press('Escape');

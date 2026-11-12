@@ -12,6 +12,7 @@ import {
   saveExplored,
   loadViewMode,
   saveViewMode,
+  type MapPoint,
 } from '@antartida/core';
 import { useReducedMotion, useTimers } from './hooks.ts';
 import { MapView, type Layer3DProps, type Phase, type ViewMode } from './map/MapView.tsx';
@@ -19,6 +20,9 @@ import { Filters } from './ui.tsx';
 
 const loadExpedition = () => import('./expedition/Expedition.tsx');
 const Expedition = lazy(() => loadExpedition().then((m) => ({ default: m.Expedition })));
+
+const loadOrcadas = () => import('./orcadas/OrcadasExpedition.tsx');
+const OrcadasExpedition = lazy(() => loadOrcadas().then((m) => ({ default: m.OrcadasExpedition })));
 
 const loadMap3D = () => import('./map3d/Map3DLayer.tsx');
 const Map3DLayerLazy = lazy(() => loadMap3D().then((m) => ({ default: m.Map3DLayer })));
@@ -43,10 +47,11 @@ function hasWebGL(): boolean {
 }
 
 export function AntarcticaApp() {
-  const [screen, setScreen] = useState<'map' | 'exp'>('map');
+  const [screen, setScreen] = useState<'map' | 'exp' | 'orcadas'>('map');
   const [phase, setPhase] = useState<Phase>('idle');
   const [explored, setExplored] = useState<string[]>([]);
   const [voyaging, setVoyaging] = useState(false);
+  const [activePoint, setActivePoint] = useState<MapPoint>(EXPEDITION_POINT);
   const [toast, setToast] = useState('');
   const [legend, setLegend] = useState(true);
   const [returned, setReturned] = useState(false);
@@ -97,15 +102,18 @@ export function AntarcticaApp() {
     saveViewMode(next);
   };
 
-  const start = () => {
+  const start = (point: MapPoint) => {
     if (phase !== 'idle') return;
     setToast('');
-    void loadExpedition();
+    setActivePoint(point);
+    const nextScreen = point.id === 'orcadas' ? 'orcadas' : 'exp';
+    if (nextScreen === 'orcadas') void loadOrcadas();
+    else void loadExpedition();
     setPhase(reduced ? 'fade' : 'dive');
     later(
       'enter',
       () => {
-        setScreen('exp');
+        setScreen(nextScreen);
         setPhase('idle');
       },
       reduced ? FADE_MS : DIVE_MS
@@ -137,7 +145,7 @@ export function AntarcticaApp() {
     setScreen('map');
     setPhase('ret');
     setReturned(true);
-    if (done) complete(EXPEDITION_POINT);
+    if (done) complete(activePoint);
     else setToast('');
     later('ret', () => setPhase('idle'), RETURN_MS);
   };
@@ -150,6 +158,7 @@ export function AntarcticaApp() {
           phase={phase}
           explored={explored}
           voyaging={voyaging}
+          diveTarget={activePoint}
           toast={toast}
           legend={legend}
           focusExpedition={returned}
@@ -162,6 +171,10 @@ export function AntarcticaApp() {
           onStartVoyage={startVoyage}
           onEndVoyage={endVoyage}
         />
+      ) : screen === 'orcadas' ? (
+        <Suspense fallback={null}>
+          <OrcadasExpedition reduced={reduced} onLeave={leave} />
+        </Suspense>
       ) : (
         <Suspense fallback={null}>
           <Expedition reduced={reduced} onLeave={leave} />

@@ -35,6 +35,7 @@ export type Camera3DCommand =
 
 export type Layer3DProps = LayerProps & {
   size: Size;
+  diveTarget: MapPoint;
   /** `n` grows with every request so repeating the same command still fires. */
   command: { n: number; cmd: Camera3DCommand } | null;
   /** The camera came to rest: the 2D-style view it shows, for clustering and the 2D switch. */
@@ -48,6 +49,7 @@ export interface MapViewProps {
   explored: readonly string[];
   /** The trip from Ushuaia is open: its panel replaces the map's own controls. */
   voyaging?: boolean;
+  diveTarget?: MapPoint;
   toast: string;
   legend: boolean;
   /** Move focus to the expedition marker on mount (coming back from the expedition). */
@@ -57,7 +59,7 @@ export interface MapViewProps {
   Layer3D?: (props: Layer3DProps) => React.ReactNode;
   onToggleLegend: () => void;
   onToggleMode?: (next: ViewMode) => void;
-  onStart: () => void;
+  onStart: (point: MapPoint) => void;
   onStartVoyage?: () => void;
   onEndVoyage?: (done: boolean) => void;
 }
@@ -79,6 +81,7 @@ export function MapView({
   phase,
   explored,
   voyaging = false,
+  diveTarget = EXPEDITION_POINT,
   toast,
   legend,
   focusExpedition,
@@ -152,8 +155,8 @@ export function MapView({
     setList(false);
     if (phase === 'fade') return;
     setAnim('dive');
-    setView(diveView(live.current.size, EXPEDITION_POINT.x, EXPEDITION_POINT.y));
-  }, [phase]);
+    setView(diveView(live.current.size, diveTarget.x, diveTarget.y));
+  }, [phase, diveTarget]);
 
   const animateTo = (next: View) => {
     setView(next);
@@ -272,7 +275,7 @@ export function MapView({
 
   const openPoint = (p: MapPoint | SeaPoint) => {
     if (p.id === VOYAGE_POINT.id && onStartVoyage) onStartVoyage();
-    else if ('tier' in p && p.tier === 'A') onStart();
+    else if ('tier' in p && p.tier === 'A') onStart(p);
     else {
       setSheet(p);
       setTouched(true);
@@ -319,6 +322,7 @@ export function MapView({
               view={view}
               anim={anim}
               phase={phase}
+              diveTarget={diveTarget}
               markers={markers}
               onPick={onPick}
               command={command}

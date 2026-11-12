@@ -91,6 +91,19 @@ Costos:
 - **TypeScript 6.0.3**, no 7.0. `svelte-check` 4.7.8 todavía pide TypeScript ^5 o ^6, y se usa la misma versión en todo el repo.
 - **Un solo spec de Playwright** (`packages/e2e`) para todas las apps, con roles y textos del handoff como selectores. Además del flujo, falla ante cualquier error de consola (hidratación, excepciones, 404).
 
+### Estilo de los modelos 3D (voxel de cajas)
+
+Decisión del 11 nov 2026 (Lucas, a partir del trabajo de #4): **todo modelo 3D nuevo —animales, vehículos, edificios, instrumentos— se hace con el estilo voxel de cajas de la expedición «Desde Ushuaia»**, para que las expediciones se vean como una sola obra. Responde la pregunta abierta de `docs/expediciones/desde-ushuaia-diseno.md` («Estilo de la fauna»): todo lo vivo es voxel.
+
+- Un modelo es una lista de cajas `[centroX, centroY, centroZ, tamañoX, tamañoY, tamañoZ, color]`. La proa o el hocico apunta a `+x`; `y` es arriba; una unidad es más o menos el largo del modelo.
+- Las cajas se funden en una sola geometría con color por vértice y el sombreado ya pintado en las caras (`buildBoxGeometry` en `packages/react-ui/src/voyage/vehicles.ts`, de #4). Material: `MeshBasicMaterial({ vertexColors: true })`. Sin luces ni archivos `.glb`: una draw call por modelo.
+- Colores planos y apagados, de la paleta de `voyage/sightingModels.ts`. Son aproximados: los modelos son ilustraciones, no retratos, y se rotulan como tales.
+- El movimiento es por partes rígidas (alas que baten, cuerpo que se mece). Con movimiento reducido quedan quietos.
+- El trazo de tinta lo pone `InkEffect`; se pierde cuando el monitor de rendimiento apaga el posprocesado.
+- Hasta que #4 esté en `main`, otra rama que necesite `buildBoxGeometry` lleva una copia idéntica y la reemplaza por el import al hacer rebase.
+
+Pendiente, con issue propio: la fauna y el Irízar de ambiente de #16 son láminas SVG (billboards), no voxel. Convertirlos queda fuera de #3 y #4.
+
 ## Por stack (laboratorio)
 
 ### dibujado

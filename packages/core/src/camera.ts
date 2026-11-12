@@ -109,12 +109,12 @@ export function viewFrom3D(size: Size, geo: Geometry, target: Vector3Like, dista
   return clampView(size, k, size.vw / 2 - geo.ox - map.x * pxPerUnit, size.vh / 2 - geo.oy - map.y * pxPerUnit);
 }
 
-/** DIVE_3D: Low, south of Marambio looking north over the island, above heightAt. */
-export const DIVE_3D: CameraPose = (() => {
-  const elevM = heightAt(EXPEDITION_POINT.x, EXPEDITION_POINT.y);
+/** Low pose south of a map point looking north over it, above heightAt. */
+export function divePose3D(point: { x: number; y: number }): CameraPose {
+  const elevM = heightAt(point.x, point.y);
   const groundH = worldHeight(elevM);
-  const target = toWorld(EXPEDITION_POINT.x, EXPEDITION_POINT.y, groundH);
-  // Camera south of Marambio (+Z in world) and elevated above ground
+  const target = toWorld(point.x, point.y, groundH);
+  // Camera south of target (+Z in world) and elevated above ground
   return {
     pos: {
       x: target.x,
@@ -123,4 +123,7 @@ export const DIVE_3D: CameraPose = (() => {
     },
     target,
   };
-})();
+}
+
+/** DIVE_3D: Low, south of Marambio looking north over the island, above heightAt. */
+export const DIVE_3D: CameraPose = divePose3D(EXPEDITION_POINT);

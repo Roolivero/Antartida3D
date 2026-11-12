@@ -3,6 +3,7 @@ import { FOV, HOME_TILT_DEG } from './camera.ts';
 import { estimateLabelWidth } from './labels.ts';
 import { depthAt, getOceanDepthGrid, type OceanDepthGrid } from './ocean.ts';
 import { routeAt } from './route.ts';
+import { createSeededRng } from './rng.ts';
 import seaAtlasManifest from './assets/sea-atlas.json' with { type: 'json' };
 
 export type SeaSpriteId =
@@ -399,15 +400,7 @@ export function pointInPolygon(
 }
 
 /** Deterministic Mulberry32 PRNG returning values in [0, 1). */
-export function createSeededRng(seed: number): () => number {
-  let s = seed | 0;
-  return () => {
-    s = (s + 0x6d2b79f5) | 0;
-    let t = Math.imul(s ^ (s >>> 15), 1 | s);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
+export { createSeededRng } from './rng.ts';
 
 /**
  * Deterministic hash matching GLSL `fract(sin(x) * 43758.5453123)` so CPU ripple positions

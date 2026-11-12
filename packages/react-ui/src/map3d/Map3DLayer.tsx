@@ -6,7 +6,7 @@ import { EffectComposer } from '@react-three/postprocessing';
 import {
   homePose3D,
   performanceBounds,
-  DIVE_3D,
+  divePose3D,
   FOV,
   distanceFromK3D,
   generateSeaLifeInstances,
@@ -24,6 +24,7 @@ import {
   irizarStateAtTime,
   SEA_POINTS,
   type Geometry,
+  type MapPoint,
   type Marker,
   type OceanDepthGrid,
   type SeaLifeInstance,
@@ -48,6 +49,7 @@ function SceneContent({
   wide,
   lowQuality,
   phase,
+  diveTarget,
   reduced,
   size,
   geo,
@@ -62,6 +64,7 @@ function SceneContent({
   wide: boolean;
   lowQuality: boolean;
   phase: Phase;
+  diveTarget: MapPoint;
   reduced: boolean;
   size: Size;
   geo: Geometry;
@@ -125,6 +128,7 @@ function SceneContent({
       )}
       <ControlsBridge
         phase={phase}
+        diveTarget={diveTarget}
         reduced={reduced}
         size={size}
         geo={geo}
@@ -158,6 +162,7 @@ const NEAR_CLOSE = NEAR * (FUEGIA_MIN_DISTANCE / MIN_DISTANCE);
 
 function ControlsBridge({
   phase,
+  diveTarget,
   reduced,
   size,
   geo,
@@ -165,6 +170,7 @@ function ControlsBridge({
   onCameraRest,
 }: {
   phase: Phase;
+  diveTarget: MapPoint;
   reduced: boolean;
   size: Size;
   geo: Geometry;
@@ -198,13 +204,14 @@ function ControlsBridge({
 
     if (phase === 'dive') {
       const dur = reduced ? 0 : 1.5;
+      const dive = divePose3D(diveTarget);
       cc.setLookAt(
-        DIVE_3D.pos.x,
-        DIVE_3D.pos.y,
-        DIVE_3D.pos.z,
-        DIVE_3D.target.x,
-        DIVE_3D.target.y,
-        DIVE_3D.target.z,
+        dive.pos.x,
+        dive.pos.y,
+        dive.pos.z,
+        dive.target.x,
+        dive.target.y,
+        dive.target.z,
         dur > 0
       );
     } else if (!initialized.current) {
@@ -212,7 +219,7 @@ function ControlsBridge({
       const home = homePose3D(size.vw / size.vh);
       cc.setLookAt(home.pos.x, home.pos.y, home.pos.z, home.target.x, home.target.y, home.target.z, false);
     }
-  }, [phase, reduced]);
+  }, [phase, reduced, diveTarget]);
 
   // Report where the camera settled, so clustering and the 2D view follow the orbit camera.
   useEffect(() => {
@@ -419,6 +426,7 @@ export function Map3DLayer({
   size,
   geo,
   phase,
+  diveTarget,
   markers,
   onPick,
   command,
@@ -501,6 +509,7 @@ export function Map3DLayer({
           wide={size.vw > 820}
           lowQuality={lowQuality}
           phase={phase}
+          diveTarget={diveTarget}
           reduced={reduced}
           size={size}
           geo={geo}

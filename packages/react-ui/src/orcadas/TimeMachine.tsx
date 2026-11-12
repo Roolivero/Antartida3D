@@ -1,0 +1,431 @@
+import { useMemo, useRef } from 'react';
+import {
+  ORCADAS_ERAS,
+  ORCADAS_FACTS,
+  ORCADAS_FIRST_YEAR,
+  eraAt,
+  isPublishable,
+  sourcesOf,
+  type OrcadasFact,
+} from '@antartida/core';
+import { KindChip } from './KindChip.tsx';
+import { BUILDING_LABELS } from './time/timeMath.ts';
+
+const DIGIT_STRIP = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9] as const;
+
+function YearCounter({ year }: { year: number }) {
+  const digits = String(year)
+    .padStart(4, '0')
+    .split('')
+    .map((ch) => Number(ch) || 0);
+
+  return (
+    <div className="orc-year-counter" aria-label={`Año ${year}`}>
+      <span className="orc-sr-only">{year}</span>
+      <div className="orc-year-reels" aria-hidden="true">
+        {digits.map((d, idx) => (
+          <span key={idx} className="orc-digit-window">
+            <span
+              className="orc-digit-track hand"
+              style={{ transform: `translate3d(0, -${d * 10}%, 0)` }}
+            >
+              {DIGIT_STRIP.map((n) => (
+                <span key={n} className="orc-digit-cell">
+                  {n}
+                </span>
+              ))}
+            </span>
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export function TimeMachine({
+  year,
+  maxYear,
+  onYear,
+}: {
+  year: number;
+  maxYear: number;
+  onYear: (y: number) => void;
+}) {
+  const rulerRef = useRef<SVGSVGElement>(null);
+  const draggingRef = useRef(false);
+
+  const safeMaxYear = Math.max(ORCADAS_FIRST_YEAR + 1, maxYear);
+  const clampedYear = Math.max(ORCADAS_FIRST_YEAR, Math.min(safeMaxYear, Math.trunc(year)));
+  const currentEra = eraAt(clampedYear);
+  const eraIndex = ORCADAS_ERAS.findIndex((e) => e.id === currentEra.id);
+  const continuousYears = Math.max(0, clampedYear - ORCADAS_FIRST_YEAR);
+
+  // Filter era facts through isPublishable
+  const eraFacts = useMemo(() => {
+    const byId = new Map<string, OrcadasFact>(ORCADAS_FACTS.map((f) => [f.id, f]));
+    return currentEra.factIds
+      .map((id) => byId.get(id))
+      .filter((f): f is OrcadasFact => f !== undefined && isPublishable(f));
+  }, [currentEra]);
+
+  const rulerGeom = useMemo(() => {
+    const w = 336;
+    const h = 68;
+    const padL = 18;
+    const padR = 18;
+    const plotW = w - padL - padR;
+    const span = Math.max(1, safeMaxYear - ORCADAS_FIRST_YEAR);
+
+    const xOf = (yr: number) =>
+      padL + ((Math.max(ORCADAS_FIRST_YEAR, Math.min(safeMaxYear, yr)) - ORCADAS_FIRST_YEAR) / span) * plotW;
+
+    const ticks: { yr: number; x: number; major: boolean; medium: boolean }[] = [];
+    for (let yr = ORCADAS_FIRST_YEAR; yr <= safeMaxYear; yr += 2) {
+      const major = yr % 20 === 0 || yr === ORCADAS_FIRST_YEAR;
+      const medium = yr % 10 === 0;
+      ticks.push({ yr, x: xOf(yr), major, medium });
+    }
+
+    const eraSpans = ORCADAS_ERAS.map((era, i) => {
+      const nextFrom = ORCADAS_ERAS[i + 1]?.fromYear ?? safeMaxYear;
+      const x1 = xOf(era.fromYear);
+      const x2 = xOf(nextFrom);
+      return {
+        id: era.id,
+        fromYear: era.fromYear,
+        title: era.title,
+        x1,
+        x2,
+        width: Math.max(2, x2 - x1),
+      };
+    });
+
+    return { w, h, padL, padR, plotW, span, xOf, ticks, eraSpans };
+  }, [safeMaxYear]);
+
+  const cursorX = rulerGeom.xOf(clampedYear);
+
+  function yearFromClientX(clientX: number): number {
+    const svg = rulerRef.current;
+    if (!svg) return clampedYear;
+    const rect = svg.getBoundingClientRect();
+    if (rect.width <= 0) return clampedYear;
+    const svgX = ((clientX - rect.left) / rect.width) * rulerGeom.w;
+    const ratio = (svgX - rulerGeom.padL) / rulerGeom.plotW;
+    const rawYear = Math.round(ORCADAS_FIRST_YEAR + ratio * rulerGeom.span);
+    return Math.max(ORCADAS_FIRST_YEAR, Math.min(safeMaxYear, rawYear));
+  }
+
+  return (
+    <div className="orc-activity orc-eras">
+      {/* Top Year Counter + Continuous Record Indicator */}
+      <div className="orc-tm-top">
+        <div className="orc-tm-year-block">
+          <span className="orc-tm-kicker">Año en la estación</span>
+          <YearCounter year={clampedYear} />
+        </div>
+
+        <div className="orc-tm-record-box">
+          <KindChip kind="calc" />
+          <strong className="orc-tm-record-num">
+            {continuousYears === 0
+              ? 'Inicio del registro (1903)'
+              : `${continuousYears} ${
+                  continuousYears === 1 ? 'año' : 'años'
+                } de registro continuo`}
+          </strong>
+          <span className="orc-tm-record-formula">
+            {clampedYear} − {ORCADAS_FIRST_YEAR} = {continuousYears}{' '}
+            {continuousYears === 1 ? 'año' : 'años'} sin pausa
+          </span>
+        </div>
+      </div>
+
+      {/* Notebook Ruler Horizontal Slider */}
+      <div
+        className="orc-ruler-slider"
+        role="slider"
+        tabIndex={0}
+        aria-label="Año en la estación"
+        aria-valuemin={ORCADAS_FIRST_YEAR}
+        aria-valuemax={safeMaxYear}
+        aria-valuenow={clampedYear}
+        aria-valuetext={`Año ${clampedYear}, ${currentEra.title}`}
+        onKeyDown={(e) => {
+          if (e.key === 'ArrowRight' || e.key === 'ArrowUp') {
+            e.preventDefault();
+            onYear(Math.min(safeMaxYear, clampedYear + 1));
+          } else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') {
+            e.preventDefault();
+            onYear(Math.max(ORCADAS_FIRST_YEAR, clampedYear - 1));
+          } else if (e.key === 'PageUp') {
+            e.preventDefault();
+            onYear(Math.min(safeMaxYear, clampedYear + 10));
+          } else if (e.key === 'PageDown') {
+            e.preventDefault();
+            onYear(Math.max(ORCADAS_FIRST_YEAR, clampedYear - 10));
+          } else if (e.key === 'Home') {
+            e.preventDefault();
+            onYear(ORCADAS_FIRST_YEAR);
+          } else if (e.key === 'End') {
+            e.preventDefault();
+            onYear(safeMaxYear);
+          }
+        }}
+        onPointerDown={(e) => {
+          draggingRef.current = true;
+          e.currentTarget.setPointerCapture(e.pointerId);
+          onYear(yearFromClientX(e.clientX));
+        }}
+        onPointerMove={(e) => {
+          if (!draggingRef.current) return;
+          onYear(yearFromClientX(e.clientX));
+        }}
+        onPointerUp={(e) => {
+          if (draggingRef.current) {
+            draggingRef.current = false;
+            try {
+              e.currentTarget.releasePointerCapture(e.pointerId);
+            } catch {
+              // ignore
+            }
+          }
+        }}
+      >
+        <svg
+          ref={rulerRef}
+          viewBox={`0 0 ${rulerGeom.w} ${rulerGeom.h}`}
+          className="orc-ruler-svg"
+          aria-hidden="true"
+        >
+          {/* Notebook wooden/brass ruler body */}
+          <rect
+            x="6"
+            y="14"
+            width={rulerGeom.w - 12}
+            height="42"
+            rx="5"
+            fill="#EFE3CC"
+            stroke="#1F2A36"
+            strokeWidth="1.6"
+          />
+
+          {/* Era span color bars along top of ruler */}
+          {rulerGeom.eraSpans.map((sp, idx) => {
+            const isActive = sp.id === currentEra.id;
+            return (
+              <rect
+                key={sp.id}
+                x={sp.x1}
+                y="15.5"
+                width={sp.width}
+                height="6"
+                fill={
+                  isActive
+                    ? '#A4471F'
+                    : idx % 2 === 0
+                      ? '#7FA8C4'
+                      : '#C0862F'
+                }
+                opacity={isActive ? 0.95 : 0.45}
+              />
+            );
+          })}
+
+          {/* Graduation millimeter/year ticks */}
+          {rulerGeom.ticks.map((t) => {
+            const tickH = t.major ? 14 : t.medium ? 10 : 6;
+            return (
+              <line
+                key={t.yr}
+                x1={t.x}
+                y1={22}
+                x2={t.x}
+                y2={22 + tickH}
+                stroke="#1F2A36"
+                strokeWidth={t.major ? '1.2' : '0.7'}
+                opacity={t.major || t.medium ? 0.85 : 0.45}
+              />
+            );
+          })}
+
+          {/* Era milestone notches and labels */}
+          {rulerGeom.eraSpans.map((sp, i) => {
+            const isActive = sp.id === currentEra.id;
+            // Offset 1905 label slightly so it doesn't collide with 1903
+            const labelX = i === 1 ? sp.x1 + 14 : sp.x1;
+            return (
+              <g key={sp.id}>
+                <line
+                  x1={sp.x1}
+                  y1="14"
+                  x2={sp.x1}
+                  y2="42"
+                  stroke={isActive ? '#A4471F' : '#1E3E5C'}
+                  strokeWidth={isActive ? '1.8' : '1.2'}
+                />
+                <polygon
+                  points={`${sp.x1},14 ${sp.x1 - 3.5},8 ${sp.x1 + 3.5},8`}
+                  fill={isActive ? '#A4471F' : '#1E3E5C'}
+                />
+                <text
+                  x={labelX}
+                  y="51"
+                  textAnchor={i === 0 ? 'start' : 'middle'}
+                  fontSize="8.5"
+                  fontWeight="800"
+                  fill={isActive ? '#A4471F' : '#1F2A36'}
+                >
+                  {sp.fromYear}
+                </text>
+              </g>
+            );
+          })}
+
+          {/* End year label */}
+          <text
+            x={rulerGeom.w - rulerGeom.padR}
+            y="51"
+            textAnchor="end"
+            fontSize="8.5"
+            fontWeight="700"
+            fill="#5E656C"
+          >
+            {safeMaxYear}
+          </text>
+
+          {/* Draggable vernier cursor */}
+          <g transform={`translate(${cursorX.toFixed(1)}, 0)`}>
+            <rect
+              x="-16"
+              y="2"
+              width="32"
+              height="62"
+              fill="transparent"
+            />
+            <line
+              x1="0"
+              y1="8"
+              x2="0"
+              y2="56"
+              stroke="#A4471F"
+              strokeWidth="2.2"
+            />
+            <rect
+              x="-8"
+              y="22"
+              width="16"
+              height="16"
+              rx="4"
+              fill="#FBF4E6"
+              stroke="#1F2A36"
+              strokeWidth="1.8"
+            />
+            <circle cx="0" cy="30" r="2.8" fill="#A4471F" />
+          </g>
+        </svg>
+      </div>
+
+      {/* Era navigation: Era anterior / Era siguiente + quick era milestones */}
+      <div className="orc-era-nav-row">
+        <button
+          type="button"
+          className="orc-era-step-btn"
+          disabled={eraIndex <= 0}
+          onClick={() => {
+            if (eraIndex > 0) {
+              onYear(ORCADAS_ERAS[eraIndex - 1].fromYear);
+            }
+          }}
+        >
+          ‹ Era anterior
+        </button>
+
+        <span className="orc-era-step-pos">
+          Era {eraIndex + 1} de {ORCADAS_ERAS.length}
+        </span>
+
+        <button
+          type="button"
+          className="orc-era-step-btn"
+          disabled={eraIndex >= ORCADAS_ERAS.length - 1}
+          onClick={() => {
+            if (eraIndex < ORCADAS_ERAS.length - 1) {
+              onYear(ORCADAS_ERAS[eraIndex + 1].fromYear);
+            }
+          }}
+        >
+          Era siguiente ›
+        </button>
+      </div>
+
+      <div className="orc-era-pills" role="group" aria-label="Hitos históricos">
+        {ORCADAS_ERAS.map((era) => {
+          const active = currentEra.id === era.id;
+          return (
+            <button
+              key={era.id}
+              type="button"
+              className={`orc-era-btn${active ? ' is-active' : ''}`}
+              aria-pressed={active}
+              onClick={() => onYear(era.fromYear)}
+            >
+              <span>{era.fromYear}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Current Era Card + publishable facts */}
+      <article className="orc-era-card" aria-live="polite">
+        <div className="orc-era-head">
+          <div className="orc-era-head-top">
+            <span className="orc-era-from hand">Desde {currentEra.fromYear}</span>
+            {eraFacts.length === 0 ? (
+              <KindChip kind="recon" label="Reconstrucción" />
+            ) : (
+              <KindChip kind="recon" label="Diorama de época" />
+            )}
+          </div>
+          <h3>{currentEra.title}</h3>
+        </div>
+
+        <p className="orc-era-summary">{currentEra.summary}</p>
+
+        {/* Active buildings in the 3D scene for this era */}
+        <div className="orc-era-buildings" aria-label="Construcciones en escena">
+          {currentEra.buildings.map((bId) => (
+            <span key={bId} className="orc-building-tag">
+              {BUILDING_LABELS[bId]}
+            </span>
+          ))}
+        </div>
+
+        {/* Publishable facts for the current era */}
+        {eraFacts.length > 0 && (
+          <div className="orc-era-facts">
+            {eraFacts.map((fact) => {
+              const srcs = sourcesOf(fact);
+              return (
+                <div key={fact.id} className="orc-era-fact-item">
+                  <div className="orc-fact-top">
+                    <KindChip kind={fact.kind} />
+                    {fact.title && (
+                      <strong className="orc-fact-title">{fact.title}</strong>
+                    )}
+                  </div>
+                  <p className="orc-fact-text">{fact.text}</p>
+                  {srcs.length > 0 && (
+                    <small className="orc-fact-src">
+                      Fuente: {srcs.map((s) => `${s.label} (${s.org})`).join(' · ')}
+                    </small>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </article>
+    </div>
+  );
+}
