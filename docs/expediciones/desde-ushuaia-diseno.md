@@ -28,6 +28,14 @@ El turismo se menciona como una línea de contexto: no es un transporte jugable 
 - `useVoyage` guarda la opción elegida por id de hito y la borra al empezar o salir del viaje. La primera respuesta queda fija.
 - La tarjeta del hito muestra la pregunta, después los datos; la última tarjeta muestra «acertaste X de Y». Detalle del contenido en `desde-ushuaia.md`, sección 8 ter.
 
+## Ushuaia al inicio del viaje
+
+- `Town3D.tsx` dibuja un pueblo voxel (casas de colores con techo de chapa, chimeneas con humo) y el cartel «Ushuaia». No es un botón ni tiene ficha.
+- En el centro va la iglesia amarilla y roja con torre, que se ve desde toda la ciudad: es lo que la distingue de un pueblo cualquiera. Se modeló a partir de una foto de referencia que aportó quien lleva el issue; no se usa la foto en la aplicación.
+- El resto es una ilustración de una ciudad, no un mapa de sus edificios. El tamaño está exagerado, igual que el de los vehículos.
+- **Posición aproximada:** el relieve se dibuja diez veces más alto que el real, y el sitio real de la ciudad queda dentro de una ladera. El pueblo se ubica en el terreno más bajo al norte de la bahía, a menos de 1,6 unidades de mapa (unos 13 km).
+- El humo pide cuadros solo con la cámara cerca y se queda quieto con movimiento reducido.
+
 ## Avistajes (mapa vivo)
 
 - Durante el viaje aparecen animales cerca del vehículo. Se pueden tocar un rato para abrir una ficha con nombre, un dato curioso y su fuente.

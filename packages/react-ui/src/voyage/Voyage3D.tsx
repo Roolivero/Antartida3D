@@ -21,6 +21,7 @@ import {
 import { buildPinGeometry, pinMaterial } from './pins.ts';
 import { buildVehicleGeometry, vehicleMaterial } from './vehicles.ts';
 import { Sighting3D } from './Sighting3D.tsx';
+import { Town3D } from './Town3D.tsx';
 import { buildTrailGeometry, trailMaterial, updateTrail } from './trail.ts';
 import { NARROW_PX, type VoyageBus } from './useVoyage.ts';
 
@@ -232,6 +233,7 @@ export function Voyage3D({ bus, reduced, overlay }: {
           overlay={overlay}
         />
       ))}
+      <Town3D reduced={reduced} wide={wide} overlay={overlay} />
       <primitive object={route} />
       {pins.map((_, i) => (
         <group key={i} ref={(g) => void (pinGroups.current[i] = g)}>

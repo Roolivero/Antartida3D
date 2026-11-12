@@ -272,6 +272,72 @@ const MODELS: Record<string, Model> = {
   adelia: { body: penguin('ring') },
 };
 
+/** A house with a zinc roof in two steps, standing on y = 0. */
+const cottage = (x: number, z: number, w: number, h: number, d: number, wall: number, y = 0): Box[] => [
+  [x, y + h / 2, z, w, h, d, wall],
+  [x, y + h + 0.015, z, w + 0.04, 0.03, d + 0.04, ZINC],
+  [x, y + h + 0.045, z, w + 0.04, 0.03, d * 0.5, ZINC],
+  [x + w * 0.2, y + h * 0.55, z + d / 2 + 0.003, w * 0.22, h * 0.3, 0.006, LAMP],
+  [x - w * 0.2, y + h * 0.4, z + d / 2 + 0.003, w * 0.18, h * 0.8, 0.006, WOOD],
+];
+
+/**
+ * The yellow and red church of the town center, with its tower: the building that tells Ushuaia
+ * from any other town. Modelled from a photo; standing on y = 0, front towards +z, tower at -x.
+ */
+const church = (x: number, z: number, y: number): Box[] => [
+  // Nave: red base, yellow walls, red roof in steps.
+  [x + 0.12, y + 0.03, z, 0.46, 0.06, 0.24, RED],
+  [x + 0.12, y + 0.13, z, 0.44, 0.14, 0.22, LAMP],
+  [x + 0.12, y + 0.215, z, 0.48, 0.03, 0.26, RED],
+  [x + 0.12, y + 0.245, z, 0.48, 0.03, 0.17, RED],
+  [x + 0.12, y + 0.275, z, 0.48, 0.03, 0.08, RED],
+  // Red buttresses and tall windows on the side seen from the water.
+  ...[0, 0.12, 0.24, 0.34].map((dx): Box => [x + dx, y + 0.1, z + 0.113, 0.025, 0.2, 0.012, RED]),
+  ...[0.06, 0.18, 0.29].map((dx): Box => [x + dx, y + 0.14, z + 0.112, 0.03, 0.09, 0.008, WHITE]),
+  // Tower: yellow shaft, red belfry corners, red roof to a point, cross.
+  [x - 0.16, y + 0.05, z + 0.02, 0.16, 0.1, 0.16, RED],
+  [x - 0.16, y + 0.27, z + 0.02, 0.14, 0.4, 0.14, LAMP],
+  [x - 0.16, y + 0.31, z + 0.092, 0.035, 0.035, 0.008, WHITE],
+  [x - 0.16, y + 0.42, z + 0.092, 0.07, 0.06, 0.008, WHITE],
+  [x - 0.16, y + 0.485, z + 0.02, 0.19, 0.03, 0.19, RED],
+  [x - 0.16, y + 0.53, z + 0.02, 0.14, 0.06, 0.14, RED],
+  [x - 0.16, y + 0.59, z + 0.02, 0.09, 0.06, 0.09, RED],
+  [x - 0.16, y + 0.645, z + 0.02, 0.045, 0.05, 0.045, RED],
+  [x - 0.16, y + 0.72, z + 0.02, 0.012, 0.1, 0.012, WHITE],
+  [x - 0.16, y + 0.735, z + 0.02, 0.05, 0.012, 0.012, WHITE],
+];
+
+/** Tops of the chimneys of the town, where the smoke comes out. */
+export const TOWN_CHIMNEYS: readonly (readonly [number, number, number])[] = [[-0.52, 0.36, -0.02], [0.2, 0.5, -0.32], [0.62, 0.33, 0.02]];
+
+/**
+ * Ushuaia at the start of the trip: its yellow and red church among coloured houses with zinc roofs
+ * on a slope, seen from the bay (+z). An illustration of the town, not a map of its buildings.
+ */
+const TOWN: Box[] = [
+  // Ground under the town, down to the water.
+  [0, -0.06, -0.1, 1.7, 0.12, 0.92, GRASS],
+  [0, 0.02, 0.05, 1.7, 0.04, 0.62, GRASS],
+  [0, 0.07, -0.3, 1.5, 0.14, 0.4, GRASS],
+  // Front row, by the water.
+  ...cottage(-0.6, 0.12, 0.26, 0.16, 0.2, RED, 0.04),
+  ...church(-0.12, 0.14, 0.04),
+  ...cottage(0.4, 0.17, 0.2, 0.13, 0.16, LAMP, 0.04),
+  ...cottage(0.68, 0.12, 0.24, 0.15, 0.2, ORANGE, 0.04),
+  // Back row, up the slope.
+  ...cottage(-0.45, -0.3, 0.26, 0.15, 0.18, WHITE, 0.14),
+  ...cottage(-0.12, -0.3, 0.22, 0.17, 0.18, SKY, 0.14),
+  ...cottage(0.2, -0.32, 0.26, 0.2, 0.2, RED, 0.14),
+  ...cottage(0.54, -0.3, 0.24, 0.14, 0.18, CREAM, 0.14),
+  // Chimneys, under TOWN_CHIMNEYS.
+  [-0.52, 0.3, -0.02, 0.04, 0.12, 0.04, BROWN],
+  [0.2, 0.44, -0.32, 0.04, 0.12, 0.04, BROWN],
+  [0.62, 0.27, 0.02, 0.04, 0.12, 0.04, BROWN],
+];
+
+export const buildTownGeometry = () => buildBoxGeometry(TOWN);
+
 export interface SightingGeometry {
   body: BufferGeometry;
   /** Right and left wing, each measured from its root. */

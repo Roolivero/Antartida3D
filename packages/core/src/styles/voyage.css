@@ -41,6 +41,8 @@
 /* Gear badge on the corner: it must not change the button size, or the row reflows under the pointer. */
 .vgear{position:absolute;top:-12px;right:-8px;padding:2px 8px;border-radius:12px;border:2px solid var(--ink);background:var(--ocre);color:var(--ink);font-size:13px;line-height:1.2;pointer-events:none}
 /* Animals and places to spot: a ring around each model on the map, with its icon on the corner. It pulses to show it can be opened. */
+/* Name of the town drawn at the start of the trip: a label, not a button. */
+.vtown{font-family:'Fraunces',Georgia,serif;font-weight:700;font-size:17px;color:var(--ink);white-space:nowrap;pointer-events:none;text-shadow:0 0 3px var(--paper),0 0 3px var(--paper),0 0 6px var(--paper)}
 .vspot{position:relative;width:76px;height:76px;padding:0;border-radius:50%;border:2px dashed var(--ink);background:color-mix(in srgb,var(--paper) 18%,transparent);color:var(--deep);pointer-events:auto;cursor:pointer;animation:vspot 1.5s ease-out infinite}
 .vspot svg{position:absolute;top:-8px;right:-8px;width:30px;height:30px;padding:5px;border-radius:50%;border:2px solid var(--ink);background:var(--paper)}
 /* Already spotted: grey and still, but it stays on the map and opens its card again. */
