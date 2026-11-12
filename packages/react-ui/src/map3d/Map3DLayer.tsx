@@ -138,6 +138,7 @@ function SceneContent({
         phase={phase}
         timeUniform={seaTime}
         instances={seaLifeInstances}
+        voyage={voyage}
       />
     </SeaTimeContext.Provider>
   );
@@ -304,9 +305,11 @@ function ProjectMarkers({
   phase,
   timeUniform,
   instances,
+  voyage,
 }: {
   markers: Marker[];
   seaMarkers: SeaMarker[];
+  voyage: Layer3DProps['voyage'];
   overlayRef: RefObject<HTMLDivElement | null>;
   phase: Phase;
   timeUniform: { value: number };
@@ -347,6 +350,11 @@ function ProjectMarkers({
     for (const sm of seaMarkers) {
       const btn = el.querySelector<HTMLElement>(`[data-key="${sm.key}"]`);
       if (!btn) continue;
+      // During the trip the sea life is hidden (SeaLife): its markers go with it.
+      if (voyage?.state) {
+        btn.style.display = 'none';
+        continue;
+      }
 
       let mapX = sm.x;
       let mapY = sm.y;
