@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { BoxGeometry, MeshBasicMaterial, Object3D, type Group, type InstancedMesh, type Mesh } from 'three';
 import { useFrame } from '@react-three/fiber';
-import { DRAKE_STORM, MODEL_MIN_PX, createSeededRng, screenPx } from '@antartida/core';
+import { DRAKE_STORM, MODEL_MIN_PX, createSeededRng, screenPx, stormNearest } from '@antartida/core';
 import { useSeaTime } from '../map3d/useAnimationClock.ts';
 import { buildBoxGeometry, type Box } from './vehicles.ts';
 
@@ -14,12 +14,15 @@ const FOAM = 0xf7fafb;
 const BOLT = 0xfff3b0;
 
 const { radius: RADIUS, cloudBase: CLOUD_BASE } = DRAKE_STORM;
-const CLOUDS = 22;
-/** Clouds the two bolts fall from. */
-const BOLT_CLOUDS = [5, 8];
-const STREAKS = 300;
-const WHITECAPS = 240;
-const GUSTS = 34;
+/** Half the length of the middle line of the storm, and its direction in the frame of the storm (+x downwind). */
+const HALF = Math.hypot(DRAKE_STORM.to.x - DRAKE_STORM.from.x, DRAKE_STORM.to.y - DRAKE_STORM.from.y) / 2;
+const AXIS = Math.atan2(DRAKE_STORM.to.y - DRAKE_STORM.from.y, DRAKE_STORM.to.x - DRAKE_STORM.from.x) - DRAKE_STORM.wind;
+const CLOUDS = 60;
+/** Clouds the bolts fall from. */
+const BOLT_CLOUDS = [5, 8, 23, 41];
+const STREAKS = 750;
+const WHITECAPS = 600;
+const GUSTS = 85;
 /** Boxes of one gust of wind: a thin ribbon that bends as it goes. */
 const GUST_LINKS = 9;
 /** Seconds a streak of rain takes to fall. */
@@ -75,19 +78,24 @@ interface Layout {
 /** Same storm on every visit: the layout comes from a fixed seed. */
 function layOut(): Layout {
   const rng = createSeededRng(58);
-  const inDisc = (reach = RADIUS) => {
-    const [r, a] = [Math.sqrt(rng()) * reach, rng() * Math.PI * 2];
-    return [Math.cos(a) * r, Math.sin(a) * r] as const;
+  // A point of the band, evenly spread: within `reach` of its middle line.
+  const inBand = (reach = RADIUS) => {
+    for (;;) {
+      const along = (rng() * 2 - 1) * (HALF + reach);
+      const across = (rng() * 2 - 1) * reach;
+      if (Math.hypot(Math.max(0, Math.abs(along) - HALF), across) > reach) continue;
+      return [along * Math.cos(AXIS) - across * Math.sin(AXIS), along * Math.sin(AXIS) + across * Math.cos(AXIS)] as const;
+    }
   };
   // One bank of clouds over the whole storm, at three heights so they overlap without flickering.
-  const spots = Array.from({ length: CLOUDS }, (_, i) => [...inDisc(RADIUS - 4), 9 + rng() * 5, CLOUD_BASE + (i % 3) * 0.9] as const);
+  const spots = Array.from({ length: CLOUDS }, (_, i) => [...inBand(RADIUS - 4), 9 + rng() * 5, CLOUD_BASE + (i % 3) * 0.9] as const);
   return {
     clouds: spots.flatMap(([x, z, width, base]) =>
       CLOUD.map(([cx, cy, cz, sx, sy, sz, color]): Box => [x + cx * width, base + cy * width, z + cz * width, sx * width, sy * width, sz * width, color])),
     bolts: BOLT_CLOUDS.map((i) => [spots[i][0], spots[i][1], spots[i][3]] as const),
-    streaks: Array.from({ length: STREAKS }, () => [...inDisc(), rng()] as const),
-    caps: Array.from({ length: WHITECAPS }, () => [...inDisc(), 0.25 + rng() * 0.35, rng() * Math.PI * 2] as const),
-    gusts: Array.from({ length: GUSTS }, () => [...inDisc(RADIUS - 2), 0.35 + rng() * 1.3, rng()] as const),
+    streaks: Array.from({ length: STREAKS }, () => [...inBand(), rng()] as const),
+    caps: Array.from({ length: WHITECAPS }, () => [...inBand(), 0.25 + rng() * 0.35, rng() * Math.PI * 2] as const),
+    gusts: Array.from({ length: GUSTS }, () => [...inBand(RADIUS - 2), 0.35 + rng() * 1.3, rng()] as const),
   };
 }
 
@@ -124,7 +132,9 @@ export function Storm3D({ reduced }: { reduced: boolean }) {
   useFrame(({ camera, size }) => {
     const g = group.current;
     if (!g) return;
-    const distance = Math.hypot(camera.position.x - g.position.x, camera.position.y, camera.position.z - g.position.z);
+    // Measured to the closest part of the band: it is long, and the trip camera is rarely at its middle.
+    const near = stormNearest(camera.position.x + 500, camera.position.z + 500);
+    const distance = Math.hypot(camera.position.x + 500 - near.x, camera.position.y, camera.position.z + 500 - near.y);
     g.visible = screenPx(2 * RADIUS, distance, size.height) >= MODEL_MIN_PX;
     if (!g.visible) return;
     const time = seaTime.value;

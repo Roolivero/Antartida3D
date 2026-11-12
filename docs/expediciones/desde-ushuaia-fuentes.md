@@ -124,3 +124,11 @@ Medidas y colores usados únicamente para proporcionar los modelos voxel. Los co
   - Puerto Argentino: `Aviso ARA Puerto Argentino (A-21) - Foto Oficial.jpg` (Armada Argentina, CC BY 4.0).
   - Hércules: `C-130 Hercules previo al desfile 9 de julio 2019 01.jpg` (BugWarp, CC BY 4.0) y `Macri y el TC-61.jpg` (Casa Rosada, CC BY 2.5 AR).
 - No hay modelos 3D con licencia abierta verificada: los modelos se hacen de forma procedural.
+
+## Fuentes de cálculos
+
+No se muestran en la interfaz: ningún texto publicado las cita. Respaldan un dato de entrada de una estimación (cálculo propio).
+
+| Para qué se usa | Organismo | Documento | Qué dice | URL | Consultada |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| Coordenada del aeropuerto de Río Gallegos, para estimar la velocidad del Hércules (`HERCULES_CRUISE_KMH`) | Administración Nacional de Aviación Civil (ANAC) | AIP Argentina, SAWG AD 2.1 y AD 2.2, «SAWG - RÍO GALLEGOS / Piloto Civil Norberto Fernández». El PDF no muestra fecha en la primera página; sus metadatos dicen 16-04-2025 | «COORD GEO del ARP y emplazamiento en el AD: 513632S - 0691844W Centro geométrico de pista» | https://ais.anac.gob.ar/descarga/aip-6801264f51b46 | 2026-11-12 |

@@ -48,6 +48,9 @@ uniform float uIsobarsStrength;    // 7. Pencil isobaths every 500 m and 2000 m 
 uniform float uFoamStrength;       // 8. Animated coastal & ice-shelf barrier surf foam
 uniform float uPaperGrainStrength; // 9. Screen-space paper grain overlay
 uniform vec4 uWhaleRipples[8];     // Up to 8 whale emergence positions (xy = worldXZ, z = speed, w = phase)
+uniform vec4 uStormBand;           // Storm of the Drake: ends of its middle line (xy = from, zw = to, world XZ)
+uniform vec2 uStormShape;          // x = reach from the middle line, y = width of the edge where it builds up
+uniform vec2 uStormWind;           // Unit vector the wind blows to (world XZ)
 uniform float uFadeStart;
 uniform float uFadeEnd;
 
@@ -119,6 +122,12 @@ void main() {
   float depthMeters = mix(sampledDepth, 4000.0, edgeFactor);
   float coastDist = mix(bathySample.a * 12.0, 12.0, edgeFactor);
 
+  // Storm of the Drake Passage: 0 outside, 1 well inside (same shape as stormAt in @antartida/core).
+  vec2 stormAxis = uStormBand.zw - uStormBand.xy;
+  float stormAlong = clamp(dot(vWorldPos.xz - uStormBand.xy, stormAxis) / dot(stormAxis, stormAxis), 0.0, 1.0);
+  float stormDist = length(vWorldPos.xz - uStormBand.xy - stormAxis * stormAlong);
+  float storm = smoothstep(0.0, uStormShape.y, uStormShape.x - stormDist) * (1.0 - edgeFactor);
+
   // ---------------------------------------------------------------------------
   // 1. Depth absorption (Beer-Lambert 1 - exp(-d * k)) & shallow seabed shading
   // ---------------------------------------------------------------------------
@@ -178,7 +187,7 @@ void main() {
   vec3 wnB = waveSampleB.rgb * 2.0 - 1.0;
   // Fade wave normal perturbation in the far distance to prevent horizon Moire/corduroy
   float waveDistFade = 1.0 - smoothstep(280.0, 850.0, camDist);
-  float effWaveStrength = uWaveStrength * (0.18 + 0.82 * waveDistFade);
+  float effWaveStrength = uWaveStrength * (0.18 + 0.82 * waveDistFade) * (1.0 + 1.5 * storm);
   vec3 waveNormal = normalize(vec3(
     (wnA.x + wnB.x) * effWaveStrength,
     1.0,
@@ -206,6 +215,30 @@ void main() {
   float glint = smoothstep(0.08, 0.36, specRaw * (0.5 + 0.9 * brushCut)) * brushCut;
   vec3 glintCol = mix(ICE, PAPER_SRGB, 0.25);
   waterCol = mix(waterCol, glintCol, glint * uSunGlintStrength);
+
+  // ---------------------------------------------------------------------------
+  // 5b. Rough sea under the storm: darker water and a swell that runs downwind.
+  //     ILLUSTRATIVE: not a measured sea state.
+  // ---------------------------------------------------------------------------
+  if (storm > 0.001) {
+    // Shadow of the clouds: darker and greyer.
+    waterCol = mix(waterCol, waterCol * 0.74 + vec3(0.035, 0.045, 0.055), storm * 0.65);
+    // The swell shows from the camera of the trip and fades out from afar, where it would shimmer.
+    float swellFade = 1.0 - smoothstep(60.0, 190.0, camDist);
+    if (swellFade > 0.001) {
+      float downwind = dot(vWorldPos.xz, uStormWind);
+      // Crests bent by noise, so they do not read as ruled lines.
+      float bend = (valueNoise(vWorldPos.xz * 0.30) - 0.5) * 3.2 + (lowNoise - 0.5) * 4.0;
+      float swell = sin(downwind * 2.6 + bend - uTime * 1.5);
+      float trough = 1.0 - smoothstep(-0.95, -0.15, swell);
+      float crest = smoothstep(0.74, 0.98, swell);
+      // Only some crests break into foam, and not for long.
+      float breaking = smoothstep(0.42, 0.72, valueNoise(vWorldPos.xz * 0.55 + vec2(uTime * 0.07, 0.0)));
+      float amount = storm * swellFade;
+      waterCol = mix(waterCol, waterCol * 0.80, trough * 0.55 * amount);
+      waterCol = mix(waterCol, mix(GLACIER, ICE, 0.45), crest * (0.09 + 0.40 * breaking) * amount);
+    }
+  }
 
   // ---------------------------------------------------------------------------
   // 6. Nautical chart "~" ink wave marks in open ocean (world space, fwidth fade)
@@ -282,7 +315,8 @@ void main() {
     float gradGuard = smoothstep(0.0004, 0.0025, fwidth(coord500));
     float minorIso = periodicLine(coord500, 0.50);
     float majorIso = periodicLine(depthMeters / 2000.0, 0.78);
-    float isoStrength = max(minorIso * 0.38, majorIso * 0.62) * gradGuard * contourFade * uIsobarsStrength;
+    // Under the storm the sea is the picture: the depth lines step back.
+    float isoStrength = max(minorIso * 0.38, majorIso * 0.62) * gradGuard * contourFade * uIsobarsStrength * (1.0 - 0.7 * storm);
     // Dark pencil on bright shallow shelf; pale etched slate line on dark deep slope for contrast
     vec3 isoCol = mix(mix(PENCIL, INK, 0.65), mix(GLACIER, ICE, 0.50), smoothstep(850.0, 2000.0, depthMeters) * 0.65);
     waterCol = mix(waterCol, isoCol, isoStrength);

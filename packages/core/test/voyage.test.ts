@@ -344,28 +344,51 @@ describe('storm over the Drake Passage', () => {
     return stormAt(p.x, p.y);
   };
 
-  it('sits on the sea route, in open sea between Cape Horn and the 60° S parallel', () => {
-    const { lat } = unproject(DRAKE_STORM.x, DRAKE_STORM.y);
-    const degrees = DRAKE_STORM.radius / (project(0, -57).y - project(0, -58).y);
-    expect(lat - degrees).toBeGreaterThan(-60);
-    expect(lat + degrees).toBeLessThan(-55.98); // Cape Horn
+  it('covers most of the passage, in open sea between Cape Horn and the South Shetland Islands', () => {
+    const { from, to, radius } = DRAKE_STORM;
+    const length = Math.hypot(to.x - from.x, to.y - from.y) + 2 * radius;
+    const hornos = project(-67.27, -55.98);
+    const livingston = project(-60.5, -62.6);
+    expect(length).toBeGreaterThan(0.7 * Math.hypot(livingston.x - hornos.x, livingston.y - hornos.y));
+    // Clear of the land at both ends, and of the Diego Ramírez Islands.
+    for (const [lon, lat] of [[-67.27, -55.98], [-68.7, -56.5], [-60.5, -62.6], [-62.5, -63.0], [-55.2, -61.1]]) {
+      const p = project(lon, lat);
+      expect(stormAt(p.x, p.y), `${lon}, ${lat}`).toBe(0);
+    }
     expect(stormAt(DRAKE_STORM.x, DRAKE_STORM.y)).toBe(1);
     expect(at('ship', 0)).toBe(0);
     expect(at('ship', 1)).toBe(0);
   });
 
-  it('builds up from its edge', () => {
-    const { x, y, radius } = DRAKE_STORM;
-    expect(stormAt(x + radius, y)).toBe(0);
-    expect(stormAt(x + radius - 1, y)).toBeGreaterThan(0);
-    expect(stormAt(x + radius - 1, y)).toBeLessThan(stormAt(x + radius - 3, y));
+  it('builds up from its edge, all around the band', () => {
+    const { from, to, radius } = DRAKE_STORM;
+    const length = Math.hypot(to.x - from.x, to.y - from.y);
+    const along = { x: (to.x - from.x) / length, y: (to.y - from.y) / length };
+    // Past the end of the middle line, and to one side of its middle.
+    const ways = [{ p: to, d: along }, { p: DRAKE_STORM, d: { x: -along.y, y: along.x } }];
+    for (const { p, d } of ways) {
+      const out = (r: number) => stormAt(p.x + d.x * r, p.y + d.y * r);
+      expect(out(radius)).toBeCloseTo(0, 9);
+      expect(out(radius - 1)).toBeGreaterThan(0);
+      expect(out(radius - 1)).toBeLessThan(out(radius - 3));
+    }
   });
 
-  it('fits where the camera may get close, so the trip camera stays under the clouds', () => {
-    const { x, y, radius } = DRAKE_STORM;
-    for (let i = 0; i < 16; i++) {
-      const a = (i / 16) * Math.PI * 2;
-      expect(minCameraDistance(x + Math.cos(a) * radius, y + Math.sin(a) * radius, 60)).toBe(FUEGIA_MIN_DISTANCE);
+  it('lets the camera get close all over it, so the trip camera stays under the clouds', () => {
+    for (const kind of ['ship', 'plane'] as const) {
+      for (let i = 0; i <= 400; i++) {
+        const p = voyageAt(kind, i / 400);
+        if (stormAt(p.x, p.y) > 0) expect(minCameraDistance(p.x, p.y, 60), `${kind} ${i}`).toBe(FUEGIA_MIN_DISTANCE);
+      }
+    }
+    // Not past it: south of the storm the camera keeps off the plateau.
+    const end = voyageAt('ship', 1);
+    expect(minCameraDistance(end.x, end.y, 60)).toBe(60);
+  });
+
+  it('is over the ship from the Drake to the 60° S parallel', () => {
+    for (const id of ['drake', 'convergencia', 'paralelo-60']) {
+      expect(at('ship', voyageStops('ship').find((s) => s.milestone.id === id)!.t), id).toBe(1);
     }
   });
 

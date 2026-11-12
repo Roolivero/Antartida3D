@@ -10,11 +10,13 @@ import {
   SRGBColorSpace,
   Texture,
   TextureLoader,
+  Vector2,
   Vector3,
   Vector4,
 } from 'three';
 import {
   DEPTH_ABSORB,
+  DRAKE_STORM,
   MAX_WHALE_RIPPLES,
   OCEAN_SIZE,
   WORLD_FADE_END,
@@ -124,6 +126,9 @@ export function Ocean({
       uFoamStrength: { value: 0.90 },
       uPaperGrainStrength: { value: 0.24 },
       uWhaleRipples: { value: initialRipples },
+      uStormBand: { value: new Vector4(DRAKE_STORM.from.x - 500, DRAKE_STORM.from.y - 500, DRAKE_STORM.to.x - 500, DRAKE_STORM.to.y - 500) },
+      uStormShape: { value: new Vector2(DRAKE_STORM.radius, DRAKE_STORM.edge) },
+      uStormWind: { value: new Vector2(Math.cos(DRAKE_STORM.wind), Math.sin(DRAKE_STORM.wind)) },
       uFadeStart: { value: WORLD_FADE_START },
       uFadeEnd: { value: WORLD_FADE_END },
       uFogColor: { value: new Color(FOG_COLOR_HEX) },

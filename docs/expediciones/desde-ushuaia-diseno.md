@@ -133,19 +133,19 @@ Registro de lo que se decide en el issue #46 (rama `46-segunda-iteracion-expedic
 - **Velocidades** (campo `cruiseKmh` de `TRANSPORTS`, en `core/src/content/ushuaia.ts`):
   - Irízar: 14 nudos `[O5]`, unos 25,9 km/h.
   - Puerto Argentino: 15 nudos `[O6]`, unos 27,8 km/h.
-  - Hércules: unos 453 km/h. **Cálculo propio**, porque ninguna fuente del catálogo da su velocidad de crucero: son los 1.584 km en línea recta entre el aeropuerto de Río Gallegos (69,31° O, 51,61° S) y Marambio, divididos por las «tres horas y media» de `[O14]`. La coordenada del aeropuerto no tiene fuente en el catálogo: queda pendiente.
+  - Hércules: unos 453 km/h. **Cálculo propio**, porque ninguna fuente del catálogo da su velocidad de crucero: son los 1.584 km en línea recta entre el aeropuerto de Río Gallegos y Marambio, divididos por las «tres horas y media» de `[O14]`. La coordenada del aeropuerto (punto de referencia: 51°36'32" S, 69°18'44" O) sale de la AIP de ANAC (ver «Fuentes de cálculos» en `desde-ushuaia-fuentes.md`), sumada el 12-11-2026. No está en el catálogo de la interfaz porque ningún texto publicado la cita: el catálogo solo lista fuentes citadas, y una estimación no lleva fuente.
 - **Totales que resultan:**
   - barcos: 1.408 km; unas 54 h el Irízar y unas 51 h el Puerto Argentino;
   - avión: 1.233 km y unas 2 h 43 min.
 - **Diferencias con datos ya publicados, a propósito:**
-  - La ficha del Irízar dice «39 horas [...] los 1.000 km hasta la Península». Es otro tramo: la barra mide el recorrido dibujado hasta Marambio, que además empieza unos 10 km adentro de la ruta (`SHIP_HEAD_START`).
+  - La ficha del Irízar decía solo «39 horas [...] los 1.000 km hasta la Península». Es otro tramo: la barra mide el recorrido dibujado hasta Marambio, que además empieza unos 10 km adentro de la ruta (`SHIP_HEAD_START`). Desde el 12-11-2026 la ficha da las dos cifras: unas 54 h para los 1.400 km dibujados y unas 39 h para los 1.000 km hasta la Península.
   - La duración del vuelo desde Ushuaia sigue sin fuente (sección 9 de `desde-ushuaia.md`). La barra la muestra solo como estimación; si aparece una fuente, se reemplaza la velocidad calculada.
 - **Dónde está:** `voyageProgress(transport, t)` en `core/src/voyage.ts` (con pruebas en `core/test/voyage.test.ts`); el texto lo arma `tripLine` en `react-ui/src/voyage/VoyagePanel.tsx`; el estilo es `.vtrip` en `core/src/styles/voyage.css`.
 - **Accesibilidad:** la línea no es una región viva. Cambia en cada kilómetro y un lector de pantalla la anunciaría sin pausa. Se lee al recorrer la barra.
 
 ### Tormenta en el Pasaje de Drake (12-11-2026)
 
-Primera versión. Se va a seguir iterando.
+Primera versión. Se va a seguir iterando. Los puntos «Dónde está», «Por qué ese lugar y ese tamaño» y el pendiente del agua quedaron reemplazados por la sección «Tormenta extendida y mar agitado» de más abajo.
 
 - **Qué es:** un efecto fijo sobre el mar, hecho con cajas (regla del estilo de bloques): banco de nubes, lluvia, relámpagos, crestas blancas y ráfagas de viento. Se ve siempre, en el mapa 3D abierto y durante el viaje. No se dibuja en el mapa 2D.
 - **Es una ilustración, no un dato.** No muestra el tiempo real ni el lugar de un temporal. La ficha del hito lo dice con una línea marcada como ilustrativa.
@@ -164,3 +164,19 @@ Primera versión. Se va a seguir iterando.
 - **Archivo compartido tocado:** `react-ui/src/map3d/Map3DLayer.tsx`, una línea para montar `Storm3D`. Avisado en el issue #46. El shader del océano no se tocó.
 - **Dónde está el código:** `react-ui/src/voyage/Storm3D.tsx` (efecto), `Voyage3D.tsx` (cámara, movimiento del vehículo y rocío), `core/src/voyage.ts` (zona), `core/src/content/ushuaia.ts` (texto y fuente).
 - **Pendiente para la próxima iteración:** agitar el agua en el shader del océano; dibujar la tormenta en el mapa 2D.
+
+### Tormenta extendida y mar agitado (12-11-2026, segunda vuelta)
+
+Pedido de quien lleva el issue: la tormenta tiene que llegar más al sur y ocupar casi todo el Pasaje de Drake.
+
+- **Forma nueva:** ya no es un disco. Es una franja a lo largo del cruce: todo lo que está a menos de 18 unidades de mapa (unos 140 km) de una línea que va de 57,6° S, 66,6° O a 60,6° S, 63,5° O. Cubre desde unos 56,3° S hasta unos 61,5° S: más del 70 % de la distancia entre el Cabo de Hornos y la isla Livingston. No toca tierra: queda libre el Cabo de Hornos, las islas Diego Ramírez y las Shetland del Sur. Una prueba lo verifica.
+- **Sigue siendo una ilustración.** Ni el lugar ni el tamaño son un dato medido. La ficha del hito lo dice.
+- **Dónde está definida:** `DRAKE_STORM` pasó de `core/src/voyage.ts` a `core/src/storm.ts`, con `stormAt(x, y)` (cuánta tormenta hay en un punto) y `stormNearest(x, y)` (el punto de la línea media más cercano). Está en un módulo propio para que `fuegia.ts` pueda usarla sin importar el viaje.
+- **Hitos dentro de la tormenta:** el barco está en plena tormenta en «Pasaje de Drake», «Convergencia Antártica» y «Paralelo 60° Sur». Sale antes de las Shetland del Sur.
+- **Cámara, cambio en una regla compartida:** antes la cámara solo podía acercarse a menos de 60 unidades dentro de la caja de Tierra del Fuego, y por eso la tormenta era chica. Ahora `minCameraDistance` (`core/src/fuegia.ts`) deja acercarse también dentro de la tormenta. Es mar abierto: no hay meseta contra la que chocar. Así la cámara del viaje queda debajo de las nubes durante toda la tormenta. Efecto en el mapa abierto: el usuario también puede acercarse a mirar la tormenta. Al sur de la tormenta vuelve a regir el mínimo de 60.
+- **Cantidades:** la franja tiene unas 2,5 veces la superficie del disco. Suben en esa proporción las nubes (60), las gotas (750), las crestas (600) y las ráfagas (85). Los relámpagos pasan de 2 a 4. Siguen siendo una geometría de nubes y tres `InstancedMesh`.
+- **Detalle fino según la distancia:** la distancia de la cámara a la tormenta se mide ahora al punto más cercano de la franja, no a su centro, porque la franja es larga.
+- **Mar agitado (shader del océano, archivo compartido, avisado en el issue #46):** dentro de la tormenta el agua es más oscura y gris (sombra de las nubes), las olas del shader son más marcadas, y hay un oleaje de fondo que corre hacia el este, con crestas claras que a veces rompen en espuma. Las curvas de profundidad se atenúan un 70 % para no competir con el oleaje. El oleaje se apaga con la distancia de la cámara (entre 60 y 190 unidades) para que no titile desde lejos. Fuera de la tormenta el océano no cambia. Es ilustrativo: no es un estado del mar medido. Con movimiento reducido queda quieto, porque usa el mismo reloj del mar.
+  - Uniforms nuevos en `Ocean.tsx`: `uStormBand`, `uStormShape`, `uStormWind`. Salen de `DRAKE_STORM`: la zona se define una sola vez.
+- **No se hace:** dibujar la tormenta en el mapa 2D. Decisión de quien lleva el issue (12-11-2026).
+- **Verificación:** capturas con el navegador en 1440 px, en el mapa abierto y en cada hito del viaje en barco, sin errores de consola. La suavidad del movimiento se miró en una secuencia de cuadros, no en video.

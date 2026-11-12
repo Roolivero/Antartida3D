@@ -35,7 +35,7 @@ Contenido verificado para la expedición **«Desde Ushuaia»** (issue #4): el vi
 - Campaña 2025/26, etapa 3: salió de Ushuaia con 65 t de carga y 260 tambores y tubos de gasoil antártico, gas y aceites; abasteció San Martín, Esperanza y Carlini y cerró Brown y Primavera `[O22]`. Duró 20 días y volvió al muelle comercial de Ushuaia tras cruzar el Drake `[O23]`.
 - En la campaña 2024/25, de regreso de Carlini a Ushuaia, cruzó el Drake «en menos de dos días», a 14 nudos de promedio `[O16]`.
 - Lleva dos helicópteros Sea King `[O16]`. En Marambio, que está en una meseta, la carga y el personal pasan del buque a la base solo con un Sea King `[O24]`. (La página de logística de la Cancillería dice «Super Puma»; se usa lo que publica la Armada.)
-- **Estimación** (cálculo propio): 1.000 km a 14 kt son unas 39 h.
+- **Estimación** (cálculo propio): 1.000 km a 14 kt son unas 39 h. El recorrido dibujado hasta Marambio mide unos 1.400 km: unas 54 h. La ficha del buque da las dos cifras, para que coincida con la barra del viaje.
 
 ### 2.2. Avión Hércules C-130 (Fuerza Aérea Argentina)
 

@@ -5,6 +5,7 @@ export * from './content/orcadas.ts';
 export * from './content/orcadas-series.ts';
 export * from './projection.ts';
 export * from './route.ts';
+export * from './storm.ts';
 export * from './voyage.ts';
 export * from './clustering.ts';
 export * from './labels.ts';

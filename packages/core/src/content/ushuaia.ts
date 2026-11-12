@@ -102,8 +102,8 @@ export interface Transport {
 const KMH_PER_KNOT = 1.852;
 /**
  * Own estimate: no source gives the cruise speed of the C-130. Source O14 gives "about three and a
- * half hours" from Río Gallegos to Marambio, about 1,584 km apart in a straight line (airport at
- * 69.31° W, 51.61° S).
+ * half hours" from Río Gallegos to Marambio, about 1,584 km apart in a straight line (airport
+ * reference point at 51°36'32" S, 69°18'44" W: AIP Argentina, SAWG AD 2.2, ANAC; see the sources doc).
  */
 const HERCULES_CRUISE_KMH = 1584 / 3.5;
 
@@ -119,7 +119,7 @@ export const TRANSPORTS: readonly Transport[] = [
       { text: 'Es «el buque insignia del Comando Conjunto Antártico». Mide 121,3 m de largo y navega a 14 nudos.', kind: 'real', sources: ['O5'] },
       { text: 'En marzo de 2026 salió de Ushuaia con 65 toneladas de carga y 260 tambores y tubos de combustible, gas y aceites para las bases.', kind: 'real', sources: ['O22'] },
       { text: 'Lleva dos helicópteros Sea King. En Marambio, que está sobre una meseta, la carga pasa del buque a la base en helicóptero.', kind: 'real', sources: ['O16', 'O24'] },
-      { text: 'Aproximadamente 39 horas lleva recorrer los 1.000 km hasta la Península a 14 nudos (cálculo propio).', kind: 'estimate', sources: [] },
+      { text: 'Aproximadamente 54 horas lleva navegar a 14 nudos los 1.400 km del recorrido dibujado hasta la Base Marambio. Los 1.000 km hasta la Península llevan unas 39 (cálculo propio).', kind: 'estimate', sources: [] },
     ],
   },
   {
