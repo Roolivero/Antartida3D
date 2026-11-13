@@ -76,7 +76,7 @@ function SceneBadge({ onOpenSource }: { onOpenSource?: (id: string) => void }) {
         <div className="orc-scene-help-popover" role="note">
           <p>{fact.text}</p>
           <p>
-            Disposición ilustrativa, no a escala: una selección de los edificios de la base, con su forma y sus colores según OpenStreetMap (imágenes Maxar 2019), acomodados en fila para que se vean; alturas aproximadas; animales, instrumentos y bandera agrandados para que se vean; relieve y pingüinera ilustrativos.{' '}
+            Disposición ilustrativa, no a escala: una selección de los edificios de la base, con su forma y sus colores según OpenStreetMap (imágenes Maxar 2019), acomodados en fila para que se vean; alturas aproximadas; animales, instrumentos y bandera agrandados para que se vean; relieve y pingüinera ilustrativos; helicóptero ilustrativo, se muestra en la temporada de visitas.{' '}
             <button
               type="button"
               className="orc-scene-sources-link"

@@ -88,7 +88,19 @@ Archivos:
 
 Verificar: `pnpm --filter @antartida/core test` (contenido, recorrido y fuentes), `pnpm typecheck`. Revisar si las e2e de Orcadas cuentan los puntos de interés; si lo hacen, actualizar el número esperado.
 
-### 6. Revisión final (Claude Code)
+### 6. Llegada del helicóptero (agregado a pedido de Lk, 13 nov 2026)
+
+Archivos: `packages/react-ui/src/orcadas/stationModels.ts`, `StationScene.tsx`.
+
+- Separar el rotor principal (buje y palas) de `HELICOPTER_BOXES` en `HELICOPTER_ROTOR_BOXES`, con el origen en el eje del mástil, como `WIND_CUPS_BOXES`. `SCENE_MODELS.helicopter` registra los dos juntos para que la prueba de detalle siga cubriendo el modelo completo.
+- Llegada, copiando el patrón del Zodiac (`arrivalRef`, `BOAT_ARRIVAL_DURATION`): al abrir la escena en temporada (`helicopterOnPad(month)`) y sin movimiento reducido, el helicóptero entra desde Bahía Scotia (frente, +z, y alto), baja con una curva suave y se posa en unos 6 s. El rotor gira rápido durante el vuelo y frena hasta detenerse unos 2 s después de posarse. Llamar `invalidate()` mientras se mueve (la escena renderiza a demanda).
+- Si el mes cambia a temporada con la escena abierta, la llegada se repite; si sale de temporada, el helicóptero desaparece.
+- Con `reduced`: posado y rotor quieto desde el inicio, sin animación.
+- Sin dependencias nuevas; la rotación del rotor es `rotation.y` del grupo.
+
+Verificar: `pnpm --filter @antartida/react-ui test`, `pnpm typecheck` y captura en enero a mitad de la llegada y al final.
+
+### 7. Revisión final (Claude Code)
 
 - Captura headless de la escena en enero (con helicóptero) y en julio (sin helicóptero), a 1440 y 390 px. Chromium del sistema con `--use-angle=vulkan`; abrir la expedición como indica `plan-orcadas-recorrido-guiado.md`.
 - Revisar el diff completo contra las reglas del repo.
@@ -97,5 +109,4 @@ Verificar: `pnpm --filter @antartida/core test` (contenido, recorrido y fuentes)
 ## Fuera de alcance
 
 - Ocultar el punto del helipuerto en las eras antiguas del viaje en el tiempo. Hoy ningún punto de interés se filtra por era (tampoco la bandera); se respeta esa convención.
-- Animación de aterrizaje o de rotor.
 - El helicóptero sobre el Irízar en el mapa abierto (ya existe como cajas en `vehicles.ts`).

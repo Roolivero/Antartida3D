@@ -16,6 +16,7 @@ Registro de todas las fuentes documentales, científicas e históricas utilizada
 | Murphy, Clarke, Symon y Priddle (1995) | Deep-Sea Research I | https://doi.org/10.1016/0967-0637(95)00057-D | 12 de noviembre de 2026 | - | Descartada: el resumen no es de acceso abierto y no se pudo confirmar el dato. Su contenido se quitó de la expedición. | |
 | Sitio y Monumento Histórico N.º 42 | Secretaría del Tratado Antártico | https://www.ats.aq/devph/en/apa-database/119 | 12 de noviembre de 2026 | - | Verificada |
 | OpenStreetMap: edificios y costa de la Base Orcadas | colaboradores de OpenStreetMap (trazado sobre imágenes Maxar 2019) | https://www.openstreetmap.org/#map=18/-60.7378/-44.7375 | 12 de noviembre de 2026 | ODbL 1.0 | Verificada. Se usa para qué edificios hay, su planta, color y techo; la disposición en la escena es ilustrativa. Detalle en `docs/orcadas-emplazamiento.md`. |
+| El rompehielos ARA "Almirante Irízar" avanza en la Campaña Antártica de Verano (15 dic 2025) | Armada Argentina | https://www.argentina.gob.ar/noticias/el-rompehielos-ara-almirante-irizar-avanza-en-la-campana-antartica-de-verano | 13 de noviembre de 2026 | - | Verificada |
 
 ## Nota sobre datos meteorológicos
 
@@ -37,8 +38,9 @@ Los datos de temperatura, presión y viento provienen del proyecto READER del Sc
 
 ## Escena (fases 5 y 7 del pulido, 13 de noviembre de 2026)
 
-- **Disposición:** escenario de frente con una selección de ocho elementos del sitio medido en OpenStreetMap. La forma, el color y el techo de cada edificio salen de OSM. Dónde está cada uno es ilustrativo, y la etiqueta «Reconstrucción ilustrada» lo dice.
+- **Disposición:** escenario de frente con una selección de nueve elementos del sitio medido en OpenStreetMap. La forma, el color y el techo de cada edificio salen de OSM. Dónde está cada uno es ilustrativo, y la etiqueta «Reconstrucción ilustrada» lo dice.
 - **Altura de las torres de radio:** OSM no la da. Se dibujan de 15 m como ilustración.
 - **Pingüinera y su loma:** [Fuente a definir]. COMNAP menciona colonias de pingüinos adelia y barbijo, pero ninguna fuente consultada las ubica. La loma, los nidos y el viaje al mar son una reconstrucción.
 - **Hielo de la bahía por mes:** sigue siendo una simulación. Crece desde la costa y la bahía se cierra de julio a septiembre. El deshielo de octubre que dice COMNAP queda en la ficha `year-hielo-octubre`.
+- **Helipuerto y helicóptero:** la losa sale de OpenStreetMap (way 1198904156, 13,5 × 13,5 m); COMNAP (2017) confirma la existencia de helipuerto y las visitas entre noviembre y marzo, y la nota de la Armada Argentina (15 dic 2025) documenta el traslado en helicóptero Sea King. El helicóptero en la losa solo se muestra de noviembre a marzo; su tipo, colores, escala y ubicación en el escenario son ilustrativos.
 

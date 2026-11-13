@@ -22,7 +22,8 @@ export type HotspotId =
   | 'bay'
   | 'colony'
   | 'flag'
-  | 'boat';
+  | 'boat'
+  | 'helipad';
 
 export interface CameraPose {
   pos: readonly [number, number, number];
@@ -111,6 +112,7 @@ const screenLayout = layoutOf('screen');
 const mastLayout = layoutOf('windMast');
 const omondLayout = layoutOf('omond');
 const flagLayout = layoutOf('flag');
+const helipadLayout = layoutOf('helipad');
 
 /** The Zodiac, beached with its bow on the gravel (StationScene strands it at the same point). */
 const boatPoint: [number, number, number] = (() => {
@@ -211,6 +213,19 @@ export const HOTSPOTS: readonly HotspotDef[] = [
     worldPos: colonyPoint,
     pose: orbit([colonyPoint[0], colonyPoint[1] - 0.4, colonyPoint[2]], 6, 165, 18, 1.2),
     fallbackPct: [74, 46],
+  },
+  {
+    id: 'helipad',
+    label: 'Helipuerto',
+    shortLabel: 'Helipuerto',
+    subtitle: 'Por acá llegan la dotación, el combustible y los científicos cuando el hielo no deja pasar al buque',
+    worldPos: [
+      helipadLayout.position[0],
+      helipadLayout.position[1] + 2.0,
+      helipadLayout.position[2],
+    ],
+    pose: orbit([helipadLayout.position[0], helipadLayout.position[1] + 0.6, helipadLayout.position[2]], 8, 180, 15, 1.5),
+    fallbackPct: [64, 54],
   },
 ];
 
