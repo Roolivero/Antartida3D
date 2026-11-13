@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
-import { BufferGeometry, Group, Line, LineDashedMaterial, Mesh, Vector3 } from 'three';
+import { BoxGeometry, BufferGeometry, Group, Line, LineDashedMaterial, Mesh, MeshBasicMaterial, Vector3 } from 'three';
 import { useFrame, useThree } from '@react-three/fiber';
 import type { CameraControls } from '@react-three/drei';
 import {
+  DRAKE_STORM,
   TRANSPORTS,
   flightClearance,
   heightAt,
   sightingsInView,
+  stormAt,
   voyageAt,
   voyageHeading,
   voyageLength,
@@ -33,6 +35,20 @@ const ROUTE_SAMPLES = 240;
 const PANEL_SHIFT = 0.14;
 /** Camera offset from the vehicle at departure: close and low, to see the Beagle Channel. */
 const DEPARTURE_OFFSET = new Vector3(3, 9, 12);
+
+/** In the storm the camera comes down to this world height: under the clouds, so they do not cover the vehicle. */
+const STORM_CAMERA_HEIGHT = DRAKE_STORM.cloudBase - 2;
+
+/**
+ * Spray thrown up when the bow digs into a wave: [x, z] in ship lengths, in the order it rises.
+ * The first ones burst at the bow; the rest run back along both sides, as the wave washes the hull.
+ */
+const SPRAY: readonly (readonly [number, number])[] = [
+  [0.5, 0.05], [0.47, -0.07], [0.54, -0.01], [0.44, 0.09], [0.5, -0.11], [0.57, 0.04],
+  [0.36, 0.13], [0.36, -0.13], [0.26, 0.15], [0.26, -0.15], [0.14, 0.16], [0.14, -0.16],
+];
+const sprayGeometry = new BoxGeometry(1, 1, 1);
+const sprayMaterial = new MeshBasicMaterial({ color: 0xf7fafb, transparent: true, opacity: 0.9 });
 
 /** The flight profile, sampled once: it costs a few hundred relief lookups per point. */
 const CLEARANCE_SAMPLES = 512;
@@ -84,6 +100,9 @@ export function Voyage3D({ bus, reduced, overlay }: {
   const drawn = useRef({ t: -1, transport: null as TransportId | null });
   // Far place the camera is at, and whether it is on its way back to the vehicle.
   const visit = useRef({ id: null as string | null, returning: false });
+  const spray = useRef<(Mesh | null)[]>([]);
+  // Whether the vehicle is in the storm, and the camera distance to go back to when it leaves.
+  const storm = useRef({ inside: false, distance: null as number | null });
   // Ids of the animals in view and of the ones already spotted, joined: React re-renders only when they change.
   const [inView, setInView] = useState('||');
 
@@ -143,6 +162,7 @@ export function Voyage3D({ bus, reduced, overlay }: {
   useFrame(({ camera }) => {
     const s = bus.state;
     const g = group.current;
+    if (!s) storm.current = { inside: false, distance: null };
     if (!s || !g) return;
     const p = voyageAt(s.kind, s.t);
     const size = Math.max(MIN_SIZE, camera.position.distanceTo(g.position) * SIZE_PER_DISTANCE);
@@ -161,6 +181,27 @@ export function Voyage3D({ bus, reduced, overlay }: {
     const sway = s.kind === 'plane'
       ? { roll: Math.sin(time * 0.9) * 0.05, pitch: Math.sin(time * 0.7) * 0.015, lift: Math.sin(time * 1.4) * 0.035 }
       : { roll: Math.sin(time * 1.1) * 0.04, pitch: Math.sin(time * 0.8) * 0.025, lift: Math.sin(time * 1.3) * 0.012 };
+    // In the storm the waves throw the ship about; the deeper in, the more.
+    const rough = stormAt(p.x, p.y);
+    // Bow up and down over each wave; the hull rises with it and rolls out of step.
+    const wave = time * 2.1;
+    // The plane flies over the storm, in calm air.
+    if (s.kind === 'ship') {
+      sway.pitch += rough * Math.sin(wave) * 0.24;
+      sway.roll += rough * Math.sin(wave * 0.63 + 1) * 0.22;
+      sway.lift += rough * Math.sin(wave - 0.9) * 0.1;
+    }
+    // Spray bursts when the bow comes down into the water.
+    const burst = s.kind === 'ship' ? rough * Math.max(0, -Math.sin(wave + 0.5)) ** 2 : 0;
+    spray.current.forEach((drop, i) => {
+      if (!drop) return;
+      const [x, z] = SPRAY[i];
+      // Each one a little higher and wider than the one before; big enough to read from the trip camera.
+      const reach = i % 6;
+      // Started above the deck: the bow is under the water when the spray bursts.
+      drop.position.set(x + burst * 0.04 * reach, 0.17 + burst * (0.12 + 0.05 * reach), z * (1 + 0.8 * burst));
+      drop.scale.setScalar(burst * (0.11 - 0.011 * reach));
+    });
 
     g.position.set(p.x - 500, height + sway.lift * size, p.y - 500);
     g.rotation.set(sway.roll, -heading, pitch + sway.pitch, 'YZX');
@@ -187,6 +228,19 @@ export function Voyage3D({ bus, reduced, overlay }: {
 
     // The camera always stays on the vehicle: the user can orbit and zoom around it, not pan away.
     if (controls) {
+      // Entering the storm, the camera comes down under the clouds; leaving it, it goes back up.
+      // Only for a ship: the plane is above the clouds, and the camera stays up there with it.
+      const inside = s.kind === 'ship' && rough > 0;
+      if (inside !== storm.current.inside) {
+        if (inside && camera.position.y > STORM_CAMERA_HEIGHT) {
+          storm.current.distance = controls.distance;
+          void controls.dollyTo((controls.distance * STORM_CAMERA_HEIGHT) / camera.position.y, !reduced);
+        } else if (!inside && storm.current.distance !== null) {
+          void controls.dollyTo(storm.current.distance, !reduced);
+          storm.current.distance = null;
+        }
+        storm.current.inside = inside;
+      }
       const departing = s.t === 0 && (drawn.current.t !== 0 || drawn.current.transport !== s.transport);
       if (departing) {
         // At the vehicle, so the camera does not jump to it when the trip starts moving.
@@ -240,6 +294,9 @@ export function Voyage3D({ bus, reduced, overlay }: {
       {trail && <mesh ref={trailMesh} geometry={trail} material={trailMaterial} frustumCulled={false} />}
       <group ref={group}>
         <mesh geometry={geometry} material={vehicleMaterial} />
+        {kind === 'ship' && SPRAY.map((_, i) => (
+          <mesh key={i} ref={(m) => void (spray.current[i] = m)} geometry={sprayGeometry} material={sprayMaterial} scale={0} />
+        ))}
       </group>
     </>
   );

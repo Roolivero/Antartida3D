@@ -128,6 +128,30 @@ Pendiente, con issue propio: la fauna y el Irízar de ambiente de #16 son lámin
 - **Tinta:** Contornos de costa y barreras de hielo generados con `Line` sobre `heightAt + ε` con micro-jitter determinista.
 - **Rendimiento medido (GPU real NVIDIA RTX 3070):** 0 tareas > 16 ms durante órbita y zoom con botones (9 ms de GPU) y rueda (152 ms de GPU, tarea máxima 3 ms).
 
+### Bordes del mapa 3D, límites de zoom y gestos (#46, 12 nov)
+
+Pedido de quien lleva el issue: los bordes del mapa se veían color crema y borrosos, y arrastrar tenía que mover el mapa.
+
+- **Sin papel en los bordes:** se quitó la niebla hacia color papel de los cuatro materiales del mapa (terreno, mar, Tierra del Fuego y tierras lejanas) y el desvanecido radial del mar hacia papel. El mar se dibuja hasta donde llega la vista.
+- **Resto del mundo:** las tierras de contexto pasan de 10° S a 60° N. Fuente, licencia y límites en `docs/datos-relieve.md`. La leyenda dice «Resto del mundo, hasta 60° N».
+- **Tope de alejamiento:** la vista más lejana es la vista general (`homeDistance3D`, donde entra todo el continente: unas 785 unidades en escritorio y 2250 en celular). Antes era un valor fijo de 3600, y de lejos el mundo quedaba como un disco rodeado de papel. Se descartó un tope más cercano (470) porque el continente entero no entraba en pantalla.
+- **Límites de cámara en `@antartida/core`:** `MAX_POLAR_DEG` (60°) y `PAN_LIMIT` (800) pasaron de `Map3DLayer.tsx` a `core/src/camera.ts`. Una prueba (`camera.test.ts`) calcula el punto más lejano que ve la cámara con esos límites y falla si queda más allá de las tierras dibujadas o del plano del mar. Quien cambie un límite tiene que extender los datos.
+- **Gestos:** arrastrar con el botón izquierdo mueve el mapa sobre el suelo, igual que en 2D. El botón derecho gira e inclina. En pantalla táctil, un dedo mueve y dos dedos acercan y giran. Antes arrastrar giraba la cámara. La rueda y las teclas no cambian.
+- **Gestos con dos dedos, como en una app de globo (12 nov, segunda vuelta):** pedido de quien lleva el issue. Reemplaza «dos dedos acercan y giran» de la línea anterior.
+  - Un dedo mueve el mapa (sin cambios).
+  - Separar o juntar los dedos (pellizco) acerca o aleja.
+  - Girar los dedos gira la cámara: el mapa gira con los dedos, el mismo ángulo.
+  - Arrastrar los dos dedos hacia arriba inclina la vista hacia el horizonte; hacia abajo la vuelve a poner desde arriba. Recorrer el 40 % del alto de la pantalla cubre todo el rango (`TILT_SCREEN_FRACTION`).
+  - **Un modo por gesto:** cuando los dedos se movieron 10 px (`TWO_FINGER_START_PX`) el gesto elige entre «inclinar» y «acercar y girar», y lo mantiene hasta que se levanta un dedo. Así un pellizco no inclina por accidente. Acercar y girar sí van juntos.
+  - **Interpretación:** el pedido decía «zoom si los movés horizontalmente». Se tomó como el pellizco habitual (separar o juntar los dedos, en cualquier dirección). Si se quería otra cosa, se ajusta en `pickMode`.
+  - **Dónde está:** la regla del gesto, sin nada de pantalla, en `core/src/gestures.ts` (con pruebas). `Map3DLayer.tsx` la conecta a la cámara; la acción de dos dedos de la biblioteca queda apagada porque no distingue un giro de un arrastre.
+  - **Computadora:** no cambia. Arrastrar con el botón izquierdo mueve, la rueda acerca, el botón derecho gira (horizontal) e inclina (vertical). El pellizco del panel táctil acerca.
+  - **Arreglo de paso:** la biblioteca de cámara solo avisa que la cámara se detuvo si ve el último paso, muy chico, de un movimiento. Si el movimiento termina dentro de un cuadro, la cámara quedaba marcada como «en movimiento» para siempre: los marcadores no se reagrupaban y se seguían dibujando cuadros. Ahora, cuando la cámara deja de moverse, se da por detenida.
+  - **Verificación:** prueba e2e con dos toques simulados (pellizco, giro y arrastre vertical) en el perfil de celular. No se probó en un teléfono real.
+- **Acercamiento en Tierra del Fuego:** el mínimo baja de 8 a 3 unidades (`FUEGIA_MIN_DISTANCE`). Es un valor a ajustar con el uso. Límite conocido en `docs/datos-relieve.md`.
+- **`project()` vale también al norte del ecuador:** antes tomaba el valor absoluto de la latitud y espejaba el norte sobre el sur. Al sur del ecuador da los mismos valores que antes.
+- **Halo del título:** el halo crema detrás del título en la vista 3D no cambia. Sin él, el título oscuro no se lee sobre el mar.
+
 ### Océano 3D, fauna, batimetría y mejoras visuales (F5 a F8)
 
 - **Costa 3D desde Bedmap3 (F8):** Se retiraron del 3D los vectores `ANTARCTICA_PATH` e `ICE_SHELVES_PATH` de Natural Earth. Como no coincidían con la elevación de Bedmap3, se cortaban en guiones discontinuos y cruzaban por dentro las barreras flotantes de Ross y Ronne. La costa 3D se extrae de la máscara de Bedmap3 (`masks > 0`) en el shader de terreno, logrando un trazo continuo y fiel al relieve real.
@@ -141,6 +165,47 @@ Pendiente, con issue propio: la fauna y el Irízar de ambiente de #16 son lámin
   - Renderizado en una única llamada de dibujo (`InstancedMesh`) con atlas de texturas (`sea-atlas.webp`) y animación de vaivén y respiración en vertex shader sin costo de CPU.
 - **Rompehielos ARA Almirante Irízar (S8):** Navega con trayecto de ida y vuelta con maniobra y estadía de amarre en puerto entre Ushuaia y Base Marambio (en vez de un bucle circular cerrado instantáneo), representando la Campaña Antártica de Verano.
 - **Marcadores del mar (S7 y S9):** Muestran solo el icono circular en reposo para no saturar el mapa con texto; el nombre y lugar emergen en hover o foco de teclado con Tab. Al activarse abren la ficha temática con fuentes oficiales verificadas. Se apilan en z-index por debajo de paneles, controles y leyenda.
+
+
+### Carteles del mapa cerrados (#54, 12-11-2026)
+
+Pedido de quien lleva el issue: los carteles de los marcadores no están abiertos de entrada, para que dé curiosidad tocar el marcador.
+
+- **Ningún cartel abierto de entrada**, ni en el relieve 3D ni en el mapa 2D. Vale para todos los marcadores: expediciones, ampliaciones previstas, próximamente y puntos del mar.
+- **Celular (toque o lápiz):** el primer toque muestra el cartel del marcador. El segundo toque abre la expedición o la ficha. Tocar otro marcador muestra el cartel de ese otro. Tocar el mapa cierra el cartel.
+- **Mouse:** pasar el cursor por encima muestra el cartel. Un clic abre.
+- **Teclado:** el foco muestra el cartel. Enter abre.
+- **Grupos de marcadores:** no cambian; un toque acerca.
+- **Dónde está la regla:** `markerPress(shown, key, touch)` en `core/src/markers.ts`, con pruebas. La interfaz distingue el dedo del mouse por el `pointerType` del clic (`MarkerButton` en `react-ui/src/map/Markers.tsx`). El cartel mostrado se guarda en `MapView.tsx` y se marca con la clase `.mk.shown`.
+- **Lado del cartel:** se abre a la derecha, salvo que ahí se salga de la pantalla y a la izquierda haya más lugar (`labelSide` en `core/src/labels.ts`). Se muestra uno solo por vez y por encima de todo, así que ya no hace falta evitar choques entre carteles: se quitó `placeLabels` y la constante `LABELS_MIN_PX`.
+- **Marcador sobre un palito (relieve 3D, 12-11-2026):** pedido de quien lleva el issue #46. El círculo que se toca va 34 px por encima de su lugar, sobre un palito fino que termina justo en el punto del mapa. Así no tapa el modelo de bloques dibujado ahí (Ushuaia, Orcadas, el Irízar, los témpanos). Vale para todos los marcadores del 3D menos los grupos. En el mapa 2D no cambia: ahí no hay modelos. Solo el círculo recibe toques; el palito no. Es una regla de `painted.css` (`.m3d .ov .mk:not(.cluster)`), con el alto en la variable `--stick`.
+- **Pruebas e2e:** entran a las expediciones con clic de mouse, así que siguen entrando con un clic. No se cambió ninguna.
+- **Queda igual:** el texto que lee un lector de pantalla en cada marcador. Con un lector de pantalla en celular puede hacer falta activar dos veces; no se probó con uno real.
+- **Reemplaza** lo que decía `docs/diseno/HANDOFF.md` sobre etiquetas siempre visibles y la nota «Marcadores del mar» de más arriba en lo que hace al toque en celular.
+
+
+### Panel inferior que se agranda (`BottomSheet`, #46, 12-11-2026)
+
+Pedido de quien lleva el issue: en el celular, el panel que sale desde abajo tiene una rayita arriba; al arrastrarla hacia arriba el panel se agranda para ver más información. Tiene que ser un componente reutilizable. Por ahora se usa solo en el selector de transporte de «Desde Ushuaia».
+
+- **Componente:** `BottomSheet` en `packages/react-ui/src/BottomSheet.tsx`. Recibe las clases extra, el id del título, la referencia al panel, `onClose` (Escape) y el contenido. Dibuja el panel (`role="dialog"`) y el tirador. El fondo oscuro (`.scrim`) lo sigue poniendo quien lo usa.
+- **Dos tamaños:** el chico es el `max-height` que el panel ya tenía en CSS (54 % en el selector). El grande es el 92 % del alto (`.sheet.grows.full`). Si el contenido es más corto, el panel no crece más que su contenido.
+- **Cómo se usa el tirador:**
+  - Arrastrar hacia arriba: el panel sigue al dedo. Al soltar, si se arrastró 40 px o más queda grande; si no, vuelve.
+  - Arrastrar hacia abajo: lo mismo, hacia el tamaño chico.
+  - Arrastrar hacia abajo desde el tamaño chico: el panel se cierra (llama a `onClose`). Pedido de quien lleva el issue. Desde el tamaño grande solo baja al chico, por más lejos que se arrastre.
+  - Un toque en el tirador cambia de tamaño.
+  - **Se arrastra desde cualquier parte del panel, no solo desde el tirador** (pedido de quien lleva el issue: al tirar hacia abajo fuera del tirador, el celular recargaba la página). Con el panel chico, el dedo lo arrastra hacia arriba o hacia abajo desde cualquier lugar; el texto no se desplaza en ese tamaño. Con el panel grande, el texto se desplaza normal; tirar hacia abajo cuando el texto está arriba de todo baja el panel.
+  - Un arrastre que empieza sobre un botón no lo aprieta: es un arrastre, no un toque.
+  - Teclado y lector de pantalla: el tirador es un botón con nombre («Agrandar el panel para ver más» / «Achicar el panel») y `aria-expanded`. Enter o Espacio cambian de tamaño.
+- **Regla en `@antartida/core`:** `sheetAfterDrag(expanded, draggedUp)` en `core/src/gestures.ts`, con pruebas.
+- **Por encima del título:** el panel grande tapa el título y el registro de exploración. Mientras está grande o se arrastra sube a `z-index: 21`; si no, el título quedaba encima y el tirador no recibía toques.
+- **Sin recarga al tirar hacia abajo:** `html` y `body` llevan `overscroll-behavior: none` (`painted.css`). La app ocupa toda la pantalla y maneja sus propios gestos; vale para toda la app, no solo para el panel. El panel además lleva `overscroll-behavior: contain`.
+- **Sin botón X en el selector de transporte** (pedido de quien lleva el issue): el panel se cierra arrastrándolo hacia abajo, con «Volver al mapa», con Escape o tocando el mapa. En pantallas anchas, donde no hay tirador, quedan «Volver al mapa», Escape y el clic fuera del panel.
+- **Pantallas anchas:** el panel es una tarjeta en una esquina y el tirador no se muestra.
+- **Movimiento reducido:** cambia de tamaño sin animación.
+- **Para usarlo en otro panel:** reemplazar su `<section className="sheet ...">` por `<BottomSheet className="..." labelledBy="..." sheetRef={ref} onClose={...}>`. `PointSheet` y las fichas de los hitos siguen como estaban.
+- **Verificación:** prueba e2e en el perfil de celular (`flow.spec.ts`): arrastre hacia arriba, hacia abajo y cierre con un toque simulado, desde el tirador y desde el cuerpo del panel, y Enter. La recarga al tirar hacia abajo no se puede probar con toques simulados: hay que confirmarla en un teléfono real.
 
 
 ## Benchmark

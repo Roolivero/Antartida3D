@@ -39,6 +39,9 @@ export function seaModelSize(px: number, distance: number): number {
   return placeModelSize(distance, perDistance, SEA_MODEL_MIN_SIZE);
 }
 
+/** A sea marker that floats over something drawn shows only while that thing is at least this wide on screen. */
+export const SEA_HINT_MIN_PX = 70;
+
 /** On-screen height in px of a world length seen at a distance, for the vertical FOV. */
 export function screenPx(worldSize: number, distance: number, viewportHeight: number): number {
   return (worldSize * viewportHeight) / (2 * Math.max(distance, 1e-6) * Math.tan((FOV * Math.PI) / 360));
@@ -93,6 +96,11 @@ export function viewFromPose(pose: CameraPose, size: Size, geo: Geometry): View 
   const py = size.vh / 2 - geo.oy - targetMap.y * pxPerUnit;
   return { k, px, py };
 }
+
+/** Steepest tilt of the orbit camera, in degrees from the vertical. */
+export const MAX_POLAR_DEG = 60;
+/** The target of the orbit camera stays within this many map units of the pole on each axis. */
+export const PAN_LIMIT = 800;
 
 /** Tilt of the 3D overview, in degrees above the horizon: low enough to show the relief. */
 export const HOME_TILT_DEG = 38;

@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   BufferAttribute,
   BufferGeometry,
-  Color,
   NoColorSpace,
   RepeatWrapping,
   ShaderMaterial,
@@ -31,7 +30,6 @@ import {
   paintedTerrainFragmentShader,
   paintedTerrainVertexShader,
 } from './paintedTerrain.glsl.ts';
-import { FOG_COLOR_HEX } from './fog.glsl.ts';
 
 export function Terrain({ wide }: { wide: boolean }) {
   const [meshData, setMeshData] = useState<TerrainMesh | null>(null);
@@ -170,8 +168,6 @@ export function Terrain({ wide }: { wide: boolean }) {
         uSunDir: { value: new Vector3(...sunDirection()) },
         uContour: { value: CONTOUR_M },
         uPaperTex: { value: textures.paper },
-        uFogColor: { value: new Color(FOG_COLOR_HEX) },
-        uFogDensity: { value: 0.35 },
         uScreenSize: { value: new Vector2(window.innerWidth, window.innerHeight) },
       },
     });

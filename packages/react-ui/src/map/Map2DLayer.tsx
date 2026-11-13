@@ -10,7 +10,7 @@ import {
   type Marker,
   type View,
 } from '@antartida/core';
-import { Markers } from './Markers.tsx';
+import { Markers, type MarkerPick } from './Markers.tsx';
 import type { Anim, Phase } from './MapView.tsx';
 
 export interface LayerProps {
@@ -19,7 +19,9 @@ export interface LayerProps {
   anim: Anim;
   phase: Phase;
   markers: Marker[];
-  onPick: (m: Marker) => void;
+  /** Key of the marker whose label is in view after a first press. */
+  shown: string | null;
+  onPick: MarkerPick;
 }
 
 const LAYER_TRANSITION: Record<Anim, string> = {
@@ -29,7 +31,7 @@ const LAYER_TRANSITION: Record<Anim, string> = {
   dive: 'transform 1.5s cubic-bezier(.55,0,.3,1)',
 };
 
-export function Map2DLayer({ geo, view, anim, phase, markers, onPick }: LayerProps) {
+export function Map2DLayer({ geo, view, anim, phase, markers, shown, onPick }: LayerProps) {
   const [ink, setInk] = useState('');
   const [src, setSrc] = useState(MAP_RASTER.base);
   const [painted, setPainted] = useState(false);
@@ -88,6 +90,7 @@ export function Map2DLayer({ geo, view, anim, phase, markers, onPick }: LayerPro
           (anim === 'zoom' ? ' zooming' : anim === 'wheel' ? ' wheeling' : '') +
           (phase === 'dive' ? ' hide' : '')
         }
+        shown={shown}
         onPick={onPick}
       />
     </>

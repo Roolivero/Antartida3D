@@ -1,4 +1,5 @@
 import oceanDepthUrl from './assets/ocean-depth-grid.bin?url';
+import { WORLD_LANDS_RADIUS } from './projection.ts';
 
 /** Large ocean plane size (in map units) to reach horizon in all camera angles. */
 export const OCEAN_SIZE = 20000;
@@ -7,12 +8,12 @@ export const OCEAN_SIZE = 20000;
 export const DEPTH_ABSORB = 0.0025;
 
 /**
- * Map-space radii from the pole (world origin) over which the ocean and the southern lands fade
- * into paper. The end stays inside the clip circle of SOUTHERN_LANDS (80° from the pole, r ≈ 1334),
- * so the clipped edge of Australia is never visible.
+ * Map-space radii from the pole (world origin) over which the lands of the rest of the world
+ * dissolve into the sea. The end stays inside their clip circle (WORLD_LANDS_RADIUS, 60° N), so
+ * the clipped edge of the northern continents is never visible.
  */
-export const WORLD_FADE_START = 950;
-export const WORLD_FADE_END = 1300;
+export const WORLD_FADE_START = WORLD_LANDS_RADIUS * 0.9;
+export const WORLD_FADE_END = WORLD_LANDS_RADIUS * 0.985;
 /** Flat tone of the lands outside Antarctica, the same as South America in the 2D map (svg/paint.ts). */
 export const FAR_LAND_COLOR_HEX = '#D9C49C';
 

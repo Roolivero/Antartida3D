@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   BufferAttribute,
   BufferGeometry,
-  Color,
   RepeatWrapping,
   ShaderMaterial,
   SRGBColorSpace,
@@ -29,7 +28,6 @@ import {
   type TerrainMesh,
 } from '@antartida/core';
 import paper512Url from '@antartida/core/assets/paper-512.webp';
-import { FOG_COLOR_HEX } from './fog.glsl.ts';
 import { fuegiaFragmentShader, fuegiaVertexShader } from './fuegia.glsl.ts';
 import { farLandUniforms, loadFarLandTexture } from './SouthernLands.tsx';
 
@@ -133,8 +131,6 @@ export function Fuegia({ wide }: { wide: boolean }) {
         ...farLand,
         uAbsorb: { value: DEPTH_ABSORB },
         uWaterFade: { value: FUEGIA_WATER_FADE },
-        uFogColor: { value: new Color(FOG_COLOR_HEX) },
-        uFogDensity: { value: 0.35 },
       },
     });
   }, [paper, farLand]);

@@ -1,4 +1,4 @@
-import { fogParsChunk, periodicLineChunk } from './fog.glsl.ts';
+import { periodicLineChunk } from './periodicLine.glsl.ts';
 
 export const paintedTerrainVertexShader = /* glsl */ `
 uniform vec4 uBounds; // minX, maxX, minY, maxY
@@ -52,8 +52,6 @@ uniform sampler2D uLightTex;
 uniform sampler2D uPaperTex;
 uniform vec3 uSunDir;
 uniform float uContour;
-
-${fogParsChunk}
 
 varying vec2 vMapUV;
 varying vec2 vTerrainUV;
@@ -293,11 +291,7 @@ void main() {
   float coastInk = 1.0 - smoothstep(0.0, sdfWidth * 1.25, abs(coastSdf - sdfWidth * 0.15));
   col = mix(col, INK, coastInk * 0.66);
 
-  // 9. Exponential fog towards paper color (matching ocean shader)
-  float fog = computeFogFactor(vWorldPos);
-  col = mix(col, uFogColor, fog);
-
-  // 10. Paper grain, fixed to the screen like the 2D grain overlay.
+  // 9. Paper grain, fixed to the screen like the 2D grain overlay.
   // On ice (vMask < 3.5), use neutral paper luminance so --paper (#EAE0D0) does not warm-tint the ice.
   vec3 paper = texture2D(uPaperTex, gl_FragCoord.xy / 512.0).rgb;
   float paperLum = dot(paper, vec3(0.299, 0.587, 0.114));

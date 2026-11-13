@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import {
-  Color,
   Mesh,
   NoColorSpace,
   PlaneGeometry,
@@ -10,15 +9,15 @@ import {
   SRGBColorSpace,
   Texture,
   TextureLoader,
+  Vector2,
   Vector3,
   Vector4,
 } from 'three';
 import {
   DEPTH_ABSORB,
+  DRAKE_STORM,
   MAX_WHALE_RIPPLES,
   OCEAN_SIZE,
-  WORLD_FADE_END,
-  WORLD_FADE_START,
   computeWhaleRipples,
   sunDirection,
   type SeaLifeInstance,
@@ -29,7 +28,6 @@ import oceanWavesAUrl from '@antartida/core/assets/ocean-waves-a-256.webp';
 import oceanWavesBUrl from '@antartida/core/assets/ocean-waves-b-256.webp';
 import paper512Url from '@antartida/core/assets/paper-512.webp';
 import { oceanFragmentShader, oceanVertexShader } from './ocean.glsl.ts';
-import { FOG_COLOR_HEX } from './fog.glsl.ts';
 import { useSeaTime, type SeaTimeUniform } from './useAnimationClock.ts';
 
 interface OceanTextures {
@@ -124,10 +122,9 @@ export function Ocean({
       uFoamStrength: { value: 0.90 },
       uPaperGrainStrength: { value: 0.24 },
       uWhaleRipples: { value: initialRipples },
-      uFadeStart: { value: WORLD_FADE_START },
-      uFadeEnd: { value: WORLD_FADE_END },
-      uFogColor: { value: new Color(FOG_COLOR_HEX) },
-      uFogDensity: { value: 0.35 },
+      uStormBand: { value: new Vector4(DRAKE_STORM.from.x - 500, DRAKE_STORM.from.y - 500, DRAKE_STORM.to.x - 500, DRAKE_STORM.to.y - 500) },
+      uStormShape: { value: new Vector2(DRAKE_STORM.radius, DRAKE_STORM.edge) },
+      uStormWind: { value: new Vector2(Math.cos(DRAKE_STORM.wind), Math.sin(DRAKE_STORM.wind)) },
     };
   }, []);
 

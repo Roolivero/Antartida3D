@@ -23,8 +23,8 @@ import {
   WORLD_FADE_START,
 } from '@antartida/core';
 import landColorUrl from '@antartida/core/assets/southern-lands-color.webp';
+import worldColorUrl from '@antartida/core/assets/world-lands-color.webp';
 import paper512Url from '@antartida/core/assets/paper-512.webp';
-import { FOG_COLOR_HEX } from './fog.glsl.ts';
 import {
   southernLandsFragmentShader,
   southernLandsVertexShader,
@@ -41,9 +41,9 @@ export function farLandUniforms() {
   };
 }
 
-/** Loads the Natural Earth II color of the southern lands and plugs it into farLandUniforms. */
-export function loadFarLandTexture(uniforms: ReturnType<typeof farLandUniforms>): Promise<Texture> {
-  return new TextureLoader().loadAsync(landColorUrl).then((t) => {
+/** Loads one of the Natural Earth II color textures of the lands outside Antarctica. */
+function loadLandColor(url: string): Promise<Texture> {
+  return new TextureLoader().loadAsync(url).then((t) => {
     t.colorSpace = SRGBColorSpace;
     t.wrapS = ClampToEdgeWrapping;
     t.wrapT = ClampToEdgeWrapping;
@@ -51,13 +51,23 @@ export function loadFarLandTexture(uniforms: ReturnType<typeof farLandUniforms>)
     t.magFilter = LinearFilter;
     // Raster row 0 is minY: no flip, so the uv maps directly.
     t.flipY = false;
+    return t;
+  });
+}
+
+/** Loads the Natural Earth II color of the near lands and plugs it into farLandUniforms. */
+export function loadFarLandTexture(uniforms: ReturnType<typeof farLandUniforms>): Promise<Texture> {
+  return loadLandColor(landColorUrl).then((t) => {
     uniforms.uFarLandTex.value = t;
     uniforms.uHasFarLand.value = 1;
     return t;
   });
 }
 
-/** Flat context silhouettes outside Antarctica (Natural Earth), colored with Natural Earth II. No relief. */
+/**
+ * Flat context silhouettes of the world outside Antarctica, up to 60° N (Natural Earth), colored
+ * with Natural Earth II. No relief.
+ */
 export function SouthernLands() {
   const invalidate = useThree((s) => s.invalidate);
 
@@ -88,8 +98,9 @@ export function SouthernLands() {
         uLandColor: { value: new Color(FAR_LAND_COLOR_HEX) },
         uFadeStart: { value: WORLD_FADE_START },
         uFadeEnd: { value: WORLD_FADE_END },
-        uFogColor: { value: new Color(FOG_COLOR_HEX) },
-        uFogDensity: { value: 0.35 },
+        uWorldLandTex: { value: null as Texture | null },
+        uHasWorldLand: { value: 0 },
+        uNearEdge: { value: (SOUTHERN_LANDS_TEXTURE_BOX.maxX - SOUTHERN_LANDS_TEXTURE_BOX.minX) / 2 },
       },
     });
   }, []);
@@ -105,6 +116,14 @@ export function SouthernLands() {
       })
       // Without it the silhouettes keep the flat FAR_LAND_COLOR_HEX tone.
       .catch((e: unknown) => console.warn('Southern lands color unavailable', e));
+    loadLandColor(worldColorUrl)
+      .then((t) => {
+        loaded.push(t);
+        material.uniforms.uWorldLandTex.value = t;
+        material.uniforms.uHasWorldLand.value = 1;
+        if (alive) invalidate();
+      })
+      .catch((e: unknown) => console.warn('World lands color unavailable', e));
     new TextureLoader()
       .loadAsync(paper512Url)
       .then((t) => {

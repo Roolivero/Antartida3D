@@ -2,7 +2,7 @@
 
 Fuentes citadas en [desde-ushuaia.md](./desde-ushuaia.md), conforme a las reglas del eje 2 de `AGENTS.md`: referencia o URL, organismo o autor que la publica y fecha de consulta.
 
-- **Fecha de consulta de todas las fuentes:** 2026-11-11.
+- **Fecha de consulta de todas las fuentes:** 2026-11-11, salvo las que indican otra fecha en su fila.
 - **Cómo se verificó:** cada URL fue abierta y leída por un agente de IA (agentes de investigación de esta sesión), que buscó el texto citado en la página o el PDF. Una segunda pasada de agentes independientes volvió a abrir las fuentes y comparó cada dato con el texto; sus correcciones ya están aplicadas. Esto **no reemplaza la revisión humana**: quien revise el PR debe abrir cada fuente y confirmar que dice lo que el contenido afirma.
 - **Prioridad de fuentes** (pedida por el equipo): 1) UNTDF, 2) otras universidades argentinas, 3) organismos oficiales, 4) internacionales.
 - **Campo `tipo`:** `UNTDF`, `universidad argentina`, `organismo oficial` (argentino), `internacional` (incluye organismos oficiales de otros países).
@@ -50,6 +50,7 @@ Fuentes citadas en [desde-ushuaia.md](./desde-ushuaia.md), conforme a las reglas
 | **[O28]** | organismo oficial | Cancillería — Dirección Nacional del Antártico | Antártida argentina (el Sector Antártico forma parte de la provincia, Ley 23.775) | https://cancilleria.gob.ar/es/iniciativas/dna/antartida-argentina |
 | **[O33]** | organismo oficial | Gobierno nacional | Nota sobre el reabastecimiento de la base Petrel tras su reapertura (15-11-2021) | https://www.argentina.gob.ar/noticias/se-cumplio-con-el-reabastecimiento-de-la-base-conjunta-antartica-petrel-tras-su-reapertura |
 | **[O34]** | organismo oficial | Cancillería — Dirección Nacional del Antártico | Bases (versión que cuenta 6 permanentes y 7 temporarias) | https://cancilleria.gob.ar/es/iniciativas/dna/antartida-argentina/bases |
+| **[O46]** | organismo oficial | Armada Argentina | «Cruzando el Pasaje de Drake a bordo del rompehielos ARA "Almirante Irízar"». La página no muestra fecha; sus metadatos dicen 25-11-2019. **Consultada el 2026-11-12.** Dice: «es famoso por sus temporales a causa de las bajas presiones y las elevadas profundidades que superan los 4 mil metros»; «se han registrado vientos que superan los 50 nudos y olas que alcanzaron los 10 metros de altura»; y, solo en la descripción de la página, «uno de los mares más turbulentos del planeta» | https://www.argentina.gob.ar/noticias/cruzando-el-pasaje-de-drake-bordo-del-rompehielos-ara-almirante-irizar |
 | **[O27]** | organismo oficial | Gobierno nacional | «Marambio: medio siglo de la primera pista de aterrizaje en la Antártida» (primer avión: Douglas C-47 TA-05) | https://www.argentina.gob.ar/noticias/marambio-medio-siglo-de-la-primera-pista-de-aterrizaje-en-la-antartida |
 
 ### 2.1. Fauna (universidades argentinas y CONICET)
@@ -123,3 +124,11 @@ Medidas y colores usados únicamente para proporcionar los modelos voxel. Los co
   - Puerto Argentino: `Aviso ARA Puerto Argentino (A-21) - Foto Oficial.jpg` (Armada Argentina, CC BY 4.0).
   - Hércules: `C-130 Hercules previo al desfile 9 de julio 2019 01.jpg` (BugWarp, CC BY 4.0) y `Macri y el TC-61.jpg` (Casa Rosada, CC BY 2.5 AR).
 - No hay modelos 3D con licencia abierta verificada: los modelos se hacen de forma procedural.
+
+## Fuentes de cálculos
+
+No se muestran en la interfaz: ningún texto publicado las cita. Respaldan un dato de entrada de una estimación (cálculo propio).
+
+| Para qué se usa | Organismo | Documento | Qué dice | URL | Consultada |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| Coordenada del aeropuerto de Río Gallegos, para estimar la velocidad del Hércules (`HERCULES_CRUISE_KMH`) | Administración Nacional de Aviación Civil (ANAC) | AIP Argentina, SAWG AD 2.1 y AD 2.2, «SAWG - RÍO GALLEGOS / Piloto Civil Norberto Fernández». El PDF no muestra fecha en la primera página; sus metadatos dicen 16-04-2025 | «COORD GEO del ARP y emplazamiento en el AD: 513632S - 0691844W Centro geométrico de pista» | https://ais.anac.gob.ar/descarga/aip-6801264f51b46 | 2026-11-12 |

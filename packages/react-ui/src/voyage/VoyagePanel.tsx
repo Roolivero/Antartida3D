@@ -13,19 +13,25 @@ import {
   VOYAGE_SOURCE_CODES,
   VOYAGE_TOURISM_NOTE,
   voyageArrived,
+  voyageProgress,
   voyageSightings,
   voyageStops,
   type TransportId,
+  type TransportKind,
+  type VoyageSource,
   type VoyageSourceCode,
 } from '@antartida/core';
+import { BottomSheet } from '../BottomSheet.tsx';
 import { useFocusReturn } from '../hooks.ts';
-import { Icon } from '../ui.tsx';
 import { Fact, type OpenSources } from './Fact.tsx';
 import { SightingIcon } from './SightingIcon.tsx';
 import type { VoyageController } from './useVoyage.ts';
 
 // Its own chunk: it needs WebGL, which the 2D fallback of the trip does not.
 const VehiclePreview = lazy(() => import('./VehiclePreview.tsx').then((m) => ({ default: m.VehiclePreview })));
+
+/** Date a source was read, when it is not the date the page gives for all of them. */
+const sourceConsulted = (code: VoyageSourceCode) => (VOYAGE_SOURCES[code] as VoyageSource).consulted;
 
 /** Separate page with every source of the expedition, numbered as the facts cite them. */
 function SourcesPage({ focus, onClose }: { focus: VoyageSourceCode; onClose: () => void }) {
@@ -49,12 +55,13 @@ function SourcesPage({ focus, onClose }: { focus: VoyageSourceCode; onClose: () 
           <h2 id="sources-title">Fuentes</h2>
           <button type="button" className="btn" onClick={onClose}>Volver al viaje</button>
         </div>
-        <p className="gdesc">Cada dato del viaje lleva un número entre corchetes. Acá está de dónde sale. Consultadas el {VOYAGE_SOURCES_CONSULTED}.</p>
+        <p className="gdesc">Cada dato del viaje lleva un número entre corchetes. Acá está de dónde sale. Consultadas el {VOYAGE_SOURCES_CONSULTED}, salvo las que dan otra fecha.</p>
         <ol className="vsrclist">
           {VOYAGE_SOURCE_CODES.map((code) => (
             <li key={code} data-source={code} className={code === focus ? 'on' : undefined}>
               <strong>{VOYAGE_SOURCES[code].org}</strong>
               <span>{VOYAGE_SOURCES[code].title}</span>
+              {sourceConsulted(code) && <span>Consultada el {sourceConsulted(code)}.</span>}
               <a href={VOYAGE_SOURCES[code].url} target="_blank" rel="noopener noreferrer">Abrir la fuente</a>
             </li>
           ))}
@@ -80,18 +87,9 @@ function Picker({ onStart, onExit, onSource, preview, reduced }: {
     <>
     {/* Touching the map outside the sheet closes it, like the sheet of a point. */}
     <div className="scrim vscrim" onClick={onExit} />
-    <section
-      className="sheet voyage"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="voyage-title"
-      ref={ref}
-      onKeyDown={(e) => e.key === 'Escape' && onExit()}
-    >
-      <div className="row vhead">
-        <h2 id="voyage-title">Desde Ushuaia</h2>
-        <button type="button" className="iconbtn" onClick={onExit} aria-label="Cerrar y volver al mapa">{Icon.close}</button>
-      </div>
+    <BottomSheet className="voyage" labelledBy="voyage-title" sheetRef={ref} onClose={onExit}>
+      {/* No close button: the sheet is dragged down, and «Volver al mapa» is below. */}
+      <h2 id="voyage-title">Desde Ushuaia</h2>
       <p className="place">Elegí cómo cruzar a la Antártida. Son los medios que usa la ciencia argentina.</p>
       <div className="vpick" role="group" aria-label="Medio de transporte">
         {TRANSPORTS.map((v) => (
@@ -117,7 +115,7 @@ function Picker({ onStart, onExit, onSource, preview, reduced }: {
         </button>
         <button type="button" className="btn" onClick={onExit}>Volver al mapa</button>
       </div>
-    </section>
+    </BottomSheet>
     </>
   );
 }
@@ -266,9 +264,25 @@ const SPEED_HINT_SHOWN_MS = 9000;
 /** Shown once per visit: a tip repeated on every leg is noise. */
 let speedHintShown = false;
 
+const WHOLE = new Intl.NumberFormat('es-AR', { maximumFractionDigits: 0 });
+
+/** Hours for the trip line: with minutes while they still matter (the flight), whole hours after that (the ships). */
+function formatTripHours(hours: number): string {
+  if (hours >= 10) return `${Math.round(hours)} h`;
+  const minutes = Math.round(hours * 60);
+  return minutes < 60 ? `${minutes} min` : `${Math.floor(minutes / 60)} h ${String(minutes % 60).padStart(2, '0')} min`;
+}
+
+/** Distance and time travelled so far. Always an estimate, and the text says so. */
+function tripLine(transport: TransportId, kind: TransportKind, t: number): string {
+  const { km, totalKm, hours } = voyageProgress(transport, t);
+  return `Estimación: ≈ ${WHOLE.format(km)} de ${WHOLE.format(totalKm)} km · ≈ ${formatTripHours(hours)} ${kind === 'plane' ? 'de vuelo' : 'de navegación'}`;
+}
+
 function TravelBar({ voyage, animated, onExit }: { voyage: VoyageController; animated: boolean; onExit: () => void }) {
   const state = voyage.state!;
   const bar = useRef<HTMLElement>(null);
+  const trip = useRef<HTMLParagraphElement>(null);
   const { bus } = voyage;
   const [atStart, setAtStart] = useState(state.t <= 0);
 
@@ -276,6 +290,11 @@ function TravelBar({ voyage, animated, onExit }: { voyage: VoyageController; ani
   useEffect(() => {
     const paint = () => {
       if (bar.current && bus.state) bar.current.style.transform = `scaleX(${bus.state.t})`;
+      if (trip.current && bus.state) {
+        // Written only when it changes: the text moves by whole km and minutes, not every frame.
+        const text = tripLine(bus.state.transport, bus.state.kind, bus.state.t);
+        if (trip.current.textContent !== text) trip.current.textContent = text;
+      }
       if (bus.state) setAtStart(bus.state.t <= 0); // re-renders only when it changes
     };
     paint();
@@ -339,6 +358,8 @@ function TravelBar({ voyage, animated, onExit }: { voyage: VoyageController; ani
         {hint && <><strong>¿Sabías?</strong> Tocá el botón dos veces seguidas y mantenelo apretado para ir más rápido.</>}
       </p>
       <div className="vprog" aria-hidden="true"><i ref={bar} /></div>
+      {/* Filled frame by frame, like the bar. Not a live region: it would be announced without pause. */}
+      <p className="vtrip" ref={trip} />
       <p className="vnext">
         <span>Próximo hito: <strong>{next.title}</strong></span>
         {animated && voyageSightings(state.kind).length > 0 && (

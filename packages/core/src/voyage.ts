@@ -8,6 +8,7 @@ import { fuegiaWorldHeight } from './fuegia.ts';
 import { project, unproject } from './projection.ts';
 import { worldHeight } from './relief.ts';
 import { ROUTE_LENGTH, routeAt } from './route.ts';
+import { stormCeiling } from './storm.ts';
 import { heightAt, type TerrainMesh } from './terrain.ts';
 
 type Point = { x: number; y: number };
@@ -68,7 +69,7 @@ function clearEnvelope(at: number, mesh?: TerrainMesh): number {
  * over the relief under and beside its path, keeps climbing steadily to FLIGHT_CRUISE, and comes
  * down to the Marambio plateau, rising again over the Antarctic relief on the way. The clearance is
  * averaged over a span no wider than its own window, so the line is smooth and still never goes
- * below the ground. ILLUSTRATIVE: not a real flight profile.
+ * below the ground, and it passes over the storm of the Drake. ILLUSTRATIVE: not a real flight profile.
  */
 export function flightClearance(t: number, mesh?: TerrainMesh): number {
   const at = clamp01(t);
@@ -78,7 +79,9 @@ export function flightClearance(t: number, mesh?: TerrainMesh): number {
   const end = flightAt(1);
   const runway = at < 0.5 ? 0 : worldHeight(heightAt(end.x, end.y, mesh));
   const airborne = Math.min(smooth01(at / FLIGHT_WINDOW), smooth01((1 - at) / FLIGHT_WINDOW));
-  return runway + (Math.max(clear, cruise) - runway) * airborne;
+  // Over the storm of the Drake the plane flies above the clouds, not through them.
+  const over = flightAt(at);
+  return runway + (Math.max(clear, cruise, stormCeiling(over.x, over.y)) - runway) * airborne;
 }
 
 /**
@@ -108,6 +111,48 @@ const LENGTHS: Record<TransportKind, number> = { ship: pathLength('ship'), plane
 
 /** Length of the whole trip in map units. */
 export const voyageLength = (kind: TransportKind) => LENGTHS[kind];
+
+const EARTH_RADIUS_KM = 6371;
+const RAD = Math.PI / 180;
+/** Great-circle distance in km between two points of the map space. */
+const groundKm = (a: Point, b: Point) => {
+  const from = unproject(a.x, a.y);
+  const to = unproject(b.x, b.y);
+  const h =
+    Math.sin(((to.lat - from.lat) * RAD) / 2) ** 2 +
+    Math.cos(from.lat * RAD) * Math.cos(to.lat * RAD) * Math.sin(((to.lon - from.lon) * RAD) / 2) ** 2;
+  return 2 * EARTH_RADIUS_KM * Math.asin(Math.sqrt(h));
+};
+/** Km travelled at each sample of the path. Map units would not do: the projection stretches them with latitude. */
+const pathKm = (kind: TransportKind) => {
+  const km = [0];
+  for (let i = 1; i <= PATH_SAMPLES; i++) {
+    km.push(km[i - 1] + groundKm(voyageAt(kind, (i - 1) / PATH_SAMPLES), voyageAt(kind, i / PATH_SAMPLES)));
+  }
+  return km;
+};
+const KM: Record<TransportKind, readonly number[]> = { ship: pathKm('ship'), plane: pathKm('plane') };
+
+export interface VoyageProgress {
+  /** Km travelled along the drawn path. */
+  km: number;
+  /** Km of the whole trip. */
+  totalKm: number;
+  /** Hours it takes to travel `km` at the cruise speed of the transport, without stops. */
+  hours: number;
+}
+
+/**
+ * Distance and time travelled at fraction `t` of the trip. An estimate, not a logged trip: the
+ * path is the drawn one and the speed is the cruise speed of the transport.
+ */
+export function voyageProgress(transport: TransportId, t: number): VoyageProgress {
+  const { kind, cruiseKmh } = TRANSPORTS.find((v) => v.id === transport)!;
+  const at = clamp01(t) * PATH_SAMPLES;
+  const i = Math.min(PATH_SAMPLES - 1, Math.floor(at));
+  const km = KM[kind][i] + (KM[kind][i + 1] - KM[kind][i]) * (at - i);
+  return { km, totalKm: KM[kind][PATH_SAMPLES], hours: km / cruiseKmh };
+}
 
 /** Direction of travel at `t` in map space, as an angle from +x towards +y (radians). */
 export function voyageHeading(kind: TransportKind, t: number): number {

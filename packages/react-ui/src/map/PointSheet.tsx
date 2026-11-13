@@ -12,7 +12,7 @@ export function PointSheet({ point, onClose, fallbackFocus }: {
   useFocusReturn(true, ref, 'button', fallbackFocus);
 
   const isSea = 'desc' in point;
-  const tagLabel = isSea ? 'Vida en el mar' : TIER[point.tier];
+  const tagLabel = isSea ? point.tag ?? 'Vida en el mar' : TIER[point.tier];
   const tagClass = isSea ? 'tag tsea' : 'tag t' + point.tier.toLowerCase();
 
   return (

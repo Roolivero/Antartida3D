@@ -1,4 +1,6 @@
 /* Painted look, layout, keyframes and markers, copied from design/Main.dc.html. Tokens live in tokens.css. */
+/* The app fills the screen and handles its own gestures: a pull down must not reload the page. */
+html,body{overscroll-behavior:none}
 body{margin:0;background:#F3EBDD}
 a{color:#1E3E5C}a:hover{color:#A4471F}
 *{box-sizing:border-box}
@@ -54,13 +56,26 @@ button:focus-visible,[tabindex]:focus-visible{outline:3px solid #1E3E5C;outline-
 .mk.tsea{z-index:1}
 .mk.tsea .dot{width:22px;height:22px;background:var(--paper);border:2px solid var(--ink);display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 2px rgba(30,62,92,.22)}
 .mk.tsea .dot svg{width:14px;height:14px;display:block}
-.mk.tsea .mlabel{display:none;background:rgba(247,250,251,.96);border-color:var(--deep);pointer-events:none}
-.mk.tsea:hover .mlabel,.mk.tsea:focus-visible .mlabel{display:block;z-index:10}
+.mk.tsea .mlabel{background:rgba(247,250,251,.96);border-color:var(--deep)}
 .mk.cluster .dot{width:34px;height:34px;background:#F7FAFB;border:2px solid #3B4651;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;color:var(--ink)}
 .mk.cluster.has-a .dot{border:3px solid var(--ocre);box-shadow:0 0 0 2px var(--ink)}
 .mk.cluster .dot::before{content:'';position:absolute;inset:-6px;border-radius:50%;border:1.5px dashed #3B4651;opacity:.55}
 .mlabel{position:absolute;left:44px;top:50%;transform:translateY(-50%);white-space:nowrap;background:rgba(247,250,251,.94);border:1px solid rgba(31,42,54,.35);border-radius:4px 10px 6px 9px;padding:3px 8px 4px;text-align:left;line-height:1.15;pointer-events:none;box-shadow:1px 2px 0 rgba(31,42,54,.12)}
 .mk.lbl-left .mlabel{left:auto;right:44px}
+/* In the 3D map a marker stands on a thin stick over its place, so it does not cover the block
+   model drawn there. The stick ends exactly on the place; only the dot takes presses. */
+.m3d .ov .mk:not(.cluster){--stick:34px;transform:translateY(calc(-1 * var(--stick)))}
+.m3d .ov .mk:not(.cluster)::after{content:'';position:absolute;left:50%;top:50%;width:2px;height:var(--stick);margin-left:-1px;background:var(--ink);box-shadow:0 0 0 1px rgba(243,235,221,.75);border-radius:1px;z-index:-1;pointer-events:none}
+/* Labels are closed: one shows on a first touch (.shown), under the mouse or with the keyboard focus. */
+.mk .mlabel{display:none}
+.mk.shown .mlabel,.mk:focus-visible .mlabel{display:block}
+.mk.shown,.mk:focus-visible{z-index:20}
+.ov [data-key]:has(.mk.shown),.ov [data-key]:focus-within{z-index:20 !important}
+@media (hover:hover){
+  .mk:hover .mlabel{display:block}
+  .mk:hover{z-index:20}
+  .ov [data-key]:hover{z-index:20 !important}
+}
 .mlabel strong{display:block;font-family:'Fraunces',Georgia,serif;font-size:14px;font-weight:700}
 .mlabel span{display:block;font-size:12px;color:#3B4651}
 .mk.ta .mlabel{background:#FBF4E6;border-color:var(--ink)}
@@ -114,6 +129,17 @@ button:focus-visible,[tabindex]:focus-visible{outline:3px solid #1E3E5C;outline-
 .sheet{position:absolute;left:0;right:0;bottom:0;max-height:86%;overflow:auto;background:var(--paper);border-top:2px solid var(--ink);border-radius:22px 22px 0 0;padding:10px 20px 24px;box-shadow:0 -10px 30px rgba(31,42,54,.2);animation:up .32s cubic-bezier(.2,.8,.3,1) both;z-index:20}
 @keyframes up{from{transform:translateY(40px);opacity:0}to{transform:none;opacity:1}}
 .grab{width:44px;height:5px;border-radius:3px;background:rgba(31,42,54,.25);margin:0 auto 12px}
+/* A sheet that grows (BottomSheet): its handle is dragged up to make it taller, down to bring it back. */
+/* Small, a finger drags the whole sheet; tall, its text scrolls. It never hands the pull on to the page. */
+.sheet.grows{transition:max-height .28s cubic-bezier(.2,.8,.3,1);touch-action:none;overscroll-behavior:contain}
+.sheet.grows.full{touch-action:pan-y}
+/* Tall, it goes over the title and the log at the top of the screen: it must be on top of them to take presses. */
+.sheet.grows.full,.sheet.grows.dragging{max-height:92%;z-index:21}
+.sheet.grows.dragging{transition:none}
+.sheet-handle{position:sticky;top:-10px;z-index:2;display:flex;align-items:center;justify-content:center;width:calc(100% + 40px);height:34px;margin:-10px -20px 0;padding:0;border:0;border-radius:22px 22px 0 0;background:var(--paper);cursor:grab;touch-action:none}
+.sheet-handle span{width:44px;height:5px;border-radius:3px;background:rgba(31,42,54,.35)}
+.sheet-handle:active{cursor:grabbing}
+.sheet-handle:active span{background:rgba(31,42,54,.6)}
 .sheet h2{margin:6px 0 2px;font-family:'Fraunces',Georgia,serif;font-size:26px;line-height:1.1}
 .sheet .place{margin:0 0 14px;color:#3B4651}
 .sheet-sources{margin:12px 0 0;padding-top:10px;border-top:1px dashed rgba(31,42,54,.3)}
@@ -266,6 +292,8 @@ button:focus-visible,[tabindex]:focus-visible{outline:3px solid #1E3E5C;outline-
   .top{padding:22px 28px 40px}
   .bottom{padding:24px 28px 24px}
   .sheet{left:auto;right:24px;bottom:24px;width:400px;border:2px solid var(--ink);border-radius:18px}
+  /* A card in a corner has nothing to be dragged to. */
+  .sheet-handle{display:none}
   .hint{top:120px}
   .toast{top:120px}
   .etop{padding:16px 28px 26px}
@@ -282,5 +310,6 @@ button:focus-visible,[tabindex]:focus-visible{outline:3px solid #1E3E5C;outline-
   .mk.ta .pulse,.cloud{animation:none}
   .pl{transition:none}
   .sheet,.kp,.mcard,.toast{animation:fadein .2s ease both}
+  .sheet.grows{transition:none}
   .stage.ret{animation:fadein .4s ease both}
 }

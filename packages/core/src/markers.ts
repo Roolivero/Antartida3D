@@ -1,11 +1,17 @@
 import { PTS, TIER, type MapPoint } from './content/points.ts';
 import type { SeaPoint } from './content/sea.ts';
 import { centroid, clusterPoints, separationZoom } from './clustering.ts';
-import { placeLabels, type LabelSide } from './labels.ts';
+import { labelSide, type LabelSide } from './labels.ts';
 import { focusWorld, geometry, toScreen, type Size, type View } from './viewport.ts';
 
-/** B/C labels appear once the map side exceeds this many px. */
-export const LABELS_MIN_PX = 640;
+/**
+ * What a press on a marker does. Labels are closed: a finger has no hover, so its first press
+ * shows the label and the second one opens; a mouse or the keyboard already see the label
+ * (hover, focus) and open at once.
+ */
+export function markerPress(shown: string | null, key: string, touch: boolean): 'show' | 'open' {
+  return touch && shown !== key ? 'show' : 'open';
+}
 
 interface MarkerBase {
   key: string;
@@ -54,7 +60,6 @@ export function buildMarkers(
   toScreenFn?: ScreenProjector
 ): Marker[] {
   const geo = geometry(size);
-  const labelsOn = geo.S * view.k > LABELS_MIN_PX;
   const projector: ScreenProjector = toScreenFn || ((x, y) => toScreen(geo, view, x, y));
   const markers: Marker[] = [];
 
@@ -100,26 +105,13 @@ export function buildMarkers(
     });
   }
 
-  const singles = markers.filter((m): m is PointMarker => m.kind === 'point');
-  const candidates = singles
-    .filter((m) => m.point.tier === 'A' || labelsOn)
-    .map((m) => ({
-      id: m.key,
-      left: m.left,
-      top: m.top,
-      title: m.point.title,
-      sub: m.point.tier === 'A' ? (m.check ? 'Explorado · ' + m.point.place : m.point.place) : TIER[m.point.tier],
-      preferred: (m.point.x > LABELS_MIN_PX ? 'left' : 'right') as LabelSide,
-      force: m.point.tier === 'A',
-    }));
-  const sides = placeLabels(candidates, markers);
-  for (const c of candidates) {
-    const m = singles.find((s) => s.key === c.id)!;
-    const side = sides.get(c.id);
-    if (side) {
-      m.label = { title: c.title, sub: c.sub, side };
-      if (side === 'left') m.cls += ' lbl-left';
-    }
+  // Every marker carries its label; the interface shows one at a time (markerPress).
+  for (const m of markers) {
+    if (m.kind !== 'point') continue;
+    const sub = m.point.tier === 'A' ? (m.check ? 'Explorado · ' + m.point.place : m.point.place) : TIER[m.point.tier];
+    const side = labelSide(m.left, m.point.title, sub, size.vw);
+    m.label = { title: m.point.title, sub, side };
+    if (side === 'left') m.cls += ' lbl-left';
   }
   return markers;
 }

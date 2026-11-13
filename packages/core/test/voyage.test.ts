@@ -2,7 +2,9 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
+  DRAKE_STORM,
   FLIGHT_CRUISE,
+  FUEGIA_MIN_DISTANCE,
   FUEGIA_LAND_MASK,
   GEAR_TAP_MS,
   ROUTE_LENGTH,
@@ -23,6 +25,7 @@ import {
   flightClearance,
   fuegiaWorldHeight,
   heightAt,
+  minCameraDistance,
   expeditionAt,
   nextGear,
   quizScore,
@@ -33,11 +36,14 @@ import {
   project,
   skipToNextStop,
   startVoyage,
+  stormAt,
+  stormCeiling,
   unproject,
   voyageArrived,
   voyageAt,
   voyageHeading,
   voyageLength,
+  voyageProgress,
   voyageSightings,
   voyageStops,
   worldHeight,
@@ -222,8 +228,13 @@ describe('flight altitude', () => {
   it('climbs little by little to its cruise height instead of shooting up', () => {
     // Soon after take-off it is only as high as the hills of Navarino need.
     expect(flightClearance(0.02, terrain)).toBeLessThan(FLIGHT_CRUISE * 0.6);
-    expect(flightClearance(0.1, terrain)).toBeLessThan(FLIGHT_CRUISE * 0.6);
-    expect(flightClearance(0.3, terrain)).toBeCloseTo(FLIGHT_CRUISE);
+    // Then it keeps climbing, to pass over the storm of the Drake: no step between two samples.
+    for (let i = 20; i < 300; i++) {
+      const rise = flightClearance((i + 1) / 1000, terrain) - flightClearance(i / 1000, terrain);
+      expect(rise, `t=${i / 1000}`).toBeLessThan(FLIGHT_CRUISE * 0.1);
+    }
+    // Past the storm it is back at its cruise height.
+    expect(flightClearance(0.85, terrain)).toBeCloseTo(FLIGHT_CRUISE);
     // Past the last islands (Cape Horn) it only climbs.
     for (let i = 130; i < 250; i++) {
       expect(flightClearance((i + 1) / 1000, terrain), `t=${i / 1000}`).toBeGreaterThanOrEqual(flightClearance(i / 1000, terrain));
@@ -330,6 +341,133 @@ describe('sightings', () => {
   it('has none from the plane', () => {
     expect(voyageSightings('plane')).toEqual([]);
     expect(sightingsInView('plane', 0.5)).toEqual([]);
+  });
+});
+
+describe('storm over the Drake Passage', () => {
+  const at = (kind: 'ship' | 'plane', t: number) => {
+    const p = voyageAt(kind, t);
+    return stormAt(p.x, p.y);
+  };
+
+  it('covers most of the passage, in open sea between Cape Horn and the South Shetland Islands', () => {
+    const { from, to, radius } = DRAKE_STORM;
+    const length = Math.hypot(to.x - from.x, to.y - from.y) + 2 * radius;
+    const hornos = project(-67.27, -55.98);
+    const livingston = project(-60.5, -62.6);
+    expect(length).toBeGreaterThan(0.7 * Math.hypot(livingston.x - hornos.x, livingston.y - hornos.y));
+    // Clear of the land at both ends, and of the Diego Ramírez Islands.
+    for (const [lon, lat] of [[-67.27, -55.98], [-68.7, -56.5], [-60.5, -62.6], [-62.5, -63.0], [-55.2, -61.1]]) {
+      const p = project(lon, lat);
+      expect(stormAt(p.x, p.y), `${lon}, ${lat}`).toBe(0);
+    }
+    expect(stormAt(DRAKE_STORM.x, DRAKE_STORM.y)).toBe(1);
+    expect(at('ship', 0)).toBe(0);
+    expect(at('ship', 1)).toBe(0);
+  });
+
+  it('builds up from its edge, all around the band', () => {
+    const { from, to, radius } = DRAKE_STORM;
+    const length = Math.hypot(to.x - from.x, to.y - from.y);
+    const along = { x: (to.x - from.x) / length, y: (to.y - from.y) / length };
+    // Past the end of the middle line, and to one side of its middle.
+    const ways = [{ p: to, d: along }, { p: DRAKE_STORM, d: { x: -along.y, y: along.x } }];
+    for (const { p, d } of ways) {
+      const out = (r: number) => stormAt(p.x + d.x * r, p.y + d.y * r);
+      expect(out(radius)).toBeCloseTo(0, 9);
+      expect(out(radius - 1)).toBeGreaterThan(0);
+      expect(out(radius - 1)).toBeLessThan(out(radius - 3));
+    }
+  });
+
+  it('lets the camera get close all over it, so the trip camera stays under the clouds', () => {
+    for (const kind of ['ship', 'plane'] as const) {
+      for (let i = 0; i <= 400; i++) {
+        const p = voyageAt(kind, i / 400);
+        if (stormAt(p.x, p.y) > 0) expect(minCameraDistance(p.x, p.y, 60), `${kind} ${i}`).toBe(FUEGIA_MIN_DISTANCE);
+      }
+    }
+    // Not past it: south of the storm the camera keeps off the plateau.
+    const end = voyageAt('ship', 1);
+    expect(minCameraDistance(end.x, end.y, 60)).toBe(60);
+  });
+
+  it('is over the ship from the Drake to the 60° S parallel', () => {
+    for (const id of ['drake', 'convergencia', 'paralelo-60']) {
+      expect(at('ship', voyageStops('ship').find((s) => s.milestone.id === id)!.t), id).toBe(1);
+    }
+  });
+
+  it('is flown over by the plane: above the clouds all the way through, with a gentle climb before it', () => {
+    let entered = false;
+    for (let i = 0; i <= 400; i++) {
+      const t = i / 400;
+      const p = voyageAt('plane', t);
+      if (stormAt(p.x, p.y) === 0) continue;
+      entered = true;
+      expect(flightClearance(t), `t = ${t}`).toBeGreaterThan(DRAKE_STORM.cloudTop);
+    }
+    expect(entered).toBe(true);
+    // Far from the storm the ceiling is gone, and it builds up without a step.
+    const end = voyageAt('plane', 1);
+    expect(stormCeiling(end.x, end.y)).toBe(0);
+    for (let i = 1; i <= 400; i++) {
+      const [a, b] = [voyageAt('plane', (i - 1) / 400), voyageAt('plane', i / 400)];
+      expect(Math.abs(stormCeiling(b.x, b.y) - stormCeiling(a.x, a.y)), `step ${i}`).toBeLessThan(1);
+    }
+  });
+
+  it('is where the ship and the plane are when the card of the Drake opens', () => {
+    for (const kind of ['ship', 'plane'] as const) {
+      const stop = voyageStops(kind).find((s) => s.milestone.id === 'drake')!;
+      expect(at(kind, stop.t), kind).toBeGreaterThan(0);
+    }
+  });
+
+  it('is explained in the card of the Drake, with its source, and owned up as a drawing', () => {
+    const drake = MILESTONES.find((m) => m.id === 'drake')!;
+    const facts = [drake.essential, ...drake.more];
+    expect(facts.some((f) => f.kind === 'real' && f.sources.includes('O46') && /temporales/.test(f.text))).toBe(true);
+    expect(facts.some((f) => f.kind === 'illustrative' && /tormenta/.test(f.text))).toBe(true);
+  });
+});
+
+describe('distance and time travelled', () => {
+  it('starts at zero and ends at the whole trip', () => {
+    for (const { id } of TRANSPORTS) {
+      const { totalKm } = voyageProgress(id, 0);
+      expect(voyageProgress(id, 0)).toMatchObject({ km: 0, hours: 0 });
+      expect(voyageProgress(id, 1).km).toBeCloseTo(totalKm, 6);
+      expect(voyageProgress(id, 2).km).toBeCloseTo(totalKm, 6);
+    }
+  });
+
+  it('grows along the trip', () => {
+    for (const { id } of TRANSPORTS) {
+      for (let i = 1; i <= 50; i++) {
+        expect(voyageProgress(id, i / 50).km).toBeGreaterThan(voyageProgress(id, (i - 1) / 50).km);
+      }
+    }
+  });
+
+  it('measures the flight as the real distance between Ushuaia and Marambio, not in map units', () => {
+    // The transport card gives about 1,230 km in a straight line.
+    const { totalKm } = voyageProgress('hercules', 1);
+    expect(totalKm).toBeGreaterThan(1230);
+    expect(totalKm).toBeLessThan(1300);
+  });
+
+  it('has a longer way by sea than by air', () => {
+    expect(voyageProgress('irizar', 1).totalKm).toBeGreaterThan(voyageProgress('hercules', 1).totalKm);
+  });
+
+  it('takes the hours of the distance at the cruise speed of each transport', () => {
+    for (const { id, cruiseKmh } of TRANSPORTS) {
+      const { km, hours } = voyageProgress(id, 0.5);
+      expect(hours).toBeCloseTo(km / cruiseKmh, 9);
+    }
+    // 14 and 15 knots: the faster ship takes less over the same route.
+    expect(voyageProgress('puerto-argentino', 1).hours).toBeLessThan(voyageProgress('irizar', 1).hours);
   });
 });
 

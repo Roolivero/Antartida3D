@@ -119,3 +119,94 @@ Propuesta (a validar):
 
 - #4 depende de #2 (estructura común), que aún no está hecha. Decisión: se trabaja sobre archivos propios de la expedición y se corrigen los bugs que aparezcan, avisando en el issue cuando se toquen archivos compartidos.
 - Criterio de terminado (del issue): recorrido completo en los tres niveles, fuentes verificadas, simulaciones marcadas, probado en celular y escritorio, `pnpm test && pnpm typecheck` en verde.
+
+## Segunda iteración (#46)
+
+Registro de lo que se decide en el issue #46 (rama `46-segunda-iteracion-expedicion-desde-ushuaia`). Cada decisión se anota acá en el mismo commit que la aplica, para que quien trabaje en otra rama la vea.
+
+### Kilómetros y horas en la barra del viaje (12-11-2026)
+
+- **Qué se ve:** una línea debajo de la barra de progreso, por ejemplo «Estimación: ≈ 320 de 1.408 km · ≈ 12 h de navegación». En el avión dice «de vuelo». Se actualiza mientras el viaje avanza o retrocede.
+- **Siempre es una estimación** y la línea lo dice con esa palabra. No es el registro de un viaje real.
+- **Kilómetros:** distancia sobre la esfera (fórmula de haversine, radio 6.371 km) a lo largo del recorrido dibujado, muestreado en 400 tramos. No se escalan las unidades del mapa: la proyección estereográfica polar las estira distinto según la latitud.
+- **Horas:** kilómetros dividido por la velocidad de crucero del transporte. No cuentan paradas, hielo, mal tiempo ni maniobras.
+- **Velocidades** (campo `cruiseKmh` de `TRANSPORTS`, en `core/src/content/ushuaia.ts`):
+  - Irízar: 14 nudos `[O5]`, unos 25,9 km/h.
+  - Puerto Argentino: 15 nudos `[O6]`, unos 27,8 km/h.
+  - Hércules: unos 453 km/h. **Cálculo propio**, porque ninguna fuente del catálogo da su velocidad de crucero: son los 1.584 km en línea recta entre el aeropuerto de Río Gallegos y Marambio, divididos por las «tres horas y media» de `[O14]`. La coordenada del aeropuerto (punto de referencia: 51°36'32" S, 69°18'44" O) sale de la AIP de ANAC (ver «Fuentes de cálculos» en `desde-ushuaia-fuentes.md`), sumada el 12-11-2026. No está en el catálogo de la interfaz porque ningún texto publicado la cita: el catálogo solo lista fuentes citadas, y una estimación no lleva fuente.
+- **Totales que resultan:**
+  - barcos: 1.408 km; unas 54 h el Irízar y unas 51 h el Puerto Argentino;
+  - avión: 1.233 km y unas 2 h 43 min.
+- **Diferencias con datos ya publicados, a propósito:**
+  - La ficha del Irízar decía solo «39 horas [...] los 1.000 km hasta la Península». Es otro tramo: la barra mide el recorrido dibujado hasta Marambio, que además empieza unos 10 km adentro de la ruta (`SHIP_HEAD_START`). Desde el 12-11-2026 la ficha da las dos cifras: unas 54 h para los 1.400 km dibujados y unas 39 h para los 1.000 km hasta la Península.
+  - La duración del vuelo desde Ushuaia sigue sin fuente (sección 9 de `desde-ushuaia.md`). La barra la muestra solo como estimación; si aparece una fuente, se reemplaza la velocidad calculada.
+- **Dónde está:** `voyageProgress(transport, t)` en `core/src/voyage.ts` (con pruebas en `core/test/voyage.test.ts`); el texto lo arma `tripLine` en `react-ui/src/voyage/VoyagePanel.tsx`; el estilo es `.vtrip` en `core/src/styles/voyage.css`.
+- **Accesibilidad:** la línea no es una región viva. Cambia en cada kilómetro y un lector de pantalla la anunciaría sin pausa. Se lee al recorrer la barra.
+
+### Tormenta en el Pasaje de Drake (12-11-2026)
+
+Primera versión. Se va a seguir iterando. Los puntos «Dónde está», «Por qué ese lugar y ese tamaño» y el pendiente del agua quedaron reemplazados por la sección «Tormenta extendida y mar agitado» de más abajo.
+
+- **Qué es:** un efecto fijo sobre el mar, hecho con cajas (regla del estilo de bloques): banco de nubes, lluvia, relámpagos, crestas blancas y ráfagas de viento. Se ve siempre, en el mapa 3D abierto y durante el viaje. No se dibuja en el mapa 2D.
+- **Es una ilustración, no un dato.** No muestra el tiempo real ni el lugar de un temporal. La ficha del hito lo dice con una línea marcada como ilustrativa.
+- **Dónde está:** `DRAKE_STORM` en `core/src/voyage.ts`, definido una sola vez. Centro donde la ruta marítima cruza 57,5° S; radio de 19 unidades de mapa (unos 150 km). `stormAt(x, y)` da cuánta tormenta hay en un punto (0 afuera, 1 adentro, con un borde suave de 4 unidades).
+- **Por qué ese lugar y ese tamaño:** entra entera en la caja de Tierra del Fuego, la única zona donde la cámara puede acercarse a menos de 60 unidades (`minCameraDistance`). Más al sur la cámara no podría bajar debajo de las nubes. Una prueba lo verifica.
+- **Viento de oeste a este** (`DRAKE_STORM.wind`): la lluvia cae inclinada hacia el este y las ráfagas y las crestas corren hacia el este. Los vientos del oeste figuran en `[I5]`.
+- **Ráfagas:** tiras blancas finas que nacen de la nada, se deslizan y se afinan hasta desaparecer. Tardan 7 segundos en cruzar su tramo, para que el movimiento sea suave.
+- **Nubes:** un solo banco que cubre toda la tormenta, sin pasillo. Base a 12 unidades de altura (`DRAKE_STORM.cloudBase`).
+- **Cámara:** cuando el vehículo entra en la tormenta, la cámara baja hasta quedar 2 unidades por debajo de la base de las nubes, para que no tapen el vehículo. Al salir vuelve a la distancia que tenía. El usuario puede volver a alejarse si quiere. Está en `react-ui/src/voyage/Voyage3D.tsx`.
+- **Vehículo en la tormenta:** el barco cabecea, rola y sube y baja con las olas, más cuanto más adentro está, y levanta rocío en la proa cuando la proa cae al agua. El avión se sacude un poco. Fuera de la tormenta el movimiento es el de siempre.
+- **Tamaño de lluvia, crestas y ráfagas:** están pensadas para la cámara del viaje (unas 9 unidades de altura). Si la cámara sube, crecen con ella hasta 6 veces. Desde lejos, cuando una gota mide menos de 5 px, no se dibujan: solo queda el banco de nubes.
+- **Movimiento reducido:** la tormenta queda quieta, sin relámpagos, y el barco no se sacude.
+- **Rendimiento:** las nubes son una sola geometría; lluvia, crestas y ráfagas son tres `InstancedMesh`. El tiempo sale del reloj del mar (`useSeaTime`), que ya pide cuadros a 30 fps.
+- **Texto del hito «Pasaje de Drake»:** lo primero que se lee es «Tiene fama de ser uno de los mares más bravos del planeta: es famoso por sus temporales.» No es cita textual, por pedido de quien lleva el issue. La fuente es `[O46]`: dice «famoso por sus temporales» en el cuerpo y «uno de los mares más turbulentos del planeta» en la descripción de la página. La frase «las más tormentosas del planeta según los navegantes» no se usa: solo se encontró en Wikipedia y en prensa.
+- **Fuente nueva `[O46]`:** Armada Argentina, consultada el 12-11-2026. La página no muestra fecha; sus metadatos dicen 25-11-2019. La página de fuentes ahora muestra la fecha de consulta de cada fuente que no sea del 11-11-2026.
+- **Archivo compartido tocado:** `react-ui/src/map3d/Map3DLayer.tsx`, una línea para montar `Storm3D`. Avisado en el issue #46. El shader del océano no se tocó.
+- **Dónde está el código:** `react-ui/src/voyage/Storm3D.tsx` (efecto), `Voyage3D.tsx` (cámara, movimiento del vehículo y rocío), `core/src/voyage.ts` (zona), `core/src/content/ushuaia.ts` (texto y fuente).
+- **Pendiente para la próxima iteración:** agitar el agua en el shader del océano; dibujar la tormenta en el mapa 2D.
+
+### Tormenta extendida y mar agitado (12-11-2026, segunda vuelta)
+
+Pedido de quien lleva el issue: la tormenta tiene que llegar más al sur y ocupar casi todo el Pasaje de Drake.
+
+- **Forma nueva:** ya no es un disco. Es una franja a lo largo del cruce: todo lo que está a menos de 18 unidades de mapa (unos 140 km) de una línea que va de 57,6° S, 66,6° O a 60,6° S, 63,5° O. Cubre desde unos 56,3° S hasta unos 61,5° S: más del 70 % de la distancia entre el Cabo de Hornos y la isla Livingston. No toca tierra: queda libre el Cabo de Hornos, las islas Diego Ramírez y las Shetland del Sur. Una prueba lo verifica.
+- **Sigue siendo una ilustración.** Ni el lugar ni el tamaño son un dato medido. La ficha del hito lo dice.
+- **Dónde está definida:** `DRAKE_STORM` pasó de `core/src/voyage.ts` a `core/src/storm.ts`, con `stormAt(x, y)` (cuánta tormenta hay en un punto) y `stormNearest(x, y)` (el punto de la línea media más cercano). Está en un módulo propio para que `fuegia.ts` pueda usarla sin importar el viaje.
+- **Hitos dentro de la tormenta:** el barco está en plena tormenta en «Pasaje de Drake», «Convergencia Antártica» y «Paralelo 60° Sur». Sale antes de las Shetland del Sur.
+- **Cámara, cambio en una regla compartida:** antes la cámara solo podía acercarse a menos de 60 unidades dentro de la caja de Tierra del Fuego, y por eso la tormenta era chica. Ahora `minCameraDistance` (`core/src/fuegia.ts`) deja acercarse también dentro de la tormenta. Es mar abierto: no hay meseta contra la que chocar. Así la cámara del viaje queda debajo de las nubes durante toda la tormenta. Efecto en el mapa abierto: el usuario también puede acercarse a mirar la tormenta. Al sur de la tormenta vuelve a regir el mínimo de 60.
+- **Cantidades:** la franja tiene unas 2,5 veces la superficie del disco. Suben en esa proporción las nubes (60), las gotas (750), las crestas (600) y las ráfagas (85). Los relámpagos pasan de 2 a 4. Siguen siendo una geometría de nubes y tres `InstancedMesh`.
+- **Detalle fino según la distancia:** la distancia de la cámara a la tormenta se mide ahora al punto más cercano de la franja, no a su centro, porque la franja es larga.
+- **Mar agitado (shader del océano, archivo compartido, avisado en el issue #46):** dentro de la tormenta el agua es más oscura y gris (sombra de las nubes), las olas del shader son más marcadas, y hay un oleaje de fondo que corre hacia el este, con crestas claras que a veces rompen en espuma. Las curvas de profundidad se atenúan un 70 % para no competir con el oleaje. El oleaje se apaga con la distancia de la cámara (entre 60 y 190 unidades) para que no titile desde lejos. Fuera de la tormenta el océano no cambia. Es ilustrativo: no es un estado del mar medido. Con movimiento reducido queda quieto, porque usa el mismo reloj del mar.
+  - Uniforms nuevos en `Ocean.tsx`: `uStormBand`, `uStormShape`, `uStormWind`. Salen de `DRAKE_STORM`: la zona se define una sola vez.
+- **Nubes más finas y traslúcidas** (pedido de quien lleva el issue, 12-11-2026): cada nube mide el 45 % de su alto anterior (`CLOUD_THICKNESS`) y la opacidad baja de 0,88 a 0,5 (`CLOUD_OPACITY`), en `Storm3D.tsx`. Desde lejos se ven el mar, la lluvia y el barco a través del banco.
+- **Barco entre las olas, más marcado** (12-11-2026): con el oleaje nuevo del océano el movimiento del barco casi no se notaba. Ahora cabecea hasta 0,24 rad (antes 0,16), rola hasta 0,22 (antes 0,2) y sube y baja 0,1 esloras (antes 0,07). El rocío pasa de 5 a 12 cajas, más grandes, y nace por encima de la cubierta: antes quedaba bajo el agua, porque estalla justo cuando la proa se hunde. Está en `Voyage3D.tsx`. Verificado en 12 cuadros seguidos a 1440 px y a 390 px.
+- **No se hace:** dibujar la tormenta en el mapa 2D. Decisión de quien lleva el issue (12-11-2026).
+- **Verificación:** capturas con el navegador en 1440 px, en el mapa abierto y en cada hito del viaje en barco, sin errores de consola. La suavidad del movimiento se miró en una secuencia de cuadros, no en video.
+
+### Pista del Pasaje de Drake en el mapa abierto (12-11-2026)
+
+Pedido de quien lleva el issue: con la vista del mapa, una pista sobre la tormenta para obtener información del Pasaje de Drake.
+
+- **Qué es:** un quinto punto del mar, `sea-drake`, en `core/src/content/sea.ts`. Se ve como los demás marcadores del mar: círculo con el ícono de olas, sobre la tormenta. Su cartel dice «Pasaje de Drake · ¿Por qué hay tormenta?». Al abrirlo muestra la ficha común (`PointSheet`).
+- **Cartel cerrado** (pedido de quien lleva el issue, 12-11-2026): al principio el cartel estaba siempre a la vista. Se cambió: queda cerrado como todos los carteles del mapa (issue #54, «Carteles del mapa cerrados» en `docs/decisiones.md`). Aparece al pasar el cursor, con el foco o con el primer toque en celular; el segundo toque abre la ficha.
+- **Dónde flota:** sobre el centro de la tormenta, 4 unidades por encima de la base de las nubes. La posición sale de `DRAKE_STORM`.
+- **Cuándo se ve:** solo en el mapa 3D abierto y solo cuando la tormenta mide al menos 70 px de ancho en pantalla (`SEA_HINT_MIN_PX`, en `core/src/camera.ts`). En la vista inicial no aparece, ni en escritorio ni en celular: ahí la tormenta es chica y la pista taparía los marcadores de las expediciones. Una prueba lo verifica. Durante el viaje se oculta, como todos los marcadores del mar: ahí la ficha del hito ya lo explica.
+- **Texto de la ficha:** los mismos datos del hito «Pasaje de Drake» (`[O46]` e `[I6]`), más la línea que dice que la tormenta dibujada es ilustrativa. Las fuentes se toman del catálogo del viaje (`VOYAGE_SOURCES`), no se copian.
+- **Etiqueta de la ficha:** «Mar y clima», no «Vida en el mar». Para eso `SeaPoint` tiene dos campos opcionales nuevos: `tag` y `over` (altura a la que flota y ancho de lo que tiene debajo).
+- **Orden:** `sea-drake` va último en `SEA_POINTS`. Las pruebas e2e y el teclado toman el primer marcador del mar, y tiene que ser uno visible en la vista inicial.
+- **Prueba compartida cambiada:** `core/test/sea.test.ts` ahora espera 5 puntos, acepta cualquier fecha de consulta de noviembre de 2026 (la fuente `[O46]` se leyó el 12) y deja fuera de la prueba de superposición a los puntos con `over`, que no se ven en la vista inicial.
+- **Limitación conocida:** la pista está en el centro de la tormenta. Si la cámara mira solo una punta de la franja, la pista queda fuera de pantalla.
+- **Verificación:** capturas a 1440 px y a 390 px con la pista visible y la ficha abierta con un toque real.
+
+### El Hércules vuela por encima de la tormenta (12-11-2026)
+
+Pedido de quien lleva el issue: el avión pasa por encima de la tormenta, en el mapa abierto y en la expedición.
+
+- **Qué cambia:** el perfil de vuelo (`flightClearance`, en `core/src/voyage.ts`) suma un piso sobre la tormenta: `stormCeiling(x, y)`, en `core/src/storm.ts`. Dentro de la tormenta el avión vuela 2,5 unidades por encima del tope de las nubes (`DRAKE_STORM.cloudTop`, 17). El piso baja a cero de forma suave en 24 unidades de mapa antes y después de la tormenta.
+- **Vale para los dos aviones:** el del viaje y el Hércules de ambiente del mapa abierto usan el mismo perfil (`heightOf`). No hubo que tocar `SeaLife.tsx`.
+- **Nubes con tope:** `Storm3D.tsx` no deja que ninguna nube pase de `cloudTop`.
+- **Cámara del viaje en avión:** ya no baja debajo de las nubes al entrar en la tormenta. Eso queda solo para el barco. La cámara sigue al avión, arriba.
+- **El avión ya no se sacude en la tormenta:** vuela por encima, en aire calmo. El barco sí se sigue sacudiendo.
+- **Es ilustrativo:** la altura del avión sobre la tormenta no es un nivel de vuelo real, igual que la altura de las nubes no es un dato. La altura de crucero dibujada (10.000 pies a ×10) sigue valiendo fuera de la tormenta.
+- **Prueba cambiada:** «climbs little by little» en `core/test/voyage.test.ts` pedía que el avión estuviera a altura de crucero al 30 % del viaje. Ahí ahora está sobre la tormenta. La prueba pide que suba sin saltos y que después de la tormenta vuelva a la altura de crucero. Prueba nueva: el avión está por encima del tope de las nubes en todo el tramo de tormenta.
+- **Verificación:** capturas del viaje en avión a 1440 px y a 390 px, en «Pasaje de Drake» y «Convergencia Antártica». El Hércules de ambiente del mapa abierto no se capturó: usa la misma función, cubierta por la prueba.

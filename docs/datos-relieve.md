@@ -182,16 +182,18 @@ Bedmap3 termina en 60° S, así que el 3D no tenía tierra en Sudamérica: Ushua
 - **Exageración vertical ×10**, no ×50: a ×50 una sierra de 1000 m mediría seis unidades del mapa junto a un canal de menos de una, y lo taparía. La leyenda lo declara.
 - **Color:** tinte según la altura y la pendiente: pasto en la costa, verde de bosque hasta unos 600 m, roca arriba y en las laderas empinadas, nieve desde unos 1000 m. No representa la cobertura real del suelo; la leyenda dice «color según altura».
 - **Precisión:** la simplificación de la malla conserva la costa, pero el relieve interior tiene un error de hasta unos 310 m (malla ancha) y 500 m (celular). Sirve para leer la forma del terreno, no para medir alturas.
-- **Cámara:** sobre esta región se puede acercar hasta 8 unidades (`FUEGIA_MIN_DISTANCE`); sobre la Antártida el mínimo sigue en 60.
+- **Cámara:** sobre esta región se puede acercar hasta 3 unidades (`FUEGIA_MIN_DISTANCE`); sobre la Antártida el mínimo sigue en 60. Antes eran 8 (#46). A 3 unidades y con la inclinación máxima la cámara queda a 1,5 unidades de altura: puede atravesar un pico de más de 1200 m (por ejemplo en la Cordillera Darwin). No hay grilla de alturas de esta región para evitarlo.
 - **Regenerar:** bajar `IBCSO_v2_bed.tif` a `~/.cache/antartida3d/ibcso/` (o indicar la carpeta con `IBCSO_DIR`) y correr `pnpm --filter @antartida/core fuegia`.
 - **Perfil bajo el vuelo:** `packages/core/src/flight-ground.ts` guarda la altura máxima de la tierra bajo la ruta del avión sobre Tierra del Fuego (60 valores, uno cada 0,2 % del viaje, 0,8 unidades a cada lado). Sale del mismo `IBCSO_v2_bed.tif` con `pnpm --filter @antartida/core flight-ground`. El avión del viaje lo usa para pasar por encima del relieve. Hay que regenerarlo si cambia la ruta.
 - **El mapa 2D no cambia:** sigue con la costa de Natural Earth.
 
-## Resto del hemisferio sur en 3D: siluetas y color del suelo (#42)
+## Resto del mundo en 3D: siluetas y color del suelo (#42, #46)
 
-Fuera de la Antártida y de la zona de IBCSO, la vista 3D muestra Sudamérica, la punta de África, Australia y Nueva Zelanda como **siluetas planas, sin relieve**. Son contexto geográfico, no datos científicos.
+Fuera de la Antártida y de la zona de IBCSO, la vista 3D muestra el resto del mundo, hasta 60° N, como **siluetas planas, sin relieve**. Son contexto geográfico, no datos científicos.
 
-- **Siluetas:** Natural Earth `ne_50m_land`, la misma fuente que la costa 2D. Están en `packages/core/src/southern-lands.ts` y se generan con `pnpm coastline`, recortadas a 80° del polo (unos 10° S).
+- **Hasta dónde:** 60° N (150° desde el Polo Sur, `WORLD_LANDS_CLIP_DEG`). La proyección del mapa es estereográfica polar: hacia el Polo Norte crece sin límite, así que el mundo entero no se puede dibujar. La cámara más lejana y más inclinada no llega a ver ese borde en las pantallas de referencia (una prueba lo verifica). En los últimos grados la tierra se disuelve en el mar para que el corte no se vea.
+- **Deformación:** en esta proyección las tierras del norte se ven muy estiradas (a 50° N, unas 8 veces más grandes que cerca del polo). Es propio de la proyección, no un error de los datos.
+- **Siluetas:** Natural Earth `ne_50m_land`, la misma fuente que la costa 2D. Están en `packages/core/src/southern-lands.ts` y se generan con `pnpm coastline`. Las tierras lejanas se simplifican más, en proporción a cuánto las agranda la proyección: solo se ven de lejos.
 - **Color del suelo:** Natural Earth II con relieve sombreado, versión de 50 m (`NE2_50M_SR`, v3.2.0). Es una cobertura del suelo idealizada: bosque, estepa, desierto y hielo, con sombreado de relieve. Es una ilustración cartográfica, no una imagen satelital.
 
 | Dato | Valor |
@@ -204,7 +206,10 @@ Fuera de la Antártida y de la zona de IBCSO, la vista 3D muestra Sudamérica, l
 | Fecha de consulta | 12 de noviembre de 2026 |
 
 - **Dónde está:** `~/.cache/antartida3d/natural-earth-2/NE2_50M_SR/NE2_50M_SR.tif`, fuera del repo. Se puede usar otra carpeta con la variable `NE2_DIR`.
-- **Archivo generado (va al repo):** `packages/core/src/assets/southern-lands-color.webp`. Es el raster reproyectado a la estereográfica polar del mapa. Se regenera con `pnpm --filter @antartida/core southern-lands-color`.
+- **Archivos generados (van al repo):** se regeneran los dos con `pnpm --filter @antartida/core southern-lands-color`.
+  - `packages/core/src/assets/southern-lands-color.webp`: las tierras cercanas, hasta 10° S. Es el raster reproyectado a la estereográfica polar del mapa.
+  - `packages/core/src/assets/world-lands-color.webp` (308 kB): el resto del mundo, hasta 60° N. En esta textura la distancia al centro es el ángulo desde el Polo Sur (acimutal equidistante). En la estereográfica el norte lejano se llevaría casi todos los píxeles. El shader hace la misma cuenta para leerla.
+- **Segunda consulta de la fuente:** 12 de noviembre de 2026, misma versión y misma licencia. El archivo descargado es el mismo `NE2_50M_SR.zip`.
 
 ## Otros datos geográficos del mapa (ya existían)
 

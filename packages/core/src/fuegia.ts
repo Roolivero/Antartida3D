@@ -1,4 +1,5 @@
 import { METERS_PER_MAP_UNIT } from './relief.ts';
+import { stormAt } from './storm.ts';
 
 /**
  * Tierra del Fuego, southern Patagonia and the Malvinas in map space: the land the Antarctic
@@ -48,8 +49,9 @@ export function inFuegia(x: number, y: number): boolean {
 /**
  * Closest the orbit camera may get to its target (map units). Over Antarctica `base` keeps it off
  * the 4 km plateau; around Tierra del Fuego the land is low and narrow channels need a close look.
+ * In the storm of the Drake, open sea, it may get as close: the camera has to go under the clouds.
  */
-export const FUEGIA_MIN_DISTANCE = 8;
+export const FUEGIA_MIN_DISTANCE = 3;
 export function minCameraDistance(x: number, y: number, base: number): number {
-  return inFuegia(x, y) ? Math.min(base, FUEGIA_MIN_DISTANCE) : base;
+  return inFuegia(x, y) || stormAt(x, y) > 0 ? Math.min(base, FUEGIA_MIN_DISTANCE) : base;
 }
