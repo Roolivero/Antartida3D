@@ -789,3 +789,35 @@ test('G6: in the entry view every hotspot dot is inside the viewport and the cam
   expect(ratio).toBeGreaterThan(1);
   expect(ratio).toBeLessThanOrEqual(1.25);
 });
+
+test('on desktop (1440px) the chapter panel can be hidden to a right-edge tab and shown again with focus restored', async ({
+  page,
+}) => {
+  const vw = page.viewportSize()?.width ?? 1440;
+  test.skip(vw < 900, 'Desktop only test');
+
+  await openOrcadasFromMap(page);
+
+  const panel = page.locator('#orc-chapter-panel');
+  const hideBtn = page.getByRole('button', { name: 'Ocultar panel' });
+  await expect(panel).toBeVisible();
+  await expect(hideBtn).toHaveAttribute('aria-expanded', 'true');
+  await expect(hideBtn).toHaveAttribute('aria-controls', 'orc-chapter-panel');
+
+  await hideBtn.click();
+
+  const showBtn = page.getByRole('button', { name: 'Mostrar panel' });
+  await expect(showBtn).toBeVisible();
+  await expect(showBtn).toHaveAttribute('aria-expanded', 'false');
+  await expect(showBtn).toHaveAttribute('aria-controls', 'orc-chapter-panel');
+  await expect(showBtn).toBeFocused();
+  await expect(panel).toBeHidden();
+  await expect(panel).toHaveAttribute('inert', '');
+
+  await showBtn.click();
+
+  await expect(panel).toBeVisible();
+  await expect(showBtn).toHaveCount(0);
+  await expect(hideBtn).toHaveAttribute('aria-expanded', 'true');
+  await expectFocused(page, ORCADAS_GUIDING_QUESTION);
+});

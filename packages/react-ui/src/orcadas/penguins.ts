@@ -5,7 +5,7 @@ import { PENGUIN_KNOLL, SLIDE_DIRECTION, VOXEL_PALETTE } from './stationModels.t
 /**
  * Penguin colony of the Orcadas diorama: a reconstruction (no source places the colony) of
  * Adélie and chinstrap penguins on a rocky knoll, with a few of them doing the round trip to the
- * sea: walk, toboggan down the snow, shake, swim and leap back onto the beach.
+ * sea: walk, toboggan down the snow, swim, leap back onto the beach and shake.
  *
  * Everything here is a pure function of time, so the scene can draw any instant and the tests
  * can check the whole loop (no overlap, nobody walks on water or through a building).
@@ -544,7 +544,6 @@ export function buildPenguinRoute(heightAt: HeightAt): PenguinRoute {
   const slide = toSamples(curve([rim, slideEnd], 0.12), ground);
   add('slide', slide, slide[slide.length - 1].d / SLIDE_SPEED);
   add('standUp', still(last()), 0.8);
-  add('shake', still(last()), 1.3);
   const walk2 = toSamples([slideEnd, edge], ground);
   add('walk', walk2, Math.max(0.6, walk2[walk2.length - 1].d / WALK_SPEED));
   const diveP = toSamples(curve([edge, dive], 0.1), (x, z) => Math.max(SWIM_Y, ground(x, z)));
@@ -554,6 +553,7 @@ export function buildPenguinRoute(heightAt: HeightAt): PenguinRoute {
   const leap = toSamples(curve([back, landing], 0.08), (x, z) => Math.max(SWIM_Y, ground(x, z)));
   add('leap', leap, Math.max(0.9, leap[leap.length - 1].d / 1.4));
   add('standUp', still(last()), 0.8);
+  add('shake', still(last()), 1.3);
   const walk3 = toSamples(curve([landing, side, rest], 0.15), ground);
   add('walk', walk3, walk3[walk3.length - 1].d / WALK_SPEED);
   // At rest the penguin turns back towards the rim, ready for the next trip.
@@ -678,7 +678,7 @@ export function travellerPose(route: PenguinRoute, t: number, offset: number, ou
       out.headPitch = (1 - smooth(0, 0.7, u)) * 1.2;
       break;
     case 'shake': {
-      // Quick shake to get the snow off, fading out.
+      // Quick shake to get the water off, fading out.
       const fade = Math.sin(u * Math.PI);
       out.roll = Math.sin(u * 44) * 0.24 * fade;
       out.flipL = out.flipR = 0.2 + fade * (0.55 + Math.sin(u * 44) * 0.25);

@@ -22,7 +22,8 @@ export type HotspotId =
   | 'bay'
   | 'colony'
   | 'flag'
-  | 'boat';
+  | 'boat'
+  | 'helipad';
 
 export interface CameraPose {
   pos: readonly [number, number, number];
@@ -83,11 +84,17 @@ export const VIEW_ELEVATION_DEG: readonly [number, number] = [5, 38];
 /** Entry view on desktop; the station sits left of the side panel. */
 export const OVERVIEW_POSE_DESKTOP: CameraPose = orbit(STATION_CENTRE, 22, VIEW_BEARING_DEG, 12, 4.8);
 
+/** Entry view on desktop with the side panel hidden; the station sits centred. */
+export const OVERVIEW_POSE_DESKTOP_FULL: CameraPose = orbit(STATION_CENTRE, 22, VIEW_BEARING_DEG, 12, 0);
+
+/** Portrait phones frame the whole row, from the penguin knoll to the helipad. */
+const MOBILE_CENTRE_X = 0.4;
+
 /** Portrait phone: farther back, the station high on the screen above the bottom panel. */
-export const OVERVIEW_POSE_MOBILE: CameraPose = orbit([STATION_CENTRE[0], 0.4, STATION_CENTRE[2]], 44, VIEW_BEARING_DEG, 15, 0, 6);
+export const OVERVIEW_POSE_MOBILE: CameraPose = orbit([MOBILE_CENTRE_X, 0.4, STATION_CENTRE[2]], 50, VIEW_BEARING_DEG, 15, 0, 6);
 
 /** Portrait phone with the panel expanded: only a strip at the top is left. */
-export const OVERVIEW_POSE_MOBILE_EXPANDED: CameraPose = orbit([STATION_CENTRE[0], 0.4, STATION_CENTRE[2]], 52, VIEW_BEARING_DEG, 20, 0, 14);
+export const OVERVIEW_POSE_MOBILE_EXPANDED: CameraPose = orbit([MOBILE_CENTRE_X, 0.4, STATION_CENTRE[2]], 58, VIEW_BEARING_DEG, 20, 0, 14);
 
 /** Phone on its side: a short, wide screen with the panel on the right; closer, so no two dots overlap. */
 export const OVERVIEW_POSE_LANDSCAPE: CameraPose = orbit(STATION_CENTRE, 16, VIEW_BEARING_DEG, 12, 4.6);
@@ -111,6 +118,7 @@ const screenLayout = layoutOf('screen');
 const mastLayout = layoutOf('windMast');
 const omondLayout = layoutOf('omond');
 const flagLayout = layoutOf('flag');
+const helipadLayout = layoutOf('helipad');
 
 /** The Zodiac, beached with its bow on the gravel (StationScene strands it at the same point). */
 const boatPoint: [number, number, number] = (() => {
@@ -212,27 +220,41 @@ export const HOTSPOTS: readonly HotspotDef[] = [
     pose: orbit([colonyPoint[0], colonyPoint[1] - 0.4, colonyPoint[2]], 6, 165, 18, 1.2),
     fallbackPct: [74, 46],
   },
+  {
+    id: 'helipad',
+    label: 'Helipuerto',
+    shortLabel: 'Helipuerto',
+    subtitle: 'Por acá llegan la dotación, el combustible y los científicos cuando el hielo no deja pasar al buque',
+    worldPos: [
+      helipadLayout.position[0],
+      helipadLayout.position[1] + 2.0,
+      helipadLayout.position[2],
+    ],
+    pose: orbit([helipadLayout.position[0], helipadLayout.position[1] + 0.6, helipadLayout.position[2]], 8, 180, 15, 1.5),
+    fallbackPct: [64, 54],
+  },
 ];
 
 export function poseForHotspot(
   focus: HotspotId | null,
   mobile: boolean,
   panelExpanded = false,
-  landscape = false
+  landscape = false,
+  panelHidden = false
 ): CameraPose {
   if (!focus || focus === 'overview') {
     if (landscape) return OVERVIEW_POSE_LANDSCAPE;
     if (mobile) {
       return panelExpanded ? OVERVIEW_POSE_MOBILE_EXPANDED : OVERVIEW_POSE_MOBILE;
     }
-    return OVERVIEW_POSE_DESKTOP;
+    return panelHidden ? OVERVIEW_POSE_DESKTOP_FULL : OVERVIEW_POSE_DESKTOP;
   }
   const found = HOTSPOTS.find((h) => h.id === focus);
   if (!found) {
     if (mobile) {
       return panelExpanded ? OVERVIEW_POSE_MOBILE_EXPANDED : OVERVIEW_POSE_MOBILE;
     }
-    return OVERVIEW_POSE_DESKTOP;
+    return panelHidden ? OVERVIEW_POSE_DESKTOP_FULL : OVERVIEW_POSE_DESKTOP;
   }
   return mobile ? mobilePose(found.pose, panelExpanded) : found.pose;
 }
@@ -296,7 +318,8 @@ export function Hotspots({
       const dotX = r.left + r.width / 2;
       const dotY = r.top + r.height / 2;
       const panelEl = document.querySelector('.orc-panel');
-      const panelLeft = panelEl ? panelEl.getBoundingClientRect().left : window.innerWidth - 504;
+      const panelVisible = panelEl && !panelEl.classList.contains('is-hidden');
+      const panelLeft = panelVisible ? panelEl.getBoundingClientRect().left : window.innerWidth - 24;
       const cardWidth = 320;
       const maxRight = panelLeft - 16;
 

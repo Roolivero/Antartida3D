@@ -12,6 +12,7 @@ import {
   compassPoint,
   dayLengthHours,
   decadeMeans,
+  helicopterOnPad,
   initialOrcadas,
   linearTrend,
   midMonthDayOfYear,
@@ -472,5 +473,17 @@ describe('time series statistics', () => {
       { year: 1907, value: null },
       { year: 1908, value: null },
     ]);
+  });
+});
+
+describe('helicopterOnPad', () => {
+  it('is true only from November to March (1..12) and normalizes out-of-range months', () => {
+    const expected = [true, true, true, false, false, false, false, false, false, false, true, true];
+    for (let month = 1; month <= 12; month++) {
+      expect(helicopterOnPad(month)).toBe(expected[month - 1]);
+    }
+    expect(helicopterOnPad(0)).toBe(true); // December
+    expect(helicopterOnPad(13)).toBe(true); // January
+    expect(helicopterOnPad(16)).toBe(false); // April
   });
 });

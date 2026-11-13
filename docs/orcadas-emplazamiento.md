@@ -100,12 +100,12 @@ Posición en metros desde el mástil de la bandera (x al este, z al norte). Todo
 
 Se probaron dos versiones sobre el plano real: a escala (6 m por unidad) y como maqueta compacta (distancias acortadas). En las dos la base quedaba desparramada, con edificios tapados y mucho suelo vacío, y la escena se leía como un plano. Lk aprobó cambiarla por un escenario:
 
-- **Selección:** se dibujan ocho elementos del sitio medido (`DIORAMA_ELEMENT_IDS` en `orcadas-layout.ts`): mástil de viento, abrigo, Casa Omond, bandera, dos pabellones naranjas (OSM 360745961, de techo abovedado, y 360745962, a dos aguas), una torre de radio y el bote. No se dibujan el cementerio, la usina, el tanque, el helipuerto ni los demás módulos.
+- **Selección:** se dibujan nueve elementos del sitio medido (`DIORAMA_ELEMENT_IDS` en `orcadas-layout.ts`): mástil de viento, abrigo, Casa Omond, bandera, dos pabellones naranjas (OSM 360745961, de techo abovedado, y 360745962, a dos aguas), una torre de radio, el helipuerto (OSM 1198904156) y el bote. No se dibujan el cementerio, la usina, el tanque ni los demás módulos.
 - **Qué sale de OSM:** qué edificio es, su planta (largo y ancho, a 3,5 m por unidad), su color y su techo.
 - **Qué es ilustrativo:** dónde está cada pieza. Van en fila frente a la cámara, de izquierda a derecha, sobre un istmo dibujado entre Bahía Scotia (adelante) y Bahía Uruguay (atrás). También son ilustrativos el relieve, la loma de la pingüinera y la altura de la torre (OSM no la da; se dibuja de 15 m).
 - **Agrandados para que se vean:** abrigo, mástil de viento, bandera y animales.
 - **Vista fija:** la cámara mira el escenario de frente, baja, desde Bahía Scotia. Al entrar se ve siempre la misma toma. Se puede girar 35° a cada lado, subir hasta 38° y acercar o alejar dentro de un rango.
 
-La etiqueta «Reconstrucción ilustrada» lo dice así: disposición ilustrativa, no a escala; una selección de edificios con su forma y sus colores según OpenStreetMap, acomodados en fila para que se vean; alturas aproximadas; animales, instrumentos y bandera agrandados; relieve y pingüinera ilustrativos.
+La etiqueta «Reconstrucción ilustrada» lo dice así: disposición ilustrativa, no a escala; una selección de edificios con su forma y sus colores según OpenStreetMap, acomodados en fila para que se vean; alturas aproximadas; animales, instrumentos y bandera agrandados; relieve y pingüinera ilustrativos; helicóptero ilustrativo, se muestra en la temporada de visitas.
 
 Las plantas, rumbos y posiciones medidas de la tabla de arriba siguen en `orcadas-site.ts` como referencia, con su prueba (`orcadas-site.test.ts`).

@@ -65,6 +65,7 @@ const {
   WOOD,
   WOOD_LIGHT,
   SEA_GREY,
+  WHALE_GREY,
   BROWN,
   BROWN_DARK,
   LAMP,
@@ -685,6 +686,132 @@ export const STATION_BOAT_BOXES: readonly Box[] = [
   [-1.04, 0.015, 0, 0.08, 0.03, 0.02, ZODIAC_MOTOR],
   [-1.145, 0.06, 0, 0.03, 0.11, 0.03, ZINC],
   [-1.145, 0.06, 0, 0.03, 0.03, 0.11, ZINC],
+];
+
+/**
+ * 9b. Station helipad (OSM way 1198904156, 13.5 x 13.5 m): grey concrete slab resting on y = 0,
+ * light perimeter curb, white H marking (3 boxes), and 8 edge lights (corners + side midpoints).
+ */
+const HELIPAD_SLAB_H = 0.07;
+const HELIPAD_CURB_H = 0.018;
+/** Top of the helipad curb: where a landed helicopter rests. */
+export const HELIPAD_TOP_Y = HELIPAD_SLAB_H + HELIPAD_CURB_H;
+
+export function buildHelipadBoxes(side: number): Box[] {
+  const padH = HELIPAD_SLAB_H;
+  const borderW = side * 0.055;
+  const borderH = HELIPAD_CURB_H;
+  const borderY = padH + borderH / 2;
+  const hH = 0.014;
+  const hY = padH + hH / 2;
+  const hLen = side * 0.44;
+  const hSpan = side * 0.36;
+  const hBar = side * 0.075;
+  const edge = side / 2 - borderW / 2;
+  const lightS = Math.max(0.08, side * 0.032);
+  const baseY = padH + borderH + 0.007;
+  const bulbY = padH + borderH + 0.027;
+
+  const lights: readonly [number, number][] = [
+    [-edge, -edge],
+    [0, -edge],
+    [edge, -edge],
+    [edge, 0],
+    [edge, edge],
+    [0, edge],
+    [-edge, edge],
+    [-edge, 0],
+  ];
+
+  return [
+    // Concrete slab
+    [0, padH / 2, 0, side, padH, side, ROCK],
+    // Light perimeter border
+    [0, borderY, edge, side, borderH, borderW, ZODIAC_TUBE],
+    [0, borderY, -edge, side, borderH, borderW, ZODIAC_TUBE],
+    [edge, borderY, 0, borderW, borderH, side - 2 * borderW, ZODIAC_TUBE],
+    [-edge, borderY, 0, borderW, borderH, side - 2 * borderW, ZODIAC_TUBE],
+    // White "H" marking (3 boxes)
+    [-hSpan / 2 + hBar / 2, hY, 0, hBar, hH, hLen, WHITE],
+    [hSpan / 2 - hBar / 2, hY, 0, hBar, hH, hLen, WHITE],
+    [0, hY, 0, hSpan - 2 * hBar, hH, hBar, WHITE],
+    // Edge lights at corners and side midpoints
+    ...lights.flatMap(([lx, lz]): Box[] => [
+      [lx, baseY, lz, lightS * 1.35, 0.014, lightS * 1.35, BLACK],
+      [lx, bulbY, lz, lightS, 0.026, lightS, LAMP],
+    ]),
+  ];
+}
+
+/**
+ * 9c. Sea King helicopter (+x nose, +y up, base on y = 0, length 1).
+ * Illustrative livery using VOXEL_PALETTE (type, livery and scale are illustrative).
+ */
+export const HELICOPTER_BOXES: readonly Box[] = [
+  // Boat-shaped watertight lower hull and main cabin
+  [0.08, 0.06, 0, 0.34, 0.032, 0.12, WHALE_GREY],
+  [0.09, 0.092, 0, 0.38, 0.036, 0.16, WHALE_GREY],
+  [0.08, 0.145, 0, 0.4, 0.076, 0.15, SEA_GREY],
+  [0.07, 0.185, 0, 0.36, 0.012, 0.13, WHITE],
+  // Nose and cockpit with front and side windows
+  [0.33, 0.085, 0, 0.11, 0.048, 0.13, ORANGE],
+  [0.32, 0.125, 0, 0.11, 0.044, 0.135, SEA_GREY],
+  [0.42, 0.098, 0, 0.08, 0.042, 0.095, ORANGE],
+  [0.3, 0.156, 0, 0.06, 0.036, 0.125, BLACK],
+  [0.29, 0.154, 0.072, 0.075, 0.034, 0.012, BLACK],
+  [0.29, 0.154, -0.072, 0.075, 0.034, 0.012, BLACK],
+  // Cabin side windows
+  [0.18, 0.148, 0.078, 0.045, 0.032, 0.01, BLACK],
+  [0.18, 0.148, -0.078, 0.045, 0.032, 0.01, BLACK],
+  [0.09, 0.148, 0.078, 0.045, 0.032, 0.01, BLACK],
+  [0.09, 0.148, -0.078, 0.045, 0.032, 0.01, BLACK],
+  [-0.01, 0.148, 0.078, 0.04, 0.032, 0.01, BLACK],
+  [-0.01, 0.148, -0.078, 0.04, 0.032, 0.01, BLACK],
+  // Twin-turbine engine cowling on top, intakes and exhausts
+  [0.09, 0.212, 0, 0.26, 0.046, 0.1, SEA_GREY],
+  [0.08, 0.24, 0, 0.18, 0.022, 0.082, ORANGE],
+  [0.23, 0.212, 0.028, 0.035, 0.034, 0.034, BLACK],
+  [0.23, 0.212, -0.028, 0.035, 0.034, 0.034, BLACK],
+  [-0.055, 0.214, 0.03, 0.045, 0.026, 0.026, ZINC],
+  [-0.055, 0.214, -0.03, 0.045, 0.026, 0.026, ZINC],
+  // Main rotor mast (hub and crossed blades live in HELICOPTER_ROTOR_BOXES)
+  [0.08, 0.268, 0, 0.032, 0.045, 0.032, ZINC],
+  // Tail boom, vertical pylon, horizontal stabilizer and tail rotor
+  [-0.17, 0.145, 0, 0.17, 0.072, 0.085, SEA_GREY],
+  [-0.31, 0.158, 0, 0.15, 0.052, 0.062, ORANGE],
+  [-0.39, 0.195, 0, 0.075, 0.072, 0.04, ORANGE],
+  [-0.415, 0.245, 0, 0.06, 0.056, 0.034, SEA_GREY],
+  [-0.405, 0.235, 0.06, 0.055, 0.014, 0.1, SEA_GREY],
+  [-0.42, 0.252, -0.028, 0.026, 0.026, 0.028, ZINC],
+  [-0.42, 0.252, -0.044, 0.016, 0.16, 0.008, BLACK],
+  [-0.42, 0.252, -0.044, 0.16, 0.016, 0.008, BLACK],
+  // Lateral sponsons with main wheels and rear tailwheel (resting on y = 0)
+  [0.06, 0.085, 0.132, 0.18, 0.046, 0.068, SEA_GREY],
+  [0.06, 0.085, -0.132, 0.18, 0.046, 0.068, SEA_GREY],
+  [0.145, 0.085, 0.132, 0.038, 0.042, 0.062, ORANGE],
+  [0.145, 0.085, -0.132, 0.038, 0.042, 0.062, ORANGE],
+  [0.06, 0.112, 0.092, 0.045, 0.022, 0.042, ZINC],
+  [0.06, 0.112, -0.092, 0.045, 0.022, 0.042, ZINC],
+  [0.085, 0.0225, 0.132, 0.052, 0.045, 0.028, BLACK],
+  [0.085, 0.0225, -0.132, 0.052, 0.045, 0.028, BLACK],
+  [0.085, 0.052, 0.132, 0.022, 0.026, 0.02, ZINC],
+  [0.085, 0.052, -0.132, 0.022, 0.026, 0.02, ZINC],
+  [-0.2, 0.018, 0, 0.038, 0.036, 0.022, BLACK],
+  [-0.2, 0.072, 0, 0.018, 0.08, 0.018, ZINC],
+];
+
+/** Mast-axis origin of the Sea King main rotor in HELICOPTER_BOXES space. */
+export const HELICOPTER_ROTOR_ORIGIN: readonly [number, number, number] = [0.08, 0.298, 0];
+
+/** Sea King main rotor (hub and crossed blades), centered on the mast axis. */
+export const HELICOPTER_ROTOR_BOXES: readonly Box[] = [
+  [0, 0, 0, 0.062, 0.026, 0.062, BLACK],
+  [0, 0.004, 0, 0.84, 0.01, 0.03, BLACK],
+  [0, 0.004, 0, 0.03, 0.01, 0.84, BLACK],
+  [0.395, 0.005, 0, 0.05, 0.012, 0.032, LAMP],
+  [-0.395, 0.005, 0, 0.05, 0.012, 0.032, LAMP],
+  [0, 0.005, 0.395, 0.032, 0.012, 0.05, LAMP],
+  [0, 0.005, -0.395, 0.032, 0.012, 0.05, LAMP],
 ];
 
 /**

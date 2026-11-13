@@ -50,6 +50,7 @@ const STAGE: Readonly<Record<string, readonly [number, number, number]>> = {
   'module-360745961': [2.1, -0.3, 0.08],
   'tower-3653005104': [2.9, -2.5, 0],
   'module-360745962': [5.35, -0.5, -0.1],
+  helipad: [9.4, 0, 0],
   boat: [2.4, 3.6, 0.3],
 };
 

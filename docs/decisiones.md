@@ -235,6 +235,14 @@ Plan: `.agents/plans/plan-orcadas-recorrido-guiado.md`. Objetivo: que la expedic
 - **La calidad vuelve sola:** al tapar la ventana con otra, el navegador frena los cuadros, el monitor de rendimiento bajaba la resolución (dpr 0,7) y no la subía nunca, porque en calidad baja el tope de 30 fps quedaba bajo el umbral de subida. Ahora los umbrales dependen de la calidad (como en el mapa 3D, `performanceBounds`), se mide de nuevo al volver a la ventana y, si el navegador descarta el contexto WebGL, se esperan 4 s a que lo devuelva antes de pasar al dibujo 2D.
 - **Menos rótulos repetidos:** el título de Llegar es la pregunta guía (antes repetía «Estación Orcadas» de la barra superior), Responder usa la toma general al atardecer, la bitácora queda en una línea y los números se muestran con coma decimal.
 
+### Helipuerto y helicóptero en Orcadas (#68, 13-11-2026)
+
+Plan: `.agents/plans/plan-helipuerto-orcadas.md`.
+
+- **Helipuerto:** se suma al escenario el helipuerto medido en OpenStreetMap (OSM way 1198904156, 13,5 × 13,5 m a 3,5 m por unidad) y el punto de interés «Helipuerto» con fuentes verificadas (COMNAP 2017; Armada Argentina, 15 dic 2025).
+- **Helicóptero en temporada de visitas:** Sea King voxel posado sobre la losa, visible solo entre noviembre y marzo (`helicopterOnPad(month)` en `@antartida/core`), según COMNAP (2017).
+- **Qué es ilustrativo:** el tipo de helicóptero, sus colores, su escala y su ubicación en el escenario. La leyenda de la escena lo declara.
+
 ## Benchmark
 
 - Lighthouse, peso, pan y pinch corren en Chromium headless sin GPU. Las cifras de frames e interacción sirven para comparar corridas entre sí, no como valores absolutos de un teléfono real.

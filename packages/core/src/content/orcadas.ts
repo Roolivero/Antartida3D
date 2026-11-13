@@ -128,6 +128,15 @@ export const ORCADAS_SOURCES: readonly OrcadasSource[] = [
     consulted: '12 de noviembre de 2026',
     verified: true,
   },
+  {
+    id: 'armada-relevo-2025',
+    label: 'El rompehielos ARA "Almirante Irízar" avanza en la Campaña Antártica de Verano (15 dic 2025)',
+    short: 'Armada, 2025',
+    org: 'Armada Argentina',
+    url: 'https://www.argentina.gob.ar/noticias/el-rompehielos-ara-almirante-irizar-avanza-en-la-campana-antartica-de-verano',
+    consulted: '13 de noviembre de 2026',
+    verified: true,
+  },
 ] as const;
 
 const SOURCE_MAP = new Map<string, OrcadasSource>(
@@ -175,6 +184,14 @@ export const ORCADAS_FACTS: readonly OrcadasFact[] = [
     title: 'Cómo se llega',
     text: 'A la base se llega en buque o en helicóptero, con unas 25 visitas de buques por año entre noviembre y marzo. No tiene muelle: cuenta con dos botes Zodiac con motor fuera de borda y con playas aptas para desembarcar botes chicos.',
     sourceIds: ['comnap'],
+  },
+  {
+    id: 'arrival-relevo-sea-king',
+    chapter: 'arrival',
+    kind: 'real',
+    title: 'Relevo en helicóptero',
+    text: 'La base tiene helipuerto. En diciembre de 2025 el hielo no dejó acercarse al rompehielos Irízar, que quedó a la deriva en Bahía Scotia: un helicóptero Sea King hizo 23 vuelos en más de dos horas y llevó a 21 personas de la dotación nueva, combustible y científicos.',
+    sourceIds: ['armada-relevo-2025', 'comnap'],
   },
   {
     id: 'arrival-elevacion',
@@ -481,7 +498,7 @@ export const ORCADAS_ERAS: readonly OrcadasEra[] = [
   },
 ] as const;
 
-export type OrcadasHotspotId = 'screen' | 'mast' | 'house' | 'flag' | 'bay' | 'colony' | 'boat';
+export type OrcadasHotspotId = 'screen' | 'mast' | 'house' | 'flag' | 'bay' | 'colony' | 'boat' | 'helipad';
 
 export interface OrcadasTourStop {
   id: string;
@@ -623,6 +640,7 @@ export const ORCADAS_HOTSPOT_FACTS: Record<OrcadasHotspotId, readonly string[]> 
   bay: ['year-hielo-octubre'],
   boat: ['arrival-transporte'],
   colony: ['arrival-fauna'],
+  helipad: ['arrival-relevo-sea-king'],
 };
 
 /** Facts a panel shows at once; the rest go folded under «Saber más». */
