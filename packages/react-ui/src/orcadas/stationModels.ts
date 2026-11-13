@@ -774,15 +774,8 @@ export const HELICOPTER_BOXES: readonly Box[] = [
   [0.23, 0.212, -0.028, 0.035, 0.034, 0.034, BLACK],
   [-0.055, 0.214, 0.03, 0.045, 0.026, 0.026, ZINC],
   [-0.055, 0.214, -0.03, 0.045, 0.026, 0.026, ZINC],
-  // Main rotor mast, hub and stopped axis-aligned crossed blades
+  // Main rotor mast (hub and crossed blades live in HELICOPTER_ROTOR_BOXES)
   [0.08, 0.268, 0, 0.032, 0.045, 0.032, ZINC],
-  [0.08, 0.298, 0, 0.062, 0.026, 0.062, BLACK],
-  [0.08, 0.302, 0, 0.84, 0.01, 0.03, BLACK],
-  [0.08, 0.302, 0, 0.03, 0.01, 0.84, BLACK],
-  [0.475, 0.303, 0, 0.05, 0.012, 0.032, LAMP],
-  [-0.315, 0.303, 0, 0.05, 0.012, 0.032, LAMP],
-  [0.08, 0.303, 0.395, 0.032, 0.012, 0.05, LAMP],
-  [0.08, 0.303, -0.395, 0.032, 0.012, 0.05, LAMP],
   // Tail boom, vertical pylon, horizontal stabilizer and tail rotor
   [-0.17, 0.145, 0, 0.17, 0.072, 0.085, SEA_GREY],
   [-0.31, 0.158, 0, 0.15, 0.052, 0.062, ORANGE],
@@ -805,6 +798,20 @@ export const HELICOPTER_BOXES: readonly Box[] = [
   [0.085, 0.052, -0.132, 0.022, 0.026, 0.02, ZINC],
   [-0.2, 0.018, 0, 0.038, 0.036, 0.022, BLACK],
   [-0.2, 0.072, 0, 0.018, 0.08, 0.018, ZINC],
+];
+
+/** Mast-axis origin of the Sea King main rotor in HELICOPTER_BOXES space. */
+export const HELICOPTER_ROTOR_ORIGIN: readonly [number, number, number] = [0.08, 0.298, 0];
+
+/** Sea King main rotor (hub and crossed blades), centered on the mast axis. */
+export const HELICOPTER_ROTOR_BOXES: readonly Box[] = [
+  [0, 0, 0, 0.062, 0.026, 0.062, BLACK],
+  [0, 0.004, 0, 0.84, 0.01, 0.03, BLACK],
+  [0, 0.004, 0, 0.03, 0.01, 0.84, BLACK],
+  [0.395, 0.005, 0, 0.05, 0.012, 0.032, LAMP],
+  [-0.395, 0.005, 0, 0.05, 0.012, 0.032, LAMP],
+  [0, 0.005, 0.395, 0.032, 0.012, 0.05, LAMP],
+  [0, 0.005, -0.395, 0.032, 0.012, 0.05, LAMP],
 ];
 
 /**

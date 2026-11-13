@@ -10,6 +10,9 @@ import {
   FLAG_SEGMENT_BOXES,
   FLAG_SEGMENT_WIDTH,
   HELICOPTER_BOXES,
+  HELICOPTER_ROTOR_BOXES,
+  HELICOPTER_ROTOR_ORIGIN,
+  offsetBoxes,
   SEA_ICE_FLOE_A,
   SEA_ICE_FLOE_B,
   SEA_ICE_FLOE_C,
@@ -627,7 +630,10 @@ export const SCENE_MODELS: Readonly<Record<string, readonly Box[]>> = {
     return buildHelipadBoxes(layoutOf('helipad').footprint[0]);
   },
   get helicopter() {
-    return HELICOPTER_BOXES;
+    return [
+      ...HELICOPTER_BOXES,
+      ...offsetBoxes(HELICOPTER_ROTOR_BOXES, ...HELICOPTER_ROTOR_ORIGIN),
+    ];
   },
 };
 

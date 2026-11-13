@@ -66,6 +66,8 @@ import {
   FLAG_SEGMENT_BOXES,
   FLAG_SEGMENT_WIDTH,
   HELICOPTER_BOXES,
+  HELICOPTER_ROTOR_BOXES,
+  HELICOPTER_ROTOR_ORIGIN,
   HELIPAD_TOP_Y,
   ICEBERG_PINNACLE_BOXES,
   ICEBERG_TABULAR_BOXES,
@@ -556,6 +558,14 @@ const BOAT_ARRIVAL_DISTANCE = 8.0;
 const WAKE_COUNT = 26;
 /** Rotor blade length in HELICOPTER_BOXES; scaled so the rotor matches the helipad side. */
 const HELICOPTER_ROTOR_SPAN = 0.84;
+const HELI_ARRIVAL_DURATION = 6.0;
+const HELI_ROTOR_COAST_DURATION = 2.0;
+const HELI_TOTAL_ARRIVAL_DURATION = HELI_ARRIVAL_DURATION + HELI_ROTOR_COAST_DURATION;
+const HELI_ROTOR_CRUISE_SPEED = 22;
+/** Approach start in helipad local units: high over Bahía Scotia (+z) and slightly west (-x). */
+const HELI_START_OFFSET: readonly [number, number, number] = [-3.5, 5.2, 10.5];
+const HELI_START_YAW = Math.atan2(HELI_START_OFFSET[2], -HELI_START_OFFSET[0]);
+const HELI_START_PITCH = -0.12;
 
 function clamp01(v: number): number {
   return v < 0 ? 0 : v > 1 ? 1 : v;
@@ -607,6 +617,8 @@ function StationElements({
   const cupsRef = useRef<Group>(null);
   const boatRef = useRef<Group>(null);
   const wakeRef = useRef<InstancedMesh>(null);
+  const heliRef = useRef<Group>(null);
+  const heliRotorRef = useRef<Group>(null);
   const elementRefs = useRef<Record<string, Group | null>>({});
 
   const presences = useRef<Record<BuildingId, number>>({
@@ -639,6 +651,12 @@ function StationElements({
     elapsed: 0,
   });
   const prevFrozenRef = useRef<boolean>(isFrozen);
+
+  const heliArrivalRef = useRef<{ active: boolean; elapsed: number }>({
+    active: showHelicopter && !reduced,
+    elapsed: 0,
+  });
+  const prevShowHeliRef = useRef<boolean>(showHelicopter);
 
   // Pulled up for the winter onto the flat gravel above the beach, so the chocks stay short.
   const boatBeachRest = useMemo(() => {
@@ -749,6 +767,7 @@ function StationElements({
   const vaneGeo = useMemo(() => buildBoxGeometry(WIND_VANE_BOXES), []);
   const cupsGeo = useMemo(() => buildBoxGeometry(WIND_CUPS_BOXES), []);
   const heliGeo = useMemo(() => buildBoxGeometry(HELICOPTER_BOXES), []);
+  const heliRotorGeo = useMemo(() => buildBoxGeometry(HELICOPTER_ROTOR_BOXES), []);
 
   const flagGeos = useMemo(() => FLAG_SEGMENT_BOXES.map((boxes) => buildBoxGeometry(boxes)), []);
   const flagJointRefs = useRef<(Group | null)[]>([]);
@@ -761,12 +780,13 @@ function StationElements({
       vaneGeo.dispose();
       cupsGeo.dispose();
       heliGeo.dispose();
+      heliRotorGeo.dispose();
       for (const g of flagGeos) g.dispose();
       boatBeachRest.chockGeo.dispose();
       boatGeo.dispose();
       wakeGeo.dispose();
     };
-  }, [geometries, vaneGeo, cupsGeo, heliGeo, flagGeos, boatBeachRest, boatGeo, wakeGeo]);
+  }, [geometries, vaneGeo, cupsGeo, heliGeo, heliRotorGeo, flagGeos, boatBeachRest, boatGeo, wakeGeo]);
 
   useLayoutEffect(() => {
     if (reduced) waveFlag(flagJointRefs.current, 0, windKmh);
@@ -799,6 +819,32 @@ function StationElements({
     }
     if (wakeRef.current && (isFrozen || reduced || !arrivalRef.current.active)) {
       wakeRef.current.visible = false;
+    }
+
+    const wasShowHeli = prevShowHeliRef.current;
+    prevShowHeliRef.current = showHelicopter;
+    if (heliRef.current) {
+      heliRef.current.rotation.order = 'YXZ';
+      if (!showHelicopter || reduced) {
+        heliArrivalRef.current.active = false;
+        heliRef.current.position.set(0, HELIPAD_TOP_Y, 0);
+        heliRef.current.rotation.set(0, 0, 0);
+        if (heliRotorRef.current) heliRotorRef.current.rotation.y = 0;
+      } else if (
+        !wasShowHeli ||
+        (heliArrivalRef.current.active && heliArrivalRef.current.elapsed === 0)
+      ) {
+        heliArrivalRef.current = { active: true, elapsed: 0 };
+        heliRef.current.position.set(
+          HELI_START_OFFSET[0],
+          HELIPAD_TOP_Y + HELI_START_OFFSET[1],
+          HELI_START_OFFSET[2]
+        );
+        heliRef.current.rotation.set(0, HELI_START_YAW, HELI_START_PITCH);
+        if (heliRotorRef.current) heliRotorRef.current.rotation.y = 0;
+      }
+    } else if (!showHelicopter) {
+      heliArrivalRef.current.active = false;
     }
 
     if (reduced) {
@@ -941,6 +987,47 @@ function StationElements({
           boatRef.current.rotation.set(strandedPose.roll + dRoll, bRotY, strandedPose.pitch + dPitch);
         }
       }
+      if (showHelicopter && heliRef.current && heliArrivalRef.current.active) {
+        heliRef.current.rotation.order = 'YXZ';
+        const dt = Math.min(delta, 0.05);
+        heliArrivalRef.current.elapsed += dt;
+        const elapsed = heliArrivalRef.current.elapsed;
+
+        if (elapsed < HELI_ARRIVAL_DURATION) {
+          const u = clamp01(elapsed / HELI_ARRIVAL_DURATION);
+          const horiz = 1 - (1 - u) ** 2.2;
+          const vert = smooth01(u);
+          heliRef.current.position.set(
+            HELI_START_OFFSET[0] * (1 - horiz),
+            HELIPAD_TOP_Y + HELI_START_OFFSET[1] * (1 - vert),
+            HELI_START_OFFSET[2] * (1 - horiz)
+          );
+          const yaw = HELI_START_YAW * (1 - vert);
+          const pitch =
+            HELI_START_PITCH * (1 - smooth01((u - 0.2) / 0.55)) +
+            0.08 * Math.sin(Math.PI * clamp01((u - 0.55) / 0.45));
+          const roll = 0.09 * Math.sin(Math.PI * vert);
+          heliRef.current.rotation.set(roll, yaw, pitch);
+        } else {
+          heliRef.current.position.set(0, HELIPAD_TOP_Y, 0);
+          heliRef.current.rotation.set(0, 0, 0);
+        }
+
+        if (heliRotorRef.current) {
+          const rotorSpeed =
+            elapsed <= HELI_ARRIVAL_DURATION
+              ? HELI_ROTOR_CRUISE_SPEED
+              : HELI_ROTOR_CRUISE_SPEED *
+                (1 - smooth01((elapsed - HELI_ARRIVAL_DURATION) / HELI_ROTOR_COAST_DURATION));
+          heliRotorRef.current.rotation.y += dt * rotorSpeed;
+        }
+
+        if (elapsed >= HELI_TOTAL_ARRIVAL_DURATION) {
+          heliArrivalRef.current.active = false;
+        } else {
+          arrivalMoving = true;
+        }
+      }
     }
 
     let moving = false;
@@ -1005,11 +1092,13 @@ function StationElements({
                 </group>
               )}
               {el.id === 'helipad' && showHelicopter && (
-                <group
-                  position={[0, HELIPAD_TOP_Y, 0]}
-                  scale={layout.footprint[0] / HELICOPTER_ROTOR_SPAN}
-                >
-                  <mesh geometry={heliGeo} material={vehicleMaterial} />
+                <group ref={heliRef} position={[0, HELIPAD_TOP_Y, 0]}>
+                  <group scale={layout.footprint[0] / HELICOPTER_ROTOR_SPAN}>
+                    <mesh geometry={heliGeo} material={vehicleMaterial} />
+                    <group ref={heliRotorRef} position={HELICOPTER_ROTOR_ORIGIN}>
+                      <mesh geometry={heliRotorGeo} material={vehicleMaterial} />
+                    </group>
+                  </group>
                 </group>
               )}
             </group>
