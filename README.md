@@ -28,6 +28,7 @@ Equipo **DOT ENV**, hackatón SoberaníaTech (Ushuaia, 2026), Eje 2: Antártida,
 │  ├─ diseno/           especificación de diseño (HANDOFF.md y prototipo)
 │  ├─ decisiones.md     registro de decisiones y diferencias
 │  ├─ datos-relieve.md  origen y archivos de los datos de relieve 3D (Bedmap3)
+│  ├─ tecnologias.md    guía fácil de leer de las tecnologías del proyecto
 │  └─ rendimiento.md    + rendimiento/ (results.json, capturas/)
 ├─ .agents/ .claude/ .githooks/
 ├─ AGENTS.md  ROADMAP.md  README.md  .gitignore
@@ -129,5 +130,7 @@ En cumplimiento con las bases de la hackatón, se declara el uso de herramientas
   > Plan, decisiones de diseño, revisión, verificación con capturas y parte de la implementación con Claude Code (modelo Claude Opus 5.5); implementación de los pasos delegada a Antigravity (Gemini 4 Hydrogen) bajo revisión. Cada frase de parada sale de una ficha con fuente verificada; no se agregaron datos nuevos.
 - **Resto del hemisferio sur en el mapa 3D (#42):**
   > Planificación, revisión y ajustes visuales con Claude Code (modelo Claude Opus 5.5); implementación de partes delegada a Antigravity (Gemini 3.8 Flash) bajo revisión. Las siluetas salen de Natural Earth y su color de Natural Earth II (ambos de dominio público); son contexto geográfico, no datos.
+- **Documento de tecnologías (#82):**
+  > Redactado con asistencia de IA a partir del código y la documentación del repositorio, con revisión del equipo. No agrega datos nuevos.
 - **Bordes del mapa 3D, resto del mundo hasta 60° N y gestos de la cámara (#46):**
   > Planificación, implementación y pruebas con asistencia de IA, con revisión del equipo. Las siluetas salen de Natural Earth y su color de Natural Earth II (ambos de dominio público); son contexto geográfico, no datos.
