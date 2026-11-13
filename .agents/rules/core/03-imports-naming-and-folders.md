@@ -17,5 +17,5 @@ Configuración de workspace y TypeScript.
 
 <!-- adapt -->
 - Workspace: `pnpm-workspace.yaml` y `tsconfig.base.json`.
-- Paquetes: `@antartida/core`, `@antartida/react-ui`, `@antartida/e2e`, `@antartida/bench`, `@antartida/dibujado`, `@antartida/atlas`.
+- Paquetes: `@antartida/core`, `@antartida/react-ui`, `@antartida/e2e`, `@antartida/bench`, `@antartida/dibujado`.
 <!-- /adapt -->

@@ -26,21 +26,16 @@ Reglas y arquitectura de trabajo para el equipo y agentes en este repositorio.
 
 ## 4. Arquitectura del repositorio (S1)
 - Monorepo pnpm en la raíz.
-- `apps/`: aplicaciones independientes a comparar (`apps/dibujado` en puerto 5103, `apps/atlas` en puerto 5175).
+- `apps/`: la aplicación (`apps/dibujado`, puerto 5103).
 - `packages/`: código compartido (`packages/core`, `packages/react-ui`, `packages/e2e`).
 - `scripts/bench/`: scripts de benchmark de rendimiento.
 - `docs/`: documentación unificada (`propuesta.pdf`, `diseno/`, `decisiones.md`, `rendimiento.md`).
 
-## 5. Cómo descartar una app
-- Para quedarse con una sola app, alcanza con borrar la carpeta de la otra en `apps/` y quitar su script correspondiente del `package.json` raíz.
-
-## 6. Comandos canónicos
+## 5. Comandos canónicos
 - `pnpm install`: instalación de dependencias del workspace.
 - `pnpm dev`: inicia `apps/dibujado` (puerto 5103).
-- `pnpm dev:atlas`: inicia `apps/atlas` (puerto 5175).
 - `pnpm build`: compila todas las aplicaciones.
-- `pnpm test`: corre suite de pruebas unitarias (`packages/core` y `apps/atlas`).
+- `pnpm test`: corre suite de pruebas unitarias (`packages/core`).
 - `pnpm typecheck`: validación de tipos TypeScript en el workspace.
 - `pnpm e2e`: tests de flujo con Playwright para `apps/dibujado`.
-- `pnpm --filter @antartida/atlas test:ui`: tests de interfaz para `apps/atlas`.
 - `pnpm bench`: benchmark de rendimiento.

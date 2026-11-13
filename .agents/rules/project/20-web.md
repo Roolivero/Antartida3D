@@ -34,6 +34,5 @@ Pruebas de interfaz y rendimiento.
 
 <!-- adapt -->
 - E2E: `pnpm e2e` (`packages/e2e/tests/`).
-- Smoke UI atlas: `pnpm --filter @antartida/atlas test:ui`.
 - Rendimiento: `pnpm bench`.
 <!-- /adapt -->

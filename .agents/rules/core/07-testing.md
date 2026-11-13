@@ -19,7 +19,6 @@ description: Pruebas automatizadas.
 Suite de pruebas del proyecto.
 
 <!-- adapt -->
-- Pruebas unitarias: `pnpm test` (Vitest para `@antartida/core`, Node test runner para `@antartida/atlas`).
+- Pruebas unitarias: `pnpm test` (Vitest para `@antartida/core`).
 - Pruebas E2E: `pnpm e2e` (`@antartida/e2e` con Playwright a 390 y 1440 px).
-- Pruebas de interfaz atlas: `pnpm --filter @antartida/atlas test:ui`.
 <!-- /adapt -->

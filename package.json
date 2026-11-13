@@ -8,7 +8,6 @@
   },
   "scripts": {
     "dev": "pnpm --filter @antartida/dibujado dev",
-    "dev:atlas": "pnpm --filter @antartida/atlas dev",
     "build": "pnpm -r --filter \"./apps/*\" build",
     "preview": "pnpm --filter @antartida/dibujado preview",
     "test": "pnpm -r --if-present test",
