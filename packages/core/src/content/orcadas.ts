@@ -245,6 +245,14 @@ export const ORCADAS_FACTS: readonly OrcadasFact[] = [
     sourceIds: ['comnap'],
   },
   {
+    id: 'year-zodiac',
+    chapter: 'months',
+    kind: 'real',
+    title: 'Sin muelle',
+    text: 'La base no tiene muelle: usa dos botes Zodiac con motor fuera de borda y desembarca en playas aptas para botes chicos.',
+    sourceIds: ['comnap'],
+  },
+  {
     id: 'year-fauna-meses',
     chapter: 'months',
     kind: 'sim',
@@ -484,6 +492,11 @@ export interface OrcadasTourStop {
   line: string;
   /** Journey stops only: the year the stop sets ('now' = maxYear). */
   year?: number | 'now';
+  /**
+   * Facts folded under the stop's «Saber más»: what the line leaves out. The stop's own fact is
+   * listed only when the line shortens it; otherwise «Saber más» would repeat the line.
+   */
+  more: readonly string[];
 }
 
 export const ORCADAS_TOUR: readonly OrcadasTourStop[] = [
@@ -494,6 +507,7 @@ export const ORCADAS_TOUR: readonly OrcadasTourStop[] = [
     spot: 'overview',
     factId: 'arrival-istmo',
     line: 'La base está en el istmo Ibarguren, entre las bahías Scotia y Uruguay, en la isla Laurie.',
+    more: ['arrival-coordenadas', 'arrival-elevacion'],
   },
   {
     id: 'arrival-antiguedad',
@@ -501,6 +515,7 @@ export const ORCADAS_TOUR: readonly OrcadasTourStop[] = [
     spot: 'flag',
     factId: 'arrival-antiguedad',
     line: 'Es la presencia humana estable más antigua de la Antártida.',
+    more: [],
   },
   {
     id: 'arrival-monumento',
@@ -508,6 +523,7 @@ export const ORCADAS_TOUR: readonly OrcadasTourStop[] = [
     spot: 'house',
     factId: 'done-monumento-hsm42',
     line: 'Casa Omond y Casa Moneta forman, con un cementerio, el Sitio y Monumento Histórico N.º 42.',
+    more: [],
   },
   {
     id: 'arrival-fauna',
@@ -515,6 +531,7 @@ export const ORCADAS_TOUR: readonly OrcadasTourStop[] = [
     spot: 'colony',
     factId: 'arrival-fauna',
     line: 'Viven pingüinos barbijo y adelia, skúas, petreles, elefantes marinos y focas de Weddell.',
+    more: ['arrival-fauna'],
   },
 
   // observation
@@ -524,6 +541,7 @@ export const ORCADAS_TOUR: readonly OrcadasTourStop[] = [
     spot: 'screen',
     factId: 'obs-instrumental-1903',
     line: 'En 1903 había cuatro abrigos meteorológicos con termómetros seco y húmedo, de máxima y de mínima.',
+    more: ['obs-instrumental-1903', 'obs-registro-1903', 'obs-simulacion'],
   },
 
   // journey
@@ -534,6 +552,7 @@ export const ORCADAS_TOUR: readonly OrcadasTourStop[] = [
     factId: 'eras-expedicion-bruce',
     year: 1903,
     line: 'La expedición escocesa de Bruce inauguró el observatorio el 1 de abril de 1903.',
+    more: ['eras-decreto-1904', 'eras-traspaso-1904', 'eras-hugo-acuna', 'eras-casa-moneta-1905'],
   },
   {
     id: 'journey-1927',
@@ -542,6 +561,7 @@ export const ORCADAS_TOUR: readonly OrcadasTourStop[] = [
     factId: 'eras-radio-1927',
     year: 1927,
     line: 'En 1927 se inauguró la primera estación radiotelegráfica antártica.',
+    more: ['eras-radio-1927', 'eras-dotacion-nativa-1927', 'eras-jose-moneta'],
   },
   {
     id: 'journey-1951',
@@ -550,6 +570,7 @@ export const ORCADAS_TOUR: readonly OrcadasTourStop[] = [
     factId: 'eras-traspaso-armada',
     year: 1951,
     line: 'En 1951 pasó a la Armada como Destacamento Naval (1952 según Cancillería).',
+    more: ['eras-unica-base'],
   },
   {
     id: 'journey-now',
@@ -558,11 +579,12 @@ export const ORCADAS_TOUR: readonly OrcadasTourStop[] = [
     factId: 'century-tendencia-zazulie',
     year: 'now',
     line: 'Desde 1950 el registro muestra un calentamiento significativo en las cuatro estaciones.',
+    more: ['century-tendencia-zazulie', 'century-promedios-temp', 'century-record-frio'],
   },
 ] as const;
 
 const FACT_MAP = new Map<string, OrcadasFact>(ORCADAS_FACTS.map((f) => [f.id, f]));
-const TOUR_FACT_IDS = new Set(ORCADAS_TOUR.map((stop) => stop.factId));
+const TOUR_FACT_IDS = new Set(ORCADAS_TOUR.flatMap((stop) => [stop.factId, ...stop.more]));
 
 export function factById(id: string): OrcadasFact | null {
   return FACT_MAP.get(id) ?? null;
@@ -575,6 +597,13 @@ export function tourStops(chapter: Chapter): OrcadasTourStop[] {
     const fact = FACT_MAP.get(stop.factId);
     return fact !== undefined && isPublishable(fact);
   });
+}
+
+/** Publishable facts folded under a stop's «Saber más», in declared order. */
+export function stopMoreFacts(stop: OrcadasTourStop): OrcadasFact[] {
+  return stop.more
+    .map((id) => FACT_MAP.get(id))
+    .filter((f): f is OrcadasFact => f !== undefined && isPublishable(f));
 }
 
 /** Guided-tour stop at `index` for `chapter`, or null if out of range. */
@@ -591,7 +620,7 @@ export const ORCADAS_HOTSPOT_FACTS: Record<OrcadasHotspotId, readonly string[]> 
   mast: ['obs-estacion-centenaria'],
   house: ['arrival-coordenadas'],
   flag: ['arrival-antiguedad'],
-  bay: ['year-hielo-octubre'],
+  bay: ['year-zodiac'],
   colony: ['arrival-fauna'],
 };
 

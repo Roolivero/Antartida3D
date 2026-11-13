@@ -181,6 +181,8 @@ Criterio de terminado del issue:
 
 > Enmienda: además se pulieron Responder (eje con grados enteros, bitácora en una línea y el detalle de la observación plegado) y la toma de la bandera. «Saber más» de la tarjeta de parada ya no se remonta al cambiar de parada (perdía el foco con ← y →) y la bitácora usa el signo menos tipográfico, como el resto de los gráficos. El PR queda para cuando Lk lo revise.
 
+> Enmienda (pedido de Lk tras probarlo): «Saber más» de cada parada muestra lo que la frase deja afuera y cambia con cada «Siguiente»; ya no repite la frase ni existe el «Saber más del capítulo» en los capítulos con paradas. Responder suma la lista de lo hecho, al estilo del cuaderno de «Desde Ushuaia». El abrigo de Observar se redibujó con volumen (puerta con canto y celosías dobles).
+
 ## Riesgos y decisiones abiertas
 
 - **Paradas sin ficha con fuente:** si un `spot` no tiene una ficha publicable que sirva de `line`, la parada no se crea. Nunca se inventa el texto.

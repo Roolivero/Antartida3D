@@ -1199,12 +1199,58 @@ details.orc-more > summary:focus-visible {
 /* Done chapter */
 .orc-done-seal-row {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 12px;
   background: #FBF4E6;
   border: 1.5px solid var(--ink);
   border-radius: 10px;
   padding: 8px 10px;
+}
+
+/* Closing checklist: solid chips for what was done, dashed for what was left (like .vnote). */
+.orc-checklist-lead {
+  margin: 2px 0 6px;
+  font-size: 13px;
+}
+
+.orc-checklist ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.orc-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 4px 10px;
+  border-radius: 18px;
+  border: 1.5px dashed var(--pencil);
+  color: var(--pencil);
+  font-size: 13px;
+}
+
+.orc-check svg {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  opacity: 0.7;
+}
+
+.orc-check.is-done {
+  border: 1.5px solid var(--ink);
+  background: var(--ice);
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.orc-check.is-done svg {
+  color: var(--deep);
+  opacity: 1;
 }
 
 .orc-seal {

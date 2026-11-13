@@ -1,11 +1,11 @@
 import { useEffect, useRef } from 'react';
-import { factById, type OrcadasTourStop } from '@antartida/core';
+import { factById, stopMoreFacts, type OrcadasTourStop } from '@antartida/core';
 import { FactCard, FactSources } from './FactList.tsx';
 import { KindChip } from './KindChip.tsx';
 
 /**
- * The active stop of the guided tour: one short line, its kind and its source, with the full fact
- * folded under «Saber más». The panel's main button moves forward and «Atrás» moves back; with focus
+ * The active stop of the guided tour: one short line, its kind and its source, with what the line
+ * leaves out folded under «Saber más» (nothing, when the line already says it all). The panel's main button moves forward and «Atrás» moves back; with focus
  * inside the card, the arrow keys do the same.
  */
 export function TourCard({
@@ -24,10 +24,16 @@ export function TourCard({
   onReachEnd?: () => void;
 }) {
   const fact = factById(stop.factId);
-  // A new stop starts with «Saber más» folded. The element stays mounted so focus on it survives the arrow keys.
+  const moreFacts = stopMoreFacts(stop);
+  // A new stop starts with «Saber más» folded. The element stays mounted so focus on it survives the
+  // arrow keys; when the new stop has nothing to fold, focus moves to the card instead of being lost.
+  const card = useRef<HTMLElement>(null);
   const more = useRef<HTMLDetailsElement>(null);
   useEffect(() => {
-    if (more.current) more.current.open = false;
+    const details = more.current;
+    if (!details) return;
+    details.open = false;
+    if (details.hidden && details.contains(document.activeElement)) card.current?.focus();
   }, [stop.id]);
 
   if (!fact) return null;
@@ -53,7 +59,7 @@ export function TourCard({
   };
 
   return (
-    <article className="orc-tour-card" onKeyDown={handleKeyDown}>
+    <article ref={card} className="orc-tour-card" tabIndex={-1} onKeyDown={handleKeyDown}>
       <div className="orc-tour-meta">
         <KindChip kind={fact.kind} />
         {total > 1 && (
@@ -69,10 +75,12 @@ export function TourCard({
 
       <FactSources fact={fact} />
 
-      <details ref={more} className="orc-more orc-tour-more">
+      <details ref={more} className="orc-more orc-tour-more" hidden={moreFacts.length === 0}>
         <summary>Saber más</summary>
         <div className="orc-more-facts">
-          <FactCard fact={fact} />
+          {moreFacts.map((f) => (
+            <FactCard key={f.id} fact={f} />
+          ))}
         </div>
       </details>
     </article>

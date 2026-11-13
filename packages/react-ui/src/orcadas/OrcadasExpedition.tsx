@@ -11,6 +11,7 @@ import {
   factsFor,
   hotspotFacts,
   initialOrcadas,
+  orcadasProgress,
   orcadasReducer,
   readingFor,
   seaIceAt,
@@ -315,6 +316,7 @@ export function OrcadasExpedition({
                 guesses={s.guesses}
                 obsMonth={s.obsMonth}
                 reading={reading}
+                progress={orcadasProgress(s)}
                 onGotoObservation={() => dispatch({ type: 'goto', chapter: 'observation' })}
               />
             )}

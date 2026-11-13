@@ -157,6 +157,10 @@ test('Responder: without reading shows monthly mean, reference line, and Volver 
   await expect(sentenceBlock).toContainText(`${seg1.asCold} de ${seg1.years}`);
   await expect(sentenceBlock).toContainText(`${seg2.asCold} de ${seg2.years}`);
 
+  // Straight to Responder: the checklist shows what was left, dashed.
+  await expect(page.locator('.orc-checklist-lead')).toContainText('Te faltó lo punteado');
+  await expect(page.locator('.orc-check', { hasText: 'Temperatura sin anotar' })).not.toHaveClass(/is-done/);
+
   const backToObsBtn = page.getByRole('button', { name: 'Volver a Observar' });
   await expect(backToObsBtn).toBeVisible();
   await backToObsBtn.click();

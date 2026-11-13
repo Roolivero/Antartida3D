@@ -10,6 +10,7 @@ import {
   sameMonthSeries,
   scoreObservation,
   truthFor,
+  type OrcadasProgressItem,
   type Reading,
   type ReadingKind,
 } from '@antartida/core';
@@ -22,11 +23,13 @@ export function Answer({
   guesses,
   obsMonth,
   reading,
+  progress,
   onGotoObservation,
 }: {
   guesses: Partial<Record<ReadingKind, number>>;
   obsMonth: number;
   reading: Reading;
+  progress: readonly OrcadasProgressItem[];
   onGotoObservation: () => void;
 }) {
   const normMonth = (((obsMonth - 1) % 12) + 12) % 12 + 1;
@@ -325,11 +328,12 @@ export function Answer({
         />
         <div className="orc-done-summary">
           <span className="orc-kicker hand">Bitácora sellada</span>
-          <p>
-            {recorded === 0
-              ? 'Recorriste la base y su registro desde 1903.'
-              : `Tu observación: ${obsScore} de ${recorded} ${recorded === 1 ? 'lectura' : 'lecturas'} dentro del margen.`}
-          </p>
+          {recorded > 0 && (
+            <p>
+              Tu observación: {obsScore} de {recorded} {recorded === 1 ? 'lectura' : 'lecturas'} dentro del margen.
+            </p>
+          )}
+          <Checklist progress={progress} />
         </div>
       </div>
 
@@ -362,6 +366,70 @@ export function Answer({
           </dl>
         </details>
       )}
+    </div>
+  );
+}
+
+const CHECK_LABELS: Record<OrcadasProgressItem['id'], (item: OrcadasProgressItem) => string> = {
+  arrival: ({ done, total }) => `Llegada: ${done} de ${total} paradas`,
+  temp: ({ done }) => (done ? 'Temperatura anotada' : 'Temperatura sin anotar'),
+  extra: ({ done, total }) => `Presión, viento y nubes: ${done} de ${total} (opcional)`,
+  journey: ({ done, total }) => `Viaje: ${done} de ${total} épocas`,
+};
+
+/** Small notebook drawings, one per checklist line. */
+function CheckIcon({ id }: { id: OrcadasProgressItem['id'] }) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      {id === 'arrival' && (
+        <>
+          <path d="M6 21V3" />
+          <path d="M6 4h12v3H6M6 7h12v3H6" />
+        </>
+      )}
+      {id === 'temp' && (
+        <>
+          <path d="M10 14.5V5a2 2 0 0 1 4 0v9.5a4 4 0 1 1-4 0Z" />
+          <path d="M12 10v7" />
+        </>
+      )}
+      {id === 'extra' && (
+        <>
+          <circle cx="12" cy="13" r="8" />
+          <path d="M12 13l4-4M8 13h1M15 13h1M12 8v1" />
+        </>
+      )}
+      {id === 'journey' && (
+        <>
+          <path d="M7 3h10M7 21h10M8 3c0 5 8 5 8 9s-8 4-8 9M16 3c0 5-8 5-8 9s8 4 8 9" />
+        </>
+      )}
+    </svg>
+  );
+}
+
+/**
+ * What the visitor did, like the voyage's notebook: each part done is a solid chip, each one left
+ * is dashed, so a gap shows at a glance. The optional readings never count as a gap.
+ */
+function Checklist({ progress }: { progress: readonly OrcadasProgressItem[] }) {
+  const missing = progress.filter((item) => !item.optional && item.done < item.total).length;
+  return (
+    <div className="orc-checklist">
+      <p className="orc-checklist-lead">
+        {missing === 0 ? 'Completaste la expedición.' : 'Te faltó lo punteado: podés volver desde los capítulos.'}
+      </p>
+      <ul aria-label="Lo que hiciste en la expedición">
+        {progress.map((item) => {
+          const done = item.done >= item.total;
+          return (
+            <li key={item.id} className={`orc-check${done ? ' is-done' : ''}`}>
+              <CheckIcon id={item.id} />
+              {CHECK_LABELS[item.id](item)}
+            </li>
+          );
+        })}
+      </ul>
     </div>
   );
 }

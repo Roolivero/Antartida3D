@@ -114,7 +114,7 @@ pnpm bench           # benchmark de rendimiento
     3. Viajar: 1903, 1927, 1951 y hoy, con la serie del siglo.
     4. Responder: la lectura comparada con el mismo mes de todos los años.
 
-    Se recorre entero sin escribir ningún número. El resto de las fichas queda en «Saber más». La tira de meses cambia la luz y el hielo de la escena en cualquier capítulo; en el celular es un chip con el mes que se despliega, y el panel del capítulo se arrastra para agrandarlo o achicarlo hasta dejar solo su nombre y el botón principal.
+    Se recorre entero sin escribir ningún número. Lo que cada frase deja afuera queda en el «Saber más» de esa parada. Al final, Responder muestra qué se completó y qué faltó. La tira de meses cambia la luz y el hielo de la escena en cualquier capítulo; en el celular es un chip con el mes que se despliega, y el panel del capítulo se arrastra para agrandarlo o achicarlo hasta dejar solo su nombre y el botón principal.
   - **Dato real:** la serie de temperatura (SCAR READER), las fechas de la historia y la elevación.
   - **Simulación (rotulada):** la observación del día, el hielo de la bahía por mes y la fauna por mes.
   - **Cálculo:** las horas de luz, la media móvil y la tendencia en dos tramos (1904–1950 y 1951–2025).

@@ -166,8 +166,15 @@ test('completes the full mobile tour without typing any numbers (390x844 and 360
 
   // Llegar: traverse all 4 stops with primary button
   await expect(page.locator('.orc-tour-count')).toHaveText('1 de 4');
+  // «Saber más» folds what the line leaves out, never the line again; with nothing left out it is not shown.
+  const tourLine = page.locator('.orc-tour-line');
+  const tourMore = page.locator('.orc-tour-more');
+  await tourMore.locator('summary').click();
+  await expect(tourMore.locator('.orc-fact-card')).not.toHaveCount(0);
+  await expect(tourMore).not.toContainText((await tourLine.innerText()).trim());
   await primary(page).click();
   await expect(page.locator('.orc-tour-count')).toHaveText('2 de 4');
+  await expect(tourMore).toBeHidden();
   await primary(page).click();
   await expect(page.locator('.orc-tour-count')).toHaveText('3 de 4');
   await primary(page).click();
@@ -215,6 +222,14 @@ test('completes the full mobile tour without typing any numbers (390x844 and 360
   await expect(sentence).toContainText(`${seg2.asCold} de ${seg2.years}`);
   await expect(sentence).toContainText(formatTempC(selectedTemp));
   await expect(page.getByRole('button', { name: 'Volver a Observar' })).toHaveCount(0);
+
+  // The closing checklist: everything required done, the optional readings left dashed.
+  const checklist = page.getByRole('list', { name: 'Lo que hiciste en la expedición' });
+  await expect(page.locator('.orc-checklist-lead')).toHaveText('Completaste la expedición.');
+  await expect(checklist.locator('.orc-check.is-done')).toHaveCount(3);
+  await expect(checklist).toContainText('Llegada: 4 de 4 paradas');
+  await expect(checklist).toContainText('Viaje: 4 de 4 épocas');
+  await expect(checklist.locator('.orc-check:not(.is-done)')).toContainText('Presión, viento y nubes: 0 de 3 (opcional)');
 
   await primary(page).click();
   await expect(log(page)).toContainText('1/2');

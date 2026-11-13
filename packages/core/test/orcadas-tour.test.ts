@@ -5,13 +5,16 @@ import {
   factById,
   factsFor,
   isPublishable,
+  ORCADAS_HOTSPOT_FACTS,
   panelFacts,
+  stopMoreFacts,
   tourStop,
   tourStops,
 } from '../src/content/orcadas.ts';
 import {
   CHAPTERS,
   initialOrcadas,
+  orcadasProgress,
   orcadasReducer as reduce,
   tourAtEnd,
 } from '../src/orcadas.ts';
@@ -144,5 +147,55 @@ describe('orcadas guided tour stops', () => {
     })();
     expect(answerPanelIds).not.toContain('done-monumento-hsm42');
     expect(answerPanelIds).toContain('done-laborc-actual');
+  });
+
+  it('folds every fact of a toured chapter under exactly one stop, and never just repeats the line', () => {
+    const onHotspots = new Set(Object.values(ORCADAS_HOTSPOT_FACTS).flat());
+    for (const chapter of CHAPTERS) {
+      const stops = tourStops(chapter);
+      if (stops.length === 0) continue;
+      const folded = stops.flatMap((stop) => stopMoreFacts(stop).map((f) => f.id));
+      expect(new Set(folded).size, chapter).toBe(folded.length);
+      const shown = new Set([...stops.map((stop) => stop.factId), ...folded]);
+      for (const fact of factsFor(chapter)) {
+        expect(shown.has(fact.id) || onHotspots.has(fact.id), `${chapter}:${fact.id}`).toBe(true);
+      }
+      // Nothing left for a chapter-wide «Saber más».
+      const { visible, more } = panelFacts(factsFor(chapter));
+      expect([...visible, ...more].map((f) => f.id), chapter).toEqual([]);
+    }
+    for (const stop of ORCADAS_TOUR) {
+      expect(stop.more.length, stop.id).toBe(stopMoreFacts(stop).length);
+      // The stop's own fact is folded only when its text says more than the line.
+      if (stop.more.includes(stop.factId)) {
+        expect(factById(stop.factId)!.text.length, stop.id).toBeGreaterThan(stop.line.length + 30);
+      }
+    }
+  });
+
+  it('tracks the stops seen and the readings taken for the closing checklist', () => {
+    const item = (st: ReturnType<typeof initialOrcadas>, id: string) => orcadasProgress(st).find((i) => i.id === id)!;
+    let s = initialOrcadas(11, 2026);
+    expect(item(s, 'arrival')).toMatchObject({ done: 1, total: tourStops('arrival').length });
+    expect(item(s, 'temp').done).toBe(0);
+    expect(item(s, 'journey').done).toBe(0);
+
+    s = reduce(s, { type: 'tourGo', index: 2 });
+    s = reduce(s, { type: 'tourPrev' });
+    expect(item(s, 'arrival').done).toBe(3);
+
+    s = reduce(s, { type: 'goto', chapter: 'observation' });
+    s = reduce(s, { type: 'guess', kind: 'temp', value: -2 });
+    s = reduce(s, { type: 'guess', kind: 'wind', value: 20 });
+    expect(item(s, 'temp').done).toBe(1);
+    expect(item(s, 'extra')).toMatchObject({ done: 1, total: 3, optional: true });
+
+    s = reduce(s, { type: 'goto', chapter: 'journey' });
+    expect(item(s, 'journey').done).toBe(1);
+    s = reduce(s, { type: 'year', year: 1960 });
+    expect(item(s, 'journey').done).toBe(2);
+    // Going back over a seen stop does not count it twice.
+    s = reduce(s, { type: 'tourGo', index: 0 });
+    expect(item(s, 'journey').done).toBe(2);
   });
 });
