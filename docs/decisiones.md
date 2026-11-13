@@ -137,6 +137,17 @@ Pedido de quien lleva el issue: los bordes del mapa se veían color crema y borr
 - **Tope de alejamiento:** la vista más lejana es la vista general (`homeDistance3D`, donde entra todo el continente: unas 785 unidades en escritorio y 2250 en celular). Antes era un valor fijo de 3600, y de lejos el mundo quedaba como un disco rodeado de papel. Se descartó un tope más cercano (470) porque el continente entero no entraba en pantalla.
 - **Límites de cámara en `@antartida/core`:** `MAX_POLAR_DEG` (60°) y `PAN_LIMIT` (800) pasaron de `Map3DLayer.tsx` a `core/src/camera.ts`. Una prueba (`camera.test.ts`) calcula el punto más lejano que ve la cámara con esos límites y falla si queda más allá de las tierras dibujadas o del plano del mar. Quien cambie un límite tiene que extender los datos.
 - **Gestos:** arrastrar con el botón izquierdo mueve el mapa sobre el suelo, igual que en 2D. El botón derecho gira e inclina. En pantalla táctil, un dedo mueve y dos dedos acercan y giran. Antes arrastrar giraba la cámara. La rueda y las teclas no cambian.
+- **Gestos con dos dedos, como en una app de globo (12 nov, segunda vuelta):** pedido de quien lleva el issue. Reemplaza «dos dedos acercan y giran» de la línea anterior.
+  - Un dedo mueve el mapa (sin cambios).
+  - Separar o juntar los dedos (pellizco) acerca o aleja.
+  - Girar los dedos gira la cámara: el mapa gira con los dedos, el mismo ángulo.
+  - Arrastrar los dos dedos hacia arriba inclina la vista hacia el horizonte; hacia abajo la vuelve a poner desde arriba. Recorrer el 40 % del alto de la pantalla cubre todo el rango (`TILT_SCREEN_FRACTION`).
+  - **Un modo por gesto:** cuando los dedos se movieron 10 px (`TWO_FINGER_START_PX`) el gesto elige entre «inclinar» y «acercar y girar», y lo mantiene hasta que se levanta un dedo. Así un pellizco no inclina por accidente. Acercar y girar sí van juntos.
+  - **Interpretación:** el pedido decía «zoom si los movés horizontalmente». Se tomó como el pellizco habitual (separar o juntar los dedos, en cualquier dirección). Si se quería otra cosa, se ajusta en `pickMode`.
+  - **Dónde está:** la regla del gesto, sin nada de pantalla, en `core/src/gestures.ts` (con pruebas). `Map3DLayer.tsx` la conecta a la cámara; la acción de dos dedos de la biblioteca queda apagada porque no distingue un giro de un arrastre.
+  - **Computadora:** no cambia. Arrastrar con el botón izquierdo mueve, la rueda acerca, el botón derecho gira (horizontal) e inclina (vertical). El pellizco del panel táctil acerca.
+  - **Arreglo de paso:** la biblioteca de cámara solo avisa que la cámara se detuvo si ve el último paso, muy chico, de un movimiento. Si el movimiento termina dentro de un cuadro, la cámara quedaba marcada como «en movimiento» para siempre: los marcadores no se reagrupaban y se seguían dibujando cuadros. Ahora, cuando la cámara deja de moverse, se da por detenida.
+  - **Verificación:** prueba e2e con dos toques simulados (pellizco, giro y arrastre vertical) en el perfil de celular. No se probó en un teléfono real.
 - **Acercamiento en Tierra del Fuego:** el mínimo baja de 8 a 3 unidades (`FUEGIA_MIN_DISTANCE`). Es un valor a ajustar con el uso. Límite conocido en `docs/datos-relieve.md`.
 - **`project()` vale también al norte del ecuador:** antes tomaba el valor absoluto de la latitud y espejaba el norte sobre el sur. Al sur del ecuador da los mismos valores que antes.
 - **Halo del título:** el halo crema detrás del título en la vista 3D no cambia. Sin él, el título oscuro no se lee sobre el mar.

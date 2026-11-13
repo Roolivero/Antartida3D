@@ -24,5 +24,6 @@ export * from './terrain.ts';
 export * from './fuegia.ts';
 export * from './fuegia-mesh.ts';
 export * from './camera.ts';
+export * from './gestures.ts';
 export * from './ocean.ts';
 export * from './sea.ts';

@@ -251,6 +251,87 @@ test.describe('3D relief view', () => {
     expect(end.polar).toBeCloseTo(start.polar, 3);
   });
 
+  test('on a touch screen two fingers zoom by pinching, turn by twisting and tilt by dragging up', async ({ page, isMobile }) => {
+    test.skip(!isMobile, 'touch gestures belong to the phone layout');
+    await page.goto('/');
+    await page.getByRole('group', { name: 'Modo de vista' }).getByRole('button', { name: 'Relieve 3D' }).click();
+    await page.waitForFunction(() => (window as any).__cameraControls);
+    const reset = () =>
+      page.evaluate(() => {
+        const cc = (window as any).__cameraControls;
+        cc.moveTo(0, 0, 0, false);
+        cc.dollyTo(600, false);
+        cc.rotateTo(0, 0.5, false);
+        (window as any).__invalidate();
+      });
+    const cam = () =>
+      page.evaluate(() => {
+        const cc = (window as any).__cameraControls;
+        // Where a point east of the target is drawn, as an angle around the target on screen.
+        const centre = cc.getTarget().clone().project(cc.camera);
+        const east = cc.getTarget().clone();
+        east.x += 50;
+        east.project(cc.camera);
+        return {
+          az: cc.azimuthAngle as number,
+          polar: cc.polarAngle as number,
+          d: cc.distance as number,
+          tx: cc.getTarget().x as number,
+          // Screen y grows down, so this grows clockwise.
+          eastOnScreen: Math.atan2(-(east.y - centre.y), east.x - centre.x),
+        };
+      });
+    const vp = page.viewportSize()!;
+    const [cx, cy] = [vp.width / 2, vp.height * 0.3];
+    const cdp = await page.context().newCDPSession(page);
+    type Pair = [{ x: number; y: number }, { x: number; y: number }];
+    /** Two fingers go from `from` to `to` in ten moves; `to` gets the step 0..1. */
+    const gesture = async (at: (u: number) => Pair) => {
+      const points = (u: number) => at(u).map((p, id) => ({ ...p, id }));
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: points(0) });
+      for (let i = 1; i <= 10; i++) await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: points(i / 10) });
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+      await page.waitForTimeout(150);
+      await page.waitForFunction(() => {
+        (window as any).__invalidate();
+        return !(window as any).__cameraControls.active;
+      });
+    };
+
+    // Spreading the fingers to twice the gap halves the distance; nothing else moves.
+    await reset();
+    let start = await cam();
+    await gesture((u) => [{ x: cx - 40 - 40 * u, y: cy }, { x: cx + 40 + 40 * u, y: cy }]);
+    let end = await cam();
+    expect(end.d).toBeCloseTo(start.d / 2, 0);
+    expect(end.az).toBeCloseTo(start.az, 3);
+    expect(end.polar).toBeCloseTo(start.polar, 3);
+    expect(end.tx).toBeCloseTo(start.tx, 1);
+
+    // Twisting the fingers clockwise turns the map clockwise with them, by the same angle.
+    await reset();
+    start = await cam();
+    const turn = Math.PI / 4;
+    await gesture((u) => [
+      { x: cx - 60 * Math.cos(turn * u), y: cy - 60 * Math.sin(turn * u) },
+      { x: cx + 60 * Math.cos(turn * u), y: cy + 60 * Math.sin(turn * u) },
+    ]);
+    end = await cam();
+    expect(Math.abs(end.az - start.az)).toBeCloseTo(turn, 2);
+    expect(end.eastOnScreen).toBeGreaterThan(start.eastOnScreen);
+    expect(end.polar).toBeCloseTo(start.polar, 3);
+    expect(end.d).toBeCloseTo(start.d, 1);
+
+    // Dragging both fingers up tilts the view towards the horizon; it does not zoom or turn.
+    await reset();
+    start = await cam();
+    await gesture((u) => [{ x: cx - 40, y: cy + 60 - 120 * u }, { x: cx + 40, y: cy + 60 - 120 * u }]);
+    end = await cam();
+    expect(end.polar).toBeGreaterThan(start.polar + 0.2);
+    expect(end.az).toBeCloseTo(start.az, 3);
+    expect(end.d).toBeCloseTo(start.d, 1);
+  });
+
   test('terrain is rendered and South Pole pixel is not ocean color', async ({ page }) => {
     await page.goto('/');
     const toggle = page.getByRole('group', { name: 'Modo de vista' });
