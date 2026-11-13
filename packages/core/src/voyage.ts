@@ -8,6 +8,7 @@ import { fuegiaWorldHeight } from './fuegia.ts';
 import { project, unproject } from './projection.ts';
 import { worldHeight } from './relief.ts';
 import { ROUTE_LENGTH, routeAt } from './route.ts';
+import { stormCeiling } from './storm.ts';
 import { heightAt, type TerrainMesh } from './terrain.ts';
 
 type Point = { x: number; y: number };
@@ -68,7 +69,7 @@ function clearEnvelope(at: number, mesh?: TerrainMesh): number {
  * over the relief under and beside its path, keeps climbing steadily to FLIGHT_CRUISE, and comes
  * down to the Marambio plateau, rising again over the Antarctic relief on the way. The clearance is
  * averaged over a span no wider than its own window, so the line is smooth and still never goes
- * below the ground. ILLUSTRATIVE: not a real flight profile.
+ * below the ground, and it passes over the storm of the Drake. ILLUSTRATIVE: not a real flight profile.
  */
 export function flightClearance(t: number, mesh?: TerrainMesh): number {
   const at = clamp01(t);
@@ -78,7 +79,9 @@ export function flightClearance(t: number, mesh?: TerrainMesh): number {
   const end = flightAt(1);
   const runway = at < 0.5 ? 0 : worldHeight(heightAt(end.x, end.y, mesh));
   const airborne = Math.min(smooth01(at / FLIGHT_WINDOW), smooth01((1 - at) / FLIGHT_WINDOW));
-  return runway + (Math.max(clear, cruise) - runway) * airborne;
+  // Over the storm of the Drake the plane flies above the clouds, not through them.
+  const over = flightAt(at);
+  return runway + (Math.max(clear, cruise, stormCeiling(over.x, over.y)) - runway) * airborne;
 }
 
 /**

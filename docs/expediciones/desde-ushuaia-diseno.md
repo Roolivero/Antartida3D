@@ -197,3 +197,16 @@ Pedido de quien lleva el issue: con la vista del mapa, una pista sobre la tormen
 - **Prueba compartida cambiada:** `core/test/sea.test.ts` ahora espera 5 puntos, acepta cualquier fecha de consulta de noviembre de 2026 (la fuente `[O46]` se leyó el 12) y deja fuera de la prueba de superposición a los puntos con `over`, que no se ven en la vista inicial.
 - **Limitación conocida:** la pista está en el centro de la tormenta. Si la cámara mira solo una punta de la franja, la pista queda fuera de pantalla.
 - **Verificación:** capturas a 1440 px y a 390 px con la pista visible y la ficha abierta con un toque real.
+
+### El Hércules vuela por encima de la tormenta (12-11-2026)
+
+Pedido de quien lleva el issue: el avión pasa por encima de la tormenta, en el mapa abierto y en la expedición.
+
+- **Qué cambia:** el perfil de vuelo (`flightClearance`, en `core/src/voyage.ts`) suma un piso sobre la tormenta: `stormCeiling(x, y)`, en `core/src/storm.ts`. Dentro de la tormenta el avión vuela 2,5 unidades por encima del tope de las nubes (`DRAKE_STORM.cloudTop`, 17). El piso baja a cero de forma suave en 24 unidades de mapa antes y después de la tormenta.
+- **Vale para los dos aviones:** el del viaje y el Hércules de ambiente del mapa abierto usan el mismo perfil (`heightOf`). No hubo que tocar `SeaLife.tsx`.
+- **Nubes con tope:** `Storm3D.tsx` no deja que ninguna nube pase de `cloudTop`.
+- **Cámara del viaje en avión:** ya no baja debajo de las nubes al entrar en la tormenta. Eso queda solo para el barco. La cámara sigue al avión, arriba.
+- **El avión ya no se sacude en la tormenta:** vuela por encima, en aire calmo. El barco sí se sigue sacudiendo.
+- **Es ilustrativo:** la altura del avión sobre la tormenta no es un nivel de vuelo real, igual que la altura de las nubes no es un dato. La altura de crucero dibujada (10.000 pies a ×10) sigue valiendo fuera de la tormenta.
+- **Prueba cambiada:** «climbs little by little» en `core/test/voyage.test.ts` pedía que el avión estuviera a altura de crucero al 30 % del viaje. Ahí ahora está sobre la tormenta. La prueba pide que suba sin saltos y que después de la tormenta vuelva a la altura de crucero. Prueba nueva: el avión está por encima del tope de las nubes en todo el tramo de tormenta.
+- **Verificación:** capturas del viaje en avión a 1440 px y a 390 px, en «Pasaje de Drake» y «Convergencia Antártica». El Hércules de ambiente del mapa abierto no se capturó: usa la misma función, cubierta por la prueba.

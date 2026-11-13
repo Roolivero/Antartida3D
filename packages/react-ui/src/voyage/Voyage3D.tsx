@@ -181,14 +181,12 @@ export function Voyage3D({ bus, reduced, overlay }: {
     const sway = s.kind === 'plane'
       ? { roll: Math.sin(time * 0.9) * 0.05, pitch: Math.sin(time * 0.7) * 0.015, lift: Math.sin(time * 1.4) * 0.035 }
       : { roll: Math.sin(time * 1.1) * 0.04, pitch: Math.sin(time * 0.8) * 0.025, lift: Math.sin(time * 1.3) * 0.012 };
-    // In the storm the waves throw the ship about, and the plane shakes; the deeper in, the more.
+    // In the storm the waves throw the ship about; the deeper in, the more.
     const rough = stormAt(p.x, p.y);
     // Bow up and down over each wave; the hull rises with it and rolls out of step.
     const wave = time * 2.1;
-    if (s.kind === 'plane') {
-      sway.roll += rough * Math.sin(time * 3.1) * 0.07;
-      sway.lift += rough * Math.sin(time * 4.3) * 0.03;
-    } else {
+    // The plane flies over the storm, in calm air.
+    if (s.kind === 'ship') {
       sway.pitch += rough * Math.sin(wave) * 0.24;
       sway.roll += rough * Math.sin(wave * 0.63 + 1) * 0.22;
       sway.lift += rough * Math.sin(wave - 0.9) * 0.1;
@@ -231,7 +229,8 @@ export function Voyage3D({ bus, reduced, overlay }: {
     // The camera always stays on the vehicle: the user can orbit and zoom around it, not pan away.
     if (controls) {
       // Entering the storm, the camera comes down under the clouds; leaving it, it goes back up.
-      const inside = rough > 0;
+      // Only for a ship: the plane is above the clouds, and the camera stays up there with it.
+      const inside = s.kind === 'ship' && rough > 0;
       if (inside !== storm.current.inside) {
         if (inside && camera.position.y > STORM_CAMERA_HEIGHT) {
           storm.current.distance = controls.distance;

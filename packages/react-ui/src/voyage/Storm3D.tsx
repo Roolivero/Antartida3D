@@ -13,7 +13,7 @@ const RAIN = 0xb9cbd6;
 const FOAM = 0xf7fafb;
 const BOLT = 0xfff3b0;
 
-const { radius: RADIUS, cloudBase: CLOUD_BASE } = DRAKE_STORM;
+const { radius: RADIUS, cloudBase: CLOUD_BASE, cloudTop: CLOUD_TOP } = DRAKE_STORM;
 /** Half the length of the middle line of the storm, and its direction in the frame of the storm (+x downwind). */
 const HALF = Math.hypot(DRAKE_STORM.to.x - DRAKE_STORM.from.x, DRAKE_STORM.to.y - DRAKE_STORM.from.y) / 2;
 const AXIS = Math.atan2(DRAKE_STORM.to.y - DRAKE_STORM.from.y, DRAKE_STORM.to.x - DRAKE_STORM.from.x) - DRAKE_STORM.wind;
@@ -95,8 +95,12 @@ function layOut(): Layout {
   // One bank of clouds over the whole storm, at three heights so they overlap without flickering.
   const spots = Array.from({ length: CLOUDS }, (_, i) => [...inBand(RADIUS - 4), 9 + rng() * 5, CLOUD_BASE + (i % 3) * 0.9] as const);
   return {
+    // No cloud goes over CLOUD_TOP: the plane of the trip flies just above it.
     clouds: spots.flatMap(([x, z, width, base]) =>
-      CLOUD.map(([cx, cy, cz, sx, sy, sz, color]): Box => [x + cx * width, base + cy * width * CLOUD_THICKNESS, z + cz * width, sx * width, sy * width * CLOUD_THICKNESS, sz * width, color])),
+      CLOUD.map(([cx, cy, cz, sx, sy, sz, color]): Box => {
+        const height = sy * width * CLOUD_THICKNESS;
+        return [x + cx * width, Math.min(base + cy * width * CLOUD_THICKNESS, CLOUD_TOP - height / 2), z + cz * width, sx * width, height, sz * width, color];
+      })),
     bolts: BOLT_CLOUDS.map((i) => [spots[i][0], spots[i][1], spots[i][3]] as const),
     streaks: Array.from({ length: STREAKS }, () => [...inBand(), rng()] as const),
     caps: Array.from({ length: WHITECAPS }, () => [...inBand(), 0.25 + rng() * 0.35, rng() * Math.PI * 2] as const),

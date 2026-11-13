@@ -37,6 +37,7 @@ import {
   skipToNextStop,
   startVoyage,
   stormAt,
+  stormCeiling,
   unproject,
   voyageArrived,
   voyageAt,
@@ -227,8 +228,13 @@ describe('flight altitude', () => {
   it('climbs little by little to its cruise height instead of shooting up', () => {
     // Soon after take-off it is only as high as the hills of Navarino need.
     expect(flightClearance(0.02, terrain)).toBeLessThan(FLIGHT_CRUISE * 0.6);
-    expect(flightClearance(0.1, terrain)).toBeLessThan(FLIGHT_CRUISE * 0.6);
-    expect(flightClearance(0.3, terrain)).toBeCloseTo(FLIGHT_CRUISE);
+    // Then it keeps climbing, to pass over the storm of the Drake: no step between two samples.
+    for (let i = 20; i < 300; i++) {
+      const rise = flightClearance((i + 1) / 1000, terrain) - flightClearance(i / 1000, terrain);
+      expect(rise, `t=${i / 1000}`).toBeLessThan(FLIGHT_CRUISE * 0.1);
+    }
+    // Past the storm it is back at its cruise height.
+    expect(flightClearance(0.85, terrain)).toBeCloseTo(FLIGHT_CRUISE);
     // Past the last islands (Cape Horn) it only climbs.
     for (let i = 130; i < 250; i++) {
       expect(flightClearance((i + 1) / 1000, terrain), `t=${i / 1000}`).toBeGreaterThanOrEqual(flightClearance(i / 1000, terrain));
@@ -389,6 +395,25 @@ describe('storm over the Drake Passage', () => {
   it('is over the ship from the Drake to the 60° S parallel', () => {
     for (const id of ['drake', 'convergencia', 'paralelo-60']) {
       expect(at('ship', voyageStops('ship').find((s) => s.milestone.id === id)!.t), id).toBe(1);
+    }
+  });
+
+  it('is flown over by the plane: above the clouds all the way through, with a gentle climb before it', () => {
+    let entered = false;
+    for (let i = 0; i <= 400; i++) {
+      const t = i / 400;
+      const p = voyageAt('plane', t);
+      if (stormAt(p.x, p.y) === 0) continue;
+      entered = true;
+      expect(flightClearance(t), `t = ${t}`).toBeGreaterThan(DRAKE_STORM.cloudTop);
+    }
+    expect(entered).toBe(true);
+    // Far from the storm the ceiling is gone, and it builds up without a step.
+    const end = voyageAt('plane', 1);
+    expect(stormCeiling(end.x, end.y)).toBe(0);
+    for (let i = 1; i <= 400; i++) {
+      const [a, b] = [voyageAt('plane', (i - 1) / 400), voyageAt('plane', i / 400)];
+      expect(Math.abs(stormCeiling(b.x, b.y) - stormCeiling(a.x, a.y)), `step ${i}`).toBeLessThan(1);
     }
   });
 
