@@ -1090,6 +1090,7 @@ details.orc-more > summary:focus-visible {
 }
 
 .orc-month-popover .orc-month-details {
+  max-height: none;
   overflow-y: visible;
 }
 
@@ -1639,17 +1640,25 @@ details.orc-more > summary:focus-visible {
     padding: 6px 10px;
   }
 
-  .orc-month-details {
-    max-height: calc(100dvh - 160px);
-  }
-
   .orc-month-strip-wrap {
     top: 58px;
-    left: 8px;
-    right: auto;
-    width: calc(52% - 16px);
-    max-width: 380px;
     z-index: 15;
+  }
+
+  /* The open strip stays left of the chapter panel, and scrolls inside the short screen. */
+  .orc-month-popover {
+    width: calc(54vw - 24px);
+    max-height: calc(100dvh - 116px);
+  }
+
+  /* Fuentes takes the place of the chapter panel, so the scene and its dots stay usable. */
+  .orc-sources {
+    top: 52px;
+    right: 8px;
+    bottom: 8px;
+    left: auto;
+    width: 46%;
+    max-height: none;
   }
 
   .orc-scene-badge {

@@ -1233,6 +1233,8 @@ function StationCameraAndProjection({
 
   const isPortrait = size.width < 900 && size.height > size.width;
   const mobile = isPortrait;
+  // Same test as the landscape media query of orcadas.css, where the panel takes the right 46 %.
+  const landscape = size.width > size.height && size.height <= 500;
 
   useLayoutEffect(() => {
     invalidate();
@@ -1251,7 +1253,7 @@ function StationCameraAndProjection({
     cc.maxPolarAngle = (90 - VIEW_ELEVATION_DEG[0]) * deg;
     cc.minDistance = 3;
     // Never farther than a little beyond the entry view: the stage ends past it.
-    const entry = poseForHotspot(null, mobile, Boolean(panelExpanded));
+    const entry = poseForHotspot(null, mobile, Boolean(panelExpanded), landscape);
     cc.maxDistance =
       Math.hypot(
         entry.pos[0] - entry.target[0],
@@ -1261,7 +1263,7 @@ function StationCameraAndProjection({
     cc.smoothTime = 0.32;
     cc.setBoundary(new Box3(new Vector3(-20, -1, -14), new Vector3(20, 24, 60)));
 
-    const pose = poseForHotspot(focus, mobile, Boolean(panelExpanded));
+    const pose = poseForHotspot(focus, mobile, Boolean(panelExpanded), landscape);
     if (!initializedRef.current) {
       // Every visit starts from the same view, without an entry flight.
       initializedRef.current = true;
@@ -1290,7 +1292,7 @@ function StationCameraAndProjection({
       );
     }
     invalidate();
-  }, [focus, mobile, reduced, panelExpanded, invalidate]);
+  }, [focus, mobile, landscape, reduced, panelExpanded, invalidate]);
 
   // Keyboard orbit (Arrow keys) and zoom (+ / -)
   useEffect(() => {
@@ -1393,11 +1395,12 @@ function StationCameraAndProjection({
     const minY = strip
       ? strip.getBoundingClientRect().bottom - overlay.getBoundingClientRect().top + 24
       : 116;
-    // Nor under the chapter panel of a phone, whatever its size (a bottom sheet the user drags).
-    const panel = isPortrait ? document.querySelector('.orc-panel') : null;
-    const panelTop = panel
-      ? panel.getBoundingClientRect().top - overlay.getBoundingClientRect().top - 28
-      : null;
+    // Nor under the chapter panel: above it on a portrait phone (a bottom sheet the user drags),
+    // left of it elsewhere (a card on the right).
+    const panelRect = document.querySelector('.orc-panel')?.getBoundingClientRect();
+    const overlayRect = overlay.getBoundingClientRect();
+    const panelTop = panelRect && isPortrait ? panelRect.top - overlayRect.top - 28 : null;
+    const panelLeft = panelRect && !isPortrait ? panelRect.left - overlayRect.left - 28 : null;
 
     for (const spot of HOTSPOTS) {
       const btn = map.get(spot.id);
@@ -1427,7 +1430,7 @@ function StationCameraAndProjection({
         continue;
       }
 
-      const maxX = size.width >= 900 ? size.width - 560 : size.width - 68;
+      const maxX = panelLeft ?? size.width - 68;
       const maxY = panelTop ?? (isPortrait ? size.height * 0.52 : size.height - 64);
       const sx = Math.max(58, Math.min(maxX, rawSx));
       const sy = Math.max(Math.min(minY, maxY), Math.min(maxY, rawSy));

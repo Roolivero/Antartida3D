@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { factById, type OrcadasTourStop } from '@antartida/core';
 import { FactCard, FactSources } from './FactList.tsx';
 import { KindChip } from './KindChip.tsx';
@@ -23,6 +24,11 @@ export function TourCard({
   onReachEnd?: () => void;
 }) {
   const fact = factById(stop.factId);
+  // A new stop starts with «Saber más» folded. The element stays mounted so focus on it survives the arrow keys.
+  const more = useRef<HTMLDetailsElement>(null);
+  useEffect(() => {
+    if (more.current) more.current.open = false;
+  }, [stop.id]);
 
   if (!fact) return null;
 
@@ -63,7 +69,7 @@ export function TourCard({
 
       <FactSources fact={fact} />
 
-      <details key={stop.id} className="orc-more orc-tour-more">
+      <details ref={more} className="orc-more orc-tour-more">
         <summary>Saber más</summary>
         <div className="orc-more-facts">
           <FactCard fact={fact} />

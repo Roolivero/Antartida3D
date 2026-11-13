@@ -88,6 +88,9 @@ export const OVERVIEW_POSE_MOBILE: CameraPose = orbit([STATION_CENTRE[0], 0.4, S
 /** Portrait phone with the panel expanded: only a strip at the top is left. */
 export const OVERVIEW_POSE_MOBILE_EXPANDED: CameraPose = orbit([STATION_CENTRE[0], 0.4, STATION_CENTRE[2]], 52, VIEW_BEARING_DEG, 20, 0, 14);
 
+/** Phone on its side: a short, wide screen with the panel on the right; closer, so no two dots overlap. */
+export const OVERVIEW_POSE_LANDSCAPE: CameraPose = orbit(STATION_CENTRE, 16, VIEW_BEARING_DEG, 12, 4.6);
+
 /** How far the user can zoom out, relative to the entry view of the device. */
 export const VIEW_MAX_ZOOM_OUT = 1.2;
 
@@ -197,9 +200,11 @@ export const HOTSPOTS: readonly HotspotDef[] = [
 export function poseForHotspot(
   focus: HotspotId | null,
   mobile: boolean,
-  panelExpanded = false
+  panelExpanded = false,
+  landscape = false
 ): CameraPose {
   if (!focus || focus === 'overview') {
+    if (landscape) return OVERVIEW_POSE_LANDSCAPE;
     if (mobile) {
       return panelExpanded ? OVERVIEW_POSE_MOBILE_EXPANDED : OVERVIEW_POSE_MOBILE;
     }

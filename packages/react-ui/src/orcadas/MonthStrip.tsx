@@ -7,7 +7,7 @@ import {
   midMonthDayOfYear,
   seaIceAt,
 } from '@antartida/core';
-import { useIsDesktop } from '../hooks.ts';
+import { useMediaQuery } from '../hooks.ts';
 import { FactList } from './FactList.tsx';
 import { KindChip } from './KindChip.tsx';
 import { SunArc } from './time/SunArc.tsx';
@@ -55,7 +55,8 @@ export function MonthStrip({
   onMonth: (m: number) => void;
   onHour: (h: number) => void;
 }) {
-  const isDesktop = useIsDesktop(900);
+  // The whole strip only where the scene has room for it: a phone, upright or on its side, gets the chip.
+  const isDesktop = useMediaQuery('(min-width: 900px) and (min-height: 501px)');
   const [open, setOpen] = useState(false);
 
   const normMonth = (((month - 1) % 12) + 12) % 12 + 1;

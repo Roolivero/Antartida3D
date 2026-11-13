@@ -1,3 +1,4 @@
+import { formatTempC } from '../century/centuryData.ts';
 import { beaufort, compassPoint, type Reading, type ReadingKind } from '@antartida/core';
 
 export const NOTEBOOK_LABELS: Record<ReadingKind, { title: string; unit: string }> = {
@@ -10,7 +11,7 @@ export const NOTEBOOK_LABELS: Record<ReadingKind, { title: string; unit: string 
 export function formatRecorded(kind: ReadingKind, val: number, reading: Reading): string {
   switch (kind) {
     case 'temp':
-      return `${val > 0 ? '+' : ''}${val.toFixed(1).replace('.', ',')} °C`;
+      return formatTempC(val, 1, true);
     case 'pressure':
       return `${val.toFixed(1).replace('.', ',')} hPa`;
     case 'wind': {
