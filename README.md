@@ -138,3 +138,5 @@ En cumplimiento con las bases de la hackatón, se declara el uso de herramientas
   > Redactado con asistencia de IA a partir del código y la documentación del repositorio, con revisión del equipo. No agrega datos nuevos.
 - **Bordes del mapa 3D, resto del mundo hasta 60° N y gestos de la cámara (#46):**
   > Planificación, implementación y pruebas con asistencia de IA, con revisión del equipo. Las siluetas salen de Natural Earth y su color de Natural Earth II (ambos de dominio público); son contexto geográfico, no datos.
+- **Cámara del viaje con movimiento reducido (#76):**
+  > Diagnóstico, arreglo y prueba e2e con asistencia de IA, con revisión del equipo. No se agregaron datos ni fuentes.
