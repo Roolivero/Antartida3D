@@ -118,8 +118,9 @@ export const TRANSPORTS: readonly Transport[] = [
     facts: [
       { text: 'Es «el buque insignia del Comando Conjunto Antártico». Mide 121,3 m de largo y navega a 14 nudos.', kind: 'real', sources: ['O5'] },
       { text: 'En marzo de 2026 salió de Ushuaia con 65 toneladas de carga y 260 tambores y tubos de combustible, gas y aceites para las bases.', kind: 'real', sources: ['O22'] },
-      { text: 'Lleva dos helicópteros Sea King. En Marambio, que está sobre una meseta, la carga pasa del buque a la base en helicóptero.', kind: 'real', sources: ['O16', 'O24'] },
-      { text: 'Aproximadamente 54 horas lleva navegar a 14 nudos los 1.400 km del recorrido dibujado hasta la Base Marambio. Los 1.000 km hasta la Península llevan unas 39 (cálculo propio).', kind: 'estimate', sources: [] },
+      // How they are used at Marambio is the question of the arrival: it is not told here.
+      { text: 'Lleva dos helicópteros Sea King.', kind: 'real', sources: ['O16'] },
+      { text: 'Aproximadamente 52 horas lleva navegar a 14 nudos los 1.350 km del recorrido dibujado hasta frente a la Base Marambio. Los 1.000 km hasta la Península llevan unas 39 (cálculo propio).', kind: 'estimate', sources: [] },
     ],
   },
   {
@@ -260,6 +261,8 @@ export const MILESTONES: readonly Milestone[] = [
     id: 'marambio',
     title: 'Base Marambio',
     anchor: [-56.62, -64.23],
+    // The base itself: a ship ends its trip off the island (SHIP_ANCHORAGE), and the pin stands on the base.
+    place: [-56.62, -64.23],
     kinds: BOTH,
     essential: { text: 'Llegaste. Marambio es la única base argentina con pista para aviones de carga y pasajeros, a unos 200 m sobre el mar.', kind: 'real', sources: ['O2', 'O24'] },
     more: [
@@ -293,6 +296,8 @@ export interface VoyageQuestion {
   answer: number;
   /** Asked only on ships or only on planes; on every transport that passes the milestone otherwise. */
   kind?: TransportKind;
+  /** Asked only on this transport: a question about the Irízar is not asked on another ship. */
+  only?: TransportId;
 }
 
 export interface ExpeditionStop {
@@ -344,26 +349,24 @@ export const EXPEDITION: Readonly<Record<string, ExpeditionStop>> = {
     ],
   },
   shetland: {
-    question: {
-      prompt: '¿Cómo llega la carga de un buque a una base que no tiene muelle?',
-      options: ['En lanchas de desembarco', 'El buque se apoya en la playa', 'Por un puente flotante'],
-      answer: 0,
-    },
     notes: [
       { kind: 'ship', fact: real('En las bases sin muelle la carga baja en lanchas de desembarco. Un «Grupo Playa» va a tierra y descarga junto con la gente de la base.', 'O43') },
       { only: 'irizar', fact: real('Las cargas más pesadas las lleva un helicóptero Sea King del rompehielos.', 'O43') },
     ],
   },
   marambio: {
+    // Only what source O24 says: the plateau and the helicopter. It does not say the base has no port or pier.
     question: {
-      prompt: '¿Cuánta gente vive en la Base Marambio durante el invierno?',
-      options: ['Unas 70 personas', 'Unas 700 personas', 'Nadie: la base se cierra'],
-      answer: 0,
+      only: 'irizar',
+      prompt: 'Marambio está sobre una meseta, a unos 200 m sobre el mar. ¿Cómo pasan del Irízar a la base las personas y la carga?',
+      options: ['Por un puente', 'En botes', 'En helicóptero'],
+      answer: 2,
     },
     notes: [
-      { fact: real('En Marambio viven en promedio 70 personas en invierno y 170 en verano, cuando se suman los campamentos científicos.', 'O45') },
+      // First on the Irízar: it answers the question.
+      { only: 'irizar', fact: real('La carga y el personal pasan del rompehielos a la base solo en helicóptero: un Sea King va y viene entre el buque y la meseta.', 'O24') },
+      { kind: 'ship', fact: { text: 'El lugar donde el buque espera frente a la isla es ilustrativo: no hay fuente que dé su posición. Se dibuja lejos porque el buque está agrandado y taparía la isla.', kind: 'illustrative', sources: [] } },
       { fact: real('En 2022, 227 personas pasaron un año entero en las siete bases permanentes argentinas: 179 varones, 31 mujeres y 17 niños.', 'O42') },
-      { only: 'irizar', fact: real('Marambio está sobre una meseta: la carga y el personal pasan del rompehielos a la base en un helicóptero Sea King.', 'O24') },
       { kind: 'ship', fact: real('Los residuos de las bases vuelven en barco a Ushuaia, donde se tratan para reciclarlos o para su disposición final.', 'O41') },
       { kind: 'plane', fact: real('La pista mide 1.200 m de largo por 35 m de ancho. La abrieron 21 hombres con barretas, picos y palas.', 'O45') },
     ],

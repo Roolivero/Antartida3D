@@ -236,3 +236,35 @@ Pedido de quien lleva el issue: el avión se sacude un poco cuando pasa por arri
 - **Prueba nueva** en `core/test/voyage.test.ts`: no hay sacudida fuera de la tormenta ni con movimiento reducido, nunca pasa de sus topes, crece con la tormenta y el avión pasa por el centro de la tormenta.
 - **Verificación:** capturas del viaje en avión en el hito «Pasaje de Drake», a 1440 px y a 390 px, seis cuadros seguidos en cada tamaño. El avión se mueve unos 4 px entre cuadros en escritorio y unos 2 px en celular, sin errores en la consola. Con movimiento reducido, dos capturas tomadas con 2 segundos de diferencia son idénticas.
 - **Bug aparte, no causado por este cambio:** con movimiento reducido la cámara no va al vehículo al saltar a un hito (#76). Se reproduce en `main`.
+
+### Llegada a la Base Marambio (13-11-2026)
+
+Pedido de quien lleva el issue, para dejar lista la llegada antes de empezar la expedición de la base (#74). Se hace en dos etapas.
+
+**Etapa 1 (hecha):**
+
+- **Qué pasaba:** la ruta del mar termina en la coordenada de la base, que está sobre una meseta. El buque navegaba más de 5 km por adentro de la isla.
+- **El buque se detiene frente a la isla:** el viaje en buque termina 7 unidades de mapa antes del final de la ruta (`SHIP_ANCHORAGE`, en `core/src/voyage.ts`). Queda en 63,79° S, 56,39° O, a unos 51 km de la base, con unos 46 km de mar hasta la costa (cálculo propio sobre el relieve del mapa). Es el mismo recurso que `SHIP_HEAD_START` en la salida de Ushuaia.
+- **Por qué 7 unidades:** primero se probó con 2 (unos 15 km) y no se veía. Cerca de Marambio la cámara no baja de 60 unidades (`MIN_DISTANCE`), y a esa distancia el buque se dibuja de 4,5 unidades de largo: quedaba pegado al pin de la base. Con 8 quedaba junto a las islas del norte. Con 7 hay mar a la vista entre el buque y la isla, en celular y en escritorio.
+- **Vale para los dos buques:** el Irízar y el Puerto Argentino usan el mismo recorrido. El avión no cambia: aterriza en la base.
+- **`route.ts` no se toca:** esa ruta la comparten la línea del mapa 2D, el Irízar de ambiente del mapa abierto y los extremos del vuelo. Sigue terminando en la base.
+- **Es ilustrativo:** la fuente `[O24]` solo dice que el rompehielos trabajó «frente a la base». No dice dónde ni a qué distancia. La ficha de llegada de los buques lo declara con una nota, que también dice que se dibuja lejos porque el buque está agrandado.
+- **Pin en la base:** el hito `marambio` lleva `place`, así su pin queda sobre la base y no en el mar.
+- **Cámara en la llegada:** un hito con `place` lleva la cámara a ese lugar mientras su ficha está abierta (Cabo de Hornos). En la llegada de un buque la cámara va a mitad de camino entre el buque y la base, para que se vean los dos por encima de la ficha (`Voyage3D.tsx`). En la llegada del avión se queda con el avión, como antes.
+- **Pregunta nueva, solo del Irízar:** «Marambio está sobre una meseta, a unos 200 m sobre el mar. ¿Cómo pasan del Irízar a la base las personas y la carga?» Opciones: por un puente, en botes, en helicóptero. `VoyageQuestion` suma `only`, como ya tenían las notas.
+- **No se afirma que la base «no tiene puerto»:** `[O24]` no lo dice. La pregunta se apoya en la meseta, que sí está en la fuente.
+- **Preguntas que salen:** la de Shetland del Sur se quita (su dato de las lanchas queda como nota). La de la población de la base, con su nota, pasa a #74.
+- **Ficha del Irízar en el selector:** ya no cuenta cómo se usa el helicóptero en Marambio, para no responder la pregunta antes de zarpar.
+- **Cuántas preguntas quedan:** 3 en el Irízar, 2 en el Hércules y 2 en el Puerto Argentino.
+- **Kilómetros y horas:** el recorrido en buque pasa a medir 1.355 km, unas 52 horas a 14 nudos (antes, unos 1.400 km y 54 horas). La ficha del Irízar ahora dice «52 horas» y «1.350 km del recorrido dibujado hasta frente a la Base Marambio».
+- **Pruebas:** en `core/test/voyage.test.ts`, el buque termina en el agua y a `SHIP_ANCHORAGE` de la base por la ruta; el pin está en la base; la pregunta es solo del Irízar; el puntaje cuenta 3, 2 y 2. Prueba E2E nueva, `e2e/tests/voyage-arrival.spec.ts`, a 390 y 1440 px.
+- **Verificación:** `pnpm test`, `pnpm typecheck` y `pnpm build`. La prueba E2E nueva pasa a 390 y 1440 px; no se corrió el resto de la suite E2E. Capturas de la llegada en 3D: Irízar a 1440 y 390 px (el buque queda en el agua, el pin en la base y los dos se ven por encima de la ficha) y Hércules a 390 px (llega a la base, como antes). El Puerto Argentino no se capturó: usa el mismo recorrido que el Irízar.
+
+**Etapa 2 (pendiente, depende de #68):**
+
+- Animación corta del traslado del Irízar a la base en helicóptero Sea King, después de responder la pregunta.
+- Reutiliza el Sea King de la rama del issue #68 (`HELICOPTER_BOXES`, `HELICOPTER_ROTOR_BOXES` y `HELICOPTER_ROTOR_ORIGIN`, en `react-ui/src/orcadas/stationModels.ts`). No se dibuja otro modelo. Se hace cuando #68 esté en `main`.
+- Sin animación con movimiento reducido, en el mapa 2D o sin WebGL: ahí la respuesta la dan las notas, como en la etapa 1.
+- Diseño previsto: el recorrido del helicóptero es una función pura en `core/src/voyage.ts` (de la cubierta de vuelo del buque a la base, sin pasar por debajo del relieve), con su prueba. `useVoyage.ts` guarda si el traslado no empezó, está en vuelo o terminó. `Voyage3D.tsx` dibuja el helicóptero y lleva la cámara con él. En `VoyagePanel.tsx`, al responder la pregunta aparece «Ver el traslado»; durante el vuelo la ficha se achica a una barra con «Saltar»; al posarse se abre la ficha de llegada.
+- El Irízar lleva dos Sea King `[O16]`: uno vuela y el otro queda dibujado en la cubierta.
+- La animación es ilustrativa y la ficha lo dice.

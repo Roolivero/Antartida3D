@@ -9,6 +9,7 @@ import {
   FUEGIA_LAND_MASK,
   GEAR_TAP_MS,
   ROUTE_LENGTH,
+  SHIP_ANCHORAGE,
   SHIP_HEAD_START,
   MILESTONES,
   EXPEDITION,
@@ -103,9 +104,15 @@ describe('voyage content', () => {
 });
 
 describe.each(['ship', 'plane'] as const)('voyage path (%s)', (kind) => {
-  it('ends in Marambio', () => {
+  it('ends at Marambio: a plane on the base, a ship off the island', () => {
     const end = voyageAt(kind, 1);
-    expect(Math.hypot(end.x - MARAMBIO.x, end.y - MARAMBIO.y)).toBeLessThan(0.01);
+    const fromBase = Math.hypot(end.x - MARAMBIO.x, end.y - MARAMBIO.y);
+    if (kind === 'plane') expect(fromBase).toBeLessThan(0.01);
+    else {
+      // SHIP_ANCHORAGE is measured along the route, which bends a little: in a straight line it is somewhat less.
+      expect(fromBase).toBeGreaterThan(0.8 * SHIP_ANCHORAGE);
+      expect(fromBase).toBeLessThanOrEqual(SHIP_ANCHORAGE);
+    }
   });
 
   it('opens its milestones in order, the first at departure and the last on arrival', () => {
@@ -148,19 +155,26 @@ describe('voyage path', () => {
     expect(voyageStops('ship')).toHaveLength(MILESTONES.length);
   });
 
-  it('stands the pin of Cabo de Hornos on the cape, not on the path, and every other pin on the path', () => {
+  it('stands the pins of Cabo de Hornos and Base Marambio on those places, not on the path, and every other pin on the path', () => {
     for (const stop of voyageStops('ship')) {
       const onPath = voyageAt('ship', stop.t);
       const off = Math.hypot(stop.pin.x - onPath.x, stop.pin.y - onPath.y);
-      if (stop.milestone.id !== 'hornos') expect(off).toBe(0);
-      else {
+      if (stop.milestone.id === 'hornos') {
         const { lon, lat } = unproject(stop.pin.x, stop.pin.y);
         expect(lon).toBeCloseTo(-67.27, 2);
         expect(lat).toBeCloseTo(-55.97, 2);
         // The ship passes south-east of the cape, in open sea.
         expect(off).toBeGreaterThan(2);
-      }
+      } else if (stop.milestone.id === 'marambio') {
+        // The ship stays off the island; the pin stands on the base.
+        expect(Math.hypot(stop.pin.x - MARAMBIO.x, stop.pin.y - MARAMBIO.y)).toBeLessThan(0.01);
+        expect(off).toBeGreaterThan(0.8 * SHIP_ANCHORAGE);
+      } else expect(off).toBe(0);
     }
+    // The plane lands on the base: its pin is where the flight ends.
+    const stops = voyageStops('plane');
+    const landing = voyageAt('plane', 1);
+    expect(Math.hypot(stops[stops.length - 1].pin.x - landing.x, stops[stops.length - 1].pin.y - landing.y)).toBeLessThan(0.01);
   });
 
   it('flies a shorter path than the ship sails', () => {
@@ -176,6 +190,24 @@ describe('voyage path', () => {
     expect(length('plane')).toBeLessThan(length('ship'));
     expect(voyageLength('ship')).toBeCloseTo(length('ship'), 0);
     expect(voyageLength('plane')).toBeCloseTo(length('plane'), 0);
+  });
+});
+
+describe('arrival of a ship off Marambio', () => {
+  const buf = readFileSync(join(import.meta.dirname, '../src/assets/terrain-mesh-hi.bin'));
+  const terrain = parseTerrainMesh(buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength));
+  const onLand = (p: { x: number; y: number }) => heightAt(p.x, p.y, terrain) > 0;
+
+  it('stops on the water, with open sea between the ship and the island', () => {
+    // The sea route ends on the base, up on the plateau: a ship that sailed all of it ended inside the island.
+    expect(onLand(routeAt(1))).toBe(true);
+    // The last stretch of the trip never touches land.
+    for (let i = 0; i <= 200; i++) expect(onLand(voyageAt('ship', 1 - (i / 200) * 0.02)), `step ${i}`).toBe(false);
+    // Past the ship, the route goes on over the water for at least half of the way to the base.
+    const end = 1 - SHIP_ANCHORAGE / ROUTE_LENGTH;
+    let water = 0;
+    while (water < 400 && !onLand(routeAt(end + ((water + 1) / 400) * (1 - end)))) water++;
+    expect((water / 400) * SHIP_ANCHORAGE).toBeGreaterThan(SHIP_ANCHORAGE / 2);
   });
 });
 
@@ -292,12 +324,34 @@ describe('how the expedition works', () => {
     }
   });
 
+  it('asks how people and cargo reach the base only on the Irízar, and tells only what source O24 says', () => {
+    const { question, notes } = expeditionAt('marambio', 'irizar');
+    expect(question!.options[question!.answer]).toBe('En helicóptero');
+    // The note that answers it comes first, with its source.
+    expect(notes[0].text).toMatch(/helicóptero/);
+    expect(notes[0].sources).toEqual(['O24']);
+    expect(expeditionAt('marambio', 'puerto-argentino').question).toBeNull();
+    expect(expeditionAt('marambio', 'hercules').question).toBeNull();
+    expect(expeditionAt('shetland', 'irizar').question).toBeNull();
+    // The source does not say that the base has no port or pier: the trip does not say it either.
+    expect([question!.prompt, ...notes.map((f) => f.text)].join(' ')).not.toMatch(/puerto|muelle/i);
+    // Where a ship waits off the island is a drawing, and a ship says so; the plane lands on the base.
+    const drawing = (id: 'irizar' | 'puerto-argentino' | 'hercules') =>
+      expeditionAt('marambio', id).notes.some((f) => f.kind === 'illustrative' && /frente a la isla/.test(f.text));
+    expect(drawing('irizar')).toBe(true);
+    expect(drawing('puerto-argentino')).toBe(true);
+    expect(drawing('hercules')).toBe(false);
+  });
+
   it('counts the questions answered right', () => {
-    expect(quizScore('irizar', {})).toEqual({ right: 0, total: 4 });
-    expect(quizScore('hercules', {})).toEqual({ right: 0, total: 3 });
-    expect(quizScore('irizar', { beagle: 0, 'paralelo-60': 1, shetland: 2, marambio: 0 })).toEqual({ right: 3, total: 4 });
-    // The Shetland question is not asked on the plane: its answer does not count there.
-    expect(quizScore('hercules', { beagle: 0, 'paralelo-60': 1, shetland: 0, marambio: 0 })).toEqual({ right: 3, total: 3 });
+    expect(quizScore('irizar', {})).toEqual({ right: 0, total: 3 });
+    expect(quizScore('hercules', {})).toEqual({ right: 0, total: 2 });
+    expect(quizScore('puerto-argentino', {})).toEqual({ right: 0, total: 2 });
+    expect(quizScore('irizar', { beagle: 0, 'paralelo-60': 1, marambio: 0 })).toEqual({ right: 2, total: 3 });
+    expect(quizScore('irizar', { beagle: 0, 'paralelo-60': 1, marambio: 2 })).toEqual({ right: 3, total: 3 });
+    // The question of Marambio is about the Irízar: an answer to it does not count on another transport.
+    expect(quizScore('hercules', { beagle: 0, 'paralelo-60': 1, marambio: 2 })).toEqual({ right: 2, total: 2 });
+    expect(quizScore('puerto-argentino', { beagle: 0, 'paralelo-60': 1, marambio: 2 })).toEqual({ right: 2, total: 2 });
   });
 });
 

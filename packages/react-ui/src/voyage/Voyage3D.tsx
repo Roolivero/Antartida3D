@@ -10,6 +10,7 @@ import {
   planeTurbulence,
   sightingsInView,
   stormAt,
+  voyageArrived,
   voyageAt,
   voyageHeading,
   voyageLength,
@@ -265,9 +266,14 @@ export function Voyage3D({ bus, reduced, overlay }: {
         const open = bus.open ? voyageSightings(s.kind).find((v) => v.sighting.id === bus.open) : undefined;
         // A milestone about a place off the path (Cabo de Hornos): its card shows the place, where its pin stands.
         const stop = s.card >= 0 ? voyageStops(s.kind)[s.card] : undefined;
+        // On arrival a ship stays off the island: the camera goes halfway to the base, to show both.
+        // A plane lands on the base: the camera stays with it.
+        const arrived = voyageArrived(s);
+        const place = !stop?.milestone.place || (arrived && s.kind === 'plane') ? null
+          : arrived ? { x: (stop.pin.x + p.x) / 2, y: (stop.pin.y + p.y) / 2 } : stop.pin;
         const far = open?.sighting.place && Math.hypot(open.x - p.x, open.y - p.y) > VISIT_DISTANCE
           ? { id: open.sighting.id, x: open.x, y: open.y }
-          : stop?.milestone.place ? { id: stop.milestone.id, ...stop.pin } : null;
+          : stop && place ? { id: stop.milestone.id, ...place } : null;
         if (far) {
           // Opening a far place takes the camera there, to see it; the trip waits.
           if (visit.current.id !== far.id) {
