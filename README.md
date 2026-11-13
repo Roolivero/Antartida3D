@@ -8,26 +8,16 @@ Equipo **DOT ENV**, hackatón SoberaníaTech (Ushuaia, 2026), Eje 2: Antártida,
 
 - `[completar]`
 
-## Aplicaciones a comparar
+## Aplicación
 
-El repositorio contiene dos enfoques en `apps/` para evaluar y seleccionar la base definitiva:
-
-- **`apps/dibujado`** (puerto 5103): mapa dibujado estilo acuarela con relieve (2D y 3D) y expediciones interactivas en Marambio («¿Cómo era la Antártida antes del hielo?») y Estación Orcadas («¿Cuánto cambió el clima de la isla Laurie en 120 años?»). Máxima optimización de interacción, foco en accesibilidad completa por teclado y zoom fluido.
-- **`apps/atlas`** (puerto 5175): prototipo exploratorio de atlas 3D con 5 propuestas temáticas, filtros por Naturaleza e Historias, vista 2D/3D y paneles informativos accesibles.
-
-### Cómo descartar una app
-
-El monorepo está estructurado de manera que para quedarse con una sola aplicación alcanza con:
-1. Eliminar la carpeta no elegida (`apps/atlas` o `apps/dibujado`).
-2. Remover el script de arranque correspondiente (`dev:atlas` o `dev`) del `package.json` raíz.
+**`apps/dibujado`** (puerto 5103): mapa dibujado estilo acuarela con relieve (2D y 3D) y expediciones interactivas en Marambio («¿Cómo era la Antártida antes del hielo?») y Estación Orcadas («¿Cuánto cambió el clima de la isla Laurie en 120 años?»). Máxima optimización de interacción, foco en accesibilidad completa por teclado y zoom fluido.
 
 ## Estructura del repositorio
 
 ```
 /                       pnpm workspace (package.json, pnpm-workspace.yaml, pnpm-lock.yaml, tsconfig.base.json)
 ├─ apps/
-│  ├─ dibujado/         app del mapa dibujado (2D pintado + 3D con relieve), puerto 5103
-│  └─ atlas/            app del atlas, puerto 5175
+│  └─ dibujado/         app del mapa dibujado (2D pintado + 3D con relieve), puerto 5103
 ├─ packages/
 │  ├─ core/             core de la app dibujada (TypeScript puro)
 │  ├─ react-ui/         componentes de interfaz
@@ -38,8 +28,7 @@ El monorepo está estructurado de manera que para quedarse con una sola aplicaci
 │  ├─ diseno/           especificación de diseño (HANDOFF.md y prototipo)
 │  ├─ decisiones.md     registro de decisiones y diferencias
 │  ├─ datos-relieve.md  origen y archivos de los datos de relieve 3D (Bedmap3)
-│  ├─ rendimiento.md    + rendimiento/ (results.json, capturas/)
-│  └─ capturas/atlas/   capturas del atlas
+│  └─ rendimiento.md    + rendimiento/ (results.json, capturas/)
 ├─ .agents/ .claude/ .githooks/
 ├─ AGENTS.md  ROADMAP.md  README.md  .gitignore
 ```
@@ -53,17 +42,15 @@ pnpm install
 
 # Servidores de desarrollo
 pnpm dev             # apps/dibujado en http://localhost:5103
-pnpm dev:atlas       # apps/atlas en http://localhost:5175
 
 # Build y preview
 pnpm build           # compila todas las aplicaciones
 pnpm preview         # vista previa de apps/dibujado
 
 # Verificación
-pnpm test            # tests unitarios de core y atlas
+pnpm test            # tests unitarios de core
 pnpm typecheck       # validación de tipos TypeScript
 pnpm e2e             # tests de flujo e2e en apps/dibujado (Playwright)
-pnpm --filter @antartida/atlas test:ui   # tests de interfaz de apps/atlas
 pnpm bench           # benchmark de rendimiento
 ```
 
@@ -122,8 +109,7 @@ pnpm bench           # benchmark de rendimiento
   - La explicación de la disposición está en [`docs/orcadas-emplazamiento.md`](docs/orcadas-emplazamiento.md).
 - **Librerías 3D (apps/dibujado y react-ui):** Three.js (licencia MIT), React Three Fiber (licencia MIT), @react-three/drei (licencia MIT), @react-three/postprocessing (licencia MIT).
 - **Costa y barreras de hielo:** [Natural Earth](https://www.naturalearthdata.com/) (`ne_50m_land`, `ne_50m_antarctic_ice_shelves_polys`), dominio público. [Términos de uso](https://www.naturalearthdata.com/about/terms-of-use/).
-- **Base Orcadas (apps/atlas):** coordenadas de [Armada Argentina · bases permanentes](https://www.argentina.gob.ar/armada/antartida/bases-permanentes) e historia y ubicación de [Cancillería Argentina](https://cancilleria.gob.ar/es/iniciativas/dna/antartida-argentina/bases/orcadas).
-- **Relieve de apps/atlas:** ilustrativo, generado por una función del prototipo. No son datos reales de elevación.
+- **Base Orcadas:** coordenadas de [Armada Argentina · bases permanentes](https://www.argentina.gob.ar/armada/antartida/bases-permanentes) e historia y ubicación de [Cancillería Argentina](https://cancilleria.gob.ar/es/iniciativas/dna/antartida-argentina/bases/orcadas).
 - **Tipografías:** Fraunces, Atkinson Hyperlegible, Caveat, DM Sans y Libre Caslon Display (todas bajo licencia SIL Open Font License 1.1 vía `@fontsource`).
 - **Contenido científico:** provisional y en proceso de validación por el equipo (`[Contenido provisional]`, `[Fuente a definir]`).
 
@@ -133,7 +119,7 @@ En cumplimiento con las bases de la hackatón, se declara el uso de herramientas
 
 - **App dibujada:**
   > Como exigen las bases de la hackatón: se dibujo un boceto con todas las posibles ideas y luego **el diseño se generó con Claude Design** (prototipo en `docs/diseno/design/Main.dc.html`) y **el código de este repositorio se escribió con Claude Code**, con multiples revisiones del equipo.
-- **App atlas:**
+- **Prototipo atlas (descartado, ya no está en el repositorio; se recupera en el commit `2ab6f80`):**
   > Interfaz y código de este prototipo desarrollados con Codex a partir de la revisión de los dos proyectos y del borrador provisto por el equipo.
 - **Expedición Estación Orcadas:**
   > Planificación, arquitectura, revisión y verificación de fuentes con Claude Code (modelo Claude Fable 5.2); implementación delegada a agentes de Antigravity (Gemini 4 Argon y Gemini 3.8 Flash) bajo revisión; búsqueda inicial de fuentes con Gemini 3.8 Flash, con cada fuente publicada abierta y confirmada después por el orquestador (Claude Code); la confirmación humana de cada fuente se hace en la revisión del PR; ninguna imagen ni texto generado se presenta como dato.

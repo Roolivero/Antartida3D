@@ -1,18 +1,17 @@
 # Decisiones y diferencias
 
-Diferencias respecto del prototipo (`docs/diseno/design/Main.dc.html`) y entre stacks, y por qué.
+Diferencias respecto del prototipo (`docs/diseno/design/Main.dc.html`) y decisiones del proyecto, y por qué.
 
-> La app base es **dibujado**. El estado histórico del laboratorio se recupera con la etiqueta git `lab-comparacion`.
+> La app es **dibujado**. El repositorio tuvo antes un segundo prototipo (`apps/atlas`), que se descartó y se quitó (#1). Se recupera en el commit `2ab6f80`.
 
 ## Arquitectura del repo
 
-El monorepo unifica las aplicaciones y paquetes en una sola estructura (S1):
+El monorepo reúne la aplicación y los paquetes en una sola estructura (S1):
 
 ```
 /                       pnpm workspace (package.json, pnpm-workspace.yaml, pnpm-lock.yaml, tsconfig.base.json)
 ├─ apps/
-│  ├─ dibujado/         app del mapa dibujado (2D pintado + 3D con relieve), puerto 5103
-│  └─ atlas/            app del atlas, puerto 5175
+│  └─ dibujado/         app del mapa dibujado (2D pintado + 3D con relieve), puerto 5103
 ├─ packages/
 │  ├─ core/             core de la app dibujada (TypeScript puro)
 │  ├─ react-ui/         componentes de interfaz
@@ -22,8 +21,7 @@ El monorepo unifica las aplicaciones y paquetes en una sola estructura (S1):
 │  ├─ propuesta.pdf     documento original de propuesta
 │  ├─ diseno/           especificación de diseño (HANDOFF.md y prototipo)
 │  ├─ decisiones.md     registro de decisiones y diferencias
-│  ├─ rendimiento.md    + rendimiento/ (results.json, capturas/)
-│  └─ capturas/atlas/   capturas del atlas
+│  └─ rendimiento.md    + rendimiento/ (results.json, capturas/)
 ├─ .agents/ .claude/ .githooks/
 ├─ AGENTS.md  ROADMAP.md  README.md  .gitignore
 ```
@@ -104,9 +102,7 @@ Decisión del 11 nov 2026 (Lucas, a partir del trabajo de #4): **todo modelo 3D 
 
 Pendiente, con issue propio: la fauna y el Irízar de ambiente de #16 son láminas SVG (billboards), no voxel. Convertirlos queda fuera de #3 y #4.
 
-## Por stack (laboratorio)
-
-### dibujado
+## Stack
 
 - Migrada de Preact a React 19.3.1 para compatibilidad con React Three Fiber 9 y Drei en la vista 3D (R3F no corre sobre `preact/compat`).
 - Se eliminaron los alias a `preact/compat` y se adoptó `@vitejs/plugin-react`.
@@ -241,7 +237,7 @@ Plan: `.agents/plans/plan-orcadas-recorrido-guiado.md`. Objetivo: que la expedic
 
 ## Benchmark
 
-- Lighthouse, peso, pan y pinch corren en Chromium headless sin GPU. Las cifras de frames e interacción sirven para comparar las apps entre sí, no como valores absolutos de un teléfono real.
+- Lighthouse, peso, pan y pinch corren en Chromium headless sin GPU. Las cifras de frames e interacción sirven para comparar corridas entre sí, no como valores absolutos de un teléfono real.
 - El zoom se mide aparte con la GPU real (`scripts/bench/src/gpu.ts`, flags de ANGLE), sumando las tareas del proceso de GPU en una traza. Sin GPU disponible, Chromium cae a SwiftShader y los números no son comparables.
 - **JS inicial** = scripts del HTML (y `component-url`/`renderer-url` de las islas de Astro), más todo lo que importan estáticamente y los scripts inline. Los `import()` diferidos no cuentan.
 - Las capturas se toman con `prefers-reduced-motion: reduce` para que no dependan del momento exacto de una animación.

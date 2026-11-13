@@ -26,7 +26,7 @@ Solo lo estructural. Los detalles de contenido pendientes se agregan cuando el e
 
 Objetivo: base técnica cerrada y una expedición recorrible de punta a punta.
 
-- [x] Elegir prototipo base (comparación en `apps/`)
+- [x] Elegir prototipo base (`apps/dibujado`)
 - [ ] Elegir la primera expedición a desarrollar completa (Orcadas ya tiene fuentes oficiales)
 - [ ] Reunir y validar fuentes de esa expedición
 - [ ] Implementar el recorrido de esa expedición (explorar → descubrir → profundizar)

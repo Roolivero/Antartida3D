@@ -38,7 +38,7 @@ El paquete completo pesa 2,1 GB: siete grillas GeoTIFF y un shapefile. Solo se b
 
 ### Por qué Bedmap3
 
-- **Es un dato real y citable.** La regla del eje pide no presentar simulaciones como datos reales. El relieve anterior del atlas era una fórmula inventada; este es una medición publicada por un organismo científico.
+- **Es un dato real y citable.** La regla del eje pide no presentar simulaciones como datos reales. El relieve anterior era una fórmula inventada; este es una medición publicada por un organismo científico.
 - **Cubre todo el continente sin huecos**, en un solo archivo, a una resolución (500 m) muy por encima de lo que necesita un mapa interactivo.
 - **Trae la máscara de tipo de superficie.** Permite pintar distinto la roca expuesta y distinguir las barreras de hielo flotantes, como el 2D.
 - **Usa el nivel del mar como referencia,** así la costa queda en altura 0 y coincide con el plano del océano.
