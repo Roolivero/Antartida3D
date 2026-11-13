@@ -7,14 +7,13 @@ import {
   answerFor,
   checkGuess,
   climateFor,
-  factsFor,
   sameMonthSeries,
   scoreObservation,
   truthFor,
   type Reading,
   type ReadingKind,
 } from '@antartida/core';
-import { FactList, SourceContext } from './FactList.tsx';
+import { SourceContext } from './FactList.tsx';
 import { KindChip } from './KindChip.tsx';
 import { formatTempC, getReaderSource } from './century/centuryData.ts';
 import { NOTEBOOK_LABELS, formatRecorded } from './observation/Notebook.tsx';
@@ -45,7 +44,6 @@ export function Answer({
 
   const series = useMemo(() => sameMonthSeries(normMonth), [normMonth]);
   const readerSource = useMemo(() => getReaderSource(), []);
-  const answerFacts = useMemo(() => factsFor('answer'), []);
 
   const recorded = READING_KINDS.filter((k) => typeof guesses[k] === 'number').length;
   const obsScore = scoreObservation(guesses, reading);
@@ -363,8 +361,6 @@ export function Answer({
           })}
         </dl>
       )}
-
-      <FactList facts={answerFacts} />
     </div>
   );
 }

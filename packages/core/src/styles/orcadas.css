@@ -32,17 +32,13 @@
 .orc-scene-badge {
   position: absolute;
   left: 12px;
-  bottom: calc(45dvh + 10px);
+  bottom: calc(var(--orc-sheet) + 10px);
   top: auto;
   z-index: 5;
   pointer-events: none;
   display: flex;
   flex-direction: column-reverse;
   align-items: flex-start;
-}
-
-.orc.is-panel-expanded .orc-scene-badge {
-  bottom: calc(85dvh + 10px);
 }
 
 .orc-scene-badge-row {
@@ -472,14 +468,27 @@
   gap: 8px;
 }
 
-/* Chapter Notebook Panel: mobile <= 45% height bottom sheet */
+/* Chapter panel. On a portrait phone it is a bottom sheet (BottomSheet) with three sizes: peek
+   (chapter name and main button), small and tall. The scene label sits on top of it. */
+.orc {
+  --orc-sheet: 45dvh;
+}
+
+.orc.is-panel-expanded {
+  --orc-sheet: 85dvh;
+}
+
+.orc.is-panel-peek {
+  --orc-sheet: 132px;
+}
+
 .orc-panel {
   position: absolute;
   left: 0;
   right: 0;
   bottom: 0;
-  height: 45dvh;
-  max-height: 45dvh;
+  height: var(--orc-sheet);
+  max-height: var(--orc-sheet);
   z-index: 6;
   background: var(--paper);
   border-top: 2px solid var(--ink);
@@ -491,48 +500,55 @@
   transition: height 0.22s cubic-bezier(0.2, 0.85, 0.3, 1), max-height 0.22s cubic-bezier(0.2, 0.85, 0.3, 1);
 }
 
-.orc-panel.is-expanded {
-  height: 85dvh;
-  max-height: 85dvh;
+/* The shared sheet styles (painted.css) are for a card with padding; this one lays out its own. */
+.orc-panel.sheet {
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: auto;
+  padding: 0 0 env(safe-area-inset-bottom, 0px);
+  border: 0;
+  border-top: 2px solid var(--ink);
+  border-radius: 18px 18px 0 0;
+  overflow: hidden;
+  max-height: var(--orc-sheet);
+  z-index: 6;
+}
+
+.orc-panel.sheet.full {
+  max-height: var(--orc-sheet);
   z-index: 15;
 }
 
-.orc-panel-toggle {
+/* While dragged, the sheet can grow up to tall; the finger sets its max-height. */
+.orc-panel.sheet.dragging {
+  height: 85dvh;
+  z-index: 15;
+}
+
+.orc-panel .sheet-handle {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 3px;
-  width: 100%;
-  min-height: 44px;
-  padding: 4px 12px;
-  background: transparent;
-  border: none;
-  border-bottom: 1px solid rgba(31, 42, 54, 0.1);
-  color: var(--deep);
-  font-family: 'Atkinson Hyperlegible', system-ui, sans-serif;
-  font-size: 13px;
-  font-weight: 700;
-  cursor: pointer;
+  position: static;
   flex: none;
+  width: 100%;
+  height: 28px;
+  margin: 0;
+  border-radius: 18px 18px 0 0;
 }
 
-.orc-panel-toggle:focus-visible {
+.orc-panel .sheet-handle:focus-visible {
   outline: 2px solid var(--deep);
-  outline-offset: -2px;
+  outline-offset: -3px;
 }
 
-.orc-panel-toggle-bar {
-  display: block;
-  width: 32px;
-  height: 4px;
-  border-radius: 2px;
-  background: rgba(31, 42, 54, 0.3);
+/* Peek: only the chapter name and the main button. */
+.orc-panel.peek .orc-panel-scroll {
+  overflow: hidden;
 }
 
-.orc-panel-toggle-text {
-  font-size: 12px;
-  line-height: 1;
+.orc-panel.peek .orc-panel-scroll > :not(.orc-panel-head),
+.orc-panel.peek .orc-chapter-h2 {
+  display: none;
 }
 
 .orc-panel-scroll {
@@ -553,7 +569,8 @@
   color: var(--deep);
 }
 
-.orc-chapter-h2 {
+/* Scoped to the panel so the shared `.sheet h2` style does not win on phones. */
+.orc-panel .orc-chapter-h2 {
   margin: 1px 0 0;
   font-family: 'Fraunces', Georgia, serif;
   font-size: 20px;
@@ -591,6 +608,49 @@
   font-size: 14px;
   line-height: 1.38;
   color: var(--ink);
+}
+
+/* Guided tour stop card */
+.orc-tour-card {
+  background: #FBF4E6;
+  border: 1.5px solid rgba(31, 42, 54, 0.35);
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.orc-activity .orc-tour-card {
+  background: var(--paper);
+}
+
+.orc-tour-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.orc-tour-count {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--pencil);
+}
+
+.orc-tour-line {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.42;
+  color: var(--ink);
+}
+
+.orc-tour-card .orc-fact-srcs {
+  margin-top: 0;
+}
+
+.orc-tour-more {
+  margin-top: 0;
 }
 
 /* Fact cards */
@@ -750,93 +810,6 @@ details.orc-more > summary:focus-visible {
   font-size: 13px;
   line-height: 1.3;
   color: #2B3640;
-}
-
-.orc-obs-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 7px;
-}
-
-.orc-obs-field {
-  background: var(--paper);
-  border: 1px solid rgba(31, 42, 54, 0.35);
-  border-radius: 8px;
-  padding: 6px 8px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.orc-obs-field.is-exact,
-.orc-obs-field.is-close {
-  border-color: var(--deep);
-  background: #E8F1F6;
-}
-
-.orc-obs-label {
-  display: flex;
-  flex-direction: column;
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--ink);
-}
-
-.orc-obs-instrument {
-  font-weight: 400;
-  font-size: 11px;
-  color: #2B3640;
-}
-
-.orc-obs-input-row {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.orc-input-num {
-  width: 100%;
-  min-width: 0;
-  min-height: 34px;
-  padding: 4px 6px;
-  border: 1.5px solid var(--ink);
-  border-radius: 6px;
-  background: #fff;
-  color: var(--ink);
-  font: inherit;
-  font-size: 14px;
-  font-weight: 700;
-}
-
-.orc-mini-btn {
-  flex: none;
-  min-height: 34px;
-  padding: 0 7px;
-  border-radius: 6px;
-  border: 1px solid var(--deep);
-  background: #DCE8EF;
-  color: var(--ink);
-  font-size: 11px;
-  font-weight: 700;
-  white-space: nowrap;
-}
-
-.orc-obs-badge {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--deep);
-}
-
-.orc-obs-badge.is-off {
-  color: var(--oxide);
-}
-
-.orc-obs-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  font-size: 12px;
 }
 
 .orc-link-btn {
@@ -1065,52 +1038,6 @@ details.orc-more > summary:focus-visible {
   gap: 6px;
 }
 
-/* Journey eras */
-.orc-era-pills {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-}
-
-.orc-era-btn {
-  min-height: 32px;
-  padding: 2px 10px;
-  border-radius: 14px;
-  border: 1.5px solid var(--ink);
-  background: var(--paper);
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.orc-era-btn.is-active {
-  background: var(--ink);
-  color: var(--ice);
-}
-
-.orc-era-card {
-  background: var(--paper);
-  border: 1px solid rgba(31, 42, 54, 0.35);
-  border-radius: 8px;
-  padding: 7px 9px;
-}
-
-.orc-era-head h3 {
-  margin: 0;
-  font-family: 'Fraunces', Georgia, serif;
-  font-size: 15px;
-}
-
-.orc-era-from {
-  font-size: 16px;
-  color: var(--deep);
-}
-
-.orc-era-card p {
-  margin: 4px 0 0;
-  font-size: 12.5px;
-  line-height: 1.35;
-}
-
 /* Answer & Century Charts */
 .orc-answer {
   display: flex;
@@ -1275,16 +1202,6 @@ details.orc-more > summary:focus-visible {
   flex: 1 1 auto;
   width: auto;
   max-width: none;
-}
-
-.orc-panel .orc-obs-status {
-  display: block;
-  padding: 0 14px 8px;
-  background: var(--paper);
-  font-size: 12px;
-  text-align: center;
-  color: var(--ink);
-  opacity: 0.8;
 }
 
 .orc-scrim {
@@ -1477,10 +1394,6 @@ details.orc-more > summary:focus-visible {
     font-size: 13px;
   }
 
-  .orc-panel-toggle {
-    display: none;
-  }
-
   .orc-scene-badge {
     left: 24px;
     top: auto;
@@ -1524,7 +1437,7 @@ details.orc-more > summary:focus-visible {
     padding: 16px 18px 12px;
   }
 
-  .orc-chapter-h2 {
+  .orc-panel .orc-chapter-h2 {
     font-size: 26px;
   }
 
@@ -1610,10 +1523,6 @@ details.orc-more > summary:focus-visible {
     font-size: 12px;
   }
 
-  .orc-panel-toggle {
-    display: none;
-  }
-
   .orc-panel {
     top: 52px;
     right: 8px;
@@ -1631,7 +1540,7 @@ details.orc-more > summary:focus-visible {
     padding: 8px 12px 6px;
   }
 
-  .orc-chapter-h2 {
+  .orc-panel .orc-chapter-h2 {
     font-size: 18px;
   }
 

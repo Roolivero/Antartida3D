@@ -64,9 +64,9 @@ describe('chapters and state', () => {
     expect(CHAPTERS.map(chapterIndex)).toEqual(CHAPTERS.map((_, i) => i));
   });
 
-  it('lets the user leave the observation with 0 readings, and stops at done', () => {
-    // Requirement changed (plan B3): the chapter buttons skipped the lock anyway, and the
-    // closing chapter already handles a missing observation, so the lock is gone.
+  it('marks observationDone once temperature is recorded, lets user leave with 0 readings, and stops at answer', () => {
+    // Requirement changed (#61 paso 3): temperature is the only primary reading;
+    // pressure, wind and clouds are optional, and the user can still advance at any time.
     let s = initialOrcadas(1, 2025);
     expect(canAdvanceOrcadas(s)).toBe(true);
     s = reduce(s, { type: 'next' });
@@ -75,15 +75,19 @@ describe('chapters and state', () => {
     expect(canAdvanceOrcadas(s)).toBe(true);
     expect(reduce(s, { type: 'next' }).chapter).toBe(CHAPTERS[2]);
 
+    // Optional readings alone do not complete the main observation
     s = run(
       [
-        { type: 'guess', kind: 'temp', value: 0.5 },
         { type: 'guess', kind: 'pressure', value: 990 },
         { type: 'guess', kind: 'wind', value: 20 },
         { type: 'guess', kind: 'clouds', value: 6 },
       ],
       s
     );
+    expect(observationDone(s)).toBe(false);
+
+    // Recording temperature completes observationDone
+    s = reduce(s, { type: 'guess', kind: 'temp', value: 0.5 });
     expect(observationDone(s)).toBe(true);
 
     s = run(Array.from({ length: CHAPTERS.length }, () => ({ type: 'next' }) as const), s);

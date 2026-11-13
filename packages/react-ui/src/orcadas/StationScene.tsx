@@ -1331,6 +1331,18 @@ function StationCameraAndProjection({
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [reduced, invalidate]);
 
+  // The phone's chapter panel changes height without the camera moving: place the dots again.
+  useEffect(() => {
+    const panel = isPortrait ? document.querySelector('.orc-panel') : null;
+    if (!panel) return;
+    const ro = new ResizeObserver(() => {
+      projectedRef.current = false;
+      invalidate();
+    });
+    ro.observe(panel);
+    return () => ro.disconnect();
+  }, [isPortrait, invalidate]);
+
   useFrame(() => {
     const cc = controlsRef.current;
     if (cc && cc.active) {
@@ -1381,6 +1393,11 @@ function StationCameraAndProjection({
     const minY = strip
       ? strip.getBoundingClientRect().bottom - overlay.getBoundingClientRect().top + 24
       : 116;
+    // Nor under the chapter panel of a phone, whatever its size (a bottom sheet the user drags).
+    const panel = isPortrait ? document.querySelector('.orc-panel') : null;
+    const panelTop = panel
+      ? panel.getBoundingClientRect().top - overlay.getBoundingClientRect().top - 28
+      : null;
 
     for (const spot of HOTSPOTS) {
       const btn = map.get(spot.id);
@@ -1411,9 +1428,7 @@ function StationCameraAndProjection({
       }
 
       const maxX = size.width >= 900 ? size.width - 560 : size.width - 68;
-      const maxY = isPortrait
-        ? (panelExpanded ? size.height * 0.14 : size.height * 0.52)
-        : size.height - 64;
+      const maxY = panelTop ?? (isPortrait ? size.height * 0.52 : size.height - 64);
       const sx = Math.max(58, Math.min(maxX, rawSx));
       const sy = Math.max(Math.min(minY, maxY), Math.min(maxY, rawSy));
       btn.style.opacity = '1';

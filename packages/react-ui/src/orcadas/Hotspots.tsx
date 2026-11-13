@@ -3,6 +3,7 @@ import {
   HOTSPOT_BUILDING,
   hotspotFacts,
   layoutOf,
+  tourStops,
   type BuildingId,
   type Chapter,
   type OrcadasHotspotId,
@@ -214,13 +215,6 @@ export function poseForHotspot(
   return mobile ? mobilePose(found.pose, panelExpanded) : found.pose;
 }
 
-const CHAPTER_KEY_SPOTS: Record<Chapter, readonly HotspotId[]> = {
-  arrival: ['house', 'flag'],
-  observation: ['screen', 'mast'],
-  journey: ['house', 'flag'],
-  answer: ['flag'],
-};
-
 export function Hotspots({
   overlayRef,
   activeSpot,
@@ -312,6 +306,17 @@ export function Hotspots({
       ) ?? null
   );
 
+  const keySpots = useMemo(() => {
+    if (!chapter) return null;
+    const spots = tourStops(chapter)
+      .map((stop) => stop.spot)
+      .filter((spot): spot is Exclude<HotspotId, 'overview'> => spot !== 'overview');
+    if (chapter === 'answer' && spots.length === 0) {
+      return new Set<HotspotId>(['flag']);
+    }
+    return new Set<HotspotId>(spots);
+  }, [chapter]);
+
   return (
     <>
       <div
@@ -322,7 +327,7 @@ export function Hotspots({
       >
         {visibleHotspots.map((spot) => {
           const isSelected = activeSpot === spot.id;
-          const isKeySpot = chapter ? CHAPTER_KEY_SPOTS[chapter]?.includes(spot.id) : true;
+          const isKeySpot = keySpots ? keySpots.has(spot.id) : true;
           return (
             <button
               key={spot.id}

@@ -1,7 +1,6 @@
 /* Orcadas · time (YearWheel & TimeMachine) */
 
-.orc-year + .orc-facts-list,
-.orc-eras + .orc-facts-list {
+.orc-year + .orc-facts-list {
   display: none;
 }
 
@@ -75,49 +74,6 @@
   color: var(--ink);
 }
 
-/* Year readings stack */
-.orc-year-readings {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.orc-reading-card {
-  background: var(--paper);
-  border: 1px solid rgba(31, 42, 54, 0.35);
-  border-radius: 8px;
-  padding: 7px 9px;
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-
-.orc-reading-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-
-.orc-reading-kicker {
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--deep);
-}
-
-.orc-reading-main {
-  margin: 0;
-  font-size: 13.5px;
-  line-height: 1.3;
-  color: var(--ink);
-}
-
-.orc-reading-sub {
-  font-size: 12px;
-  color: var(--ink);
-}
-
 .orc-fauna-ico {
   width: 14px;
   height: 14px;
@@ -130,33 +86,18 @@
   gap: 4px;
 }
 
-.orc-inline-facts {
-  margin-top: 2px;
-}
-
 /* TimeMachine: Year Counter + Continuous Record */
-.orc-tm-top {
-  display: flex;
-  align-items: stretch;
-  justify-content: space-between;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.orc-tm-year-block {
-  background: var(--paper);
-  border: 1.5px solid var(--ink);
-  border-radius: 10px;
-  padding: 6px 12px;
+.orc-eras {
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  gap: 10px;
 }
 
-.orc-tm-kicker {
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--deep);
+.orc-tm-top {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 12px;
 }
 
 .orc-year-counter {
@@ -194,143 +135,11 @@
   text-align: center;
 }
 
-.orc-tm-record-box {
-  flex: 1 1 160px;
-  background: var(--paper);
-  border: 1px dashed var(--ink);
-  border-radius: 10px;
-  padding: 6px 10px;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: center;
-  gap: 2px;
-}
-
-.orc-tm-record-num {
-  font-family: 'Fraunces', Georgia, serif;
-  font-size: 13.5px;
-  color: var(--ink);
-  line-height: 1.2;
-}
-
-.orc-tm-record-formula {
+.orc-tm-record-line {
+  margin: 0;
   font-size: 12px;
-  color: var(--deep);
-  font-weight: 700;
-}
-
-/* Notebook Ruler Slider */
-.orc-ruler-slider {
-  position: relative;
-  min-height: 58px;
-  cursor: ew-resize;
-  touch-action: none;
-  user-select: none;
-  border-radius: 8px;
-}
-
-.orc-ruler-slider:focus-visible {
-  outline: 3px solid var(--deep);
-  outline-offset: 2px;
-}
-
-.orc-ruler-svg {
-  display: block;
-  width: 100%;
-  height: 64px;
-}
-
-/* Era navigation buttons */
-.orc-era-nav-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.orc-era-step-btn {
-  min-height: 44px;
-  padding: 0 12px;
-  border-radius: 10px;
-  border: 1.5px solid var(--ink);
-  background: var(--paper);
-  color: var(--ink);
-  font-size: 13px;
-  font-weight: 700;
-  box-shadow: 1px 2px 0 rgba(31, 42, 54, 0.14);
-}
-
-.orc-era-step-btn:hover:not(:disabled) {
-  background: #fff;
-}
-
-.orc-era-step-btn:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-  box-shadow: none;
-}
-
-.orc-era-step-pos {
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--deep);
-  text-align: center;
-}
-
-.orc-era-pills .orc-era-btn {
-  min-height: 44px;
-  min-width: 48px;
-  padding: 0 10px;
-}
-
-/* Era card details */
-.orc-era-head-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.orc-era-summary {
-  margin: 4px 0 6px;
-  font-size: 13px;
-  line-height: 1.35;
-  color: var(--ink);
-}
-
-.orc-era-buildings {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-  margin-bottom: 6px;
-}
-
-.orc-building-tag {
-  font-size: 12px;
-  font-weight: 700;
-  padding: 2px 8px;
-  border-radius: 8px;
-  background: #E8DEC9;
-  border: 1px solid rgba(31, 42, 54, 0.35);
-  color: var(--ink);
-}
-
-.orc-era-facts {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin-top: 6px;
-  padding-top: 6px;
-  border-top: 1px dashed rgba(31, 42, 54, 0.3);
-}
-
-.orc-era-fact-item {
-  background: #FBF4E6;
-  border: 1px solid rgba(31, 42, 54, 0.32);
-  border-radius: 8px;
-  padding: 6px 8px;
+  color: var(--pencil);
+  line-height: 1.3;
 }
 
 @media (prefers-reduced-motion: reduce) {

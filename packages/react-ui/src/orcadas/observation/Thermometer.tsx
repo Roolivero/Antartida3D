@@ -1,13 +1,28 @@
-import { useId } from 'react';
+import { useId, type RefObject } from 'react';
+
+const TEMP_MIN = -25;
+const TEMP_MAX = 10;
+
+function clampTemp(val: number): number {
+  const clamped = Math.max(TEMP_MIN, Math.min(TEMP_MAX, val));
+  const rounded = Math.round(clamped * 10) / 10;
+  return Object.is(rounded, -0) ? 0 : rounded;
+}
 
 export function Thermometer({
   tempC,
   draftC,
   reduced,
+  lensRef,
+  onDraftChange,
+  onConfirm,
 }: {
   tempC: number;
   draftC: number;
   reduced: boolean;
+  lensRef?: RefObject<SVGCircleElement | null>;
+  onDraftChange?: (nextC: number) => void;
+  onConfirm?: () => void;
 }) {
   const uid = useId().replace(/:/g, '');
   const clipId = `therm-lens-${uid}`;
@@ -15,8 +30,8 @@ export function Thermometer({
   const skyWashId = `therm-wash-${uid}`;
 
   // Full thermometer stem mapping (-25 to +10 °C -> y from 142 down to 54)
-  const clampFull = Math.max(-25, Math.min(10, tempC));
-  const stemRatio = (clampFull - -25) / 35;
+  const clampFull = Math.max(TEMP_MIN, Math.min(TEMP_MAX, tempC));
+  const stemRatio = (clampFull - TEMP_MIN) / (TEMP_MAX - TEMP_MIN);
   const stemTopY = 142 - stemRatio * 88;
 
   // Magnifier lens centered around nearest integer degree to tempC
@@ -29,7 +44,15 @@ export function Thermometer({
   // In the lens: y increases downward, temperature increases upward
   const yForTemp = (t: number) => lensCy - (t - centerDeg) * pxPerDeg;
   const meniscusY = yForTemp(tempC);
-  const draftY = Math.max(lensCy - lensR + 10, Math.min(lensCy + lensR - 10, yForTemp(draftC)));
+  const draftY = Math.max(lensCy - lensR + 6, Math.min(lensCy + lensR - 6, yForTemp(draftC)));
+
+  const tempFromClientY = (clientY: number, rect: DOMRect) => {
+    if (rect.height <= 0) return draftC;
+    const centerY = rect.top + rect.height / 2;
+    const dySvg = ((clientY - centerY) / (rect.height / 2)) * lensR;
+    const clampedDy = Math.max(-(lensR - 6), Math.min(lensR - 6, dySvg));
+    return clampTemp(centerDeg - clampedDy / pxPerDeg);
+  };
 
   // Generate 0.1 °C ticks from (centerDeg - 2) to (centerDeg + 2)
   const startTenth = (centerDeg - 2) * 10;
@@ -54,8 +77,8 @@ export function Thermometer({
       <svg
         className="orc-obs-svg"
         viewBox="0 0 380 208"
-        role="img"
-        aria-label="Ilustración del abrigo meteorológico con termómetro de mercurio y lupa de lectura graduada en décimas de grado"
+        role="group"
+        aria-label="Abrigo meteorológico con termómetro de mercurio y lupa graduada en décimas de grado"
       >
         <defs>
           <clipPath id={clipId}>
@@ -235,11 +258,6 @@ export function Thermometer({
           </g>
         </g>
 
-        {/* Handwritten caption under shelter */}
-        <text x="86" y="196" textAnchor="middle" className="orc-obs-svg-hand">
-          Abrigo abierto
-        </text>
-
         {/* Sight lines from thermometer stem to the magnifying glass */}
         <circle
           cx="86"
@@ -361,11 +379,17 @@ export function Thermometer({
               x2={lensCx + 20}
               y2={draftY}
               stroke="#1E3E5C"
-              strokeWidth="1.6"
+              strokeWidth="1.8"
               strokeDasharray="3 2"
             />
+            <circle
+              cx={lensCx - 30}
+              cy={draftY}
+              r="3.2"
+              fill="#1E3E5C"
+            />
             <polygon
-              points={`${lensCx + 12},${draftY} ${lensCx + 20},${draftY - 4} ${lensCx + 20},${draftY + 4}`}
+              points={`${lensCx + 12},${draftY} ${lensCx + 21},${draftY - 4.5} ${lensCx + 21},${draftY + 4.5}`}
               fill="#1E3E5C"
             />
           </g>
@@ -415,24 +439,69 @@ export function Thermometer({
           stroke="#FBF4E6"
           strokeWidth="3"
           paintOrder="stroke"
+          pointerEvents="none"
         >
           menisco
         </text>
 
-        {/* Lens caption */}
-        <rect
-          x={lensCx - 54}
-          y={lensCy + lensR + 8}
-          width="108"
-          height="19"
-          rx="9"
-          fill="#FBF4E6"
-          stroke="#1F2A36"
-          strokeWidth="1.2"
+        {/* Interactive lens touch/drag zone for setting the reading guide without typing */}
+        <circle
+          ref={lensRef}
+          cx={lensCx}
+          cy={lensCy}
+          r={lensR}
+          fill="transparent"
+          className="orc-obs-lens-hit"
+          role="slider"
+          tabIndex={0}
+          aria-label="Guía de lectura en la lupa del termómetro"
+          aria-valuemin={TEMP_MIN}
+          aria-valuemax={TEMP_MAX}
+          aria-valuenow={draftC}
+          aria-valuetext={`${draftC.toFixed(1).replace('.', ',')} °C`}
+          onPointerDown={(e) => {
+            if (!onDraftChange) return;
+            const el = e.currentTarget;
+            el.focus();
+            el.setPointerCapture?.(e.pointerId);
+            onDraftChange(tempFromClientY(e.clientY, el.getBoundingClientRect()));
+          }}
+          onPointerMove={(e) => {
+            if (!onDraftChange) return;
+            if (e.currentTarget.hasPointerCapture && !e.currentTarget.hasPointerCapture(e.pointerId)) {
+              return;
+            }
+            if (e.buttons === 0 && !e.currentTarget.hasPointerCapture?.(e.pointerId)) return;
+            onDraftChange(tempFromClientY(e.clientY, e.currentTarget.getBoundingClientRect()));
+          }}
+          onKeyDown={(e) => {
+            if (!onDraftChange) return;
+            const step = e.shiftKey ? 1 : 0.1;
+            if (e.key === 'ArrowUp' || e.key === 'ArrowRight') {
+              e.preventDefault();
+              onDraftChange(clampTemp(draftC + step));
+            } else if (e.key === 'ArrowDown' || e.key === 'ArrowLeft') {
+              e.preventDefault();
+              onDraftChange(clampTemp(draftC - step));
+            } else if (e.key === 'PageUp') {
+              e.preventDefault();
+              onDraftChange(clampTemp(draftC + 1));
+            } else if (e.key === 'PageDown') {
+              e.preventDefault();
+              onDraftChange(clampTemp(draftC - 1));
+            } else if (e.key === 'Home') {
+              e.preventDefault();
+              onDraftChange(TEMP_MIN);
+            } else if (e.key === 'End') {
+              e.preventDefault();
+              onDraftChange(TEMP_MAX);
+            } else if (e.key === 'Enter') {
+              e.preventDefault();
+              onConfirm?.();
+            }
+          }}
         />
-        <text x={lensCx} y={lensCy + lensR + 21} textAnchor="middle" className="orc-obs-svg-tag">
-          Lupa ×5 · escala 0,1 °C
-        </text>
+
       </svg>
     </div>
   );

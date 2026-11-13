@@ -1,5 +1,3 @@
-import type { BuildingId } from '@antartida/core';
-
 export const MONTH_SHORT: readonly string[] = [
   'ENE',
   'FEB',
@@ -14,15 +12,6 @@ export const MONTH_SHORT: readonly string[] = [
   'NOV',
   'DIC',
 ] as const;
-
-export const BUILDING_LABELS: Record<BuildingId, string> = {
-  omond: 'Casa Omond (piedra, 1903)',
-  moneta: 'Casa Moneta (madera, 1905)',
-  radioMast: 'Torres de radio (1927)',
-  modern: 'Laboratorio LABORC y pabellones',
-  flag: 'Pabellón nacional',
-  windMast: 'Mástil de viento',
-};
 
 export function seasonForMonth(month: number): string {
   switch (month) {

@@ -6,7 +6,6 @@ import {
   ORCADAS_CLIMATE,
   ORCADAS_FAUNA,
   ORCADAS_GUIDING_QUESTION,
-  READING_KINDS,
   chapterIndex,
   eraAt,
   factsFor,
@@ -16,8 +15,12 @@ import {
   readingFor,
   seaIceAt,
   sunsetHour,
+  tourAtEnd,
+  tourStop,
+  tourStops,
   type Chapter,
 } from '@antartida/core';
+import { BottomSheet, type OpenSheetSize } from '../BottomSheet.tsx';
 import { useFocusReturn, useIsDesktop } from '../hooks.ts';
 import { Icon } from '../ui.tsx';
 import { Answer } from './Answer.tsx';
@@ -29,20 +32,18 @@ import { MonthStrip } from './MonthStrip.tsx';
 import { Observation } from './observation/Observation.tsx';
 import { SourcesPanel } from './SourcesPanel.tsx';
 import { StationScene } from './StationScene.tsx';
+import { TourCard } from './TourCard.tsx';
 
-const CHAPTER_DEFAULT_FOCUS: Record<Chapter, HotspotId> = {
-  arrival: 'overview',
-  observation: 'screen',
-  journey: 'overview',
-  answer: 'flag',
-};
+function chapterFocus(chapter: Chapter, tourIndex: number): HotspotId {
+  return tourStop(chapter, tourIndex)?.spot ?? (chapter === 'answer' ? 'flag' : 'overview');
+}
 
-function primaryButtonText(chapter: Chapter, recorded: number): string {
+function primaryButtonText(chapter: Chapter): string {
   switch (chapter) {
     case 'arrival':
       return 'Hacer la observación';
     case 'observation':
-      return recorded >= 4 ? 'Viajar en el tiempo' : 'Seguir';
+      return 'Viajar en el tiempo';
     case 'journey':
       return 'Ver la respuesta';
     case 'answer':
@@ -116,32 +117,39 @@ export function OrcadasExpedition({
     () => initialOrcadas(initDate.month, initDate.year)
   );
 
-  const [focus, setFocus] = useState<HotspotId | null>('overview');
+  const [focus, setFocus] = useState<HotspotId | null>(() => chapterFocus('arrival', 0));
   const [openSpot, setOpenSpot] = useState<Exclude<HotspotId, 'overview'> | null>(null);
   const [highlightSource, setHighlightSource] = useState<string | null>(null);
-  const [panelExpanded, setPanelExpanded] = useState(false);
+  const [sheetSize, setSheetSize] = useState<OpenSheetSize>('small');
 
   const isDesktop = useIsDesktop(900);
+  // On a phone held upright the chapter panel is a bottom sheet; tall, it leaves the scene a strip.
+  const panelExpanded = !isDesktop && sheetSize === 'tall';
+  const panelRef = useRef<HTMLElement>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const sourcesBtnRef = useRef<HTMLButtonElement>(null);
   const hotspotsRef = useRef<HTMLDivElement>(null);
   const mobileCardRef = useRef<HTMLElement>(null);
+  const primaryBtnRef = useRef<HTMLButtonElement>(null);
 
-  // Move focus to the chapter h2 heading and update camera framing whenever chapter changes
+  // Move focus to the chapter h2 heading and reset panel scroll whenever chapter changes
   useEffect(() => {
-    setOpenSpot(null);
-    setFocus(CHAPTER_DEFAULT_FOCUS[s.chapter]);
     if (scrollRef.current) {
       scrollRef.current.scrollTop = 0;
     }
     headingRef.current?.focus({ preventScroll: true });
-    if (s.chapter === 'observation') {
-      setPanelExpanded(true);
-    } else {
-      setPanelExpanded(false);
-    }
+    // Observing needs the thermometer and its button on screen: the sheet opens tall there.
+    setSheetSize(s.chapter === 'observation' ? 'tall' : 'small');
   }, [s.chapter]);
+
+  // Update camera framing whenever the active chapter or tour stop changes
+  useEffect(() => {
+    setOpenSpot(null);
+    setFocus(chapterFocus(s.chapter, s.tourIndex));
+    // A new stop has a line to read: a sheet folded down to its title comes back up.
+    setSheetSize((size) => (size === 'peek' ? 'small' : size));
+  }, [s.chapter, s.tourIndex]);
 
   const activeSpotDef = useMemo(
     () => (openSpot ? HOTSPOTS.find((h) => h.id === openSpot) ?? null : null),
@@ -201,18 +209,160 @@ export function OrcadasExpedition({
     s.chapter === 'journey' ? era.buildings : eraAt(s.maxYear).buildings;
 
   const idx = chapterIndex(s.chapter);
-  const recorded = READING_KINDS.filter((kind) => typeof s.guesses[kind] === 'number').length;
+  const stops = useMemo(() => tourStops(s.chapter), [s.chapter]);
+  const activeStop = tourStop(s.chapter, s.tourIndex);
+  const atTourEnd = tourAtEnd(s);
+  const defaultFocus = chapterFocus(s.chapter, s.tourIndex);
+
+  const tourCardElement = activeStop ? (
+    <TourCard
+      stop={activeStop}
+      index={s.tourIndex}
+      total={stops.length}
+      onPrev={() => dispatch({ type: 'tourPrev' })}
+      onNext={() => dispatch({ type: 'tourNext' })}
+      onReachEnd={() => primaryBtnRef.current?.focus()}
+    />
+  ) : null;
+
+  const panelBody = (
+    <>
+      <span id="orc-panel-label" hidden>
+        Capítulo {idx + 1}: {CHAPTER_NAMES[s.chapter]}
+      </span>
+      {openSpot && !isDesktop && activeSpotDef ? (
+        <section
+          className="orc-spot-card orc-spot-panel-card"
+          role="dialog"
+          aria-label={activeSpotDef.label}
+          ref={mobileCardRef}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') {
+              e.stopPropagation();
+              setOpenSpot(null);
+              setFocus(defaultFocus);
+            }
+          }}
+        >
+          <div className="orc-spot-head">
+            <div>
+              <span className="orc-kicker">Punto de exploración</span>
+              <h3>{activeSpotDef.label}</h3>
+            </div>
+            <button
+              type="button"
+              className="btn ghost orc-btn-return"
+              onClick={() => {
+                setOpenSpot(null);
+                setFocus(defaultFocus);
+              }}
+            >
+              Volver al capítulo
+            </button>
+          </div>
+          <p className="orc-spot-sub">{activeSpotDef.subtitle}</p>
+          <div className="orc-spot-facts">
+            {activeSpotFact && <FactCard fact={activeSpotFact} />}
+          </div>
+        </section>
+      ) : (
+        <>
+          <div className="orc-panel-scroll" ref={scrollRef}>
+            <div className="orc-panel-head">
+              <span className="orc-kicker hand">
+                Capítulo {idx + 1} de {CHAPTERS.length} · {CHAPTER_NAMES[s.chapter]}
+              </span>
+              <h2 ref={headingRef} tabIndex={-1} className="orc-chapter-h2">
+                {CHAPTER_HEADINGS[s.chapter]}
+              </h2>
+            </div>
+
+            {s.chapter === 'arrival' && (
+              <div className="orc-chapter-content">
+                <p className="orc-lead">
+                  Acá se mide el tiempo sin pausa desde 1903.
+                </p>
+                {tourCardElement}
+              </div>
+            )}
+
+            {s.chapter === 'observation' && (
+              <div className="orc-chapter-content">
+                <Observation
+                  reading={reading}
+                  guesses={s.guesses}
+                  onGuess={(kind, value) => dispatch({ type: 'guess', kind, value })}
+                  month={s.obsMonth}
+                />
+                {tourCardElement}
+              </div>
+            )}
+
+            {s.chapter === 'journey' && (
+              <div className="orc-chapter-content">
+                <Journey
+                  year={s.year}
+                  maxYear={s.maxYear}
+                  onYear={(year) => dispatch({ type: 'year', year })}
+                  tourCard={tourCardElement}
+                />
+              </div>
+            )}
+
+            {s.chapter === 'answer' && (
+              <Answer
+                guesses={s.guesses}
+                obsMonth={s.obsMonth}
+                reading={reading}
+                onGotoObservation={() => dispatch({ type: 'goto', chapter: 'observation' })}
+              />
+            )}
+
+            <FactList facts={chapterFacts} summary="Saber más del capítulo" />
+          </div>
+
+          <div className="orc-bar ebar">
+            {(idx > 0 || s.tourIndex > 0) && (
+              <button
+                type="button"
+                className="btn ghost orc-btn-back"
+                onClick={() => dispatch({ type: s.tourIndex > 0 ? 'tourPrev' : 'back' })}
+              >
+                Atrás
+              </button>
+            )}
+            <button
+              ref={primaryBtnRef}
+              type="button"
+              className="btn primary orc-btn-primary"
+              onClick={() => {
+                if (!atTourEnd) {
+                  dispatch({ type: 'tourNext' });
+                } else if (s.chapter === 'answer') {
+                  onLeave(true);
+                } else {
+                  dispatch({ type: 'next' });
+                }
+              }}
+            >
+              {atTourEnd ? primaryButtonText(s.chapter) : 'Siguiente'}
+            </button>
+          </div>
+        </>
+      )}
+    </>
+  );
 
   return (
     <SourceContext.Provider value={handleOpenSource}>
       <section
-        className={`orc${panelExpanded ? ' is-panel-expanded' : ''}`}
+        className={`orc${panelExpanded ? ' is-panel-expanded' : ''}${!isDesktop && sheetSize === 'peek' ? ' is-panel-peek' : ''}`}
         aria-label="Expedición Estación Orcadas"
         onKeyDown={(e) => {
           if (e.key === 'Escape') {
             if (openSpot) {
               setOpenSpot(null);
-              setFocus('overview');
+              setFocus(defaultFocus);
             } else if (s.panel) {
               dispatch({ type: 'closePanel' });
             }
@@ -264,12 +414,20 @@ export function OrcadasExpedition({
               dispatch({ type: 'closePanel' });
               setHighlightSource(null);
             }
+            const stopIdx = stops.findIndex((st) => st.spot === id);
+            if (stopIdx >= 0) {
+              setOpenSpot(null);
+              setFocus(id);
+              dispatch({ type: 'tourGo', index: stopIdx });
+              return;
+            }
             setFocus(id);
             setOpenSpot(id);
+            setSheetSize((size) => (size === 'peek' ? 'small' : size));
           }}
           onCloseCard={() => {
             setOpenSpot(null);
-            setFocus('overview');
+            setFocus(defaultFocus);
           }}
         />
 
@@ -334,143 +492,23 @@ export function OrcadasExpedition({
           </nav>
         </header>
 
-        {/* Field Notebook Chapter Panel */}
-        <div
-          className={`orc-panel${panelExpanded ? ' is-expanded' : ''}`}
-          role="region"
-          aria-label={`Capítulo ${idx + 1}: ${CHAPTER_NAMES[s.chapter]}`}
-        >
-          <button
-            type="button"
-            className="orc-panel-toggle"
-            aria-expanded={panelExpanded}
-            onClick={() => setPanelExpanded((v) => !v)}
+        {/* Field Notebook Chapter Panel: a side card on wide screens, a bottom sheet on phones */}
+        {isDesktop ? (
+          <div className="orc-panel" role="region" aria-labelledby="orc-panel-label">
+            {panelBody}
+          </div>
+        ) : (
+          <BottomSheet
+            className="orc-panel"
+            labelledBy="orc-panel-label"
+            sheetRef={panelRef}
+            floor="peek"
+            size={sheetSize}
+            onSize={setSheetSize}
           >
-            <span className="orc-panel-toggle-bar" aria-hidden="true" />
-            <span className="orc-panel-toggle-text">
-              {panelExpanded ? 'Ver menos' : 'Ver más'}
-            </span>
-          </button>
-          {openSpot && !isDesktop && activeSpotDef ? (
-            <section
-              className="orc-spot-card orc-spot-panel-card"
-              role="dialog"
-              aria-label={activeSpotDef.label}
-              ref={mobileCardRef}
-              onKeyDown={(e) => {
-                if (e.key === 'Escape') {
-                  e.stopPropagation();
-                  setOpenSpot(null);
-                  setFocus('overview');
-                }
-              }}
-            >
-              <div className="orc-spot-head">
-                <div>
-                  <span className="orc-kicker">Punto de exploración</span>
-                  <h3>{activeSpotDef.label}</h3>
-                </div>
-                <button
-                  type="button"
-                  className="btn ghost orc-btn-return"
-                  onClick={() => {
-                    setOpenSpot(null);
-                    setFocus('overview');
-                  }}
-                >
-                  Volver al capítulo
-                </button>
-              </div>
-              <p className="orc-spot-sub">{activeSpotDef.subtitle}</p>
-              <div className="orc-spot-facts">
-                {activeSpotFact && <FactCard fact={activeSpotFact} />}
-              </div>
-            </section>
-          ) : (
-            <>
-              <div className="orc-panel-scroll" ref={scrollRef}>
-                <div className="orc-panel-head">
-                  <span className="orc-kicker hand">
-                    Capítulo {idx + 1} de {CHAPTERS.length} · {CHAPTER_NAMES[s.chapter]}
-                  </span>
-                  <h2 ref={headingRef} tabIndex={-1} className="orc-chapter-h2">
-                    {CHAPTER_HEADINGS[s.chapter]}
-                  </h2>
-                </div>
-
-                {s.chapter === 'arrival' && (
-                  <div className="orc-chapter-content">
-                    <p className="orc-question">{ORCADAS_GUIDING_QUESTION}</p>
-                    <p className="orc-lead">
-                      En el istmo entre las bahías Scotia y Uruguay se mide el tiempo sin pausa desde 1903.
-                    </p>
-                    <FactList facts={chapterFacts} />
-                  </div>
-                )}
-
-                {s.chapter === 'observation' && (
-                  <div className="orc-chapter-content">
-                    <Observation
-                      reading={reading}
-                      guesses={s.guesses}
-                      onGuess={(kind, value) => dispatch({ type: 'guess', kind, value })}
-                      onClear={() => dispatch({ type: 'clearGuesses' })}
-                      month={s.obsMonth}
-                    />
-                    <FactList facts={chapterFacts} />
-                  </div>
-                )}
-
-                {s.chapter === 'journey' && (
-                  <div className="orc-chapter-content">
-                    <Journey
-                      year={s.year}
-                      maxYear={s.maxYear}
-                      onYear={(year) => dispatch({ type: 'year', year })}
-                    />
-                  </div>
-                )}
-
-                {s.chapter === 'answer' && (
-                  <Answer
-                    guesses={s.guesses}
-                    obsMonth={s.obsMonth}
-                    reading={reading}
-                    onGotoObservation={() => dispatch({ type: 'goto', chapter: 'observation' })}
-                  />
-                )}
-              </div>
-
-              <div className="orc-bar ebar">
-                {idx > 0 && (
-                  <button
-                    type="button"
-                    className="btn ghost orc-btn-back"
-                    onClick={() => dispatch({ type: 'back' })}
-                  >
-                    Atrás
-                  </button>
-                )}
-                <button
-                  type="button"
-                  className="btn primary orc-btn-primary"
-                  onClick={() =>
-                    s.chapter === 'answer' ? onLeave(true) : dispatch({ type: 'next' })
-                  }
-                >
-                  {primaryButtonText(s.chapter, recorded)}
-                </button>
-              </div>
-              {s.chapter === 'observation' && recorded < 4 && (
-                <small className="orc-obs-status" role="status">
-                  {4 - recorded === 1
-                    ? 'Te falta 1 lectura, podés volver después.'
-                    : `Te faltan ${4 - recorded} lecturas, podés volver después.`}
-                </small>
-              )}
-            </>
-          )}
-        </div>
+            {panelBody}
+          </BottomSheet>
+        )}
 
         {s.panel && (
           <SourcesPanel
