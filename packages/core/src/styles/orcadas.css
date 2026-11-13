@@ -851,13 +851,98 @@ details.orc-more > summary:focus-visible {
 /* MonthStrip */
 .orc-month-strip-wrap {
   position: absolute;
-  /* Below the header and the chapter buttons, which end at 116 px on a portrait phone. */
-  top: 122px;
+  /* Below the header and the chapter buttons, which end at 106 px on a portrait phone. */
+  top: 114px;
   left: 8px;
-  right: 8px;
+  right: auto;
+  width: fit-content;
   max-width: calc(100vw - 16px);
-  /* Above the hotspots (11), so the open «Saber más» is never covered by a dot. */
+  /* Above the hotspots (11), so the open popover and «Saber más» are never covered by a dot. */
   z-index: 12;
+}
+
+.orc-month-chip {
+  min-height: 44px;
+  padding: 6px 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--paper);
+  border: 1.5px solid var(--ink);
+  border-radius: 8px;
+  box-shadow: 2px 3px 0 rgba(31, 42, 54, 0.12);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.orc-month-chip:hover {
+  background: #fff;
+}
+
+.orc-month-chip:focus-visible {
+  outline: 2px solid var(--deep);
+  outline-offset: 2px;
+}
+
+.orc-month-chip-bars {
+  width: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: none;
+}
+
+.orc-month-chip-bars .orc-month-daylight-track {
+  height: 14px;
+}
+
+.orc-month-chip-caret {
+  font-size: 12px;
+  line-height: 1;
+  transition: transform 0.15s ease;
+}
+
+.orc-month-chip[aria-expanded="true"] .orc-month-chip-caret {
+  transform: rotate(180deg);
+}
+
+.orc-month-popover {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  width: calc(100vw - 16px);
+  max-width: 420px;
+  max-height: calc(100dvh - 176px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  box-sizing: border-box;
+  background: var(--paper);
+  border: 1.5px solid var(--ink);
+  border-radius: 10px;
+  padding: 6px;
+  box-shadow: 2px 4px 0 rgba(31, 42, 54, 0.18);
+  animation: orc-card-in 0.18s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
+
+.orc-month-popover .orc-month-strip {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.orc-month-popover .orc-month-btn {
+  padding: 3px 1px 4px;
+}
+
+@media (max-width: 400px) {
+  .orc-month-popover .orc-month-short {
+    font-size: 11px;
+  }
 }
 
 .orc-month-strip {
@@ -1001,9 +1086,11 @@ details.orc-more > summary:focus-visible {
   padding: 6px 10px;
   font-size: 12px;
   box-shadow: 2px 3px 0 rgba(31, 42, 54, 0.12);
-  /* On a portrait phone it ends above the bottom panel (45dvh) instead of running under it. */
-  max-height: calc(55dvh - 200px);
   overflow-y: auto;
+}
+
+.orc-month-popover .orc-month-details {
+  overflow-y: visible;
 }
 
 .orc-month-summary-toggle {
@@ -1585,7 +1672,9 @@ details.orc-more > summary:focus-visible {
   .orc-panel,
   .orc-spot-card,
   .orc-sources,
-  .orc-step-btn {
+  .orc-step-btn,
+  .orc-month-popover,
+  .orc-month-chip-caret {
     animation: none;
     transition: none;
   }
