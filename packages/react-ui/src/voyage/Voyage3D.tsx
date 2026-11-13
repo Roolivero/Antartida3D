@@ -3,12 +3,18 @@ import { BoxGeometry, BufferGeometry, Group, Line, LineDashedMaterial, Mesh, Mes
 import { useFrame, useThree } from '@react-three/fiber';
 import type { CameraControls } from '@react-three/drei';
 import {
+  CAMERA_RETURN_SECONDS,
   DRAKE_STORM,
   TRANSPORTS,
+  VOYAGE_TRANSFER,
+  cameraReturn,
   flightClearance,
   heightAt,
+  planeTurbulence,
   sightingsInView,
   stormAt,
+  transferAt,
+  voyageArrived,
   voyageAt,
   voyageHeading,
   voyageLength,
@@ -18,8 +24,9 @@ import {
   type TransportId,
   type TransportKind,
 } from '@antartida/core';
+import { HELICOPTER_BOXES, HELICOPTER_ROTOR_BOXES, HELICOPTER_ROTOR_ORIGIN } from '../orcadas/stationModels.ts';
 import { buildPinGeometry, pinMaterial } from './pins.ts';
-import { buildVehicleGeometry, vehicleMaterial } from './vehicles.ts';
+import { buildBoxGeometry, buildVehicleGeometry, vehicleMaterial } from './vehicles.ts';
 import { Sighting3D } from './Sighting3D.tsx';
 import { buildTrailGeometry, trailMaterial, updateTrail } from './trail.ts';
 import { NARROW_PX, type VoyageBus } from './useVoyage.ts';
@@ -86,6 +93,19 @@ const FOLLOW_EPSILON = 1e-4;
 const followGoal = new Vector3();
 const followTarget = new Vector3();
 
+/** Flight deck of the icebreaker in its model: how far aft of the middle it is and how high, in ship lengths. */
+const DECK_AFT = 0.33;
+const DECK_TOP = 0.091;
+/**
+ * Length of the helicopter that flies to the base, in ship lengths. A real Sea King is about a
+ * seventh of the ship: it is drawn larger, as every model of the map, to be seen from the trip camera.
+ */
+const HELICOPTER_SIZE = 0.55;
+/** Nose down while it flies forward, in radians at the middle of the hop. */
+const HELICOPTER_TILT = 0.14;
+/** Turns of the main rotor, in radians per second. */
+const ROTOR_SPEED = 22;
+
 const routeMaterial = new LineDashedMaterial({ color: 0x1f2a36, dashSize: 0.8, gapSize: 0.6, transparent: true, opacity: 0.75 });
 
 /** The vehicle travelling on the live map, its path and the camera, which stays centered on it. */
@@ -103,9 +123,11 @@ export function Voyage3D({ bus, reduced, overlay }: {
   const trailMesh = useRef<Mesh>(null);
   const [transport, setTransport] = useState<TransportId | null>(bus.state?.transport ?? null);
   const drawn = useRef({ t: -1, transport: null as TransportId | null });
-  // Far place the camera is at, and whether it is on its way back to the vehicle.
-  const visit = useRef({ id: null as string | null, returning: false });
+  // Far place the camera is at, and its way back to the vehicle: where it left from and the fraction of the time gone.
+  const visit = useRef({ id: null as string | null, back: null as { from: Vector3; u: number } | null });
   const spray = useRef<(Mesh | null)[]>([]);
+  const helicopter = useRef<Group>(null);
+  const rotor = useRef<Group>(null);
   // Whether the vehicle is in the storm, and the camera distance to go back to when it leaves.
   const storm = useRef({ inside: false, distance: null as number | null });
   // Ids of the animals in view and of the ones already spotted, joined: React re-renders only when they change.
@@ -155,6 +177,18 @@ export function Voyage3D({ bus, reduced, overlay }: {
   }, [kind]);
   useEffect(() => () => route?.geometry.dispose(), [route]);
 
+  // The Sea King that takes people and cargo from the icebreaker to the base: the model of the Orcadas helipad.
+  const seaKing = useMemo(
+    () => (transport === VOYAGE_TRANSFER.transport
+      ? { body: buildBoxGeometry(HELICOPTER_BOXES), rotor: buildBoxGeometry(HELICOPTER_ROTOR_BOXES) }
+      : null),
+    [transport],
+  );
+  useEffect(() => () => {
+    seaKing?.body.dispose();
+    seaKing?.rotor.dispose();
+  }, [seaKing]);
+
   const trail = useMemo(() => (kind ? buildTrailGeometry(kind) : null), [kind]);
   useEffect(() => () => trail?.dispose(), [trail]);
 
@@ -164,7 +198,7 @@ export function Voyage3D({ bus, reduced, overlay }: {
   const pinGeometry = useMemo(buildPinGeometry, []);
   useEffect(() => () => Object.values(pinGeometry).forEach((g) => g.dispose()), [pinGeometry]);
 
-  useFrame(({ camera }) => {
+  useFrame(({ camera }, delta) => {
     const s = bus.state;
     const g = group.current;
     if (!s) storm.current = { inside: false, distance: null };
@@ -190,11 +224,16 @@ export function Voyage3D({ bus, reduced, overlay }: {
     const rough = stormAt(p.x, p.y);
     // Bow up and down over each wave; the hull rises with it and rolls out of step.
     const wave = time * 2.1;
-    // The plane flies over the storm, in calm air.
     if (s.kind === 'ship') {
       sway.pitch += rough * Math.sin(wave) * 0.24;
       sway.roll += rough * Math.sin(wave * 0.63 + 1) * 0.22;
       sway.lift += rough * Math.sin(wave - 0.9) * 0.1;
+    } else {
+      // The plane flies over the storm, and the rough air shakes it a little.
+      const shake = planeTurbulence(time, rough);
+      sway.roll += shake.roll;
+      sway.pitch += shake.pitch;
+      sway.lift += shake.lift;
     }
     // Spray bursts when the bow comes down into the water.
     const burst = s.kind === 'ship' ? rough * Math.max(0, -Math.sin(wave + 0.5)) ** 2 : 0;
@@ -212,6 +251,27 @@ export function Voyage3D({ bus, reduced, overlay }: {
     g.rotation.set(sway.roll, -heading, pitch + sway.pitch, 'YZX');
     g.scale.setScalar(size);
 
+    // The helicopter shows once its hop to the base starts, and stays on the base after it lands.
+    const heli = helicopter.current;
+    if (heli) {
+      const flown = bus.transfer;
+      heli.visible = flown !== null;
+      if (flown !== null) {
+        const deck = {
+          x: p.x - Math.cos(heading) * DECK_AFT * size,
+          y: p.y - Math.sin(heading) * DECK_AFT * size,
+          height: g.position.y + DECK_TOP * size,
+          heading,
+        };
+        const at = transferAt(deck, flown);
+        heli.position.set(at.x - 500, at.height, at.y - 500);
+        heli.rotation.set(0, -at.heading, -HELICOPTER_TILT * Math.sin(Math.PI * flown), 'YZX');
+        heli.scale.setScalar(size * HELICOPTER_SIZE);
+        // The rotor turns while it flies and stops once it is down.
+        if (rotor.current && flown < 1) rotor.current.rotation.y = time * ROTOR_SPEED;
+      }
+    }
+
     pins.forEach((at, i) => {
       const pin = pinGroups.current[i];
       if (!pin) return;
@@ -220,6 +280,8 @@ export function Voyage3D({ bus, reduced, overlay }: {
       pin.scale.setScalar(Math.max(MIN_PIN, camera.position.distanceTo(pin.position) * PIN_PER_DISTANCE));
       pin.quaternion.copy(camera.quaternion); // always facing the camera
       (pin.children[0] as Mesh).material = i + 1 < s.reached ? pinMaterial.reached : pinMaterial.ahead;
+      // A pin is drawn over everything: the one of the base would cover the helicopter that lands on it.
+      pin.visible = bus.transfer === null || i < pins.length - 1;
     });
 
     if (trailMesh.current) trailMesh.current.visible = !bus.back;
@@ -259,29 +321,48 @@ export function Voyage3D({ bus, reduced, overlay }: {
         const open = bus.open ? voyageSightings(s.kind).find((v) => v.sighting.id === bus.open) : undefined;
         // A milestone about a place off the path (Cabo de Hornos): its card shows the place, where its pin stands.
         const stop = s.card >= 0 ? voyageStops(s.kind)[s.card] : undefined;
+        // On arrival a ship stays off the island: the camera goes halfway to the base, to show both.
+        // A plane lands on the base: the camera stays with it.
+        const arrived = voyageArrived(s);
+        const place = !stop?.milestone.place || (arrived && s.kind === 'plane') ? null
+          : arrived ? { x: (stop.pin.x + p.x) / 2, y: (stop.pin.y + p.y) / 2 } : stop.pin;
         const far = open?.sighting.place && Math.hypot(open.x - p.x, open.y - p.y) > VISIT_DISTANCE
           ? { id: open.sighting.id, x: open.x, y: open.y }
-          : stop?.milestone.place ? { id: stop.milestone.id, ...stop.pin } : null;
+          : stop && place ? { id: stop.milestone.id, ...place } : null;
+        const vehicle = { x: g.position.x, y: Math.max(0, height), z: g.position.z };
         if (far) {
           // Opening a far place takes the camera there, to see it; the trip waits.
           if (visit.current.id !== far.id) {
-            visit.current = { id: far.id, returning: false };
+            visit.current = { id: far.id, back: null };
             moved = true;
             void controls.moveTo(far.x - 500, 0, far.y - 500, !reduced);
           }
-        } else if (visit.current.id) {
-          // Closing it brings the camera back to the vehicle.
-          const state = { id: null, returning: true };
-          visit.current = state;
-          moved = true;
-          void controls.moveTo(g.position.x, Math.max(0, height), g.position.z, !reduced).then(() => void (state.returning = false));
-        } else if (s.t > 0 && !visit.current.returning) {
-          // With reduced motion nothing else moves: follow only when the vehicle moved, or each move would
-          // ask for a frame and the canvas would never rest. Otherwise the sway keeps it drawing, as before.
-          const goal = followGoal.set(g.position.x, Math.max(0, height), g.position.z);
-          if (!reduced || controls.getTarget(followTarget).distanceToSquared(goal) > FOLLOW_EPSILON ** 2) {
+        } else {
+          if (visit.current.id) {
+            // Closing it brings the camera back to the vehicle: at once with reduced motion, else little by little.
+            visit.current = { id: null, back: reduced ? null : { from: controls.getTarget(new Vector3(), false), u: 0 } };
+            if (reduced) {
+              moved = true;
+              void controls.moveTo(vehicle.x, vehicle.y, vehicle.z, false);
+            }
+          }
+          const back = visit.current.back;
+          if (back) {
+            // The vehicle may be moving again: the camera goes to where it is now, not to where it was.
+            // A long frame does not make it leap.
+            back.u = Math.min(1, back.u + Math.min(delta, 0.1) / CAMERA_RETURN_SECONDS);
+            const at = cameraReturn(back.from, vehicle, back.u);
             moved = true;
-            void controls.moveTo(goal.x, goal.y, goal.z, false);
+            void controls.moveTo(at.x, at.y, at.z, false);
+            if (back.u >= 1) visit.current.back = null;
+          } else if (s.t > 0) {
+            // With reduced motion nothing else moves: follow only when the vehicle moved, or each move would
+            // ask for a frame and the canvas would never rest. Otherwise the sway keeps it drawing, as before.
+            const goal = followGoal.set(vehicle.x, vehicle.y, vehicle.z);
+            if (!reduced || controls.getTarget(followTarget).distanceToSquared(goal) > FOLLOW_EPSILON ** 2) {
+              moved = true;
+              void controls.moveTo(goal.x, goal.y, goal.z, false);
+            }
           }
         }
       }
@@ -323,6 +404,14 @@ export function Voyage3D({ bus, reduced, overlay }: {
           <mesh key={i} ref={(m) => void (spray.current[i] = m)} geometry={sprayGeometry} material={sprayMaterial} scale={0} />
         ))}
       </group>
+      {seaKing && (
+        <group ref={helicopter} visible={false}>
+          <mesh geometry={seaKing.body} material={vehicleMaterial} />
+          <group ref={rotor} position={HELICOPTER_ROTOR_ORIGIN}>
+            <mesh geometry={seaKing.rotor} material={vehicleMaterial} />
+          </group>
+        </group>
+      )}
     </>
   );
 }

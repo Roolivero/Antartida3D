@@ -35,7 +35,7 @@ Contenido verificado para la expedición **«Desde Ushuaia»** (issue #4): el vi
 - Campaña 2025/26, etapa 3: salió de Ushuaia con 65 t de carga y 260 tambores y tubos de gasoil antártico, gas y aceites; abasteció San Martín, Esperanza y Carlini y cerró Brown y Primavera `[O22]`. Duró 20 días y volvió al muelle comercial de Ushuaia tras cruzar el Drake `[O23]`.
 - En la campaña 2024/25, de regreso de Carlini a Ushuaia, cruzó el Drake «en menos de dos días», a 14 nudos de promedio `[O16]`.
 - Lleva dos helicópteros Sea King `[O16]`. En Marambio, que está en una meseta, la carga y el personal pasan del buque a la base solo con un Sea King `[O24]`. (La página de logística de la Cancillería dice «Super Puma»; se usa lo que publica la Armada.)
-- **Estimación** (cálculo propio): 1.000 km a 14 kt son unas 39 h. El recorrido dibujado hasta Marambio mide unos 1.400 km: unas 54 h. La ficha del buque da las dos cifras, para que coincida con la barra del viaje.
+- **Estimación** (cálculo propio): 1.000 km a 14 kt son unas 39 h. El recorrido dibujado, que termina frente a Marambio, mide unos 1.350 km: unas 52 h. La ficha del buque da las dos cifras, para que coincida con la barra del viaje.
 
 ### 2.2. Avión Hércules C-130 (Fuerza Aérea Argentina)
 
@@ -69,6 +69,8 @@ Puntos `[lon, lat]` (WGS84) de partida para la ruta marítima. Marcados `fuente`
 10. `[-58.50, -63.20]` Estrecho de Bransfield (estimación)
 11. `[-57.00, -63.40]` Esperanza (`fuente` `[O2]`)
 12. `[-56.62, -64.23]` Marambio (`fuente` `[O2]`)
+
+**Los buques no llegan hasta la base.** El viaje en buque termina 7 unidades de mapa antes del final de la ruta (`SHIP_ANCHORAGE`, en `packages/core/src/voyage.ts`): en 63,79° S, 56,39° O, a unos 51 km de la base y con unos 46 km de mar hasta la costa de la isla (cálculo propio sobre el relieve del mapa). Queda tan lejos porque el buque se dibuja agrandado: más cerca taparía la isla. La base está sobre una meseta y el traslado es en helicóptero `[O24]`. **Ilustrativo:** la fuente solo dice que el rompehielos trabajó «frente a la base»; no dice dónde. El pin del hito «Base Marambio» queda en la base. La línea de la ruta del mapa 2D sigue llegando hasta la base.
 
 La ruta aérea Ushuaia → Marambio es una **ortodrómica calculada** (la derrota real del C-130 es pendiente).
 
@@ -221,9 +223,9 @@ Cada dato depende del vehículo elegido. Hay tres alcances: todos los vehículos
 | | todos | Los residuos salen de la Antártida y los retira quien los generó | [I3] |
 | Shetland del Sur | barcos | Lanchas de desembarco y «Grupo Playa» en bases sin muelle | [O43] |
 | | Irízar | Las cargas pesadas van en helicóptero Sea King | [O43] |
-| Base Marambio | todos | 70 personas en invierno y 170 en verano | [O45] |
+| Base Marambio | Irízar | Carga y personal pasan a la base solo en helicóptero: un Sea King va y viene entre el buque y la meseta | [O24] |
+| | barcos | El lugar donde el buque espera frente a la isla es ilustrativo (sin fuente); se dibuja lejos porque el buque está agrandado | — |
 | | todos | 227 personas invernaron en 2022 en las siete bases permanentes (179 varones, 31 mujeres, 17 niños) | [O42] |
-| | Irízar | Carga y personal pasan a la base en helicóptero Sea King | [O24] |
 | | barcos | Los residuos vuelven a Ushuaia para reciclaje o disposición final | [O41] |
 | | avión | Pista de 1.200 m por 35 m, abierta por 21 hombres con barretas, picos y palas | [O45] |
 
@@ -233,8 +235,15 @@ Preguntas (la respuesta correcta sale de los datos del mismo hito):
 |---|---|---|---|
 | Ushuaia y el Canal Beagle | ¿Dónde se entrena el personal antes de pasar un año en la Antártida? | En la cordillera de Neuquén | todos |
 | Paralelo 60° Sur | ¿Qué se hace con la basura que produce una base antártica? | Se saca de la Antártida | todos |
-| Shetland del Sur | ¿Cómo llega la carga de un buque a una base que no tiene muelle? | En lanchas de desembarco | barcos (el avión no pasa por ese hito) |
-| Base Marambio | ¿Cuánta gente vive en la Base Marambio durante el invierno? | Unas 70 personas | todos |
+| Base Marambio | Marambio está sobre una meseta, a unos 200 m sobre el mar. ¿Cómo pasan del Irízar a la base las personas y la carga? | En helicóptero `[O24]` | solo el Irízar |
+
+Cambios del 13-11-2026 (#46):
+
+- La pregunta de Shetland del Sur («¿Cómo llega la carga de un buque a una base que no tiene muelle?») se quitó. Su dato, las lanchas de desembarco `[O43]`, sigue como nota de ese hito. Shetland del Sur queda sin pregunta hasta tener un dato nuevo con fuente.
+- La pregunta de Marambio pasa a ser sobre el traslado del Irízar a la base. Sus opciones son «Por un puente», «En botes» y «En helicóptero». Se redacta con la meseta porque es lo que dice `[O24]`: la fuente no dice que la base no tenga puerto ni muelle.
+- La pregunta «¿Cuánta gente vive en la Base Marambio durante el invierno?» y su nota (70 personas en invierno y 170 en verano, `[O45]`) salen de este viaje y pasan a la expedición de la base (#74).
+- La ficha del Irízar en el selector ya no dice cómo se usa el helicóptero en Marambio, para no responder la pregunta antes de zarpar. Dice «Lleva dos helicópteros Sea King» `[O16]`.
+- Después de responder la pregunta de Marambio, en el mapa 3D y con movimiento permitido, el botón «Ver el traslado» muestra una animación corta: un Sea King va del Irízar a la base. Mientras se ve, la pantalla dice «Un helicóptero Sea King lleva la carga y el personal del rompehielos a la base» `[O24]` y aclara que la animación es ilustrativa: no muestra un vuelo real ni su recorrido, y el helicóptero está agrandado. El detalle está en «Llegada a la Base Marambio», en `desde-ushuaia-diseno.md`.
 
 No hay puntaje durante el viaje. La primera respuesta queda fija, se muestra si era correcta y recién después aparecen los datos. La tarjeta de llegada dice cuántas preguntas se acertaron.
 
@@ -249,6 +258,9 @@ Límites conocidos: [O44] describe el curso del personal de las Fuerzas Armadas,
 - «Paso Mitre» y «Mar de Piedrabuena»: no se encontró ninguna fuente.
 - Duración del cruce en buque turístico con fuente oficial.
 - Tipo y largo actual de la pista de Marambio.
+- Que la Base Marambio no tenga puerto ni muelle: `[O24]` no lo dice (solo dice que está sobre una meseta y que el traslado fue «exclusivamente» en helicóptero). No se afirma en el viaje.
+- Dónde espera el buque frente a Marambio y a qué distancia de la costa: `[O24]` solo dice «frente a la base». La posición dibujada es ilustrativa.
+- Por dónde vuela el helicóptero entre el buque y la base, y cuánto tarda: `[O24]` no lo dice. La animación del traslado es ilustrativa.
 
 ## 10. Retirado del borrador anterior
 

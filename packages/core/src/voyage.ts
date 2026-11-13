@@ -92,13 +92,68 @@ export function flightClearance(t: number, mesh?: TerrainMesh): number {
 export const SHIP_HEAD_START = 1.3;
 const SHIP_START = SHIP_HEAD_START / ROUTE_LENGTH;
 
-/** Position in map space at fraction `t` of the trip (0 = departure from Ushuaia, 1 = Marambio). */
+/**
+ * A ship ends its trip this many map units short of the end of the sea route, off the island: the
+ * base stands on a plateau and no ship reaches it. ILLUSTRATIVE: source O24 only says that the
+ * icebreaker worked "frente a la base", not where it stayed. It is this far (about 50 km) because
+ * the ship is drawn much larger than it is: at the closest the camera gets here it is 4.5 map
+ * units long, and nearer the base it would cover the island. The route itself keeps its two ends.
+ */
+export const SHIP_ANCHORAGE = 7;
+const SHIP_END = 1 - SHIP_ANCHORAGE / ROUTE_LENGTH;
+
+/**
+ * Position in map space at fraction `t` of the trip: 0 is the departure from Ushuaia and 1 the
+ * arrival, at Base Marambio by plane and off its island by ship.
+ */
 export function voyageAt(kind: TransportKind, t: number): Point {
-  return kind === 'plane' ? flightAt(clamp01(t)) : routeAt(SHIP_START + clamp01(t) * (1 - SHIP_START));
+  return kind === 'plane' ? flightAt(clamp01(t)) : routeAt(SHIP_START + clamp01(t) * (SHIP_END - SHIP_START));
+}
+
+/** Seconds the helicopter takes from the ship to the base. Not a real duration. */
+export const TRANSFER_SECONDS = 6;
+/** Fraction of the hop the helicopter spends going straight up at the start, and straight down at the end. */
+const TRANSFER_HOVER = 0.12;
+/** Fraction of the hop it takes to climb to its flying height, and to come down from it. */
+const TRANSFER_CLIMB = 0.35;
+/** Clear air it keeps over the highest ground under its path, in world units. */
+const TRANSFER_MARGIN = 1.5;
+const TRANSFER_SAMPLES = 24;
+
+export interface TransferPose extends Point {
+  /** World height. */
+  height: number;
+  /** Direction the nose points, measured like voyageHeading. */
+  heading: number;
+}
+
+/**
+ * Where the helicopter is at fraction `u` of its hop to Base Marambio from `from`, the flight deck
+ * of the ship as it is drawn. It lifts off, turns to the base, flies level over the highest ground
+ * on its way and comes down on the plateau, never under the relief. ILLUSTRATIVE: source O24 says
+ * the transfer is made by Sea King, not the path the helicopter flies.
+ */
+export function transferAt(from: TransferPose, u: number, mesh?: TerrainMesh): TransferPose {
+  const c = clamp01(u);
+  const base = routeAt(1);
+  const along = (k: number): Point => ({ x: from.x + (base.x - from.x) * k, y: from.y + (base.y - from.y) * k });
+  const ground = (p: Point) => Math.max(0, worldHeight(heightAt(p.x, p.y, mesh)));
+  let top = from.height;
+  for (let i = 0; i <= TRANSFER_SAMPLES; i++) top = Math.max(top, ground(along(i / TRANSFER_SAMPLES)));
+  top += TRANSFER_MARGIN;
+  const pad = ground(base);
+  const at = along(smooth01((c - TRANSFER_HOVER) / (1 - 2 * TRANSFER_HOVER)));
+  const height = c < 0.5
+    ? from.height + (top - from.height) * smooth01(c / TRANSFER_CLIMB)
+    : pad + (top - pad) * smooth01((1 - c) / TRANSFER_CLIMB);
+  // It turns the short way round while it climbs.
+  const bearing = Math.atan2(base.y - from.y, base.x - from.x);
+  const turn = Math.atan2(Math.sin(bearing - from.heading), Math.cos(bearing - from.heading));
+  return { ...at, height: Math.max(height, ground(at)), heading: from.heading + turn * smooth01(c / TRANSFER_CLIMB) };
 }
 
 const PATH_SAMPLES = 400;
-const pathLength = (kind: TransportKind) => {
+const pathLength =(kind: TransportKind) => {
   let total = 0;
   for (let i = 1; i <= PATH_SAMPLES; i++) {
     const a = voyageAt(kind, (i - 1) / PATH_SAMPLES);
@@ -259,7 +314,8 @@ export function expeditionAt(milestoneId: string, transport: TransportId): { not
   const notes = (stop?.notes ?? [])
     .filter((n) => (!n.kind || n.kind === kind) && (!n.only || n.only === transport))
     .map((n) => n.fact);
-  const question = stop?.question && (!stop.question.kind || stop.question.kind === kind) ? stop.question : null;
+  const asked = stop?.question;
+  const question = asked && (!asked.kind || asked.kind === kind) && (!asked.only || asked.only === transport) ? asked : null;
   return { notes, question };
 }
 

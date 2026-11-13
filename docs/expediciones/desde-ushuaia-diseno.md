@@ -206,7 +206,7 @@ Pedido de quien lleva el issue: el avión pasa por encima de la tormenta, en el 
 - **Vale para los dos aviones:** el del viaje y el Hércules de ambiente del mapa abierto usan el mismo perfil (`heightOf`). No hubo que tocar `SeaLife.tsx`.
 - **Nubes con tope:** `Storm3D.tsx` no deja que ninguna nube pase de `cloudTop`.
 - **Cámara del viaje en avión:** ya no baja debajo de las nubes al entrar en la tormenta. Eso queda solo para el barco. La cámara sigue al avión, arriba.
-- **El avión ya no se sacude en la tormenta:** vuela por encima, en aire calmo. El barco sí se sigue sacudiendo.
+- **El avión ya no se sacude en la tormenta:** vuela por encima, en aire calmo. El barco sí se sigue sacudiendo. (Cambiado el 13-11-2026: vuelve a sacudirse, menos que antes. Ver «Turbulencia del Hércules sobre el Drake».)
 - **Es ilustrativo:** la altura del avión sobre la tormenta no es un nivel de vuelo real, igual que la altura de las nubes no es un dato. La altura de crucero dibujada (10.000 pies a ×10) sigue valiendo fuera de la tormenta.
 - **Prueba cambiada:** «climbs little by little» en `core/test/voyage.test.ts` pedía que el avión estuviera a altura de crucero al 30 % del viaje. Ahí ahora está sobre la tormenta. La prueba pide que suba sin saltos y que después de la tormenta vuelva a la altura de crucero. Prueba nueva: el avión está por encima del tope de las nubes en todo el tramo de tormenta.
 - **Verificación:** capturas del viaje en avión a 1440 px y a 390 px, en «Pasaje de Drake» y «Convergencia Antártica». El Hércules de ambiente del mapa abierto no se capturó: usa la misma función, cubierta por la prueba.
@@ -221,3 +221,72 @@ Pedido de quien lleva el issue: el pin del hito «Cabo de Hornos» estaba en el 
 - **La cámara va al cabo mientras la ficha está abierta** y vuelve al buque al continuar. Es el mismo comportamiento que ya tenían los lugares lejanos de los avistajes (`Voyage3D.tsx`). Sin esto, en el celular (390 px) el cabo quedaba fuera de pantalla.
 - **Coordenada `[-67.27, -55.97]`:** es la punta sur de la isla Hornos tal como la dibuja el relieve de este mapa (IBCSO v2, `fuegia-mesh-hi.bin`): el vértice de tierra más austral de esa isla está en 55,974° S, 67,268° O. Se eligió así para que el pin toque la tierra que se ve. **Pendiente `[Fuente a definir]`:** no se consiguió una fuente primaria con la coordenada oficial del cabo (la lista de faros de la NGA y la de la Armada de Chile no se pudieron abrir el 13-11-2026). Páginas no primarias dan 55°58′48″ S, 67°17′21″ O, a menos de 2 km de la coordenada usada. Ver `desde-ushuaia-fuentes.md`, «Fuentes de cálculos».
 - **Verificación:** prueba en `core/test/voyage.test.ts` (el pin del cabo está en la coordenada y fuera de la ruta; los demás pines están sobre la ruta). Controlado con capturas a 1440 y 390 px: el pin toca la punta sur de la isla más austral del grupo y la cámara vuelve al buque.
+
+### Turbulencia del Hércules sobre el Drake (13-11-2026)
+
+Pedido de quien lleva el issue: el avión se sacude un poco cuando pasa por arriba del Pasaje de Drake. Cambia la decisión del 12-11-2026, que lo dejaba en aire calmo.
+
+- **Qué hace:** sobre la tormenta el avión se ladea hasta 0,035 rad (unos 2°), cabecea hasta 0,012 rad y sube y baja hasta un 2 % de su largo. Es la mitad de lo que se ladeaba antes del 12-11-2026 (0,07 rad). Los topes están en `PLANE_TURBULENCE` y el movimiento en `planeTurbulence(time, rough)`, los dos en `core/src/storm.ts`.
+- **Ritmo irregular:** cada eje mezcla dos ritmos (entre 0,7 y 1,8 sacudidas por segundo), para que no se mueva como un péndulo.
+- **Dónde:** usa `stormAt(x, y)`, la misma medida que sacude al barco. Empieza de a poco en el borde de la tormenta y se apaga al salir. Fuera de la tormenta queda el vaivén suave de siempre.
+- **Solo el avión del viaje:** se aplica en `react-ui/src/voyage/Voyage3D.tsx`. El Hércules de ambiente del mapa abierto (`SeaLife.tsx`) no cambia: se ve de lejos y la sacudida no se notaría.
+- **La cámara no se sacude:** sigue la ruta del avión, no su balanceo.
+- **Movimiento reducido:** el avión no se sacude (el tiempo queda en 0 y la función da 0).
+- **Es ilustrativo:** no hay fuente sobre turbulencia a esa altura sobre el Drake. Es parte del dibujo de la tormenta, que la ficha del hito ya declara ilustrativa. No se agregó texto a la interfaz.
+- **Prueba nueva** en `core/test/voyage.test.ts`: no hay sacudida fuera de la tormenta ni con movimiento reducido, nunca pasa de sus topes, crece con la tormenta y el avión pasa por el centro de la tormenta.
+- **Verificación:** capturas del viaje en avión en el hito «Pasaje de Drake», a 1440 px y a 390 px, seis cuadros seguidos en cada tamaño. El avión se mueve unos 4 px entre cuadros en escritorio y unos 2 px en celular, sin errores en la consola. Con movimiento reducido, dos capturas tomadas con 2 segundos de diferencia son idénticas.
+- **Bug aparte, no causado por este cambio:** con movimiento reducido la cámara no va al vehículo al saltar a un hito (#76). Se reproduce en `main`.
+
+### Llegada a la Base Marambio (13-11-2026)
+
+Pedido de quien lleva el issue, para dejar lista la llegada antes de empezar la expedición de la base (#74). Se hace en dos etapas.
+
+**Etapa 1 (hecha):**
+
+- **Qué pasaba:** la ruta del mar termina en la coordenada de la base, que está sobre una meseta. El buque navegaba más de 5 km por adentro de la isla.
+- **El buque se detiene frente a la isla:** el viaje en buque termina 7 unidades de mapa antes del final de la ruta (`SHIP_ANCHORAGE`, en `core/src/voyage.ts`). Queda en 63,79° S, 56,39° O, a unos 51 km de la base, con unos 46 km de mar hasta la costa (cálculo propio sobre el relieve del mapa). Es el mismo recurso que `SHIP_HEAD_START` en la salida de Ushuaia.
+- **Por qué 7 unidades:** primero se probó con 2 (unos 15 km) y no se veía. Cerca de Marambio la cámara no baja de 60 unidades (`MIN_DISTANCE`), y a esa distancia el buque se dibuja de 4,5 unidades de largo: quedaba pegado al pin de la base. Con 8 quedaba junto a las islas del norte. Con 7 hay mar a la vista entre el buque y la isla, en celular y en escritorio.
+- **Vale para los dos buques:** el Irízar y el Puerto Argentino usan el mismo recorrido. El avión no cambia: aterriza en la base.
+- **`route.ts` no se toca:** esa ruta la comparten la línea del mapa 2D, el Irízar de ambiente del mapa abierto y los extremos del vuelo. Sigue terminando en la base.
+- **Es ilustrativo:** la fuente `[O24]` solo dice que el rompehielos trabajó «frente a la base». No dice dónde ni a qué distancia. La ficha de llegada de los buques lo declara con una nota, que también dice que se dibuja lejos porque el buque está agrandado.
+- **Pin en la base:** el hito `marambio` lleva `place`, así su pin queda sobre la base y no en el mar.
+- **Cámara en la llegada:** un hito con `place` lleva la cámara a ese lugar mientras su ficha está abierta (Cabo de Hornos). En la llegada de un buque la cámara va a mitad de camino entre el buque y la base, para que se vean los dos por encima de la ficha (`Voyage3D.tsx`). En la llegada del avión se queda con el avión, como antes.
+- **Pregunta nueva, solo del Irízar:** «Marambio está sobre una meseta, a unos 200 m sobre el mar. ¿Cómo pasan del Irízar a la base las personas y la carga?» Opciones: por un puente, en botes, en helicóptero. `VoyageQuestion` suma `only`, como ya tenían las notas.
+- **No se afirma que la base «no tiene puerto»:** `[O24]` no lo dice. La pregunta se apoya en la meseta, que sí está en la fuente.
+- **Preguntas que salen:** la de Shetland del Sur se quita (su dato de las lanchas queda como nota). La de la población de la base, con su nota, pasa a #74.
+- **Ficha del Irízar en el selector:** ya no cuenta cómo se usa el helicóptero en Marambio, para no responder la pregunta antes de zarpar.
+- **Cuántas preguntas quedan:** 3 en el Irízar, 2 en el Hércules y 2 en el Puerto Argentino.
+- **Kilómetros y horas:** el recorrido en buque pasa a medir 1.355 km, unas 52 horas a 14 nudos (antes, unos 1.400 km y 54 horas). La ficha del Irízar ahora dice «52 horas» y «1.350 km del recorrido dibujado hasta frente a la Base Marambio».
+- **Pruebas:** en `core/test/voyage.test.ts`, el buque termina en el agua y a `SHIP_ANCHORAGE` de la base por la ruta; el pin está en la base; la pregunta es solo del Irízar; el puntaje cuenta 3, 2 y 2. Prueba E2E nueva, `e2e/tests/voyage-arrival.spec.ts`, a 390 y 1440 px.
+- **Verificación:** `pnpm test`, `pnpm typecheck` y `pnpm build`. La prueba E2E nueva pasa a 390 y 1440 px; no se corrió el resto de la suite E2E. Capturas de la llegada en 3D: Irízar a 1440 y 390 px (el buque queda en el agua, el pin en la base y los dos se ven por encima de la ficha) y Hércules a 390 px (llega a la base, como antes). El Puerto Argentino no se capturó: usa el mismo recorrido que el Irízar.
+
+**Etapa 2 (hecha el 13-11-2026, con #68 ya en `main`):**
+
+- **Qué es:** una animación de 6 segundos (`TRANSFER_SECONDS`). Un helicóptero Sea King despega de la cubierta de vuelo del Irízar, cruza el mar y se posa en la base. Solo en el Irízar: `[O24]` habla de ese buque.
+- **Cuándo se ofrece:** al responder la pregunta de la llegada aparece el botón «Ver el traslado». Está junto a los botones fijos de la ficha, en su propio renglón, para que se vea sin desplazar las notas. Es el botón principal hasta que se vio el traslado; después lo es «Terminar el viaje». Se puede volver a ver.
+- **Durante el vuelo:** la ficha se cambia por una barra chica, para que se vea el mapa. La barra dice qué se ve con su fuente («Un helicóptero Sea King lleva la carga y el personal del rompehielos a la base» `[O24]`) y que es un dibujo. Tiene el botón «Saltar», que posa el helicóptero de una vez. La tecla Escape hace lo mismo. Al posarse, vuelve la ficha de llegada con la respuesta guardada.
+- **Es ilustrativo y la interfaz lo dice:** «La animación es ilustrativa: no muestra un vuelo real ni su recorrido. El helicóptero está agrandado para que se vea.» `[O24]` dice que el traslado se hace con un Sea King. No dice por dónde vuela ni cuánto tarda.
+- **Sin animación** con movimiento reducido o en el mapa 2D: el botón no aparece y la respuesta la dan las notas, como en la etapa 1.
+- **Modelo:** el Sea King de #68 (`HELICOPTER_BOXES`, `HELICOPTER_ROTOR_BOXES` y `HELICOPTER_ROTOR_ORIGIN`, en `react-ui/src/orcadas/stationModels.ts`). No se dibujó otro modelo. El rotor gira mientras vuela y se detiene al posarse.
+- **Tamaño:** el helicóptero mide 0,55 veces el largo del buque dibujado (`HELICOPTER_SIZE`). Un Sea King real mide cerca de un séptimo del Irízar. Se probó primero con 0,34 y no se distinguía desde la cámara del viaje.
+- **El otro Sea King:** el Irízar lleva dos `[O16]`. El modelo del buque ya tenía un helicóptero chico dibujado en la cubierta, y ese queda ahí. El modelo del buque no se tocó.
+- **Recorrido:** `transferAt(from, u)`, en `core/src/voyage.ts`. Sube derecho, gira hacia la base por el lado corto, vuela a 1,5 unidades por encima del punto más alto del camino y baja derecho sobre la meseta. Nunca pasa por debajo del relieve.
+- **Por qué sube y después baja:** el buque está agrandado. Su cubierta queda dibujada más alta (0,41 unidades) que la meseta de la base en el relieve del mapa (0,10 unidades).
+- **Pin de la base:** se oculta desde que el helicóptero despega. Los pines se dibujan por encima de todo, y el de la base tapaba el aterrizaje. Después, el helicóptero posado marca la base.
+- **Cámara:** no sigue al helicóptero, a diferencia de lo previsto. En la llegada la cámara ya está a mitad de camino entre el buque y la base (etapa 1), así que todo el vuelo entra en pantalla en celular y en escritorio.
+- **Estado:** `useVoyage.ts` guarda si el traslado no empezó, está en vuelo o terminó (`transfer`), y avanza el vuelo cuadro a cuadro. Un cuadro largo no hace saltar al helicóptero. El estado se limpia al empezar otro viaje o al salir.
+- **Pruebas:** en `core/test/voyage.test.ts`, el helicóptero sale de la cubierta y termina en la base; nunca vuela por debajo del relieve; sube y baja derecho y no salta; gira por el lado corto. La prueba E2E `voyage-arrival.spec.ts` suma el flujo con movimiento (botón, barra, vuelta sola de la ficha, repetir y «Saltar») y comprueba que con movimiento reducido el botón no aparece.
+- **Verificación:** capturas del vuelo a 390 y 1440 px, sin errores de consola. La prueba E2E con movimiento tarda cerca de 40 s a 390 px y 80 s a 1440 px en un equipo sin placa de video.
+
+### Vuelta suave de la cámara al vehículo (13-11-2026)
+
+Pedido de quien lleva el issue: al cerrar la ficha de «Cabo de Hornos» y seguir avanzando, la cámara volvía al barco de forma muy brusca.
+
+- **Qué pasaba:** la ficha de un lugar fuera de la ruta lleva la cámara a ese lugar. Al cerrarla, la cámara volvía con la transición corta de los controles (0,25 s) hacia el punto donde estaba el barco en ese momento. Si el barco ya avanzaba, al terminar la transición la cámara saltaba a su posición nueva. Medido en el navegador sin pantalla: casi 5 unidades de mapa en un solo cuadro y un pico de 14 unidades por segundo.
+- **Qué hace ahora:** la vuelta dura 2 segundos (`CAMERA_RETURN_SECONDS`). El punto que mira la cámara sale del lugar en reposo, acelera de a poco y termina sobre el vehículo, esté donde esté, moviéndose con él. La cuenta está en `cameraReturn(from, vehicle, u)`, en `core/src/camera.ts`, y se aplica en `react-ui/src/voyage/Voyage3D.tsx`.
+- **Vale para todo lugar lejano:** el Cabo de Hornos y los avistajes con lugar propio que quedan lejos de la ruta (por ejemplo el Faro San Juan de Salvamento). Todos usan el mismo camino del código.
+- **La ida no cambió:** al abrir la ficha, la cámara va al lugar con la transición de siempre.
+- **Movimiento reducido:** la cámara vuelve de una vez, sin animación, como antes.
+- **Cuadros largos:** si un cuadro tarda más de 0,1 s, la vuelta avanza como si hubiera tardado 0,1 s. En un equipo muy lento la vuelta dura más, pero no salta.
+- **Pruebas nuevas** en `core/test/camera.test.ts`: sale del lugar y termina sobre el vehículo; arranca desde el reposo; llega a la velocidad del vehículo; nunca va a más del doble de su velocidad media. Con el vehículo quieto y navegando.
+- **Verificación:** medición del punto que mira la cámara, cuadro a cuadro, manteniendo «avanzar» después de cerrar la ficha del cabo. A 390 px: sube de 0,2 a 6,1 unidades por segundo en 1,4 s, baja y queda en unas 3,6, la velocidad del barco, sin salto. El paso más grande entre cuadros bajó de 4,67 a 0,64 unidades. A 1440 px el pico fue de 2,7 (el navegador sin pantalla dibuja a menos de 4 cuadros por segundo ahí).

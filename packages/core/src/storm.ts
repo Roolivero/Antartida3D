@@ -67,3 +67,20 @@ export function stormCeiling(x: number, y: number): number {
   const c = Math.min(1, Math.max(0, 1 - away / STORM_APPROACH));
   return c * c * (3 - 2 * c) * (DRAKE_STORM.cloudTop + STORM_OVERFLY);
 }
+
+/** Most a plane shakes over the storm: roll and pitch in radians (about 2° and 0.7°), lift in plane lengths. */
+export const PLANE_TURBULENCE = { roll: 0.035, pitch: 0.012, lift: 0.02 } as const;
+
+/**
+ * Shake of a plane flying over the storm, at `time` seconds and with `rough` = stormAt under it.
+ * Each axis mixes two rhythms, so the plane does not swing like a pendulum. Nothing outside the
+ * storm, and nothing at time 0 (reduced motion). ILLUSTRATIVE, like the storm: not measured turbulence.
+ */
+export function planeTurbulence(time: number, rough: number): { roll: number; pitch: number; lift: number } {
+  const bump = (slow: number, fast: number) => 0.6 * Math.sin(time * slow) + 0.4 * Math.sin(time * fast);
+  return {
+    roll: rough * bump(5.3, 8.9) * PLANE_TURBULENCE.roll,
+    pitch: rough * bump(4.1, 7.3) * PLANE_TURBULENCE.pitch,
+    lift: rough * bump(6.7, 11.3) * PLANE_TURBULENCE.lift,
+  };
+}

@@ -68,6 +68,21 @@ export function fromWorld(pos: Vector3Like): { x: number; y: number } {
   return { x: pos.x + 500, y: pos.z + 500 };
 }
 
+/** Seconds the trip camera takes to come back to the vehicle from a place off the path. */
+export const CAMERA_RETURN_SECONDS = 2;
+
+/**
+ * Point the trip camera looks at on its way back to the vehicle from a place off the path, at
+ * fraction `u` of the time. The vehicle may be moving again by then: the point leaves `from` at
+ * rest and ends on the vehicle wherever it is, moving with it, so there is no jump at either end.
+ */
+export function cameraReturn(from: Vector3Like, vehicle: Vector3Like, u: number): Vector3Like {
+  const c = Math.min(1, Math.max(0, u));
+  // Smootherstep: no speed and no acceleration at both ends.
+  const k = c * c * c * (c * (c * 6 - 15) + 10);
+  return { x: from.x + (vehicle.x - from.x) * k, y: from.y + (vehicle.y - from.y) * k, z: from.z + (vehicle.z - from.z) * k };
+}
+
 /**
  * Top-down camera that frames the plane exactly like the 2D layer frames the SVG for the
  * same view, so clustering, labels and gestures from core apply unchanged.

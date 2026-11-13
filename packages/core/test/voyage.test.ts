@@ -4,10 +4,12 @@ import { describe, expect, it } from 'vitest';
 import {
   DRAKE_STORM,
   FLIGHT_CRUISE,
+  PLANE_TURBULENCE,
   FUEGIA_MIN_DISTANCE,
   FUEGIA_LAND_MASK,
   GEAR_TAP_MS,
   ROUTE_LENGTH,
+  SHIP_ANCHORAGE,
   SHIP_HEAD_START,
   MILESTONES,
   EXPEDITION,
@@ -20,6 +22,7 @@ import {
   VOYAGE_SOURCE_CODES,
   voyageSourceNumber,
   VOYAGE_TOURISM_NOTE,
+  VOYAGE_TRANSFER,
   advanceVoyage,
   closeVoyageCard,
   flightClearance,
@@ -33,11 +36,13 @@ import {
   routeAt,
   sightingsInView,
   parseTerrainMesh,
+  planeTurbulence,
   project,
   skipToNextStop,
   startVoyage,
   stormAt,
   stormCeiling,
+  transferAt,
   unproject,
   voyageArrived,
   voyageAt,
@@ -58,6 +63,7 @@ const facts: VoyageFact[] = [
   ...MILESTONES.flatMap((m) => [m.essential, ...m.more]),
   ...SIGHTINGS.map((s) => s.fact),
   ...Object.values(EXPEDITION).flatMap((stop) => stop.notes.map((n) => n.fact)),
+  ...VOYAGE_TRANSFER.facts,
 ];
 
 describe('voyage content', () => {
@@ -101,9 +107,15 @@ describe('voyage content', () => {
 });
 
 describe.each(['ship', 'plane'] as const)('voyage path (%s)', (kind) => {
-  it('ends in Marambio', () => {
+  it('ends at Marambio: a plane on the base, a ship off the island', () => {
     const end = voyageAt(kind, 1);
-    expect(Math.hypot(end.x - MARAMBIO.x, end.y - MARAMBIO.y)).toBeLessThan(0.01);
+    const fromBase = Math.hypot(end.x - MARAMBIO.x, end.y - MARAMBIO.y);
+    if (kind === 'plane') expect(fromBase).toBeLessThan(0.01);
+    else {
+      // SHIP_ANCHORAGE is measured along the route, which bends a little: in a straight line it is somewhat less.
+      expect(fromBase).toBeGreaterThan(0.8 * SHIP_ANCHORAGE);
+      expect(fromBase).toBeLessThanOrEqual(SHIP_ANCHORAGE);
+    }
   });
 
   it('opens its milestones in order, the first at departure and the last on arrival', () => {
@@ -146,19 +158,26 @@ describe('voyage path', () => {
     expect(voyageStops('ship')).toHaveLength(MILESTONES.length);
   });
 
-  it('stands the pin of Cabo de Hornos on the cape, not on the path, and every other pin on the path', () => {
+  it('stands the pins of Cabo de Hornos and Base Marambio on those places, not on the path, and every other pin on the path', () => {
     for (const stop of voyageStops('ship')) {
       const onPath = voyageAt('ship', stop.t);
       const off = Math.hypot(stop.pin.x - onPath.x, stop.pin.y - onPath.y);
-      if (stop.milestone.id !== 'hornos') expect(off).toBe(0);
-      else {
+      if (stop.milestone.id === 'hornos') {
         const { lon, lat } = unproject(stop.pin.x, stop.pin.y);
         expect(lon).toBeCloseTo(-67.27, 2);
         expect(lat).toBeCloseTo(-55.97, 2);
         // The ship passes south-east of the cape, in open sea.
         expect(off).toBeGreaterThan(2);
-      }
+      } else if (stop.milestone.id === 'marambio') {
+        // The ship stays off the island; the pin stands on the base.
+        expect(Math.hypot(stop.pin.x - MARAMBIO.x, stop.pin.y - MARAMBIO.y)).toBeLessThan(0.01);
+        expect(off).toBeGreaterThan(0.8 * SHIP_ANCHORAGE);
+      } else expect(off).toBe(0);
     }
+    // The plane lands on the base: its pin is where the flight ends.
+    const stops = voyageStops('plane');
+    const landing = voyageAt('plane', 1);
+    expect(Math.hypot(stops[stops.length - 1].pin.x - landing.x, stops[stops.length - 1].pin.y - landing.y)).toBeLessThan(0.01);
   });
 
   it('flies a shorter path than the ship sails', () => {
@@ -174,6 +193,73 @@ describe('voyage path', () => {
     expect(length('plane')).toBeLessThan(length('ship'));
     expect(voyageLength('ship')).toBeCloseTo(length('ship'), 0);
     expect(voyageLength('plane')).toBeCloseTo(length('plane'), 0);
+  });
+});
+
+describe('arrival of a ship off Marambio', () => {
+  const buf = readFileSync(join(import.meta.dirname, '../src/assets/terrain-mesh-hi.bin'));
+  const terrain = parseTerrainMesh(buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength));
+  const onLand = (p: { x: number; y: number }) => heightAt(p.x, p.y, terrain) > 0;
+
+  it('stops on the water, with open sea between the ship and the island', () => {
+    // The sea route ends on the base, up on the plateau: a ship that sailed all of it ended inside the island.
+    expect(onLand(routeAt(1))).toBe(true);
+    // The last stretch of the trip never touches land.
+    for (let i = 0; i <= 200; i++) expect(onLand(voyageAt('ship', 1 - (i / 200) * 0.02)), `step ${i}`).toBe(false);
+    // Past the ship, the route goes on over the water for at least half of the way to the base.
+    const end = 1 - SHIP_ANCHORAGE / ROUTE_LENGTH;
+    let water = 0;
+    while (water < 400 && !onLand(routeAt(end + ((water + 1) / 400) * (1 - end)))) water++;
+    expect((water / 400) * SHIP_ANCHORAGE).toBeGreaterThan(SHIP_ANCHORAGE / 2);
+  });
+
+  describe('helicopter hop from the ship to the base', () => {
+    // The flight deck of the ship where it waits: a little above the water, nose as the ship's.
+    const ship = voyageAt('ship', 1);
+    const deck = { ...ship, height: 0.4, heading: voyageHeading('ship', 1) };
+    const ground = (p: { x: number; y: number }) => Math.max(0, worldHeight(heightAt(p.x, p.y, terrain)));
+    const hop = Array.from({ length: 201 }, (_, i) => transferAt(deck, i / 200, terrain));
+
+    it('lifts off the deck of the ship and lands on the plateau of the base', () => {
+      expect(hop[0]).toEqual(deck);
+      const end = hop[200];
+      expect(Math.hypot(end.x - MARAMBIO.x, end.y - MARAMBIO.y)).toBeLessThan(0.01);
+      expect(end.height).toBeGreaterThan(0);
+      expect(end.height).toBeCloseTo(ground(MARAMBIO), 6);
+    });
+
+    it('never flies under the relief, and passes well over it on the way', () => {
+      for (const [i, at] of hop.entries()) expect(at.height, `step ${i}`).toBeGreaterThanOrEqual(ground(at));
+      const top = Math.max(...hop.map((at) => at.height));
+      expect(top).toBeGreaterThan(Math.max(...hop.map(ground)) + 0.5);
+    });
+
+    it('goes straight up first and straight down last, without a leap in between', () => {
+      expect(hop[10].x).toBe(deck.x);
+      expect(hop[10].height).toBeGreaterThan(deck.height);
+      expect(hop[190].x).toBeCloseTo(MARAMBIO.x, 6);
+      expect(hop[190].height).toBeGreaterThan(hop[200].height);
+      const whole = Math.hypot(MARAMBIO.x - deck.x, MARAMBIO.y - deck.y);
+      for (let i = 1; i <= 200; i++) {
+        const step = Math.hypot(hop[i].x - hop[i - 1].x, hop[i].y - hop[i - 1].y, hop[i].height - hop[i - 1].height);
+        expect(step, `step ${i}`).toBeLessThan(whole / 50);
+      }
+    });
+
+    it('turns its nose to the base the short way round', () => {
+      const bearing = Math.atan2(MARAMBIO.y - deck.y, MARAMBIO.x - deck.x);
+      expect(Math.cos(hop[200].heading - bearing)).toBeCloseTo(1, 6);
+      // Starting almost opposite, it does not go the long way: the turn is never more than half a circle.
+      const back = transferAt({ ...deck, heading: bearing + 3 }, 1, terrain);
+      expect(Math.abs(back.heading - (bearing + 3))).toBeLessThan(Math.PI);
+      expect(Math.cos(back.heading - bearing)).toBeCloseTo(1, 6);
+    });
+  });
+
+  it('plays the hop only on the Irízar, and says that it is a drawing', () => {
+    expect(VOYAGE_TRANSFER.transport).toBe('irizar');
+    expect(VOYAGE_TRANSFER.facts.map((f) => f.kind)).toEqual(['real', 'illustrative']);
+    expect(VOYAGE_TRANSFER.facts[0].sources).toEqual(['O24']);
   });
 });
 
@@ -290,12 +376,34 @@ describe('how the expedition works', () => {
     }
   });
 
+  it('asks how people and cargo reach the base only on the Irízar, and tells only what source O24 says', () => {
+    const { question, notes } = expeditionAt('marambio', 'irizar');
+    expect(question!.options[question!.answer]).toBe('En helicóptero');
+    // The note that answers it comes first, with its source.
+    expect(notes[0].text).toMatch(/helicóptero/);
+    expect(notes[0].sources).toEqual(['O24']);
+    expect(expeditionAt('marambio', 'puerto-argentino').question).toBeNull();
+    expect(expeditionAt('marambio', 'hercules').question).toBeNull();
+    expect(expeditionAt('shetland', 'irizar').question).toBeNull();
+    // The source does not say that the base has no port or pier: the trip does not say it either.
+    expect([question!.prompt, ...notes.map((f) => f.text)].join(' ')).not.toMatch(/puerto|muelle/i);
+    // Where a ship waits off the island is a drawing, and a ship says so; the plane lands on the base.
+    const drawing = (id: 'irizar' | 'puerto-argentino' | 'hercules') =>
+      expeditionAt('marambio', id).notes.some((f) => f.kind === 'illustrative' && /frente a la isla/.test(f.text));
+    expect(drawing('irizar')).toBe(true);
+    expect(drawing('puerto-argentino')).toBe(true);
+    expect(drawing('hercules')).toBe(false);
+  });
+
   it('counts the questions answered right', () => {
-    expect(quizScore('irizar', {})).toEqual({ right: 0, total: 4 });
-    expect(quizScore('hercules', {})).toEqual({ right: 0, total: 3 });
-    expect(quizScore('irizar', { beagle: 0, 'paralelo-60': 1, shetland: 2, marambio: 0 })).toEqual({ right: 3, total: 4 });
-    // The Shetland question is not asked on the plane: its answer does not count there.
-    expect(quizScore('hercules', { beagle: 0, 'paralelo-60': 1, shetland: 0, marambio: 0 })).toEqual({ right: 3, total: 3 });
+    expect(quizScore('irizar', {})).toEqual({ right: 0, total: 3 });
+    expect(quizScore('hercules', {})).toEqual({ right: 0, total: 2 });
+    expect(quizScore('puerto-argentino', {})).toEqual({ right: 0, total: 2 });
+    expect(quizScore('irizar', { beagle: 0, 'paralelo-60': 1, marambio: 0 })).toEqual({ right: 2, total: 3 });
+    expect(quizScore('irizar', { beagle: 0, 'paralelo-60': 1, marambio: 2 })).toEqual({ right: 3, total: 3 });
+    // The question of Marambio is about the Irízar: an answer to it does not count on another transport.
+    expect(quizScore('hercules', { beagle: 0, 'paralelo-60': 1, marambio: 2 })).toEqual({ right: 2, total: 2 });
+    expect(quizScore('puerto-argentino', { beagle: 0, 'paralelo-60': 1, marambio: 2 })).toEqual({ right: 2, total: 2 });
   });
 });
 
@@ -430,6 +538,29 @@ describe('storm over the Drake Passage', () => {
       const [a, b] = [voyageAt('plane', (i - 1) / 400), voyageAt('plane', i / 400)];
       expect(Math.abs(stormCeiling(b.x, b.y) - stormCeiling(a.x, a.y)), `step ${i}`).toBeLessThan(1);
     }
+  });
+
+  it('shakes the plane a little over it: not outside it, not with reduced motion, never past its limit', () => {
+    const axes = ['roll', 'pitch', 'lift'] as const;
+    // The plane is well inside the storm at some point of its trip.
+    expect(Math.max(...Array.from({ length: 401 }, (_, i) => at('plane', i / 400)))).toBe(1);
+    const moved = { roll: 0, pitch: 0, lift: 0 };
+    for (let i = 0; i <= 600; i++) {
+      const time = i / 30;
+      const shake = planeTurbulence(time, 1);
+      for (const axis of axes) {
+        // Outside the storm the air is calm, at any time.
+        expect(Math.abs(planeTurbulence(time, 0)[axis]), `${axis} outside`).toBe(0);
+        expect(Math.abs(shake[axis]), `${axis} at ${time}`).toBeLessThanOrEqual(PLANE_TURBULENCE[axis]);
+        // It builds up with the storm: half the storm, half the shake.
+        expect(planeTurbulence(time, 0.5)[axis]).toBeCloseTo(shake[axis] / 2, 12);
+        moved[axis] = Math.max(moved[axis], Math.abs(shake[axis]));
+      }
+    }
+    // It does move, on its three axes.
+    for (const axis of axes) expect(moved[axis], axis).toBeGreaterThan(0.6 * PLANE_TURBULENCE[axis]);
+    // Reduced motion draws every frame at time 0: the plane stays still.
+    for (const axis of axes) expect(Math.abs(planeTurbulence(0, 1)[axis]), `${axis} reduced`).toBe(0);
   });
 
   it('is where the ship and the plane are when the card of the Drake opens', () => {

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import {
-  VOYAGE_GEARS, advanceVoyage, retreatVoyage, closeVoyageCard, nextGear, skipToNextStop, startVoyage, voyageArrived, type TransportId, type VoyageSourceCode, type VoyageState,
+  TRANSFER_SECONDS, VOYAGE_GEARS, advanceVoyage, retreatVoyage, closeVoyageCard, nextGear, skipToNextStop, startVoyage, voyageArrived, type TransportId, type VoyageSourceCode, type VoyageState,
 } from '@antartida/core';
 
 /**
@@ -19,6 +19,8 @@ export interface VoyageBus {
   open: string | null;
   /** The vehicle is going back, or stopped after going back: it is drawn turned round. */
   back: boolean;
+  /** Fraction flown of the helicopter hop from the ship to the base (1 once it landed), or null before it. */
+  transfer: number | null;
   closeSighting: () => void;
   openSource: (code: VoyageSourceCode) => void;
   listeners: Set<() => void>;
@@ -55,12 +57,17 @@ export interface VoyageController {
   answers: Readonly<Record<string, number>>;
   answer: (milestoneId: string, option: number) => void;
   closeSighting: () => void;
+  /** The helicopter hop from the ship to the base: not started, flying (the arrival card steps aside) or landed. */
+  transfer: 'none' | 'flying' | 'landed';
+  startTransfer: () => void;
+  /** Lands the helicopter on the base at once: the user skipped the rest of the hop. */
+  skipTransfer: () => void;
   reset: () => void;
 }
 
 export function useVoyage(): VoyageController {
   const [state, setState] = useState<VoyageState | null>(null);
-  const bus = useRef<VoyageBus>({ state: null, seen: [], spot: () => {}, beside: null, open: null, back: false, closeSighting: () => {}, openSource: () => {}, listeners: new Set() }).current;
+  const bus = useRef<VoyageBus>({ state: null, seen: [], spot: () => {}, beside: null, open: null, back: false, transfer: null, closeSighting: () => {}, openSource: () => {}, listeners: new Set() }).current;
   const frame = useRef(0);
   const [gear, setGear] = useState(0);
   const press = useRef({ gear: 0, at: -Infinity });
@@ -85,7 +92,39 @@ export function useVoyage(): VoyageController {
     drive.current.power = 0;
   };
 
-  useEffect(() => stop, []);
+  const [transfer, setTransfer] = useState<VoyageController['transfer']>('none');
+  const hop = useRef(0);
+  /** Ends the helicopter hop where `at` says: on the base (1) or back to not flown (null). */
+  const endTransfer = (at: 1 | null) => {
+    cancelAnimationFrame(hop.current);
+    hop.current = 0;
+    bus.transfer = at;
+    setTransfer(at === null ? 'none' : 'landed');
+    notify();
+  };
+  const startTransfer = () => {
+    cancelAnimationFrame(hop.current);
+    bus.transfer = 0;
+    setTransfer('flying');
+    notify();
+    let last = performance.now();
+    const tick = (now: number) => {
+      // Like the trip: a long frame does not make the helicopter leap.
+      const dt = Math.min(0.1, Math.max(0, (now - last) / 1000));
+      last = now;
+      const u = (bus.transfer ?? 0) + dt / TRANSFER_SECONDS;
+      if (u >= 1) return endTransfer(1);
+      bus.transfer = u;
+      notify();
+      hop.current = requestAnimationFrame(tick);
+    };
+    hop.current = requestAnimationFrame(tick);
+  };
+
+  useEffect(() => () => {
+    stop();
+    cancelAnimationFrame(hop.current);
+  }, []);
 
   /** Moves the trip frame by frame while a button is held or the trip goes by itself, then coasts to a stop. */
   const run = () => {
@@ -137,6 +176,7 @@ export function useVoyage(): VoyageController {
     bus.open = null;
     setSighting(null);
     setAnswers({});
+    endTransfer(null);
   };
 
   return {
@@ -151,6 +191,9 @@ export function useVoyage(): VoyageController {
     answers,
     // The first answer stands: the notes that follow give it away.
     answer: (id, option) => setAnswers((a) => (id in a ? a : { ...a, [id]: option })),
+    transfer,
+    startTransfer,
+    skipTransfer: () => endTransfer(1),
     start: (transport) => {
       bus.back = false;
       clearSightings();
