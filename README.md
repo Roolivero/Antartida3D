@@ -134,6 +134,8 @@ En cumplimiento con las bases de la hackatón, se declara el uso de herramientas
   > Diagnóstico de las pruebas, ajuste del tiempo límite y cambio de la ruta de los pingüinos con Claude Code (modelo Claude Sonnet 5.5). No se agregaron datos ni fuentes; el movimiento de los pingüinos es una reconstrucción ilustrada.
 - **Resto del hemisferio sur en el mapa 3D (#42):**
   > Planificación, revisión y ajustes visuales con Claude Code (modelo Claude Opus 5.5); implementación de partes delegada a Antigravity (Gemini 3.8 Flash) bajo revisión. Las siluetas salen de Natural Earth y su color de Natural Earth II (ambos de dominio público); son contexto geográfico, no datos.
+- **La lista de puntos tapa los cartelitos del mapa (#48):**
+  > Diagnóstico, arreglo y prueba e2e con asistencia de IA, con revisión del equipo. No se agregaron datos ni fuentes.
 - **Documento de tecnologías (#82):**
   > Redactado con asistencia de IA a partir del código y la documentación del repositorio, con revisión del equipo. No agrega datos nuevos.
 - **Bordes del mapa 3D, resto del mundo hasta 60° N y gestos de la cámara (#46):**
