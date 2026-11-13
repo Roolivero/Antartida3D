@@ -41,7 +41,8 @@ const focusedName = (page: Page) =>
 const expectFocused = (page: Page, name: string) => expect.poll(() => focusedName(page)).toBe(name);
 
 async function openAllDetailsInPanel(page: Page) {
-  const summaries = page.locator('.orc-panel details:not([open]) > summary');
+  // A stop with nothing to fold keeps its «Saber más» hidden: it has nothing to open.
+  const summaries = page.locator('.orc-panel details:not([open]):not([hidden]) > summary');
   while ((await summaries.count()) > 0) {
     await summaries.first().click();
   }
@@ -558,7 +559,7 @@ test('B1: observation month stays fixed when changing scene month', async ({ pag
     .click();
   await expect(page.getByRole('heading', { level: 2, name: 'La respuesta' })).toBeVisible();
   const sentenceBefore = await page.locator('.orc-answer-sentence').textContent();
-  const summaryBefore = await page.locator('.orc-done-summary p').textContent();
+  const summaryBefore = await page.locator('.orc-done-summary > p').textContent();
   expect(sentenceBefore).toBeTruthy();
 
   // 2. Change month via chip (mobile portrait) or full month strip (desktop / landscape)
@@ -579,7 +580,7 @@ test('B1: observation month stays fixed when changing scene month', async ({ pag
 
   // 3. In Responder, sentence and score summary remain tied to the observation month
   await expect(page.locator('.orc-answer-sentence')).toHaveText(sentenceBefore!);
-  await expect(page.locator('.orc-done-summary p')).toHaveText(summaryBefore!);
+  await expect(page.locator('.orc-done-summary > p')).toHaveText(summaryBefore!);
   const currentMonthIdx = new Date().getMonth();
   if (currentMonthIdx !== 0) {
     expect(sentenceBefore).not.toContain('eneros');
