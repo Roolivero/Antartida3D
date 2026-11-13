@@ -85,7 +85,7 @@ test('has no horizontal scroll', async ({ page }) => {
 test('on a phone the trip picker grows when its handle is dragged up, shrinks back and closes when dragged down', async ({ page, isMobile }) => {
   test.skip(!isMobile, 'the handle belongs to the phone layout; on wide screens the sheet is a card');
   await page.getByRole('button', { name: 'Ver como lista' }).click();
-  await page.getByRole('button', { name: /Desde Ushuaia/ }).first().click();
+  await page.getByRole('dialog', { name: 'Todos los puntos' }).getByRole('button', { name: /Desde Ushuaia/ }).click();
   const sheet = page.locator('.sheet.voyage');
   const handle = page.locator('.sheet-handle');
   await expect(handle).toBeVisible();
