@@ -154,7 +154,7 @@ export function Voyage3D({ bus, reduced, overlay }: {
   useEffect(() => () => trail?.dispose(), [trail]);
 
   // One pin per milestone ahead of the departure, so the user sees them coming.
-  const pins = useMemo(() => (kind ? voyageStops(kind).slice(1).map((stop) => voyageAt(kind, stop.t)) : []), [kind]);
+  const pins = useMemo(() => (kind ? voyageStops(kind).slice(1).map((stop) => stop.pin) : []), [kind]);
   const pinGroups = useRef<(Group | null)[]>([]);
   const pinGeometry = useMemo(buildPinGeometry, []);
   useEffect(() => () => Object.values(pinGeometry).forEach((g) => g.dispose()), [pinGeometry]);
@@ -247,11 +247,15 @@ export function Voyage3D({ bus, reduced, overlay }: {
         void controls.setLookAt(p.x - 500 + DEPARTURE_OFFSET.x, DEPARTURE_OFFSET.y, p.y - 500 + DEPARTURE_OFFSET.z, p.x - 500, 0, p.y - 500, !reduced);
       } else {
         const open = bus.open ? voyageSightings(s.kind).find((v) => v.sighting.id === bus.open) : undefined;
-        const far = open?.sighting.place && Math.hypot(open.x - p.x, open.y - p.y) > VISIT_DISTANCE ? open : null;
+        // A milestone about a place off the path (Cabo de Hornos): its card shows the place, where its pin stands.
+        const stop = s.card >= 0 ? voyageStops(s.kind)[s.card] : undefined;
+        const far = open?.sighting.place && Math.hypot(open.x - p.x, open.y - p.y) > VISIT_DISTANCE
+          ? { id: open.sighting.id, x: open.x, y: open.y }
+          : stop?.milestone.place ? { id: stop.milestone.id, ...stop.pin } : null;
         if (far) {
           // Opening a far place takes the camera there, to see it; the trip waits.
-          if (visit.current.id !== far.sighting.id) {
-            visit.current = { id: far.sighting.id, returning: false };
+          if (visit.current.id !== far.id) {
+            visit.current = { id: far.id, returning: false };
             void controls.moveTo(far.x - 500, 0, far.y - 500, !reduced);
           }
         } else if (visit.current.id) {

@@ -210,3 +210,14 @@ Pedido de quien lleva el issue: el avión pasa por encima de la tormenta, en el 
 - **Es ilustrativo:** la altura del avión sobre la tormenta no es un nivel de vuelo real, igual que la altura de las nubes no es un dato. La altura de crucero dibujada (10.000 pies a ×10) sigue valiendo fuera de la tormenta.
 - **Prueba cambiada:** «climbs little by little» en `core/test/voyage.test.ts` pedía que el avión estuviera a altura de crucero al 30 % del viaje. Ahí ahora está sobre la tormenta. La prueba pide que suba sin saltos y que después de la tormenta vuelva a la altura de crucero. Prueba nueva: el avión está por encima del tope de las nubes en todo el tramo de tormenta.
 - **Verificación:** capturas del viaje en avión a 1440 px y a 390 px, en «Pasaje de Drake» y «Convergencia Antártica». El Hércules de ambiente del mapa abierto no se capturó: usa la misma función, cubierta por la prueba.
+
+### El pin del Cabo de Hornos marca el cabo (13-11-2026)
+
+Pedido de quien lleva el issue: el pin del hito «Cabo de Hornos» estaba en el mar, sobre la ruta, y no decía cuál es la isla ni el cabo.
+
+- **Qué pasaba:** el pin de cada hito se dibujaba en el punto de la ruta más cercano a su ancla. El buque pasa al sudeste del cabo, a más de 2 unidades de mapa (lo comprueba la prueba), así que el pin quedaba en mar abierto.
+- **Campo nuevo `place`** en `Milestone` (`core/src/content/ushuaia.ts`): el lugar mismo, `[lon, lat]`, cuando el viaje solo pasa cerca. `VoyageStop` lleva `pin` (`core/src/voyage.ts`): el lugar si el hito tiene `place`; si no, el punto de la ruta, como antes. Solo «Cabo de Hornos» tiene `place`.
+- **El hito se abre donde antes:** `anchor` no cambió. La ruta, los kilómetros y las horas no cambian.
+- **La cámara va al cabo mientras la ficha está abierta** y vuelve al buque al continuar. Es el mismo comportamiento que ya tenían los lugares lejanos de los avistajes (`Voyage3D.tsx`). Sin esto, en el celular (390 px) el cabo quedaba fuera de pantalla.
+- **Coordenada `[-67.27, -55.97]`:** es la punta sur de la isla Hornos tal como la dibuja el relieve de este mapa (IBCSO v2, `fuegia-mesh-hi.bin`): el vértice de tierra más austral de esa isla está en 55,974° S, 67,268° O. Se eligió así para que el pin toque la tierra que se ve. **Pendiente `[Fuente a definir]`:** no se consiguió una fuente primaria con la coordenada oficial del cabo (la lista de faros de la NGA y la de la Armada de Chile no se pudieron abrir el 13-11-2026). Páginas no primarias dan 55°58′48″ S, 67°17′21″ O, a menos de 2 km de la coordenada usada. Ver `desde-ushuaia-fuentes.md`, «Fuentes de cálculos».
+- **Verificación:** prueba en `core/test/voyage.test.ts` (el pin del cabo está en la coordenada y fuera de la ruta; los demás pines están sobre la ruta). Controlado con capturas a 1440 y 390 px: el pin toca la punta sur de la isla más austral del grupo y la cámara vuelve al buque.
