@@ -15,7 +15,7 @@ test.afterEach(() => {
 });
 
 test.describe('Ocean 3D animation efficiency', () => {
-  test('in active 3D mode with motion allowed, seaTime advances over 1 s', async ({ page }) => {
+  test('in active 3D mode with motion allowed, seaTime advances in seconds', async ({ page }) => {
     // Override reducedMotion for this test to allow animation
     await page.emulateMedia({ reducedMotion: 'no-preference' });
     await page.goto('/');
@@ -27,13 +27,26 @@ test.describe('Ocean 3D animation efficiency', () => {
     // Wait for initial render and setup
     await page.waitForFunction(() => typeof (window as unknown as { __seaTime?: number }).__seaTime === 'number');
 
-    const t0 = await page.evaluate(() => (window as unknown as { __seaTime: number }).__seaTime);
-    await page.waitForTimeout(1000);
-    const t1 = await page.evaluate(() => (window as unknown as { __seaTime: number }).__seaTime);
+    const sample = () =>
+      page.evaluate(() => ({
+        sea: (window as unknown as { __seaTime: number }).__seaTime,
+        nowMs: performance.now(),
+      }));
 
-    expect(t1).toBeGreaterThan(t0);
-    // Should have advanced around 0.7 - 1.3 seconds
-    expect(t1 - t0).toBeGreaterThanOrEqual(0.5);
+    // The clock caps each tick at 100 ms, so below 10 fps (software rendering under load) the sea
+    // advances slower than the wall clock. Wait for the advance instead of a fixed real-time window.
+    const start = await sample();
+    let end = start;
+    await expect
+      .poll(async () => {
+        end = await sample();
+        return end.sea - start.sea;
+      }, { timeout: 15_000 })
+      .toBeGreaterThanOrEqual(0.5);
+
+    // Seconds, not milliseconds or frames: the sea never runs ahead of the page clock
+    // (plus at most one capped tick that started before the first sample).
+    expect(end.sea - start.sea).toBeLessThanOrEqual((end.nowMs - start.nowMs) / 1000 + 0.1 + 1e-9);
   });
 
   test('when document is hidden, frame rendering does not advance', async ({ page }) => {
