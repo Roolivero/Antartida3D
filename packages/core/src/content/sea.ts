@@ -16,7 +16,7 @@ export interface SeaPoint {
   sources: readonly Source[];
   pending?: boolean;
   /** Anchor type: either tracks the Irizar route or attaches to an instance species. */
-  targetSpecies?: 'irizar' | 'humpback' | 'iceberg' | 'penguins';
+  targetSpecies?: 'irizar' | 'humpback' | 'iceberg' | 'penguins' | 'orca' | 'minke' | 'seal';
   /** Fallback map position in [0..1000] space if no sea life instance is active. */
   fallbackX: number;
   fallbackY: number;
@@ -112,6 +112,45 @@ export const SEA_POINTS: readonly SeaPoint[] = [
         consulted: '2026-11-11',
       },
     ],
+  },
+  // Same text and source as the sighting of the trip from Ushuaia (SIGHTINGS in ushuaia.ts).
+  {
+    id: 'sea-orca',
+    title: 'Orca',
+    place: 'Aguas de la Península Antártica',
+    desc: 'Nace en un grupo familiar y se queda en él toda la vida. Caza en manada, muy coordinada, como los lobos: peces, calamares, pingüinos, focas y hasta otras ballenas. Los machos llegan a 9,75 m.',
+    targetSpecies: 'orca',
+    fallbackX: 130,
+    fallbackY: 600,
+    sources: [voyageSource('I16')],
+  },
+  {
+    id: 'sea-minke',
+    title: 'Ballena minke',
+    place: 'Aguas antárticas y hielo marino',
+    desc: 'Es una de las ballenas con barbas más chicas: llega a casi 9 metros de largo y unas 10 toneladas. En aguas antárticas come casi solo krill. Es muy curiosa: suele nadar varias veces alrededor de una embarcación chica y se desvía para acercarse a un barco en marcha. En verano prefiere el hielo marino abierto.',
+    targetSpecies: 'minke',
+    fallbackX: 260,
+    fallbackY: 740,
+    sources: [
+      {
+        label: 'Australian Antarctic Program · Minke whale',
+        url: 'https://www.antarctica.gov.au/about-antarctica/animals/whales/minke-whale/',
+        org: 'Australian Antarctic Division',
+        consulted: '2026-11-13',
+      },
+    ],
+  },
+  // Same text and source as the sighting of the trip from Ushuaia (SIGHTINGS in ushuaia.ts).
+  {
+    id: 'sea-leopardo',
+    title: 'Foca leopardo',
+    place: 'Hielo marino antártico',
+    desc: 'Caza pingüinos y los sacude para sacarles la piel. Las hembras superan los 3,5 m y los 500 kg.',
+    targetSpecies: 'seal',
+    fallbackX: 140,
+    fallbackY: 550,
+    sources: [voyageSource('I16')],
   },
   // Last, on purpose: it is hidden in the home view, and the first sea marker has to be one that shows there.
   {

@@ -403,7 +403,7 @@ export function MapView({
             <VoyagePanel voyage={voyage} animated={is3D && !reduced} webgl={is3D} reduced={reduced} onExit={onEndVoyage} />
           </Suspense>
         )}
-        {sheet && <PointSheet point={sheet} onClose={() => setSheet(null)} fallbackFocus={() => vpRef.current} />}
+        {sheet && <PointSheet point={sheet} onClose={() => setSheet(null)} fallbackFocus={() => vpRef.current} preview={is3D} reduced={reduced} />}
       </div>
       <div className={'veil' + (phase === 'dive' ? ' on' : phase === 'approach' ? ' late' : '')} />
     </div>

@@ -1,12 +1,18 @@
-import { useRef } from 'react';
+import { lazy, Suspense, useRef } from 'react';
 import { TIER, type MapPoint, type SeaPoint } from '@antartida/core';
 import { useFocusReturn } from '../hooks.ts';
 import { Icon } from '../ui.tsx';
 
-export function PointSheet({ point, onClose, fallbackFocus }: {
+// Its own chunk: it needs WebGL, which the 2D map does not.
+const SeaPreview = lazy(() => import('../voyage/SeaPreview.tsx').then((m) => ({ default: m.SeaPreview })));
+
+export function PointSheet({ point, onClose, fallbackFocus, preview = false, reduced = false }: {
   point: MapPoint | SeaPoint;
   onClose: () => void;
   fallbackFocus: () => HTMLElement | null;
+  /** Show the block model of a sea point (needs WebGL). */
+  preview?: boolean;
+  reduced?: boolean;
 }) {
   const ref = useRef<HTMLElement>(null);
   useFocusReturn(true, ref, 'button', fallbackFocus);
@@ -35,6 +41,11 @@ export function PointSheet({ point, onClose, fallbackFocus }: {
         <p className="place">{point.place}</p>
         {isSea ? (
           <>
+            {preview && point.targetSpecies && (
+              <Suspense fallback={<div className="vpreview sea" />}>
+                <SeaPreview species={point.targetSpecies} reduced={reduced} />
+              </Suspense>
+            )}
             <div className="q">
               <p>{point.desc}</p>
             </div>

@@ -491,6 +491,10 @@ function ProjectMarkers({
         if (inst) {
           mapX = inst.x;
           mapY = inst.y;
+        } else if (instances.length) {
+          // The animal is not drawn on this screen (fewer animals on a phone): no marker over empty sea.
+          btn.style.display = 'none';
+          continue;
         }
       }
 
