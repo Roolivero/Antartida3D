@@ -100,6 +100,16 @@ Archivos: `packages/react-ui/src/orcadas/stationModels.ts`, `StationScene.tsx`.
 
 Verificar: `pnpm --filter @antartida/react-ui test`, `pnpm typecheck` y captura en enero a mitad de la llegada y al final.
 
+## Estado (13 nov 2026, pausa)
+
+Hecho y pusheado en la rama (`2ed474b`): pasos 1 a 6 y el panel ocultable en escritorio (lo que iba a ser #69, cerrado y sumado a #68). `pnpm test`, `pnpm typecheck` y `pnpm build` en verde.
+
+Falta:
+- [ ] `pnpm e2e` completo en esta rama (la corrida en el worktree de #69 se cortó sin resultado).
+- [ ] Capturas headless: enero (llegada a mitad y posado), julio (sin helicóptero), panel oculto y visible, a 1440 y 390 px.
+- [ ] Borrar el worktree `../Antartida3D-69` (`git worktree remove ../Antartida3D-69`) y la rama `69-ocultar-panel-del-capitulo-en-escritorio` (local y remota).
+- [ ] Revisión final del diff contra `main` y PR con `Closes #68`.
+
 ### 7. Revisión final (Claude Code)
 
 - Captura headless de la escena en enero (con helicóptero) y en julio (sin helicóptero), a 1440 y 390 px. Chromium del sistema con `--use-angle=vulkan`; abrir la expedición como indica `plan-orcadas-recorrido-guiado.md`.
