@@ -71,14 +71,17 @@ export const SHEET_SNAP_PX = 40;
 /** A press that moves less than this is a tap, not a drag. */
 export const SHEET_TAP_PX = 6;
 
+export type SheetSize = 'small' | 'tall' | 'closed';
+
 /**
- * Whether a bottom sheet ends up expanded after its handle is let go. `draggedUp` is how far the
- * finger went, in px, up the screen positive. A tap switches sizes; a drag past SHEET_SNAP_PX goes
- * where it was dragged; a shorter one falls back to the size it had.
+ * Size of a bottom sheet after its handle is let go. `draggedUp` is how far the finger went, in
+ * px, up the screen positive. A tap switches between small and tall. A drag past SHEET_SNAP_PX
+ * goes one step the way it was dragged: up to tall, down to small, and down from small closes the
+ * sheet. A shorter drag falls back to the size it had.
  */
-export function sheetAfterDrag(expanded: boolean, draggedUp: number): boolean {
-  if (Math.abs(draggedUp) < SHEET_TAP_PX) return !expanded;
-  if (draggedUp >= SHEET_SNAP_PX) return true;
-  if (draggedUp <= -SHEET_SNAP_PX) return false;
-  return expanded;
+export function sheetAfterDrag(size: 'small' | 'tall', draggedUp: number): SheetSize {
+  if (Math.abs(draggedUp) < SHEET_TAP_PX) return size === 'tall' ? 'small' : 'tall';
+  if (draggedUp >= SHEET_SNAP_PX) return 'tall';
+  if (draggedUp <= -SHEET_SNAP_PX) return size === 'tall' ? 'small' : 'closed';
+  return size;
 }

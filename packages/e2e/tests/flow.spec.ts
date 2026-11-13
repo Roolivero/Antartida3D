@@ -82,7 +82,7 @@ test('has no horizontal scroll', async ({ page }) => {
   expect(await overflow()).toBeLessThanOrEqual(0);
 });
 
-test('on a phone the trip picker grows when its handle is dragged up and shrinks back', async ({ page, isMobile }) => {
+test('on a phone the trip picker grows when its handle is dragged up, shrinks back and closes when dragged down', async ({ page, isMobile }) => {
   test.skip(!isMobile, 'the handle belongs to the phone layout; on wide screens the sheet is a card');
   await page.getByRole('button', { name: 'Ver como lista' }).click();
   await page.getByRole('button', { name: /Desde Ushuaia/ }).first().click();
@@ -111,10 +111,15 @@ test('on a phone the trip picker grows when its handle is dragged up and shrinks
   await expect(handle).toHaveAttribute('aria-expanded', 'false');
   await expect.poll(height).toBeCloseTo(small, 0);
 
-  // With the keyboard, Enter on the handle switches sizes; the picker still starts the trip.
+  // With the keyboard, Enter on the handle switches sizes.
   await handle.focus();
   await page.keyboard.press('Enter');
   await expect(handle).toHaveAttribute('aria-expanded', 'true');
-  await page.getByRole('button', { name: 'Zarpar' }).click();
-  await expect(page.locator('#voyage-title')).toHaveText(/Ushuaia y el Canal Beagle/);
+  await page.keyboard.press('Enter');
+  await expect(handle).toHaveAttribute('aria-expanded', 'false');
+
+  // Dragged down from its small size, the sheet closes and the map is back.
+  await drag(200);
+  await expect(sheet).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Ver como lista' })).toBeVisible();
 });

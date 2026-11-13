@@ -77,21 +77,27 @@ describe('two fingers on the 3D map', () => {
 });
 
 describe('bottom sheet handle', () => {
-  it('switches sizes on a tap', () => {
-    expect(sheetAfterDrag(false, 0)).toBe(true);
-    expect(sheetAfterDrag(true, 3)).toBe(false);
+  it('switches between small and tall on a tap', () => {
+    expect(sheetAfterDrag('small', 0)).toBe('tall');
+    expect(sheetAfterDrag('tall', 3)).toBe('small');
   });
 
-  it('goes where it is dragged, past the snap distance', () => {
-    expect(sheetAfterDrag(false, SHEET_SNAP_PX)).toBe(true);
-    expect(sheetAfterDrag(true, -SHEET_SNAP_PX)).toBe(false);
-    // Dragging an expanded sheet further up, or a small one further down, changes nothing.
-    expect(sheetAfterDrag(true, 200)).toBe(true);
-    expect(sheetAfterDrag(false, -200)).toBe(false);
+  it('goes one step the way it is dragged, past the snap distance', () => {
+    expect(sheetAfterDrag('small', SHEET_SNAP_PX)).toBe('tall');
+    expect(sheetAfterDrag('tall', -SHEET_SNAP_PX)).toBe('small');
+    // Dragging a tall sheet further up changes nothing.
+    expect(sheetAfterDrag('tall', 200)).toBe('tall');
+  });
+
+  it('closes when a small sheet is dragged down', () => {
+    expect(sheetAfterDrag('small', -SHEET_SNAP_PX)).toBe('closed');
+    // A tall one only comes down to small, however far it is dragged.
+    expect(sheetAfterDrag('tall', -600)).toBe('small');
   });
 
   it('falls back to the size it had after a short drag', () => {
-    expect(sheetAfterDrag(false, SHEET_SNAP_PX - 1)).toBe(false);
-    expect(sheetAfterDrag(true, -(SHEET_SNAP_PX - 1))).toBe(true);
+    expect(sheetAfterDrag('small', SHEET_SNAP_PX - 1)).toBe('small');
+    expect(sheetAfterDrag('small', -(SHEET_SNAP_PX - 1))).toBe('small');
+    expect(sheetAfterDrag('tall', -(SHEET_SNAP_PX - 1))).toBe('tall');
   });
 });

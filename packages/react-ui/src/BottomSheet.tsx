@@ -3,10 +3,13 @@ import { sheetAfterDrag } from '@antartida/core';
 
 /** Part of the height of its container an expanded sheet takes. */
 const EXPANDED = 0.92;
+/** While dragged down, the sheet does not get shorter than this: the handle stays under the finger. */
+const SHEET_MIN_PX = 56;
 
 /**
  * A sheet that comes up from the bottom of a phone screen, with a handle at its top. Dragging
- * the handle up makes the sheet taller, to read more; dragging it down brings it back. A tap on
+ * the handle up makes the sheet taller, to read more; dragging it down brings it back, and
+ * dragging it down again closes the sheet. A tap on
  * the handle, or Enter with the keyboard, switches between the two sizes. On wide screens the
  * sheet is a card in a corner and the handle is hidden (`.sheet-handle` in painted.css).
  *
@@ -18,7 +21,7 @@ export function BottomSheet({ className = '', labelledBy, sheetRef, onClose, chi
   /** Id of the heading that names the dialog. */
   labelledBy: string;
   sheetRef: RefObject<HTMLElement | null>;
-  /** Escape closes the sheet. */
+  /** Escape closes the sheet, and so does dragging it down from its small size. */
   onClose: () => void;
   children: ReactNode;
 }) {
@@ -38,13 +41,16 @@ export function BottomSheet({ className = '', labelledBy, sheetRef, onClose, chi
     if (!drag.current || !sheet) return;
     // The sheet follows the finger, up to its tall size.
     const limit = (sheet.parentElement?.clientHeight ?? window.innerHeight) * EXPANDED;
-    sheet.style.maxHeight = `${Math.min(limit, Math.max(120, drag.current.height + drag.current.y - e.clientY))}px`;
+    sheet.style.maxHeight = `${Math.min(limit, Math.max(SHEET_MIN_PX, drag.current.height + drag.current.y - e.clientY))}px`;
   };
   const onUp = (e: PointerEvent<HTMLButtonElement>) => {
     const sheet = sheetRef.current;
     if (!drag.current || !sheet) return;
-    setExpanded(sheetAfterDrag(expanded, drag.current.y - e.clientY));
+    const size = sheetAfterDrag(expanded ? 'tall' : 'small', drag.current.y - e.clientY);
     drag.current = null;
+    // Dragged down from its small size, the sheet closes: it stays where the finger left it until it is gone.
+    if (size === 'closed') return onClose();
+    setExpanded(size === 'tall');
     setDragging(false);
     // Back to the sizes of the style sheet: it eases to the one it snapped to.
     sheet.style.maxHeight = '';

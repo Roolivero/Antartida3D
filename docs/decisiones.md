@@ -193,15 +193,15 @@ Pedido de quien lleva el issue: en el celular, el panel que sale desde abajo tie
 - **Cómo se usa el tirador:**
   - Arrastrar hacia arriba: el panel sigue al dedo. Al soltar, si se arrastró 40 px o más queda grande; si no, vuelve.
   - Arrastrar hacia abajo: lo mismo, hacia el tamaño chico.
+  - Arrastrar hacia abajo desde el tamaño chico: el panel se cierra (llama a `onClose`). Pedido de quien lleva el issue. Desde el tamaño grande solo baja al chico, por más lejos que se arrastre.
   - Un toque cambia de tamaño.
   - Teclado y lector de pantalla: el tirador es un botón con nombre («Agrandar el panel para ver más» / «Achicar el panel») y `aria-expanded`. Enter o Espacio cambian de tamaño.
 - **Regla en `@antartida/core`:** `sheetAfterDrag(expanded, draggedUp)` en `core/src/gestures.ts`, con pruebas.
 - **Por encima del título:** el panel grande tapa el título y el registro de exploración. Mientras está grande o se arrastra sube a `z-index: 21`; si no, el título quedaba encima y el tirador no recibía toques.
 - **Pantallas anchas:** el panel es una tarjeta en una esquina y el tirador no se muestra.
 - **Movimiento reducido:** cambia de tamaño sin animación.
-- **No hace (todavía):** arrastrar hacia abajo desde el tamaño chico no cierra el panel. Se cierra con la X, con «Volver al mapa», con Escape o tocando el mapa.
 - **Para usarlo en otro panel:** reemplazar su `<section className="sheet ...">` por `<BottomSheet className="..." labelledBy="..." sheetRef={ref} onClose={...}>`. `PointSheet` y las fichas de los hitos siguen como estaban.
-- **Verificación:** prueba e2e en el perfil de celular (`flow.spec.ts`): arrastre hacia arriba y hacia abajo con un toque simulado, y Enter.
+- **Verificación:** prueba e2e en el perfil de celular (`flow.spec.ts`): arrastre hacia arriba, hacia abajo y cierre con un toque simulado, y Enter.
 
 
 ## Benchmark
