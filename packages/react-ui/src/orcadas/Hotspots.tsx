@@ -4,6 +4,7 @@ import {
   hotspotFacts,
   layoutOf,
   type BuildingId,
+  type Chapter,
   type OrcadasHotspotId,
 } from '@antartida/core';
 import { useFocusReturn, useIsDesktop } from '../hooks.ts';
@@ -45,20 +46,24 @@ export const OVERVIEW_POSE_DESKTOP: CameraPose = {
 
 /** On a phone the target sits below the ground so the station lands above the bottom sheet. */
 export const OVERVIEW_POSE_MOBILE: CameraPose = {
-  pos: [-12, 11.5, 41],
-  target: [0.6, -5.2, 0],
+  pos: [-11, 9.2, 30.5],
+  target: [0.8, -2.4, 0],
 };
 
-/** How far a hotspot framing pulls back on a phone, and how much its target drops (per unit of distance). */
-const MOBILE_PULL_BACK = 1.9;
-const MOBILE_TARGET_DROP = 0.16;
+export const OVERVIEW_POSE_MOBILE_EXPANDED: CameraPose = {
+  pos: [-9.5, 7.8, 23.5],
+  target: [0.8, -7.2, 0],
+};
 
 /** A portrait screen is narrow and its lower half is covered: pull back and aim lower. */
-function mobilePose(pose: CameraPose): CameraPose {
+function mobilePose(pose: CameraPose, expanded = false): CameraPose {
   const [px, py, pz] = pose.pos;
   const [tx, ty, tz] = pose.target;
-  const dx = (px - tx) * MOBILE_PULL_BACK, dy = (py - ty) * MOBILE_PULL_BACK, dz = (pz - tz) * MOBILE_PULL_BACK;
-  const drop = Math.hypot(dx, dy, dz) * MOBILE_TARGET_DROP;
+  const pullBack = expanded ? 1.35 : 1.7;
+  const dx = (px - tx) * pullBack;
+  const dy = (py - ty) * pullBack;
+  const dz = (pz - tz) * pullBack;
+  const drop = Math.hypot(dx, dy, dz) * (expanded ? 0.36 : 0.11);
   return { pos: [tx + dx, ty + dy, tz + dz], target: [tx, ty - drop, tz] };
 }
 
@@ -127,8 +132,8 @@ export const HOTSPOTS: readonly HotspotDef[] = [
       flagLayout.position[2] + 0.2,
     ],
     pose: {
-      pos: [4.8, 5.8, 11.2],
-      target: [0.2, 3.6, 3.6],
+      pos: [4.4, 5.2, 11.6],
+      target: [0.2, 4.2, 3.4],
     },
     fallbackPct: [45, 37],
   },
@@ -158,20 +163,40 @@ export const HOTSPOTS: readonly HotspotDef[] = [
   },
 ];
 
-export function poseForHotspot(focus: HotspotId | null, mobile: boolean): CameraPose {
+export function poseForHotspot(
+  focus: HotspotId | null,
+  mobile: boolean,
+  panelExpanded = false
+): CameraPose {
   if (!focus || focus === 'overview') {
-    return mobile ? OVERVIEW_POSE_MOBILE : OVERVIEW_POSE_DESKTOP;
+    if (mobile) {
+      return panelExpanded ? OVERVIEW_POSE_MOBILE_EXPANDED : OVERVIEW_POSE_MOBILE;
+    }
+    return OVERVIEW_POSE_DESKTOP;
   }
   const found = HOTSPOTS.find((h) => h.id === focus);
-  if (!found) return mobile ? OVERVIEW_POSE_MOBILE : OVERVIEW_POSE_DESKTOP;
-  return mobile ? mobilePose(found.pose) : found.pose;
+  if (!found) {
+    if (mobile) {
+      return panelExpanded ? OVERVIEW_POSE_MOBILE_EXPANDED : OVERVIEW_POSE_MOBILE;
+    }
+    return OVERVIEW_POSE_DESKTOP;
+  }
+  return mobile ? mobilePose(found.pose, panelExpanded) : found.pose;
 }
+
+const CHAPTER_KEY_SPOTS: Record<Chapter, readonly HotspotId[]> = {
+  arrival: ['house', 'flag'],
+  observation: ['screen', 'mast'],
+  journey: ['house', 'flag'],
+  answer: ['flag'],
+};
 
 export function Hotspots({
   overlayRef,
   activeSpot,
   openCardSpot,
   buildings,
+  chapter,
   onSelectSpot,
   onCloseCard,
 }: {
@@ -179,6 +204,7 @@ export function Hotspots({
   activeSpot: HotspotId | null;
   openCardSpot: Exclude<HotspotId, 'overview'> | null;
   buildings?: readonly BuildingId[];
+  chapter?: Chapter;
   onSelectSpot: (id: Exclude<HotspotId, 'overview'>) => void;
   onCloseCard: () => void;
 }) {
@@ -266,12 +292,13 @@ export function Hotspots({
       >
         {visibleHotspots.map((spot) => {
           const isSelected = activeSpot === spot.id;
+          const isKeySpot = chapter ? CHAPTER_KEY_SPOTS[chapter]?.includes(spot.id) : true;
           return (
             <button
               key={spot.id}
               type="button"
               data-hotspot={spot.id}
-              className={`orc-hs${isSelected ? ' is-active' : ''}`}
+              className={`orc-hs${isSelected ? ' is-active' : ''}${!isKeySpot && !isSelected ? ' is-dimmed' : ''}`}
               style={{
                 left: `${spot.fallbackPct[0]}%`,
                 top: `${spot.fallbackPct[1]}%`,

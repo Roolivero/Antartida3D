@@ -262,7 +262,7 @@ export function Journey({
                   x={sp.x1}
                   y={labelY}
                   textAnchor={i === 0 ? 'start' : 'middle'}
-                  fontSize="8.5"
+                  fontSize="13"
                   fontWeight="800"
                   fill={isActive ? '#A4471F' : '#1F2A36'}
                 >
@@ -277,7 +277,7 @@ export function Journey({
             x={rulerGeom.w - rulerGeom.padR}
             y="51"
             textAnchor="end"
-            fontSize="8.5"
+            fontSize="13"
             fontWeight="700"
             fill="#5E656C"
           >

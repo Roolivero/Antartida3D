@@ -106,6 +106,7 @@ export function OrcadasExpedition({
   const [focus, setFocus] = useState<HotspotId | null>('overview');
   const [openSpot, setOpenSpot] = useState<Exclude<HotspotId, 'overview'> | null>(null);
   const [highlightSource, setHighlightSource] = useState<string | null>(null);
+  const [panelExpanded, setPanelExpanded] = useState(false);
 
   const isDesktop = useIsDesktop(900);
   const headingRef = useRef<HTMLHeadingElement>(null);
@@ -122,6 +123,11 @@ export function OrcadasExpedition({
       scrollRef.current.scrollTop = 0;
     }
     headingRef.current?.focus({ preventScroll: true });
+    if (s.chapter === 'observation') {
+      setPanelExpanded(true);
+    } else {
+      setPanelExpanded(false);
+    }
   }, [s.chapter]);
 
   const activeSpotDef = useMemo(
@@ -187,7 +193,7 @@ export function OrcadasExpedition({
   return (
     <SourceContext.Provider value={handleOpenSource}>
       <section
-        className="orc"
+        className={`orc${panelExpanded ? ' is-panel-expanded' : ''}`}
         aria-label="Expedición Estación Orcadas"
         onKeyDown={(e) => {
           if (e.key === 'Escape') {
@@ -212,6 +218,7 @@ export function OrcadasExpedition({
           animals={activeAnimals}
           focus={focus}
           reduced={reduced}
+          panelExpanded={panelExpanded}
           overlayRef={hotspotsRef}
         />
 
@@ -228,6 +235,7 @@ export function OrcadasExpedition({
 
         {/* Interactive 3D-projected HTML hotspots */}
         <Hotspots
+          chapter={s.chapter}
           overlayRef={hotspotsRef}
           activeSpot={focus}
           openCardSpot={openSpot}
@@ -309,10 +317,21 @@ export function OrcadasExpedition({
 
         {/* Field Notebook Chapter Panel */}
         <div
-          className="orc-panel"
+          className={`orc-panel${panelExpanded ? ' is-expanded' : ''}`}
           role="region"
           aria-label={`Capítulo ${idx + 1}: ${CHAPTER_NAMES[s.chapter]}`}
         >
+          <button
+            type="button"
+            className="orc-panel-toggle"
+            aria-expanded={panelExpanded}
+            onClick={() => setPanelExpanded((v) => !v)}
+          >
+            <span className="orc-panel-toggle-bar" aria-hidden="true" />
+            <span className="orc-panel-toggle-text">
+              {panelExpanded ? 'Ver menos' : 'Ver más'}
+            </span>
+          </button>
           {openSpot && !isDesktop && activeSpotDef ? (
             <section
               className="orc-spot-card orc-spot-panel-card"

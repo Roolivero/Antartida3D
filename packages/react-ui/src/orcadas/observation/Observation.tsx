@@ -110,6 +110,9 @@ export function Observation({
     initialDraftsFor(reading)
   );
   const [reduced, setReduced] = useState<boolean>(() => prefersReducedMotion());
+  const [inputStr, setInputStr] = useState<string>(() =>
+    formatVal('temp', initialDraftsFor(reading).temp)
+  );
 
   const sliderRef = useRef<HTMLDivElement>(null);
   const typeBufferRef = useRef<{ kind: ReadingKind; text: string; ts: number }>({
@@ -117,6 +120,10 @@ export function Observation({
     text: '',
     ts: 0,
   });
+
+  useEffect(() => {
+    setInputStr(formatVal(activeKind, drafts[activeKind]));
+  }, [activeKind, drafts]);
 
   useEffect(() => {
     try {
@@ -204,13 +211,13 @@ export function Observation({
         en la libreta.
       </p>
 
-      {/* Instrument Step / Tab Navigation */}
+      {/* Instrument Step / Tab Navigation (1 to 4 selector) */}
       <div
         className="orc-obs-tabs"
         role="tablist"
         aria-label="Instrumentos meteorológicos"
       >
-        {READING_KINDS.map((kind) => {
+        {READING_KINDS.map((kind, idx) => {
           const m = FIELD_META[kind];
           const isSelected = activeKind === kind;
           const g = guesses[kind];
@@ -234,7 +241,11 @@ export function Observation({
                 }
               }}
             >
-              <span className="orc-obs-tab-title">{m.shortLabel}</span>
+              <div className="orc-obs-tab-badge">
+                <span className="orc-obs-tab-num">{idx + 1}</span>
+                {isDone && <span className="orc-obs-tab-check" aria-hidden="true">✓</span>}
+              </div>
+              <span className="orc-obs-tab-title">{m.shortLabel.replace(/^\d+\.\s*/, '')}</span>
               <span className="orc-obs-tab-sub">
                 {isDone ? `${formatVal(kind, g)} ${m.unit}` : 'Pendiente'}
               </span>
@@ -251,13 +262,16 @@ export function Observation({
         className="orc-obs-stage"
       >
         <div className="orc-obs-stage-head">
-          <div>
+          <div className="orc-obs-stage-title-wrap">
             <h3 className="orc-obs-stage-title">{meta.label}</h3>
-            <p className="orc-obs-stage-desc">{meta.instruction}</p>
+            <span className="orc-obs-tol-pill">
+              Margen ±{TOLERANCE[activeKind]} {meta.unit}
+            </span>
           </div>
-          <span className="orc-obs-tol-pill">
-            Margen ±{TOLERANCE[activeKind]} {meta.unit}
-          </span>
+          <details className="orc-obs-details">
+            <summary>Cómo se lee</summary>
+            <p className="orc-obs-stage-desc">{meta.instruction}</p>
+          </details>
         </div>
 
         {/* SVG Instrument Illustration */}
@@ -292,17 +306,8 @@ export function Observation({
           />
         )}
 
-        {/* Fine Accessible Control: − button, custom role="slider", + button, and confirm button */}
+        {/* Fine Accessible Control: − button, custom role="slider", + button, and number input */}
         <div className="orc-obs-control-box">
-          <div className="orc-obs-control-top">
-            <span className="orc-obs-control-lbl">
-              Tu lectura en el instrumento:
-            </span>
-            <output className="orc-obs-draft-readout" aria-live="off">
-              {formatVal(activeKind, currentDraft)} {meta.unit}
-            </output>
-          </div>
-
           <div className="orc-obs-slider-row">
             <button
               type="button"
@@ -380,9 +385,6 @@ export function Observation({
                   {meta.min} {meta.unit}
                 </span>
                 <span>
-                  paso {meta.step} {meta.unit}
-                </span>
-                <span>
                   {meta.max} {meta.unit}
                 </span>
               </div>
@@ -397,6 +399,39 @@ export function Observation({
             >
               +
             </button>
+
+            <input
+              type="number"
+              inputMode="decimal"
+              className="orc-obs-num-input"
+              aria-label={`Lectura numérica de ${meta.label}`}
+              min={meta.min}
+              max={meta.max}
+              step={meta.step}
+              value={inputStr}
+              onChange={(e) => {
+                const text = e.target.value;
+                setInputStr(text);
+                if (text !== '' && text !== '-' && text !== '.' && text !== '-.' && !text.endsWith('.')) {
+                  const parsed = Number(text);
+                  if (Number.isFinite(parsed)) {
+                    const rounded = roundToStep(parsed, meta.step);
+                    const clean = clampToMeta(rounded, meta);
+                    setDrafts((prev) => ({ ...prev, [activeKind]: clean }));
+                    onGuess(activeKind, rounded);
+                  }
+                }
+              }}
+              onBlur={() => {
+                setInputStr(formatVal(activeKind, currentDraft));
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  confirmReading(activeKind, currentDraft);
+                }
+              }}
+            />
           </div>
 
           <div className="orc-obs-confirm-row">

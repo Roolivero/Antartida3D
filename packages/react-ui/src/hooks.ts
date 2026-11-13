@@ -31,16 +31,25 @@ export function useReducedMotion(): boolean {
 }
 
 export function useIsDesktop(breakpoint = 900): boolean {
-  const [isDesktop, setIsDesktop] = useState(() =>
-    typeof window !== 'undefined' ? window.innerWidth >= breakpoint : false
-  );
+  const [isDesktop, setIsDesktop] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return (
+      window.innerWidth >= breakpoint ||
+      window.matchMedia('(orientation: landscape) and (max-height: 500px)').matches
+    );
+  });
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    const mql = window.matchMedia(`(min-width: ${breakpoint}px)`);
-    const update = () => setIsDesktop(mql.matches);
+    const mqlWide = window.matchMedia(`(min-width: ${breakpoint}px)`);
+    const mqlLand = window.matchMedia('(orientation: landscape) and (max-height: 500px)');
+    const update = () => setIsDesktop(mqlWide.matches || mqlLand.matches);
     update();
-    mql.addEventListener('change', update);
-    return () => mql.removeEventListener('change', update);
+    mqlWide.addEventListener('change', update);
+    mqlLand.addEventListener('change', update);
+    return () => {
+      mqlWide.removeEventListener('change', update);
+      mqlLand.removeEventListener('change', update);
+    };
   }, [breakpoint]);
   return isDesktop;
 }

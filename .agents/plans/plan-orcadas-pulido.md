@@ -411,6 +411,8 @@ Va después de la Fase 5 porque los encuadres de cámara dependen de la base nue
 
 **Verificación:** la base, más e2e en 360 × 740 y 844 × 390. Agregar esos tamaños a `packages/e2e/playwright.config.ts` solo para las pruebas de Orcadas, para no duplicar el tiempo de toda la suite.
 
+> Enmienda (12 nov 2026): fase 6 hecha sobre la disposición provisoria (la Fase 5 se aprobó después y se hace a continuación; los encuadres de E5 se revisan otra vez con la base nueva). Medido: ventana del panel 273/585 px (390 × 844, compacto/expandido), 226/497 px (360 × 740), panel lateral en 844 × 390; botones de capítulo de 44 px sin scroll horizontal; texto HTML ≥ 12 px; texto SVG ≥ 11 px; enlaces de fuentes de 44 px. Con el panel expandido en celular vertical se ocultan los puntos y la etiqueta de la escena (quedaban encima de la tira de meses). Se quitó el rótulo «paso» del deslizador porque se pisaba con los límites. E6: la escena ya tenía `PerformanceMonitor` con degradación; la prueba en un celular físico queda pendiente para Lk. `sightingModels.ts` registra `laborc` con un getter para cortar una dependencia circular con `stationModels.ts`. Verificación: `pnpm test`, `pnpm typecheck`, `pnpm build` y e2e de Orcadas en 4 tamaños (79 pasan, 13 omitidas por tamaño) en verde.
+
 ---
 
 ## Fase 7 · Pulido visual · Issue F

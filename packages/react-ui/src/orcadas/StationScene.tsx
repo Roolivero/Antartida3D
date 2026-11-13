@@ -95,6 +95,7 @@ export interface StationSceneProps {
   animals: readonly string[];
   focus: HotspotId | null;
   reduced: boolean;
+  panelExpanded?: boolean;
   onReady?: () => void;
   overlayRef?: RefObject<HTMLDivElement | null>;
 }
@@ -1082,11 +1083,13 @@ function SnowAndSpindrift({
 function StationCameraAndProjection({
   focus,
   reduced,
+  panelExpanded,
   overlayRef,
   onReady,
 }: {
   focus: HotspotId | null;
   reduced: boolean;
+  panelExpanded?: boolean;
   overlayRef?: RefObject<HTMLDivElement | null>;
   onReady?: () => void;
 }) {
@@ -1122,7 +1125,7 @@ function StationCameraAndProjection({
     cc.smoothTime = 0.32;
     cc.setBoundary(new Box3(new Vector3(-55, -15, -55), new Vector3(55, 45, 65)));
 
-    const pose = poseForHotspot(focus, mobile);
+    const pose = poseForHotspot(focus, mobile, Boolean(panelExpanded));
     if (!initializedRef.current) {
       initializedRef.current = true;
       if (!reduced && (!focus || focus === 'overview')) {
@@ -1168,7 +1171,7 @@ function StationCameraAndProjection({
       );
     }
     invalidate();
-  }, [focus, mobile, reduced, invalidate]);
+  }, [focus, mobile, reduced, panelExpanded, invalidate]);
 
   // Keyboard orbit (Arrow keys) and zoom (+ / -)
   useEffect(() => {
@@ -1279,7 +1282,7 @@ function StationCameraAndProjection({
       const rawSx = ((projVec.x + 1) * size.width) / 2;
       const rawSy = ((-projVec.y + 1) * size.height) / 2;
       const maxX = size.width >= 900 ? size.width - 560 : size.width - 68;
-      const maxY = size.width >= 900 ? size.height - 64 : size.height * 0.52;
+      const maxY = size.width >= 900 ? size.height - 64 : panelExpanded ? size.height * 0.14 : size.height * 0.52;
       const sx = Math.max(58, Math.min(maxX, rawSx));
       const sy = Math.max(116, Math.min(maxY, rawSy));
       btn.style.opacity = '1';
@@ -1336,6 +1339,7 @@ export const StationScene = memo(function StationScene({
   animals,
   focus,
   reduced,
+  panelExpanded,
   onReady,
   overlayRef,
 }: StationSceneProps) {
@@ -1455,6 +1459,7 @@ export const StationScene = memo(function StationScene({
         <StationCameraAndProjection
           focus={focus}
           reduced={reduced}
+          panelExpanded={panelExpanded}
           overlayRef={overlayRef}
           onReady={onReady}
         />

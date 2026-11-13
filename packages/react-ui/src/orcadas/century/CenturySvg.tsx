@@ -241,7 +241,7 @@ export function CenturySvg({
                       x={midX}
                       y={midY - 6}
                       textAnchor="middle"
-                      fontSize="8.5"
+                      fontSize="14"
                       fontWeight="700"
                       fill="#A4471F"
                     >

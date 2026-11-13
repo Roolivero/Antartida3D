@@ -30,9 +30,17 @@
 .orc-scene-badge {
   position: absolute;
   left: 12px;
-  top: 104px;
+  bottom: calc(45dvh + 10px);
+  top: auto;
   z-index: 5;
   pointer-events: auto;
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: flex-start;
+}
+
+.orc.is-panel-expanded .orc-scene-badge {
+  bottom: calc(85dvh + 10px);
 }
 
 .orc-scene-badge-row {
@@ -183,10 +191,16 @@
   text-overflow: ellipsis;
 }
 
+@media (max-width: 420px) {
+  .orc-top-title span {
+    display: none;
+  }
+}
+
 /* Chapter step navigation */
 .orc-steps-nav {
   width: 100%;
-  overflow-x: auto;
+  overflow-x: hidden;
   scrollbar-width: none;
 }
 
@@ -198,27 +212,32 @@
   list-style: none;
   margin: 0;
   padding: 2px 0;
-  display: flex;
-  gap: 5px;
-  min-width: min-content;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 3px;
+  width: 100%;
 }
 
 .orc-step-item {
-  flex: 1 0 auto;
+  width: 100%;
+  min-width: 0;
 }
 
 .orc-step-btn {
-  min-height: 36px;
-  padding: 4px 9px;
+  width: 100%;
+  min-height: 44px;
+  padding: 4px 1px;
   border-radius: 18px;
   border: 1.5px solid rgba(31, 42, 54, 0.45);
   background: rgba(251, 244, 230, 0.92);
   color: var(--ink);
   font-size: 12px;
+  letter-spacing: -0.02em;
   font-weight: 700;
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  justify-content: center;
+  gap: 2px;
   white-space: nowrap;
   transition: transform 0.15s ease, background-color 0.15s ease;
 }
@@ -246,7 +265,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 11px;
+  font-size: 12px;
+  flex: none;
 }
 
 .orc-step-btn.is-current .orc-step-num {
@@ -266,15 +286,26 @@
   position: absolute;
   min-width: 44px;
   min-height: 44px;
-  padding: 4px 8px;
+  padding: 0;
   border: 0;
   background: transparent;
   pointer-events: auto;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
   transform: translate(-50%, -50%);
   will-change: transform;
+}
+
+.orc-hs.is-dimmed {
+  opacity: 0.38;
+}
+
+.orc-hs.is-dimmed:hover,
+.orc-hs.is-dimmed:focus-visible,
+.orc-hs.is-dimmed.is-active {
+  opacity: 1;
 }
 
 .orc-hs-dot {
@@ -295,10 +326,11 @@
 
 .orc-hs-ring {
   position: absolute;
-  left: 6px;
+  left: 50%;
   top: 50%;
   width: 22px;
   height: 22px;
+  margin-left: -11px;
   margin-top: -11px;
   border-radius: 50%;
   border: 2px solid var(--ocre);
@@ -318,6 +350,7 @@
 }
 
 .orc-hs-lbl {
+  display: none;
   font-family: 'Atkinson Hyperlegible', system-ui, sans-serif;
   font-size: 13px;
   font-weight: 700;
@@ -329,6 +362,10 @@
   padding: 2px 7px 3px;
   box-shadow: 1px 2px 0 rgba(31, 42, 54, 0.18);
   white-space: nowrap;
+}
+
+.orc-hs.is-active .orc-hs-lbl {
+  display: inline-block;
 }
 
 /* Hotspot floating fact card (desktop) */
@@ -416,7 +453,8 @@
   left: 0;
   right: 0;
   bottom: 0;
-  max-height: 44dvh;
+  height: 45dvh;
+  max-height: 45dvh;
   z-index: 6;
   background: var(--paper);
   border-top: 2px solid var(--ink);
@@ -425,6 +463,51 @@
   display: flex;
   flex-direction: column;
   padding-bottom: env(safe-area-inset-bottom, 0px);
+  transition: height 0.22s cubic-bezier(0.2, 0.85, 0.3, 1), max-height 0.22s cubic-bezier(0.2, 0.85, 0.3, 1);
+}
+
+.orc-panel.is-expanded {
+  height: 85dvh;
+  max-height: 85dvh;
+  z-index: 15;
+}
+
+.orc-panel-toggle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  width: 100%;
+  min-height: 44px;
+  padding: 4px 12px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid rgba(31, 42, 54, 0.1);
+  color: var(--deep);
+  font-family: 'Atkinson Hyperlegible', system-ui, sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  flex: none;
+}
+
+.orc-panel-toggle:focus-visible {
+  outline: 2px solid var(--deep);
+  outline-offset: -2px;
+}
+
+.orc-panel-toggle-bar {
+  display: block;
+  width: 32px;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(31, 42, 54, 0.3);
+}
+
+.orc-panel-toggle-text {
+  font-size: 12px;
+  line-height: 1;
 }
 
 .orc-panel-scroll {
@@ -532,23 +615,27 @@
 
 .orc-src-prefix {
   color: #5E656C;
-  font-size: 11.5px;
+  font-size: 12px;
 }
 
 .orc-src-link {
   appearance: none;
   background: none;
   border: none;
-  padding: 0;
-  margin: 0;
+  padding: 4px 8px;
+  margin: 1px 0;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
   font: inherit;
   font-size: 12px;
   font-weight: 700;
   color: var(--deep);
   text-decoration: underline;
-  text-decoration-thickness: 1px;
-  text-underline-offset: 2px;
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 3px;
   cursor: pointer;
+  border-radius: 4px;
 }
 
 .orc-src-link:hover {
@@ -770,7 +857,7 @@ details.orc-more > summary:focus-visible {
   left: 8px;
   right: 8px;
   max-width: calc(100vw - 16px);
-  z-index: 15;
+  z-index: 5;
 }
 
 .orc-month-strip {
@@ -798,7 +885,7 @@ details.orc-more > summary:focus-visible {
   border-radius: 4px;
   cursor: pointer;
   font-family: inherit;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--ink);
   position: relative;
@@ -821,6 +908,8 @@ details.orc-more > summary:focus-visible {
 
 .orc-month-short {
   display: block;
+  font-size: 12px;
+  letter-spacing: -0.02em;
   line-height: 1.1;
 }
 
@@ -1283,10 +1372,24 @@ details.orc-more > summary:focus-visible {
     justify-content: center;
   }
 
+  .orc-steps {
+    display: flex;
+    gap: 5px;
+    width: auto;
+  }
+
+  .orc-step-item {
+    width: auto;
+  }
+
   .orc-step-btn {
     min-height: 40px;
     padding: 6px 12px;
     font-size: 13px;
+  }
+
+  .orc-panel-toggle {
+    display: none;
   }
 
   .orc-scene-badge {
@@ -1317,6 +1420,7 @@ details.orc-more > summary:focus-visible {
     bottom: 24px;
     left: auto;
     width: 480px;
+    height: auto;
     max-height: calc(100dvh - 110px);
     border: 2px solid var(--ink);
     border-radius: 10px 18px 12px 16px;
@@ -1329,6 +1433,10 @@ details.orc-more > summary:focus-visible {
 
   .orc-chapter-h2 {
     font-size: 26px;
+  }
+
+  .orc-hs .orc-hs-lbl {
+    display: inline-block;
   }
 
   .orc-spot-card {
@@ -1348,15 +1456,134 @@ details.orc-more > summary:focus-visible {
   }
 }
 
+/* Landscape phones (max-height: 500px): use desktop side panel on right */
+@media ((orientation: landscape) and (max-height: 500px)) {
+  .orc-top {
+    padding: 6px 12px 8px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .orc-top-r1 {
+    flex: 0 0 auto;
+    gap: 8px;
+  }
+
+  .orc-top-btn {
+    min-height: 36px;
+    padding: 0 10px;
+    font-size: 13px;
+  }
+
+  .orc-top-title {
+    text-align: left;
+  }
+
+  .orc-top-title strong {
+    font-size: 15px;
+  }
+
+  .orc-top-title span {
+    font-size: 12px;
+    display: block;
+  }
+
+  .orc-steps-nav {
+    width: auto;
+    flex: 1;
+    display: flex;
+    justify-content: center;
+  }
+
+  .orc-steps {
+    display: flex;
+    gap: 4px;
+    width: auto;
+  }
+
+  .orc-step-item {
+    width: auto;
+  }
+
+  .orc-step-btn {
+    min-height: 36px;
+    padding: 4px 8px;
+    font-size: 12px;
+  }
+
+  .orc-panel-toggle {
+    display: none;
+  }
+
+  .orc-panel {
+    top: 52px;
+    right: 8px;
+    bottom: 8px;
+    left: auto;
+    width: 46%;
+    height: auto;
+    max-height: calc(100dvh - 60px);
+    border: 2px solid var(--ink);
+    border-radius: 10px 16px 12px 14px;
+    box-shadow: 3px 5px 0 rgba(31, 42, 54, 0.2);
+  }
+
+  .orc-panel-scroll {
+    padding: 8px 12px 6px;
+  }
+
+  .orc-chapter-h2 {
+    font-size: 18px;
+  }
+
+  .orc-kicker {
+    font-size: 13px;
+  }
+
+  .orc-bar.ebar {
+    padding: 6px 10px;
+  }
+
+  .orc-month-strip-wrap {
+    top: 52px;
+    left: 8px;
+    right: auto;
+    width: calc(52% - 16px);
+    max-width: 380px;
+    z-index: 15;
+  }
+
+  .orc-scene-badge {
+    left: 8px;
+    bottom: 8px;
+  }
+
+  .orc-hs .orc-hs-lbl {
+    display: inline-block;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .orc-hs-ring {
     animation: none;
     display: none;
   }
+  .orc-panel,
   .orc-spot-card,
   .orc-sources,
   .orc-step-btn {
     animation: none;
     transition: none;
+  }
+}
+
+/* Mobile portrait with the panel expanded: the scene is a thin strip under the month strip,
+   so the hotspots and the scene label would pile up over it. Hide them until it is compact. */
+@media (max-width: 899px) and (orientation: portrait) {
+  .orc.is-panel-expanded .orc-scene-badge,
+  .orc.is-panel-expanded .orc-hotspots {
+    visibility: hidden;
   }
 }

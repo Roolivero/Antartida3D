@@ -251,8 +251,8 @@ export function SunArc({
           />
           <text
             x={geom.padL + 4}
-            y={geom.horizonY - 3}
-            fontSize="8.5"
+            y={geom.horizonY - 5}
+            fontSize="13"
             fontWeight="700"
             fill={isNight ? '#D6E5EF' : '#1F2A36'}
           >
@@ -375,7 +375,7 @@ export function SunArc({
                 x={x}
                 y={geom.h - 3}
                 textAnchor="middle"
-                fontSize="8.5"
+                fontSize="13"
                 fontWeight="700"
                 fill="#2B3640"
               >

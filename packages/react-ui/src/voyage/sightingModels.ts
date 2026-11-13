@@ -552,7 +552,9 @@ export const SCENE_MODELS: Readonly<Record<string, readonly Box[]>> = {
   ...Object.fromEntries(Object.entries(SEA_MODELS).map(([id, boxes]) => [`sea:${id}`, boxes])),
   ushuaia: TOWN,
   orcadas: ORCADAS_SITE,
-  laborc: buildLaborcBoxes(false),
+  get laborc() {
+    return buildLaborcBoxes(false);
+  },
 };
 
 export const buildSeaGeometry = (id: SeaModelId) => buildBoxGeometry(SEA_MODELS[id]);

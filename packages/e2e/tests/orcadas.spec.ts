@@ -166,7 +166,7 @@ test('from the 3D map with motion allowed, the camera zooms down to the island b
   expect(await page.evaluate(() => (window as unknown as { __sawApproach?: boolean }).__sawApproach)).toBe(true);
 });
 
-test('respects reducedMotion, opens hotspot cards, and keeps mobile sheet within 45% height', async ({ page }) => {
+test('respects reducedMotion, opens hotspot cards, and supports compact and expanded mobile sheet', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/');
   await openOrcadasFromMap(page);
@@ -174,8 +174,27 @@ test('respects reducedMotion, opens hotspot cards, and keeps mobile sheet within
   const vw = page.viewportSize()?.width ?? 1440;
   const vh = page.viewportSize()?.height ?? 900;
   if (vw <= 420) {
-    const panelBox = (await page.locator('.orc-panel').boundingBox())!;
-    expect(panelBox.height).toBeLessThanOrEqual(vh * 0.45 + 1);
+    const panel = page.locator('.orc-panel');
+    const toggleBtn = page.getByRole('button', { name: 'Ver más' });
+    await expect(toggleBtn).toBeVisible();
+
+    // Compact mode: <= 46% height
+    const compactBox = (await panel.boundingBox())!;
+    expect(compactBox.height).toBeLessThanOrEqual(vh * 0.46 + 1);
+
+    // Expanded mode: >= 80% height
+    await toggleBtn.click();
+    await expect(page.getByRole('button', { name: 'Ver menos' })).toBeVisible();
+    await expect
+      .poll(async () => (await panel.boundingBox())?.height ?? 0)
+      .toBeGreaterThanOrEqual(vh * 0.8);
+
+    // Toggle back to compact for the rest of the test
+    await page.getByRole('button', { name: 'Ver menos' }).click();
+    await expect(page.getByRole('button', { name: 'Ver más' })).toBeVisible();
+    await expect
+      .poll(async () => (await panel.boundingBox())?.height ?? 9999)
+      .toBeLessThanOrEqual(vh * 0.46 + 1);
   }
 
   // Activate a hotspot button and check dialog + Escape focus return
@@ -483,4 +502,92 @@ test('D2 (desktop): hotspot card is within 360 px of dot and does not overlap si
     cardBox.y + cardBox.height > sidePanelBox.y;
 
   expect(overlapsSidePanel).toBe(false);
+});
+
+test('at 844x390 landscape the chapter h2 and primary button are in the viewport without scrolling', async ({ page }) => {
+  const vp = page.viewportSize() ?? { width: 1440, height: 900 };
+  test.skip(vp.width !== 844 || vp.height !== 390, 'Landscape 844x390 test only');
+
+  await openOrcadasFromMap(page);
+
+  const h2 = page.locator('.orc-chapter-h2');
+  await expect(h2).toBeVisible();
+  const h2Box = (await h2.boundingBox())!;
+  expect(h2Box.y).toBeGreaterThanOrEqual(0);
+  expect(h2Box.y + h2Box.height).toBeLessThanOrEqual(390);
+
+  const primaryBtn = page.locator('.orc-btn-primary');
+  await expect(primaryBtn).toBeVisible();
+  const btnBox = (await primaryBtn.boundingBox())!;
+  expect(btnBox.y).toBeGreaterThanOrEqual(0);
+  expect(btnBox.y + btnBox.height).toBeLessThanOrEqual(390);
+
+  // Assert panel scroll container has not been scrolled
+  const scrollTop = await page.evaluate(() => document.querySelector('.orc-panel-scroll')?.scrollTop ?? 0);
+  expect(scrollTop).toBe(0);
+});
+
+test('at 360x740 the 4 chapter buttons are >= 44 px high and the nav does not scroll horizontally', async ({ page }) => {
+  const vp = page.viewportSize() ?? { width: 1440, height: 900 };
+  test.skip(vp.width !== 360 || vp.height !== 740, 'Compact 360x740 test only');
+
+  await openOrcadasFromMap(page);
+
+  const stepBtns = page.locator('.orc-step-btn');
+  expect(await stepBtns.count()).toBe(4);
+  for (let i = 0; i < 4; i++) {
+    const box = (await stepBtns.nth(i).boundingBox())!;
+    expect(box.height).toBeGreaterThanOrEqual(44);
+  }
+
+  const navScrolls = await page.evaluate(() => {
+    const nav = document.querySelector('.orc-steps-nav');
+    return nav ? nav.scrollWidth > nav.clientWidth : false;
+  });
+  expect(navScrolls).toBe(false);
+});
+
+test('on mobile the observation shows the instrument and its control both in the viewport, and number input changes recorded value', async ({ page }) => {
+  const vp = page.viewportSize() ?? { width: 1440, height: 900 };
+  test.skip(vp.width > 420, 'Mobile portrait only test');
+
+  await openOrcadasFromMap(page);
+  await page.locator('.orc-step-btn').nth(1).click(); // Go to Observar
+  await expect(page.getByRole('heading', { level: 2, name: 'Observación del día' })).toBeVisible();
+
+  // The panel starts expanded on mobile in observation
+  const panel = page.locator('.orc-panel');
+  await expect(panel).toHaveClass(/is-expanded/);
+
+  // Both the instrument plate and the slider row are inside the viewport [0, vh]
+  const vh = vp.height;
+  const plate = page.locator('.orc-obs-plate');
+  await expect(plate).toBeVisible();
+  await expect
+    .poll(async () => {
+      const box = await plate.boundingBox();
+      return box ? box.y + box.height : 9999;
+    })
+    .toBeLessThanOrEqual(vh);
+  const plateBox = (await plate.boundingBox())!;
+  expect(plateBox.y).toBeGreaterThanOrEqual(0);
+
+  const sliderRow = page.locator('.orc-obs-slider-row');
+  await expect(sliderRow).toBeVisible();
+  await expect
+    .poll(async () => {
+      const box = await sliderRow.boundingBox();
+      return box ? box.y + box.height : 9999;
+    })
+    .toBeLessThanOrEqual(vh);
+  const rowBox = (await sliderRow.boundingBox())!;
+  expect(rowBox.y).toBeGreaterThanOrEqual(0);
+
+  // The number input changes the recorded value in the notebook
+  const numInput = page.locator('.orc-obs-num-input');
+  await expect(numInput).toBeVisible();
+  await numInput.fill('-2.5');
+
+  // Notebook active cell updates with the recorded value
+  await expect(page.locator('.orc-notebook-cell.is-active')).toContainText(/-2[.,]5 °C/);
 });

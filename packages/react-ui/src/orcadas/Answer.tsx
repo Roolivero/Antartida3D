@@ -177,9 +177,9 @@ export function Answer({
           />
           <text
             x={chartGeom.splitX - 4}
-            y={chartGeom.padT + 10}
+            y={chartGeom.padT + 12}
             textAnchor="end"
-            fontSize="8"
+            fontSize="14"
             fontWeight="700"
             fill="#5E656C"
           >
@@ -187,9 +187,9 @@ export function Answer({
           </text>
           <text
             x={chartGeom.splitX + 4}
-            y={chartGeom.padT + 10}
+            y={chartGeom.padT + 12}
             textAnchor="start"
-            fontSize="8"
+            fontSize="14"
             fontWeight="700"
             fill="#5E656C"
           >
@@ -210,7 +210,7 @@ export function Answer({
             x={chartGeom.padL + chartGeom.plotW - 4}
             y={chartGeom.threshY - 4}
             textAnchor="end"
-            fontSize="9"
+            fontSize="14"
             fontWeight="800"
             fill={hasUserTemp ? '#A4471F' : '#1E3E5C'}
           >
