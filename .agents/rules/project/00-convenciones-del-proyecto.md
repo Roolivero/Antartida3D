@@ -11,7 +11,7 @@ Reglas y arquitectura de trabajo para el equipo y agentes en este repositorio.
 - Nadie trabaja sin un issue asignado en GitHub.
 - Una rama por issue, creada desde `main` con `gh issue develop <N> --base main --checkout`.
 - Nunca commitear en `main`.
-- Un issue en curso por persona; un PR por issue.
+- Un PR por issue. Una persona puede tener varios issues en curso a la vez.
 - Tocar solo los archivos necesarios para el issue asignado. Avisar si se modifican archivos compartidos.
 
 ## 2. Idioma
