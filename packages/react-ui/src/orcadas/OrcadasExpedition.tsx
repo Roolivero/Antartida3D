@@ -34,8 +34,9 @@ import { SourcesPanel } from './SourcesPanel.tsx';
 import { StationScene } from './StationScene.tsx';
 import { TourCard } from './TourCard.tsx';
 
+/** Camera target: the active tour stop, or the entry view (the answer is read at sunset over the whole station). */
 function chapterFocus(chapter: Chapter, tourIndex: number): HotspotId {
-  return tourStop(chapter, tourIndex)?.spot ?? (chapter === 'answer' ? 'flag' : 'overview');
+  return tourStop(chapter, tourIndex)?.spot ?? 'overview';
 }
 
 function primaryButtonText(chapter: Chapter): string {

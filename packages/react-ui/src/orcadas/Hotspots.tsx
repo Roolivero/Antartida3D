@@ -151,7 +151,7 @@ export const HOTSPOTS: readonly HotspotDef[] = [
   {
     id: 'house',
     label: 'Casas históricas',
-    shortLabel: 'Estación',
+    shortLabel: 'Casa Omond',
     subtitle: 'De la pirca de piedra de Omond House a los módulos actuales',
     worldPos: [
       omondLayout.position[0],
@@ -171,7 +171,7 @@ export const HOTSPOTS: readonly HotspotDef[] = [
       flagLayout.position[1] + 2.7,
       flagLayout.position[2],
     ],
-    pose: orbit([flagLayout.position[0], flagLayout.position[1] + 1.4, flagLayout.position[2]], 6.5, 190, 10, 1.2),
+    pose: orbit([flagLayout.position[0], flagLayout.position[1] + 2.0, flagLayout.position[2]], 9.5, 190, 12, 1.6),
     fallbackPct: [48, 38],
   },
   {

@@ -58,7 +58,7 @@ export function Answer({
   const chartGeom = useMemo(() => {
     const W = 380;
     const H = 190;
-    const padL = 36;
+    const padL = 46;
     const padR = 16;
     const padT = 20;
     const padB = 26;
@@ -87,7 +87,7 @@ export function Answer({
     const threshY = yOf(threshold);
 
     const xTicks = [firstYear, 1930, 1960, 1990, lastYear];
-    const midTick = Math.round(((chartMinY + chartMaxY) / 2) * 2) / 2;
+    const midTick = Math.round((chartMinY + chartMaxY) / 2);
     const yTicks = [chartMaxY, midTick, chartMinY];
 
     return {
@@ -157,7 +157,7 @@ export function Answer({
                   textAnchor="end"
                   className="orc-svg-axis-txt"
                 >
-                  {tick} °C
+                  {formatTempC(tick, 0)}
                 </text>
               </g>
             );
@@ -211,6 +211,9 @@ export function Answer({
             fontSize="14"
             fontWeight="800"
             fill={hasUserTemp ? '#A4471F' : '#1E3E5C'}
+            stroke="#FAF4E8"
+            strokeWidth="4"
+            paintOrder="stroke"
           >
             {formatTempC(threshold)}
           </text>
@@ -312,7 +315,7 @@ export function Answer({
         </div>
       </div>
 
-      {/* Closing content moved from 'done' */}
+      {/* Closing seal: one line; the detail of the day's observation stays folded. */}
       <div className="orc-done-seal-row">
         <svg
           className="orc-seal"
@@ -323,43 +326,41 @@ export function Answer({
         <div className="orc-done-summary">
           <span className="orc-kicker hand">Bitácora sellada</span>
           <p>
-            Recorriste el istmo de la isla Laurie y viajaste desde Omond House (1903) hasta
-            la serie climática actual.{' '}
             {recorded === 0
-              ? 'No anotaste la observación del día: podés volver al capítulo 2 antes de terminar.'
-              : `Tu observación de ${monthName}: ${obsScore} de ${recorded} ${recorded === 1 ? 'lectura' : 'lecturas'} dentro del margen.`}
+              ? 'Recorriste la base y su registro desde 1903.'
+              : `Tu observación: ${obsScore} de ${recorded} ${recorded === 1 ? 'lectura' : 'lecturas'} dentro del margen.`}
           </p>
         </div>
       </div>
 
       {recorded > 0 && (
-        <div className="orc-done-sim">
-          <KindChip kind="sim" />
-          <span>El tiempo del día se sorteó dentro del clima real de {monthName}.</span>
-        </div>
-      )}
-
-      {recorded > 0 && (
-        <dl className="orc-done-readings" aria-label="Tu observación del día">
-          {READING_KINDS.map((kind) => {
-            const val = guesses[kind];
-            if (typeof val !== 'number') return null;
-            const status = checkGuess(kind, val, reading);
-            return (
-              <div key={kind}>
-                <dt>{NOTEBOOK_LABELS[kind].title}</dt>
-                <dd>{formatRecorded(kind, val, reading)}</dd>
-                <small>
-                  {status === 'off'
-                    ? `Fuera del margen: el instrumento marcaba ${formatRecorded(kind, truthFor(kind, reading), reading)}.`
-                    : status === 'exact'
-                      ? 'Lectura exacta.'
-                      : 'Dentro del margen.'}
-                </small>
-              </div>
-            );
-          })}
-        </dl>
+        <details className="orc-more">
+          <summary>Tu observación del día</summary>
+          <div className="orc-done-sim">
+            <KindChip kind="sim" />
+            <span>El tiempo del día se sorteó dentro del clima real de {monthName}.</span>
+          </div>
+          <dl className="orc-done-readings" aria-label="Tu observación del día">
+            {READING_KINDS.map((kind) => {
+              const val = guesses[kind];
+              if (typeof val !== 'number') return null;
+              const status = checkGuess(kind, val, reading);
+              return (
+                <div key={kind}>
+                  <dt>{NOTEBOOK_LABELS[kind].title}</dt>
+                  <dd>{formatRecorded(kind, val, reading)}</dd>
+                  <small>
+                    {status === 'off'
+                      ? `Fuera del margen: el instrumento marcaba ${formatRecorded(kind, truthFor(kind, reading), reading)}.`
+                      : status === 'exact'
+                        ? 'Lectura exacta.'
+                        : 'Dentro del margen.'}
+                  </small>
+                </div>
+              );
+            })}
+          </dl>
+        </details>
       )}
     </div>
   );
