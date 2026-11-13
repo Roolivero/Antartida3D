@@ -128,6 +128,19 @@ Pendiente, con issue propio: la fauna y el Irízar de ambiente de #16 son lámin
 - **Tinta:** Contornos de costa y barreras de hielo generados con `Line` sobre `heightAt + ε` con micro-jitter determinista.
 - **Rendimiento medido (GPU real NVIDIA RTX 3070):** 0 tareas > 16 ms durante órbita y zoom con botones (9 ms de GPU) y rueda (152 ms de GPU, tarea máxima 3 ms).
 
+### Bordes del mapa 3D, límites de zoom y gestos (#46, 12 nov)
+
+Pedido de quien lleva el issue: los bordes del mapa se veían color crema y borrosos, y arrastrar tenía que mover el mapa.
+
+- **Sin papel en los bordes:** se quitó la niebla hacia color papel de los cuatro materiales del mapa (terreno, mar, Tierra del Fuego y tierras lejanas) y el desvanecido radial del mar hacia papel. El mar se dibuja hasta donde llega la vista.
+- **Resto del mundo:** las tierras de contexto pasan de 10° S a 60° N. Fuente, licencia y límites en `docs/datos-relieve.md`. La leyenda dice «Resto del mundo, hasta 60° N».
+- **Tope de alejamiento:** la vista más lejana es la vista general (`homeDistance3D`, donde entra todo el continente: unas 785 unidades en escritorio y 2250 en celular). Antes era un valor fijo de 3600, y de lejos el mundo quedaba como un disco rodeado de papel. Se descartó un tope más cercano (470) porque el continente entero no entraba en pantalla.
+- **Límites de cámara en `@antartida/core`:** `MAX_POLAR_DEG` (60°) y `PAN_LIMIT` (800) pasaron de `Map3DLayer.tsx` a `core/src/camera.ts`. Una prueba (`camera.test.ts`) calcula el punto más lejano que ve la cámara con esos límites y falla si queda más allá de las tierras dibujadas o del plano del mar. Quien cambie un límite tiene que extender los datos.
+- **Gestos:** arrastrar con el botón izquierdo mueve el mapa sobre el suelo, igual que en 2D. El botón derecho gira e inclina. En pantalla táctil, un dedo mueve y dos dedos acercan y giran. Antes arrastrar giraba la cámara. La rueda y las teclas no cambian.
+- **Acercamiento en Tierra del Fuego:** el mínimo baja de 8 a 3 unidades (`FUEGIA_MIN_DISTANCE`). Es un valor a ajustar con el uso. Límite conocido en `docs/datos-relieve.md`.
+- **`project()` vale también al norte del ecuador:** antes tomaba el valor absoluto de la latitud y espejaba el norte sobre el sur. Al sur del ecuador da los mismos valores que antes.
+- **Halo del título:** el halo crema detrás del título en la vista 3D no cambia. Sin él, el título oscuro no se lee sobre el mar.
+
 ### Océano 3D, fauna, batimetría y mejoras visuales (F5 a F8)
 
 - **Costa 3D desde Bedmap3 (F8):** Se retiraron del 3D los vectores `ANTARCTICA_PATH` e `ICE_SHELVES_PATH` de Natural Earth. Como no coincidían con la elevación de Bedmap3, se cortaban en guiones discontinuos y cruzaban por dentro las barreras flotantes de Ross y Ronne. La costa 3D se extrae de la máscara de Bedmap3 (`masks > 0`) en el shader de terreno, logrando un trazo continuo y fiel al relieve real.

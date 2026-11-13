@@ -1,4 +1,4 @@
-import { fogParsChunk, periodicLineChunk } from './fog.glsl.ts';
+import { periodicLineChunk } from './periodicLine.glsl.ts';
 import { farLandChunk } from './southernLands.glsl.ts';
 
 export const fuegiaVertexShader = /* glsl */ `
@@ -46,7 +46,6 @@ uniform float uTintStart; // radius where the land tint starts turning into the 
 uniform float uAbsorb;
 uniform float uWaterFade; // outer fraction of the painted water that fades out
 
-${fogParsChunk}
 ${farLandChunk}
 
 varying float vHeight;
@@ -115,8 +114,6 @@ void main() {
   // Inked shoreline of constant screen width: the depth-based ink effect cannot see a coast at sea level.
   float w = max(fwidth(vLand), 1e-5);
   col = mix(col, INK, (1.0 - smoothstep(0.6, 1.6, abs(vLand - 0.5) / w)) * 0.8);
-
-  col = mix(col, uFogColor, computeFogFactor(vWorldPos));
 
   vec3 paper = texture2D(uPaperTex, gl_FragCoord.xy / 512.0).rgb;
   col = mix(col, col * paper * 1.2, 0.3);

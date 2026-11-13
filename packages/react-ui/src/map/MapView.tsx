@@ -320,7 +320,7 @@ export function MapView({
           role="application"
           aria-label={
             mode === '3d'
-              ? 'Mapa en relieve 3D de la Antártida. Arrastrá para orbitar o mover, usá las flechas para desplazarte, las teclas más y menos para acercar, y las teclas Q y E para girar.'
+              ? 'Mapa en relieve 3D de la Antártida. Arrastrá para mover, y con el botón derecho o con dos dedos para girar e inclinar. Usá las flechas para desplazarte, las teclas más y menos para acercar, y las teclas Q y E para girar.'
               : 'Mapa de la Antártida. Arrastrá para mover, usá las flechas para desplazarte y las teclas más y menos para acercar.'
           }
           onPointerDown={onDown}

@@ -97,6 +97,11 @@ export function viewFromPose(pose: CameraPose, size: Size, geo: Geometry): View 
   return { k, px, py };
 }
 
+/** Steepest tilt of the orbit camera, in degrees from the vertical. */
+export const MAX_POLAR_DEG = 60;
+/** The target of the orbit camera stays within this many map units of the pole on each axis. */
+export const PAN_LIMIT = 800;
+
 /** Tilt of the 3D overview, in degrees above the horizon: low enough to show the relief. */
 export const HOME_TILT_DEG = 38;
 

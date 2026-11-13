@@ -1,5 +1,5 @@
 import { MAP_RASTER_PAD, MAP_RASTER_SPAN } from '@antartida/core';
-import { fogParsChunk, periodicLineChunk } from './fog.glsl.ts';
+import { periodicLineChunk } from './periodicLine.glsl.ts';
 
 export const oceanVertexShader = /* glsl */ `
 varying vec2 vMapUV;
@@ -51,10 +51,7 @@ uniform vec4 uWhaleRipples[8];     // Up to 8 whale emergence positions (xy = wo
 uniform vec4 uStormBand;           // Storm of the Drake: ends of its middle line (xy = from, zw = to, world XZ)
 uniform vec2 uStormShape;          // x = reach from the middle line, y = width of the edge where it builds up
 uniform vec2 uStormWind;           // Unit vector the wind blows to (world XZ)
-uniform float uFadeStart;
-uniform float uFadeEnd;
 
-${fogParsChunk}
 ${periodicLineChunk}
 
 varying vec2 vMapUV;
@@ -352,19 +349,15 @@ void main() {
   }
 
   // ---------------------------------------------------------------------------
-  // 9. Exponential distance fog towards paper + screen-space paper grain (matching Terrain)
+  // 9. Screen-space paper grain (matching Terrain)
   // ---------------------------------------------------------------------------
   // Convert perceptual sRGB watercolor to Linear-sRGB for Three.js output pipeline,
-  // then apply screen-space paper grain and blend with linear uFogColor.
+  // then apply screen-space paper grain.
   vec3 waterLinear = srgbToLinear(waterCol);
   vec3 screenPaper = texture2D(uPaperTex, gl_FragCoord.xy / 512.0).rgb;
   waterLinear = mix(waterLinear, waterLinear * screenPaper * 1.18, uPaperGrainStrength);
 
-  float fog = computeFogFactor(vWorldPos);
-  vec3 finalCol = mix(waterLinear, uFogColor, fog);
-  finalCol = mix(finalCol, uFogColor, smoothstep(uFadeStart, uFadeEnd, length(vWorldPos.xz)));
-
-  gl_FragColor = vec4(finalCol, 1.0);
+  gl_FragColor = vec4(waterLinear, 1.0);
   // Shading is done in linear space (sRGB textures decode on sampling). Encode for the screen
   // when drawing straight to it; into the post-processing buffer this is a no-op.
   #include <colorspace_fragment>

@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import { Box3, Vector3 } from 'three';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { CameraControls, PerformanceMonitor } from '@react-three/drei';
+import { CameraControls, CameraControlsImpl, PerformanceMonitor } from '@react-three/drei';
 import { EffectComposer } from '@react-three/postprocessing';
 import {
   homePose3D,
@@ -23,6 +23,8 @@ import {
   worldHeight,
   fromWorld,
   minCameraDistance,
+  MAX_POLAR_DEG,
+  PAN_LIMIT,
   SEA_HINT_MIN_PX,
   screenPx,
   FUEGIA_MIN_DISTANCE,
@@ -161,12 +163,11 @@ function SceneContent({
 
 export type Map3DLayerProps = Layer3DProps;
 
-// Zoom range of the orbit camera, as a distance to its target (the overview is ~800 on desktop
-// and ~2250 on a phone). Closer than MIN_DISTANCE the camera would graze the 4 km plateau
-// (25 world units high at x50); farther than MAX_DISTANCE the view would be mostly the paper
-// beyond the faded southern lands (WORLD_FADE_END).
+// Zoom range of the orbit camera, as a distance to its target. Closer than MIN_DISTANCE the camera
+// would graze the 4 km plateau (25 world units high at x50). The farthest view is the overview
+// (homeDistance3D: ~800 on desktop and ~2250 on a phone), where the whole continent fits; farther
+// the camera would see past the lands of the rest of the world (WORLD_FADE_END).
 const MIN_DISTANCE = 60;
-const MAX_DISTANCE = 3600;
 // The camera only gets closer than MIN_DISTANCE around Tierra del Fuego; there the near plane must
 // come in too, or the land in front of the target would be clipped.
 const NEAR = 10;
@@ -208,11 +209,18 @@ function ControlsBridge({
     (window as unknown as { __gl?: unknown }).__gl = gl;
 
     cc.minPolarAngle = 0;
-    cc.maxPolarAngle = (60 * Math.PI) / 180;
+    cc.maxPolarAngle = (MAX_POLAR_DEG * Math.PI) / 180;
     cc.smoothTime = 0.25;
 
+    // Dragging moves over the map, like in the 2D view; the right button or two fingers turn and tilt.
+    const { ACTION } = CameraControlsImpl;
+    cc.mouseButtons.left = ACTION.SCREEN_PAN;
+    cc.mouseButtons.right = ACTION.ROTATE;
+    cc.touches.one = ACTION.TOUCH_SCREEN_PAN;
+    cc.touches.two = ACTION.TOUCH_DOLLY_ROTATE;
+
     // Boundary box enclosing continent and surrounding ocean navigation area
-    const bbox = new Box3(new Vector3(-800, -50, -800), new Vector3(800, 2500, 800));
+    const bbox = new Box3(new Vector3(-PAN_LIMIT, -50, -PAN_LIMIT), new Vector3(PAN_LIMIT, 2500, PAN_LIMIT));
     cc.setBoundary(bbox);
 
     if (phase === 'approach') {
@@ -271,7 +279,7 @@ function ControlsBridge({
     const smooth = !reduced;
     const { cmd } = command;
     const aspect = size.vw / size.vh;
-    const clampDistance = (d: number) => Math.min(MAX_DISTANCE, Math.max(cc.minDistance, d));
+    const clampDistance = (d: number) => Math.min(cc.maxDistance, Math.max(cc.minDistance, d));
     // Where the camera ends up; reported right away so clusters split as soon as you zoom,
     // without waiting for the 'rest' event (instant moves under reduced motion may not fire it).
     let endDistance = cc.distance;
@@ -315,6 +323,8 @@ function ControlsBridge({
     cc.minDistance = minCameraDistance(at.x, at.y, MIN_DISTANCE);
     // Panning out of Tierra del Fuego while close: back off before reaching the ice plateau.
     if (cc.distance < cc.minDistance - 0.01) void cc.dollyTo(cc.minDistance, !reduced);
+    // A narrower window has a farther overview: come back in when the window gets wider.
+    if (cc.distance > cc.maxDistance + 0.01) void cc.dollyTo(cc.maxDistance, !reduced);
     const near = cc.distance < MIN_DISTANCE ? NEAR_CLOSE : NEAR;
     if (camera.near !== near) {
       camera.near = near;
@@ -331,7 +341,7 @@ function ControlsBridge({
       // The zoom into an expedition drives the camera on every frame: gestures would fight it.
       enabled={phase !== 'approach' && phase !== 'dive'}
       minDistance={MIN_DISTANCE}
-      maxDistance={MAX_DISTANCE}
+      maxDistance={homeDistance3D(size.vw / size.vh)}
     />
   );
 }

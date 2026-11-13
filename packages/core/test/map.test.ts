@@ -36,6 +36,8 @@ describe('projection', () => {
     ['Orcadas', -44.74, -60.74],
     ['Polo Sur', 0, -90],
     ['Ushuaia', -68.3, -54.8],
+    // North of the equator too: the 3D map draws the rest of the world up to 60° N.
+    ['Madrid', -3.7, 40.4],
   ])('round-trips through unproject for %s', (_, lon, lat) => {
     const p = project(lon, lat);
     const back = unproject(p.x, p.y);
