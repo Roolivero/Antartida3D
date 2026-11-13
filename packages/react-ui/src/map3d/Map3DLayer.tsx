@@ -455,6 +455,7 @@ export function Map3DLayer({
   phase,
   diveTarget,
   markers,
+  shown,
   onPick,
   command,
   onCameraRest,
@@ -609,7 +610,7 @@ export function Map3DLayer({
                     zIndex,
                   }}
                 >
-                  <MarkerButton m={m} style={{ left: 0, top: 0 }} onPick={onPick} />
+                  <MarkerButton m={m} style={{ left: 0, top: 0 }} shown={m.key === shown} onPick={onPick} />
                 </div>
               );
             })}
@@ -628,7 +629,7 @@ export function Map3DLayer({
                     zIndex,
                   }}
                 >
-                  <MarkerButton m={sm} style={{ left: 0, top: 0 }} onPick={onPick} />
+                  <MarkerButton m={sm} style={{ left: 0, top: 0 }} shown={sm.key === shown} onPick={onPick} />
                 </div>
               );
             })}

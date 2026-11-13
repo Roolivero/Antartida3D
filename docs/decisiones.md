@@ -143,6 +143,22 @@ Pendiente, con issue propio: la fauna y el Irízar de ambiente de #16 son lámin
 - **Marcadores del mar (S7 y S9):** Muestran solo el icono circular en reposo para no saturar el mapa con texto; el nombre y lugar emergen en hover o foco de teclado con Tab. Al activarse abren la ficha temática con fuentes oficiales verificadas. Se apilan en z-index por debajo de paneles, controles y leyenda.
 
 
+### Carteles del mapa cerrados (#54, 12-11-2026)
+
+Pedido de quien lleva el issue: los carteles de los marcadores no están abiertos de entrada, para que dé curiosidad tocar el marcador.
+
+- **Ningún cartel abierto de entrada**, ni en el relieve 3D ni en el mapa 2D. Vale para todos los marcadores: expediciones, ampliaciones previstas, próximamente y puntos del mar.
+- **Celular (toque o lápiz):** el primer toque muestra el cartel del marcador. El segundo toque abre la expedición o la ficha. Tocar otro marcador muestra el cartel de ese otro. Tocar el mapa cierra el cartel.
+- **Mouse:** pasar el cursor por encima muestra el cartel. Un clic abre.
+- **Teclado:** el foco muestra el cartel. Enter abre.
+- **Grupos de marcadores:** no cambian; un toque acerca.
+- **Dónde está la regla:** `markerPress(shown, key, touch)` en `core/src/markers.ts`, con pruebas. La interfaz distingue el dedo del mouse por el `pointerType` del clic (`MarkerButton` en `react-ui/src/map/Markers.tsx`). El cartel mostrado se guarda en `MapView.tsx` y se marca con la clase `.mk.shown`.
+- **Lado del cartel:** se abre a la derecha, salvo que ahí se salga de la pantalla y a la izquierda haya más lugar (`labelSide` en `core/src/labels.ts`). Se muestra uno solo por vez y por encima de todo, así que ya no hace falta evitar choques entre carteles: se quitó `placeLabels` y la constante `LABELS_MIN_PX`.
+- **Pruebas e2e:** entran a las expediciones con clic de mouse, así que siguen entrando con un clic. No se cambió ninguna.
+- **Queda igual:** el texto que lee un lector de pantalla en cada marcador. Con un lector de pantalla en celular puede hacer falta activar dos veces; no se probó con uno real.
+- **Reemplaza** lo que decía `docs/diseno/HANDOFF.md` sobre etiquetas siempre visibles y la nota «Marcadores del mar» de más arriba en lo que hace al toque en celular.
+
+
 ## Benchmark
 
 - Lighthouse, peso, pan y pinch corren en Chromium headless sin GPU. Las cifras de frames e interacción sirven para comparar las apps entre sí, no como valores absolutos de un teléfono real.

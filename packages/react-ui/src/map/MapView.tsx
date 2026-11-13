@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react';
 import {
   DRAG_THRESHOLD, EXPEDITION_POINT, HOME, KEY_PAN, MIN_K, PTS, VOYAGE_POINT, ZOOM_MS,
-  buildMarkers, diveView, geometry, isWheelNotch, keyView, panBy, wheelFactor, zoomAround, zoomCenter,
+  buildMarkers, diveView, markerPress, geometry, isWheelNotch, keyView, panBy, wheelFactor, zoomAround, zoomCenter,
   type MapPoint, type Marker, type SeaPoint, type Size, type View,
 } from '@antartida/core';
 import { useReducedMotion, useTimers } from '../hooks.ts';
@@ -101,6 +101,8 @@ export function MapView({
   const [anim, setAnim] = useState<Anim>('');
   const [touched, setTouched] = useState(false);
   const [sheet, setSheet] = useState<MapPoint | SeaPoint | null>(null);
+  // Key of the marker whose label a first touch brought into view.
+  const [shown, setShown] = useState<string | null>(null);
   const [list, setList] = useState(false);
   const later = useTimers();
   const reduced = useReducedMotion();
@@ -186,6 +188,8 @@ export function MapView({
   };
 
   const onDown = (e: PointerEvent) => {
+    // A press anywhere else puts the label away.
+    if (!(e.target as Element).closest?.('.mk')) setShown(null);
     if (phase !== 'idle') return;
     const p = rel(e);
     const g = gesture.current;
@@ -297,13 +301,17 @@ export function MapView({
     }
   };
 
-  const onPick = (m: Marker) => {
+  const onPick = (m: Marker, touch: boolean) => {
     if (gesture.current.dragged) return;
     if (m.kind === 'cluster') {
+      setShown(null);
       if (is3D) send3D({ type: 'focus', view: m.target });
       else animateTo(m.target);
+    } else if (markerPress(shown, m.key, touch) === 'show') setShown(m.key);
+    else {
+      setShown(null);
+      openPoint(m.point);
     }
-    else openPoint(m.point);
   };
 
   const markers = useMemo(() => buildMarkers(size, view, explored, PTS), [size, view, explored]);
@@ -339,13 +347,14 @@ export function MapView({
               phase={phase}
               diveTarget={diveTarget}
               markers={markers}
+              shown={shown}
               onPick={onPick}
               command={command}
               onCameraRest={setView}
               voyage={voyaging ? voyage.bus : null}
             />
           ) : (
-            <Map2DLayer geo={geo} view={view} anim={anim} phase={phase} markers={markers} onPick={onPick} />
+            <Map2DLayer geo={geo} view={view} anim={anim} phase={phase} markers={markers} shown={shown} onPick={onPick} />
           )}
         </div>
 

@@ -87,8 +87,8 @@ Textura: filtros SVG en `Main.dc.html` → `#wc`, `#wcs`, `#ink`, `#bleed` (feTu
 - Capa del mapa con `transform: translate() scale(k)`, `k` entre 1 y 5. Pan con arrastre (umbral 6 px para no confundir con tap), pinch con dos punteros, rueda, botones +/−/reset, flechas y +/− con foco en el mapa.
 - Los marcadores son **botones HTML** en una capa encima (no dentro del SVG), con posición calculada en px para que no escalen con el zoom. Área táctil 48 px.
 - Clustering greedy por distancia **en pantalla** (< 46 px). El grupo muestra un contador; si contiene el punto activo, borde ocre. Tocarlo acerca hasta que se separen.
-- Las etiquetas de B/C aparecen cuando el mapa mide más de ~640 px de lado (zoom o escritorio). La de A siempre se ve.
-- A abre la expedición. B/C abren una ficha (título, lugar, pregunta provisional, etiqueta).
+- Las etiquetas están cerradas de entrada (#54). Se muestran al pasar el cursor, con el foco del teclado o con el primer toque en celular; el segundo toque abre. Detalle en `docs/decisiones.md`, «Carteles del mapa cerrados».
+- A abre la expedición. B/C abren una ficha (título, lugar, pregunta provisional, etiqueta). En celular, recién con el segundo toque.
 - "Ver como lista" muestra los tres grupos con encabezados reales y botones; no depende del mapa.
 
 ### Transición (1,5 s)
