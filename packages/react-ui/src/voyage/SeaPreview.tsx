@@ -9,6 +9,9 @@ type Species = NonNullable<SeaPoint['targetSpecies']>;
 const PREVIEWS: Record<Species, { boxes: readonly Box[]; motion: PreviewMotion; lift?: number }> = {
   humpback: { boxes: SEA_MODELS.humpback, motion: 'swim' },
   penguins: { boxes: SEA_MODELS.emperor, motion: 'sway', lift: 0.22 },
+  orca: { boxes: SEA_MODELS.orca, motion: 'swim' },
+  minke: { boxes: SEA_MODELS.minke, motion: 'swim' },
+  seal: { boxes: SEA_MODELS.seal, motion: 'still' },
   irizar: { boxes: VEHICLE_MODELS.irizar, motion: 'still' },
   iceberg: { boxes: SEA_MODELS['iceberg-lg'], motion: 'still' },
 };

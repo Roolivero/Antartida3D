@@ -451,7 +451,10 @@ test.describe('3D relief view', () => {
       await page.locator(`[data-key="${key}"] button`).evaluate((b: HTMLElement) => b.click());
       await expect(sheet).toBeVisible();
     };
-    for (const key of ['sea-ballena', 'sea-pinguino', 'sea-irizar', 'sea-tempano']) {
+    // The minke whale and the leopard seal are drawn only on wide screens.
+    const wide = (page.viewportSize()?.width ?? 0) > 820;
+    const drawn = ['sea-ballena', 'sea-pinguino', 'sea-irizar', 'sea-tempano', 'sea-orca', ...(wide ? ['sea-minke', 'sea-leopardo'] : [])];
+    for (const key of drawn) {
       await open(key);
       await expect(sheet.locator('.vpreview canvas')).toHaveCount(1);
       await page.keyboard.press('Escape');

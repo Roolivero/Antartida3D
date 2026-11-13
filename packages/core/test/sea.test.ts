@@ -275,8 +275,8 @@ describe('sea (fauna, icebergs, and ARA Almirante Irizar)', () => {
   });
 
   describe('sea points of interest (SEA_POINTS)', () => {
-    it('has 5 sea points of interest with verified sources or pending tag', () => {
-      expect(SEA_POINTS).toHaveLength(5);
+    it('has 8 sea points of interest with verified sources or pending tag', () => {
+      expect(SEA_POINTS).toHaveLength(8);
 
       for (const p of SEA_POINTS) {
         expect(p.id).toMatch(/^sea-/);
