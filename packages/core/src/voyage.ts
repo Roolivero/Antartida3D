@@ -166,6 +166,8 @@ export interface VoyageStop {
   milestone: Milestone;
   /** Fraction of the trip where the milestone opens. */
   t: number;
+  /** Where its pin stands, in map space: the place of the milestone if it has one, else the point of the path. */
+  pin: Point;
 }
 
 const STOP_SAMPLES = 800;
@@ -182,7 +184,8 @@ function buildStops(kind: TransportKind): VoyageStop[] {
       const target = project(anchor[0], anchor[1]);
       index = samples.reduce((best, p, i) => (Math.hypot(p.x - target.x, p.y - target.y) < Math.hypot(samples[best].x - target.x, samples[best].y - target.y) ? i : best), 0);
     }
-    return { milestone, t: index / STOP_SAMPLES };
+    const pin = milestone.place ? project(milestone.place[0], milestone.place[1]) : samples[index];
+    return { milestone, t: index / STOP_SAMPLES, pin: { x: pin.x, y: pin.y } };
   });
   return stops;
 }

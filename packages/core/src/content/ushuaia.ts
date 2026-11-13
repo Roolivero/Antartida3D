@@ -161,6 +161,8 @@ export interface Milestone {
   id: string;
   title: string;
   anchor: MilestoneAnchor;
+  /** The place itself as [lon, lat], when the trip only passes near it. Its pin stands there and not on the path. */
+  place?: readonly [lon: number, lat: number];
   /** Transports that pass by it. */
   kinds: readonly TransportKind[];
   /** Explorar: the essential, one or two sentences. */
@@ -200,6 +202,8 @@ export const MILESTONES: readonly Milestone[] = [
     id: 'hornos',
     title: 'Cabo de Hornos',
     anchor: [-67.47, -56.22],
+    // Southern tip of Isla Hornos as the relief of this map draws it (IBCSO v2); see desde-ushuaia-fuentes.md.
+    place: [-67.27, -55.97],
     kinds: ['ship'],
     essential: { text: 'El último pedazo de tierra de América. Cientos de barcos se hundieron en estas aguas.', kind: 'real', sources: ['I5'] },
     more: [

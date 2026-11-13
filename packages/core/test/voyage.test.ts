@@ -146,6 +146,21 @@ describe('voyage path', () => {
     expect(voyageStops('ship')).toHaveLength(MILESTONES.length);
   });
 
+  it('stands the pin of Cabo de Hornos on the cape, not on the path, and every other pin on the path', () => {
+    for (const stop of voyageStops('ship')) {
+      const onPath = voyageAt('ship', stop.t);
+      const off = Math.hypot(stop.pin.x - onPath.x, stop.pin.y - onPath.y);
+      if (stop.milestone.id !== 'hornos') expect(off).toBe(0);
+      else {
+        const { lon, lat } = unproject(stop.pin.x, stop.pin.y);
+        expect(lon).toBeCloseTo(-67.27, 2);
+        expect(lat).toBeCloseTo(-55.97, 2);
+        // The ship passes south-east of the cape, in open sea.
+        expect(off).toBeGreaterThan(2);
+      }
+    }
+  });
+
   it('flies a shorter path than the ship sails', () => {
     const length = (kind: 'ship' | 'plane') => {
       let total = 0;
