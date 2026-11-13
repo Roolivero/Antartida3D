@@ -1505,9 +1505,11 @@ details.orc-more > summary:focus-visible {
     font-size: 20px;
   }
 
+  /* Same width and right edge as the chapter panel below, so the steps sit centred over it. */
   .orc-steps-nav {
     width: auto;
-    flex: 1;
+    flex: 0 1 480px;
+    margin-left: auto;
     display: flex;
     justify-content: center;
   }
