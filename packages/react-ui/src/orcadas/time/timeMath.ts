@@ -20,6 +20,8 @@ export const BUILDING_LABELS: Record<BuildingId, string> = {
   moneta: 'Casa Moneta (madera, 1905)',
   radioMast: 'Torres de radio (1927)',
   modern: 'Laboratorio LABORC y pabellones',
+  flag: 'Pabellón nacional',
+  windMast: 'Mástil de viento',
 };
 
 export function seasonForMonth(month: number): string {
@@ -42,10 +44,9 @@ export function seasonForMonth(month: number): string {
 }
 
 export function seaIceDescription(iceFraction: number): string {
-  if (iceFraction >= 0.9) return 'Bahía Scotia cerrada por pack compacto';
-  if (iceFraction >= 0.5) return 'Hielo marino espeso en formación o ruptura';
-  if (iceFraction > 0) return 'Bandejones sueltos y escombros de hielo';
-  return 'Aguas abiertas con témpanos aislados';
+  if (iceFraction >= 1) return 'bahía cerrada';
+  if (iceFraction > 0) return 'hielo suelto';
+  return 'bahía abierta';
 }
 
 /**

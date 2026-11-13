@@ -161,16 +161,17 @@ export function Barometer({
         />
 
         {/* Weather regime inscriptions on the dial */}
-        <text x={cx - 34} y={cy + 40} textAnchor="middle" className="orc-obs-svg-dial-word">
+        {/* Inside the ring of numbers, so no word touches a number */}
+        <text x={cx - 27} y={cy + 17} textAnchor="middle" transform={`rotate(-38 ${cx - 27} ${cy + 17})`} className="orc-obs-svg-dial-word">
           TEMPESTAD
         </text>
-        <text x={cx} y={cy - 30} textAnchor="middle" className="orc-obs-svg-dial-word">
+        <text x={cx} y={cy - 22} textAnchor="middle" className="orc-obs-svg-dial-word">
           CAMBIO
         </text>
-        <text x={cx + 34} y={cy + 40} textAnchor="middle" className="orc-obs-svg-dial-word">
+        <text x={cx + 27} y={cy + 17} textAnchor="middle" transform={`rotate(38 ${cx + 27} ${cy + 17})`} className="orc-obs-svg-dial-word">
           CALMA
         </text>
-        <text x={cx} y={cy + 56} textAnchor="middle" className="orc-obs-svg-tag">
+        <text x={cx} y={cy + 60} textAnchor="middle" className="orc-obs-svg-tag">
           hPa
         </text>
 
@@ -294,7 +295,7 @@ export function Barometer({
                     textAnchor="end"
                     className="orc-obs-svg-scale-num"
                   >
-                    {hpa}h
+                    {hpa}
                   </text>
                 )}
                 {isHalf && (

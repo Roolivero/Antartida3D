@@ -1,7 +1,20 @@
 import { BufferAttribute, BufferGeometry, PlaneGeometry } from 'three';
-import { createSeededRng } from '@antartida/core';
-import { buildBoxGeometry, type Box } from '../voyage/vehicles.ts';
+import {
+  DIORAMA_METERS_PER_UNIT,
+  createSeededRng,
+  STAGE_HALF_EXTENT,
+  STATION_GROUND_Y,
+  STATION_LAYOUT,
+  worldCoastDistance,
+  type RoofShape,
+  type SiteColour,
+} from '@antartida/core';
+import type { Box } from '../voyage/vehicles.ts';
 import { SEA_MODELS } from '../voyage/sightingModels.ts';
+
+/** Building colours: orange from OpenStreetMap Maxar imagery, neutral grey for unassigned modules. */
+export const OSM_ORANGE = 0xff4500;
+export const UNKNOWN_BUILDING_COLOUR = 0x82888a;
 
 // Shared muted palette matching voyage/sightingModels.ts and voyage/vehicles.ts
 export const VOXEL_PALETTE = {
@@ -43,18 +56,15 @@ const {
   ICE_BLUE,
   ORANGE,
   RED,
-  RED_DARK,
   CREAM,
   WOOD,
   WOOD_LIGHT,
   SEA_GREY,
   BROWN,
   BROWN_DARK,
-  WHALE_GREY,
   LAMP,
   ZINC,
   SKY,
-  NAVY_ROOF,
   WINDOW_DAY,
   SEAL_DARK,
   SEAL_BELLY,
@@ -64,9 +74,14 @@ const {
 export interface SeaIcePlate {
   x: number;
   z: number;
-  radius: number;
+  /** Half size along local x and z, in world units. */
+  sizeX: number;
+  sizeZ: number;
   rotY: number;
+  /** seaIce value from which the plate appears (it melts into the solid sheet later). */
   threshold: number;
+  /** Floe shape variant index (0..3). */
+  variant: number;
 }
 
 export interface IcebergInstance {
@@ -78,18 +93,6 @@ export interface IcebergInstance {
   rotY: number;
   phase: number;
   variant: 'tabular' | 'pinnacle';
-}
-
-export interface PenguinInstance {
-  x: number;
-  y: number;
-  z: number;
-  rotY: number;
-  phase: number;
-  speed: number;
-  mode: 'walk' | 'slide';
-  species: 'adelie' | 'chinstrap';
-  lineIndex: number;
 }
 
 export function offsetBoxes(
@@ -117,108 +120,6 @@ export function mirrorZBoxes(boxes: readonly Box[]): Box[] {
 // ============================================================================
 // 1. FAUNA VOXEL MODELS (18 to 26 boxes per model)
 // ============================================================================
-
-/**
- * Standing penguin helper (+x is beak/front, +y is up, feet rest on y = 0).
- * Clear upright silhouette with black back/tail, wide white chest/belly, orange webbed feet,
- * pointed beak, side flippers, and species-specific facial markings.
- */
-function buildStandingPenguinBoxes(species: 'adelie' | 'chinstrap'): Box[] {
-  const faceMarks: Box[] =
-    species === 'adelie'
-      ? [
-          // Adélie: solid black head with crisp white eye rings and black pupils
-          [0.05, 0.62, 0.098, 0.055, 0.055, 0.012, WHITE],
-          [0.05, 0.62, -0.098, 0.055, 0.055, 0.012, WHITE],
-          [0.055, 0.62, 0.105, 0.024, 0.024, 0.008, BLACK],
-          [0.055, 0.62, -0.105, 0.024, 0.024, 0.008, BLACK],
-          // Reddish-orange feathered base of bill
-          [0.12, 0.60, 0, 0.06, 0.042, 0.056, RED],
-          [0.165, 0.595, 0, 0.055, 0.028, 0.038, ORANGE],
-        ]
-      : [
-          // Chinstrap: white face cheeks & throat, black crown, thin black strap under chin
-          [0.045, 0.59, 0, 0.14, 0.11, 0.196, WHITE],
-          [0.065, 0.62, 0.101, 0.026, 0.026, 0.01, BLACK],
-          [0.065, 0.62, -0.101, 0.026, 0.026, 0.01, BLACK],
-          // Characteristic thin black chinstrap line on both cheeks and under chin
-          [0.04, 0.565, 0.101, 0.022, 0.09, 0.008, BLACK],
-          [0.04, 0.565, -0.101, 0.022, 0.09, 0.008, BLACK],
-          [0.075, 0.532, 0, 0.045, 0.02, 0.202, BLACK],
-          // Black bill with orange lower base
-          [0.13, 0.60, 0, 0.075, 0.04, 0.052, BLACK],
-          [0.175, 0.595, 0, 0.05, 0.026, 0.036, BLACK],
-        ];
-
-  return [
-    // Webbed feet & ankle shanks
-    [0.05, 0.02, 0.075, 0.16, 0.04, 0.09, ORANGE],
-    [0.05, 0.02, -0.075, 0.16, 0.04, 0.09, ORANGE],
-    [0.12, 0.015, 0.075, 0.05, 0.028, 0.105, ORANGE],
-    [0.12, 0.015, -0.075, 0.05, 0.028, 0.105, ORANGE],
-    [0.01, 0.06, 0.07, 0.07, 0.06, 0.065, WHITE],
-    [0.01, 0.06, -0.07, 0.07, 0.06, 0.065, WHITE],
-    // Stiff tail wedge at -x
-    [-0.14, 0.07, 0, 0.12, 0.045, 0.11, BLACK],
-    [-0.19, 0.045, 0, 0.08, 0.03, 0.075, BLACK],
-    // Stepped black back & body core
-    [-0.01, 0.19, 0, 0.23, 0.22, 0.26, BLACK],
-    [-0.01, 0.37, 0, 0.22, 0.20, 0.24, BLACK],
-    [-0.005, 0.51, 0, 0.19, 0.12, 0.21, BLACK],
-    // Head & crown
-    [0.01, 0.61, 0, 0.18, 0.13, 0.19, BLACK],
-    [0.005, 0.685, 0, 0.14, 0.035, 0.15, BLACK],
-    // Broad bright white belly & chest wrapping forward (+x)
-    [0.055, 0.19, 0, 0.14, 0.20, 0.245, WHITE],
-    [0.06, 0.36, 0, 0.135, 0.20, 0.225, WHITE],
-    [0.055, 0.49, 0, 0.12, 0.10, 0.19, WHITE],
-    // Articulated-look side flippers (upper wing + tapered lower tip, left & right)
-    [-0.01, 0.38, 0.145, 0.11, 0.18, 0.036, BLACK],
-    [0.01, 0.24, 0.152, 0.085, 0.15, 0.032, BLACK],
-    [0.03, 0.31, 0.148, 0.03, 0.24, 0.038, WHITE],
-    [-0.01, 0.38, -0.145, 0.11, 0.18, 0.036, BLACK],
-    [0.01, 0.24, -0.152, 0.085, 0.15, 0.032, BLACK],
-    [0.03, 0.31, -0.148, 0.03, 0.24, 0.038, WHITE],
-    ...faceMarks,
-  ];
-}
-
-export const ADELIE_PENGUIN_BOXES: readonly Box[] = buildStandingPenguinBoxes('adelie');
-export const CHINSTRAP_PENGUIN_BOXES: readonly Box[] = buildStandingPenguinBoxes('chinstrap');
-
-/**
- * Penguin tobogganing on its belly (+x forward down the slope, head raised looking ahead).
- * 20 boxes.
- */
-export const SLIDING_PENGUIN_BOXES: readonly Box[] = [
-  // White belly sliding on snow
-  [0, 0.05, 0, 0.44, 0.08, 0.24, WHITE],
-  [0.14, 0.08, 0, 0.22, 0.09, 0.21, WHITE],
-  // Black back over the torso
-  [-0.02, 0.13, 0, 0.44, 0.11, 0.23, BLACK],
-  [-0.26, 0.10, 0, 0.12, 0.06, 0.14, BLACK],
-  [-0.34, 0.08, 0, 0.09, 0.035, 0.09, BLACK],
-  // Outstretched balancing flippers on both sides
-  [0.04, 0.09, 0.17, 0.13, 0.03, 0.14, BLACK],
-  [0.02, 0.08, 0.27, 0.09, 0.025, 0.10, BLACK],
-  [0.08, 0.09, 0.19, 0.03, 0.032, 0.18, WHITE],
-  [0.04, 0.09, -0.17, 0.13, 0.03, 0.14, BLACK],
-  [0.02, 0.08, -0.27, 0.09, 0.025, 0.10, BLACK],
-  [0.08, 0.09, -0.19, 0.03, 0.032, 0.18, WHITE],
-  // Raised neck & head looking forward (+x)
-  [0.22, 0.18, 0, 0.15, 0.14, 0.18, BLACK],
-  [0.25, 0.16, 0, 0.12, 0.11, 0.185, WHITE],
-  [0.25, 0.25, 0, 0.15, 0.12, 0.16, BLACK],
-  // Eye rings
-  [0.28, 0.26, 0.082, 0.045, 0.045, 0.01, WHITE],
-  [0.28, 0.26, -0.082, 0.045, 0.045, 0.01, WHITE],
-  // Forward beak
-  [0.35, 0.24, 0, 0.07, 0.038, 0.048, RED],
-  [0.40, 0.235, 0, 0.05, 0.026, 0.034, ORANGE],
-  // Orange webbed feet kicking behind (-x)
-  [-0.32, 0.04, 0.07, 0.12, 0.035, 0.075, ORANGE],
-  [-0.32, 0.04, -0.07, 0.12, 0.035, 0.075, ORANGE],
-];
 
 /**
  * Weddell seal resting on beach/ice (+x head, +y up). Mottled dark slate back,
@@ -371,252 +272,161 @@ export const SNOW_PETREL_MODEL: BirdVoxelModel = {
 // 2. STATION BUILDINGS & INSTRUMENTS VOXEL MODELS (16 to 54 boxes per model)
 // ============================================================================
 
+export function resolveBuildingColour(colour?: SiteColour): number {
+  switch (colour) {
+    case 'orange':
+      return OSM_ORANGE;
+    case 'black':
+      return VOXEL_PALETTE.BLACK;
+    case 'stone':
+      return VOXEL_PALETTE.ROCK;
+    case 'unknown':
+    default:
+      return UNKNOWN_BUILDING_COLOUR;
+  }
+}
+
+/**
+ * Generic modular station building with real measured dimensions.
+ * Long side along local +x, base at y = 0, centered on origin.
+ */
+export function buildModuleBoxes(
+  length: number,
+  width: number,
+  height: number,
+  colour?: SiteColour,
+  roof: RoofShape = 'flat',
+  isNight = false
+): Box[] {
+  const bodyCol = resolveBuildingColour(colour);
+  const winCol = isNight ? LAMP : WINDOW_DAY;
+  // Photos: buildings on a black plinth (stilts), walls with a row of small windows.
+  const plinthH = Math.max(0.08, height * 0.16);
+  const roofH = roof === 'flat' ? height * 0.12 : height * 0.42;
+  const wallH = height - plinthH - roofH;
+  const y0 = plinthH + wallH;
+  const winS = Math.min(0.2, wallH * 0.42);
+  const winY = plinthH + wallH * 0.58;
+  const doorW = Math.min(0.24, width * 0.3);
+  const doorH = Math.min(wallH * 0.82, 0.42);
+
+  const boxes: Box[] = [
+    [0, plinthH / 2, 0, length * 0.96, plinthH, width * 0.9, BLACK],
+    [0, plinthH + wallH / 2, 0, length, wallH, width, bodyCol],
+    // Door on the short end (+x), with a black frame and a step
+    [length / 2 + 0.012, plinthH + doorH / 2, 0, 0.03, doorH + 0.04, doorW + 0.05, BLACK],
+    [length / 2 + 0.022, plinthH + doorH / 2, 0, 0.02, doorH, doorW, CREAM],
+    [length / 2 + 0.09, plinthH * 0.5, 0, 0.16, plinthH, doorW + 0.08, ZINC],
+  ];
+  // A row of windows along both long sides, about one every 0.55 units.
+  const count = Math.max(1, Math.floor((length - 0.3) / 0.55));
+  for (let i = 0; i < count; i++) {
+    const x = -length / 2 + ((i + 0.5) * length) / count;
+    for (const side of [1, -1]) {
+      const z = (side * width) / 2;
+      boxes.push(
+        [x, winY, z + side * 0.012, winS + 0.04, winS + 0.04, 0.02, BLACK],
+        [x, winY, z + side * 0.022, winS, winS, 0.02, winCol]
+      );
+    }
+  }
+
+  if (roof === 'round') {
+    // Vault: three stepped layers, darker eaves along the walls.
+    boxes.push(
+      [0, y0 + roofH * 0.08, 0, length + 0.06, roofH * 0.16, width + 0.06, BLACK],
+      [0, y0 + roofH * 0.3, 0, length + 0.04, roofH * 0.3, width * 0.92, bodyCol],
+      [0, y0 + roofH * 0.6, 0, length + 0.02, roofH * 0.3, width * 0.68, bodyCol],
+      [0, y0 + roofH * 0.86, 0, length, roofH * 0.24, width * 0.36, bodyCol]
+    );
+    // Seams of the curved roof panels, about one every 0.9 units.
+    const seams = Math.floor(length / 0.9);
+    for (let i = 1; i <= seams; i++) {
+      const x = -length / 2 + (i * length) / (seams + 1);
+      boxes.push([x, y0 + roofH * 0.62, 0, 0.035, roofH * 0.62, width * 0.94, BLACK]);
+    }
+  } else if (roof === 'gabled') {
+    // Two slopes in steps, with a dark ridge.
+    boxes.push(
+      [0, y0 + roofH * 0.08, 0, length + 0.08, roofH * 0.16, width + 0.1, BLACK],
+      [0, y0 + roofH * 0.3, 0, length + 0.06, roofH * 0.28, width * 0.82, bodyCol],
+      [0, y0 + roofH * 0.56, 0, length + 0.04, roofH * 0.26, width * 0.52, bodyCol],
+      [0, y0 + roofH * 0.8, 0, length + 0.02, roofH * 0.22, width * 0.24, bodyCol],
+      [0, y0 + roofH * 0.95, 0, length + 0.04, roofH * 0.1, width * 0.1, BLACK]
+    );
+  } else {
+    // Flat roof with a parapet and a small vent.
+    boxes.push(
+      [0, y0 + roofH / 2, 0, length + 0.04, roofH, width + 0.04, BLACK],
+      [-length * 0.25, y0 + roofH + 0.06, 0, Math.min(0.3, length * 0.15), 0.12, width * 0.3, ZINC]
+    );
+  }
+  return boxes;
+}
+
 /**
  * 1. Omond House (1903 Scottish expedition stone cabin).
- * Thick dry-stone perimeter pirca walls, stepped timber & canvas roof, entrance porch,
- * stovepipe chimney, snow drifts, and deep-set window. (38 boxes)
+ * Real plan 9.0 x 4.6 m. The Antarctic Treaty Secretariat (HSM 42) states that the
+ * stone walls are partially standing.
  */
-export function buildOmondBoxes(isNight: boolean): Box[] {
-  const winCol = isNight ? LAMP : WINDOW_DAY;
-  return [
-    // Dry-stone footing & thick multi-course stone walls
-    [0, 0.12, 0, 2.65, 0.24, 2.05, ROCK_DARK],
-    [0, 0.38, 0, 2.45, 0.30, 1.85, ROCK],
-    [0, 0.68, 0, 2.40, 0.32, 1.80, 0x767b78],
-    [0, 0.98, 0, 2.44, 0.28, 1.84, ROCK],
-    // Corner stone quoins & perimeter pirca buttresses
-    [-1.18, 0.56, 0.88, 0.22, 0.92, 0.22, ROCK_DARK],
-    [1.18, 0.56, 0.88, 0.22, 0.92, 0.22, ROCK_DARK],
-    [-1.18, 0.56, -0.88, 0.22, 0.92, 0.22, ROCK_DARK],
-    [1.18, 0.56, -0.88, 0.22, 0.92, 0.22, ROCK_DARK],
-    [-1.28, 0.32, 0, 0.18, 0.52, 1.35, 0x767b78],
-    [1.28, 0.32, 0, 0.18, 0.52, 1.35, 0x767b78],
-    [0, 0.32, -0.98, 1.85, 0.52, 0.18, ROCK_DARK],
-    // Textured stone blocks on walls
-    [-0.65, 0.55, 0.92, 0.42, 0.22, 0.06, ROCK_LIGHT],
-    [0.72, 0.78, 0.92, 0.38, 0.20, 0.06, ROCK_DARK],
-    [-0.55, 0.82, -0.92, 0.48, 0.22, 0.06, ROCK_LIGHT],
-    [0.62, 0.48, -0.92, 0.44, 0.22, 0.06, ROCK_LIGHT],
-    // Stepped pitched timber & canvas roof
-    [0, 1.18, 0, 2.66, 0.12, 2.06, BROWN_DARK],
-    [0, 1.30, 0, 2.38, 0.12, 1.76, BROWN],
-    [0, 1.42, 0, 2.08, 0.12, 1.46, BROWN_DARK],
-    [0, 1.54, 0, 1.76, 0.12, 1.14, BROWN],
-    [0, 1.66, 0, 1.44, 0.12, 0.82, BROWN_DARK],
-    [0, 1.77, 0, 1.16, 0.10, 0.48, WOOD],
-    [0, 1.85, 0, 0.96, 0.08, 0.20, BROWN_DARK],
-    // Iron stovepipe chimney on roof
-    [-0.55, 1.92, -0.22, 0.22, 0.42, 0.22, BLACK],
-    [-0.55, 2.16, -0.22, 0.30, 0.06, 0.30, ZINC],
-    // Front wooden entrance vestibule (+z)
-    [-0.18, 0.46, 1.08, 0.82, 0.88, 0.52, WOOD],
-    [-0.18, 0.94, 1.10, 0.92, 0.10, 0.58, BROWN_DARK],
-    [-0.18, 1.02, 1.08, 0.68, 0.08, 0.54, BROWN],
-    [-0.18, 0.42, 1.35, 0.48, 0.74, 0.05, BROWN_DARK],
-    [-0.02, 0.42, 1.38, 0.08, 0.08, 0.04, BLACK],
-    [-0.18, 0.06, 1.48, 0.68, 0.12, 0.28, ROCK_DARK],
-    // Framed window on right front wall
-    [0.68, 0.66, 0.93, 0.46, 0.42, 0.06, CREAM],
-    [0.68, 0.66, 0.95, 0.36, 0.32, 0.05, winCol],
-    [0.68, 0.66, 0.97, 0.04, 0.34, 0.04, BLACK],
-    [0.68, 0.66, 0.97, 0.34, 0.04, 0.04, BLACK],
-    // Snow drifts along roof eaves and stone base
-    [-0.85, 1.25, 0.82, 0.72, 0.06, 0.28, WHITE],
-    [0.75, 1.25, -0.78, 0.82, 0.06, 0.28, ICE],
-    [-1.22, 0.10, 0.75, 0.55, 0.14, 0.45, WHITE],
-    [1.15, 0.10, -0.72, 0.62, 0.14, 0.48, ICE],
+export function buildOmondBoxes(_isNight = false): Box[] {
+  const l = 9.0 / DIORAMA_METERS_PER_UNIT;
+  const w = 4.6 / DIORAMA_METERS_PER_UNIT;
+  const t = 0.16;
+  const boxes: Box[] = [
+    // Stone floor inside the ruin
+    [0, 0.03, 0, l, 0.06, w, ROCK_DARK],
+    // Back wall, still standing almost whole, with a broken top
+    [0, 0.3, -w / 2 + t / 2, l, 0.5, t, ROCK],
+    [-l * 0.3, 0.6, -w / 2 + t / 2, l * 0.35, 0.12, t, ROCK_LIGHT],
+    [l * 0.2, 0.58, -w / 2 + t / 2, l * 0.25, 0.08, t, ROCK],
+    // Side walls stepping down towards the front
+    [-l / 2 + t / 2, 0.24, 0, t, 0.42, w, ROCK_LIGHT],
+    [-l / 2 + t / 2, 0.5, -w * 0.2, t, 0.12, w * 0.5, ROCK],
+    [l / 2 - t / 2, 0.2, -w * 0.1, t, 0.34, w * 0.8, ROCK],
+    // Front wall: only low stretches remain, with the gap of the old door
+    [-l * 0.3, 0.13, w / 2 - t / 2, l * 0.38, 0.2, t, ROCK],
+    [l * 0.33, 0.1, w / 2 - t / 2, l * 0.3, 0.14, t, ROCK_DARK],
+    // Stone chimney stub at the west end
+    [-l / 2 + 0.2, 0.7, -w / 2 + 0.2, 0.3, 0.3, 0.3, ROCK_DARK],
+    // Fallen stones and a weathered beam inside
+    [0.15, 0.1, 0.05, 0.3, 0.12, 0.22, ROCK_LIGHT],
+    [-0.3, 0.09, 0.15, 0.2, 0.1, 0.2, ROCK],
+    [0.1, 0.13, -0.15, l * 0.5, 0.06, 0.08, WOOD],
+    // Small plaque of the historic site (HSM 42) by the doorway
+    [0.02, 0.18, w / 2 + 0.12, 0.05, 0.36, 0.05, BROWN_DARK],
+    [0.02, 0.38, w / 2 + 0.12, 0.3, 0.18, 0.04, CREAM],
+    // Snow drifted against the back wall
+    [l * 0.1, 0.07, -w / 2 + t + 0.1, l * 0.6, 0.08, 0.18, ICE],
   ];
+  return boxes;
 }
 
 /**
- * 2. Casa Moneta (1905 wooden gable house with brick chimney).
- * Stone plinth, warm timber clapboard walls, cream corner trim, stepped red gable roof,
- * brick chimney, entrance porch, and multi-pane windows. (48 boxes)
+ * 6. Single lattice radio tower (red and white sections per reference photos).
  */
-export function buildMonetaBoxes(isNight: boolean): Box[] {
-  const winCol = isNight ? LAMP : WINDOW_DAY;
-  return [
-    // Stone foundation plinth
-    [0, 0.12, 0, 3.64, 0.24, 2.44, ROCK_DARK],
-    [0, 0.26, 0, 3.56, 0.08, 2.36, ROCK],
-    // Main horizontal timber walls (layered for clapboard texture)
-    [0, 0.62, 0, 3.44, 0.68, 2.24, WOOD_LIGHT],
-    [0, 1.18, 0, 3.44, 0.52, 2.24, 0xba8e60],
-    [0, 0.94, 0, 3.48, 0.06, 2.28, WOOD],
-    // Cream corner pilasters & wall trim
-    [-1.70, 0.85, 1.10, 0.12, 1.18, 0.12, CREAM],
-    [1.70, 0.85, 1.10, 0.12, 1.18, 0.12, CREAM],
-    [-1.70, 0.85, -1.10, 0.12, 1.18, 0.12, CREAM],
-    [1.70, 0.85, -1.10, 0.12, 1.18, 0.12, CREAM],
-    [0, 1.44, 0, 3.54, 0.08, 2.34, CREAM],
-    // Stepped oxide-red gable roof (ridge along X)
-    [0, 1.54, 0, 3.72, 0.14, 2.52, RED],
-    [0, 1.68, 0, 3.68, 0.14, 2.16, RED_DARK],
-    [0, 1.82, 0, 3.64, 0.14, 1.80, RED],
-    [0, 1.96, 0, 3.60, 0.14, 1.44, RED_DARK],
-    [0, 2.10, 0, 3.56, 0.14, 1.08, RED],
-    [0, 2.24, 0, 3.52, 0.14, 0.72, RED_DARK],
-    [0, 2.36, 0, 3.56, 0.12, 0.36, RED],
-    [0, 2.45, 0, 3.60, 0.08, 0.16, CREAM],
-    // Gable timber triangle infill on West and East ends
-    [0, 1.86, 0, 3.40, 0.56, 1.24, WOOD_LIGHT],
-    // Tall brick & metal chimney at [0.95, y, -0.35]
-    [0.95, 2.35, -0.35, 0.38, 0.82, 0.38, RED_DARK],
-    [0.95, 2.78, -0.35, 0.44, 0.08, 0.44, BLACK],
-    [0.95, 2.90, -0.35, 0.24, 0.20, 0.24, ZINC],
-    // Front entrance vestibule (+z at x = 0)
-    [0, 0.68, 1.32, 0.92, 0.96, 0.48, WOOD_LIGHT],
-    [0, 1.20, 1.34, 1.02, 0.10, 0.56, RED],
-    [0, 1.30, 1.32, 0.74, 0.10, 0.52, RED_DARK],
-    [0, 0.62, 1.57, 0.48, 0.82, 0.05, BROWN_DARK],
-    [0.16, 0.60, 1.60, 0.06, 0.08, 0.04, LAMP],
-    [0, 0.14, 1.68, 0.78, 0.16, 0.30, WOOD],
-    [0, 0.05, 1.84, 0.84, 0.10, 0.26, ROCK],
-    // Front left window (x = -1.05)
-    [-1.05, 0.88, 1.13, 0.58, 0.54, 0.06, CREAM],
-    [-1.05, 0.88, 1.15, 0.46, 0.42, 0.05, winCol],
-    [-1.05, 0.88, 1.17, 0.04, 0.44, 0.04, BLACK],
-    [-1.05, 0.88, 1.17, 0.44, 0.04, 0.04, BLACK],
-    // Front right window (x = 1.05)
-    [1.05, 0.88, 1.13, 0.58, 0.54, 0.06, CREAM],
-    [1.05, 0.88, 1.15, 0.46, 0.42, 0.05, winCol],
-    [1.05, 0.88, 1.17, 0.04, 0.44, 0.04, BLACK],
-    [1.05, 0.88, 1.17, 0.44, 0.04, 0.04, BLACK],
-    // Back windows (-z)
-    [-0.95, 0.88, -1.13, 0.54, 0.50, 0.06, CREAM],
-    [-0.95, 0.88, -1.15, 0.42, 0.38, 0.05, winCol],
-    [0.95, 0.88, -1.13, 0.54, 0.50, 0.06, CREAM],
-    [0.95, 0.88, -1.15, 0.42, 0.38, 0.05, winCol],
-    // Side gable windows (-x and +x)
-    [-1.73, 0.88, 0, 0.06, 0.52, 0.52, CREAM],
-    [-1.75, 0.88, 0, 0.05, 0.40, 0.40, winCol],
-    [1.73, 0.88, 0, 0.06, 0.52, 0.52, CREAM],
-    [1.75, 0.88, 0, 0.05, 0.40, 0.40, winCol],
-    // Historic monument plaque & snow trim
-    [0.54, 0.78, 1.14, 0.22, 0.16, 0.04, ORANGE],
-    [-1.10, 1.60, 1.12, 0.95, 0.05, 0.22, WHITE],
-    [1.10, 1.60, -1.12, 0.95, 0.05, 0.22, ICE],
+export function buildRadioTowerBoxes(height = 30 / DIORAMA_METERS_PER_UNIT): Box[] {
+  const boxes: Box[] = [
+    // Concrete foundation pad
+    [0, 0.08, 0, 0.6, 0.16, 0.6, ROCK_DARK],
+    [0, 0.18, 0, 0.44, 0.08, 0.44, ROCK],
   ];
-}
-
-/**
- * 3. Radio Telegraphy Masts (1927 twin steel lattice towers + multi-wire antenna).
- * 46 boxes.
- */
-export function buildRadioMastsBoxes(): Box[] {
-  const towerAt = (mx: number): Box[] => [
-    // Concrete & stone anchor pad
-    [mx, 0.14, 0, 0.86, 0.28, 0.86, ROCK_DARK],
-    [mx, 0.32, 0, 0.64, 0.12, 0.64, ROCK],
-    // 4 corner lattice legs rising & tapering in 3 sections
-    [mx - 0.20, 1.35, 0.20, 0.09, 2.0, 0.09, BLACK],
-    [mx + 0.20, 1.35, 0.20, 0.09, 2.0, 0.09, BLACK],
-    [mx - 0.20, 1.35, -0.20, 0.09, 2.0, 0.09, BLACK],
-    [mx + 0.20, 1.35, -0.20, 0.09, 2.0, 0.09, BLACK],
-    [mx - 0.14, 3.25, 0.14, 0.08, 2.0, 0.08, BLACK],
-    [mx + 0.14, 3.25, 0.14, 0.08, 2.0, 0.08, BLACK],
-    [mx - 0.14, 3.25, -0.14, 0.08, 2.0, 0.08, BLACK],
-    [mx + 0.14, 3.25, -0.14, 0.08, 2.0, 0.08, BLACK],
-    [mx - 0.08, 5.05, 0.08, 0.07, 1.8, 0.07, BLACK],
-    [mx + 0.08, 5.05, 0.08, 0.07, 1.8, 0.07, BLACK],
-    [mx - 0.08, 5.05, -0.08, 0.07, 1.8, 0.07, BLACK],
-    [mx + 0.08, 5.05, -0.08, 0.07, 1.8, 0.07, BLACK],
-    // Horizontal lattice cross-braces up the tower
-    [mx, 1.0, 0, 0.50, 0.07, 0.50, WHALE_GREY],
-    [mx, 2.0, 0, 0.44, 0.07, 0.44, WHALE_GREY],
-    [mx, 3.0, 0, 0.36, 0.07, 0.36, WHALE_GREY],
-    [mx, 4.0, 0, 0.30, 0.07, 0.30, WHALE_GREY],
-    [mx, 5.0, 0, 0.24, 0.07, 0.24, WHALE_GREY],
-    // Top spreader beam & white ceramic insulators
-    [mx, 5.95, 0, 0.22, 0.12, 1.45, BLACK],
-    [mx, 6.06, 0.62, 0.12, 0.14, 0.12, WHITE],
-    [mx, 6.06, -0.62, 0.12, 0.14, 0.12, WHITE],
-  ];
-
-  return [
-    ...towerAt(-5.6),
-    ...towerAt(7.2),
-    // Twin horizontal dipole wires & vertical feeder drop
-    [0.8, 6.06, 0.62, 12.8, 0.04, 0.04, BLACK],
-    [0.8, 6.06, -0.62, 12.8, 0.04, 0.04, BLACK],
-    [0.8, 6.06, 0, 0.06, 0.06, 1.28, ZINC],
-    [2.2, 4.1, 0.62, 0.04, 3.8, 0.04, BLACK],
-  ];
-}
-
-/**
- * 4. Modern Station Modules (2000+ red-orange pavilion, ochre science lab, stilts, radome, lit windows).
- * 52 boxes.
- */
-export function buildModernModulesBoxes(isNight: boolean): Box[] {
-  const winCol = isNight ? LAMP : WINDOW_DAY;
-  return [
-    // Concrete footings & steel stilts elevating main pavilion
-    [-1.5, 0.16, 0.8, 0.28, 0.32, 0.28, ZINC],
-    [0, 0.16, 0.8, 0.28, 0.32, 0.28, ZINC],
-    [1.5, 0.16, 0.8, 0.28, 0.32, 0.28, ZINC],
-    [-1.5, 0.16, -0.8, 0.28, 0.32, 0.28, ZINC],
-    [0, 0.16, -0.8, 0.28, 0.32, 0.28, ZINC],
-    [1.5, 0.16, -0.8, 0.28, 0.32, 0.28, ZINC],
-    [0, 0.34, 0, 4.05, 0.10, 2.28, BLACK],
-    // Main orange-red insulated container pavilion
-    [0, 0.98, 0, 3.92, 1.22, 2.16, RED],
-    [0, 0.52, 0, 3.98, 0.12, 2.22, RED_DARK],
-    // Vertical structural ribs on walls
-    [-1.88, 0.98, 0, 0.10, 1.24, 2.22, RED_DARK],
-    [-0.65, 0.98, 0, 0.08, 1.24, 2.20, RED_DARK],
-    [0.65, 0.98, 0, 0.08, 1.24, 2.20, RED_DARK],
-    [1.88, 0.98, 0, 0.10, 1.24, 2.22, RED_DARK],
-    // Dark navy insulated roof with overhang & snow guard
-    [0, 1.66, 0, 4.18, 0.16, 2.42, NAVY_ROOF],
-    [0, 1.78, 0, 3.96, 0.10, 2.20, 0x162f47],
-    // Roof ventilation ducts & white satellite telecom radome
-    [-1.15, 1.96, -0.35, 0.48, 0.28, 0.48, ZINC],
-    [1.15, 1.92, -0.40, 0.56, 0.18, 0.56, ZINC],
-    [1.15, 2.18, -0.40, 0.62, 0.42, 0.62, WHITE],
-    [1.15, 2.42, -0.40, 0.42, 0.16, 0.42, ICE],
-    // 4 front windows (+z) with dark frames & glowing/daylight panes
-    [-1.32, 1.04, 1.09, 0.48, 0.46, 0.05, BLACK],
-    [-1.32, 1.04, 1.11, 0.38, 0.36, 0.05, winCol],
-    [-0.44, 1.04, 1.09, 0.48, 0.46, 0.05, BLACK],
-    [-0.44, 1.04, 1.11, 0.38, 0.36, 0.05, winCol],
-    [0.44, 1.04, 1.09, 0.48, 0.46, 0.05, BLACK],
-    [0.44, 1.04, 1.11, 0.38, 0.36, 0.05, winCol],
-    [1.32, 1.04, 1.09, 0.48, 0.46, 0.05, BLACK],
-    [1.32, 1.04, 1.11, 0.38, 0.36, 0.05, winCol],
-    // Side entrance door & metal stair platform (-x)
-    [-1.98, 0.88, 0.25, 0.06, 0.88, 0.52, CREAM],
-    [-2.25, 0.40, 0.25, 0.52, 0.08, 0.72, ZINC],
-    [-2.25, 0.20, 0.72, 0.48, 0.28, 0.42, ZINC],
-    [-2.48, 0.68, 0.25, 0.05, 0.54, 0.72, BLACK],
-    // Covered utilidor bridge running north (-z) to secondary lab module
-    [-0.95, 0.78, -2.25, 0.76, 0.78, 2.40, ZINC],
-    [-0.95, 1.20, -2.25, 0.84, 0.08, 2.46, NAVY_ROOF],
-    // Secondary ochre-gold science laboratory module (LABORC) at [-1.2, y, -4.4]
-    [-1.2, 0.16, -4.4, 2.95, 0.32, 1.95, ROCK_DARK],
-    [-1.2, 0.88, -4.4, 2.84, 1.14, 1.84, ORANGE],
-    [-1.2, 0.42, -4.4, 2.90, 0.10, 1.90, BROWN],
-    [-1.2, 1.50, -4.4, 3.04, 0.16, 2.04, NAVY_ROOF],
-    [-1.2, 1.62, -4.4, 2.80, 0.08, 1.80, 0x162f47],
-    // Structural ribs on secondary module
-    [-2.58, 0.88, -4.4, 0.08, 1.16, 1.88, BROWN],
-    [0.18, 0.88, -4.4, 0.08, 1.16, 1.88, BROWN],
-    // Windows on secondary lab module (+z and -z)
-    [-1.85, 0.94, -3.47, 0.46, 0.42, 0.05, BLACK],
-    [-1.85, 0.94, -3.45, 0.36, 0.32, 0.05, winCol],
-    [-0.55, 0.94, -3.47, 0.46, 0.42, 0.05, BLACK],
-    [-0.55, 0.94, -3.45, 0.36, 0.32, 0.05, winCol],
-    [-1.85, 0.94, -5.33, 0.46, 0.42, 0.05, BLACK],
-    [-1.85, 0.94, -5.35, 0.36, 0.32, 0.05, winCol],
-    [-0.55, 0.94, -5.33, 0.46, 0.42, 0.05, BLACK],
-    [-0.55, 0.94, -5.35, 0.36, 0.32, 0.05, winCol],
-    // Solar panel & exhaust stack on lab module
-    [-1.95, 1.72, -4.4, 0.72, 0.08, 0.92, BLACK],
-    [-0.35, 1.82, -4.7, 0.18, 0.42, 0.18, ZINC],
-    // Fuel tank beside modern module
-    [2.45, 0.62, -0.4, 0.68, 0.68, 1.25, RED_DARK],
-    [2.45, 0.20, -0.4, 0.56, 0.28, 1.10, ZINC],
-  ];
+  const sections = 7;
+  const secH = (height - 0.22) / sections;
+  for (let s = 0; s < sections; s++) {
+    const col = s % 2 === 0 ? RED : WHITE;
+    const yBot = 0.22 + s * secH;
+    const taper = 1 - (s / sections) * 0.65;
+    const legOffset = 0.18 * taper;
+    const legThick = Math.max(0.035, 0.06 * taper);
+    boxes.push([-legOffset, yBot + secH / 2, -legOffset, legThick, secH, legThick, col]);
+    boxes.push([legOffset, yBot + secH / 2, -legOffset, legThick, secH, legThick, col]);
+    boxes.push([-legOffset, yBot + secH / 2, legOffset, legThick, secH, legThick, col]);
+    boxes.push([legOffset, yBot + secH / 2, legOffset, legThick, secH, legThick, col]);
+    boxes.push([0, yBot + secH, 0, legOffset * 2.2, legThick * 0.8, legOffset * 2.2, col]);
+  }
+  boxes.push([0, height + 0.15, 0, 0.04, 0.30, 0.04, BLACK]);
+  return boxes;
 }
 
 /**
@@ -755,75 +565,34 @@ export const FLAGPOLE_BASE_BOXES: readonly Box[] = [
   [0, 0.36, 0.50, 0.22, 0.10, 0.03, BLACK],
 ];
 
-/**
- * Builds 5 articulated vertical segments of the voxel Argentine flag so they can wave
- * in the wind by rigid parts. Total across the 5 segments = 20 boxes.
- */
-export function buildFlagSegmentGeometries(): BufferGeometry[] {
-  const segWidth = 0.38;
-  const segments: Box[][] = [0, 1, 2, 3, 4].map((idx) => {
-    const cx = segWidth / 2;
-    const thick = idx === 0 ? 0.07 : 0.055;
-    const base: Box[] = [
-      // Top celeste stripe
-      [cx, 0.36, 0, segWidth + 0.02, 0.36, thick, SKY],
-      // Middle white stripe
-      [cx, 0.0, 0, segWidth + 0.02, 0.36, thick, WHITE],
-      // Bottom celeste stripe
-      [cx, -0.36, 0, segWidth + 0.02, 0.36, thick, SKY],
-    ];
-    // Sol de Mayo on segments 1 and 2
-    if (idx === 1) {
-      base.push([cx + 0.06, 0.0, 0, 0.22, 0.22, thick + 0.025, LAMP]);
-      base.push([cx + 0.06, 0.0, 0, 0.28, 0.10, thick + 0.018, ORANGE]);
-    } else if (idx === 2) {
-      base.push([cx - 0.06, 0.0, 0, 0.22, 0.22, thick + 0.025, LAMP]);
-      base.push([cx - 0.06, 0.0, 0, 0.10, 0.28, thick + 0.018, ORANGE]);
-    } else {
-      // Subtle cloth seam / border detail so every segment has 4 boxes
-      base.push([cx, 0.53, 0, segWidth, 0.03, thick + 0.006, ICE]);
-    }
-    return base;
-  });
-
-  return segments.map((boxes) => buildBoxGeometry(boxes));
-}
+/** Width of each of the 5 vertical segments of the flag, in model units. */
+export const FLAG_SEGMENT_WIDTH = 0.38;
 
 /**
- * 8. Supply Crates & Fuel Drums (cajones de campaña sobre pallet).
- * 22 boxes.
+ * The Argentine flag in 5 vertical segments of boxes, each starting at its own hinge (x = 0),
+ * so the scene can chain them and make the cloth wave in the wind without a shader.
  */
-export const SUPPLY_CRATES_BOXES: readonly Box[] = [
-  // Wooden pallet base
-  [0, 0.05, 0, 1.85, 0.10, 1.35, WOOD],
-  [0, 0.11, 0, 1.78, 0.04, 1.28, BROWN],
-  // Large wooden crate 1
-  [-0.38, 0.42, 0.12, 0.86, 0.60, 0.72, WOOD_LIGHT],
-  [-0.38, 0.73, 0.12, 0.90, 0.06, 0.76, WOOD],
-  [-0.78, 0.42, 0.46, 0.08, 0.62, 0.08, BROWN],
-  [0.02, 0.42, 0.46, 0.08, 0.62, 0.08, BROWN],
-  [-0.38, 0.46, 0.49, 0.42, 0.12, 0.03, BLACK],
-  // Medium wooden crate 2 beside it
-  [0.44, 0.36, 0.18, 0.66, 0.48, 0.62, WOOD],
-  [0.44, 0.61, 0.18, 0.70, 0.05, 0.66, BROWN],
-  [0.44, 0.38, 0.50, 0.34, 0.10, 0.03, CREAM],
-  // Upper stacked small crate 3
-  [-0.28, 0.96, 0.08, 0.58, 0.42, 0.52, CREAM],
-  [-0.28, 1.18, 0.08, 0.62, 0.05, 0.56, WOOD],
-  [-0.28, 0.96, 0.35, 0.28, 0.08, 0.03, BLACK],
-  // Folded grey canvas tarpaulin
-  [0.38, 0.72, 0.15, 0.54, 0.18, 0.48, SEA_GREY],
-  [0.38, 0.82, 0.15, 0.44, 0.08, 0.38, ZINC],
-  // 2 Antarctic fuel drums at back (-z)
-  [-0.45, 0.46, -0.42, 0.44, 0.70, 0.44, RED],
-  [-0.45, 0.46, -0.42, 0.48, 0.08, 0.48, ZINC],
-  [-0.45, 0.82, -0.42, 0.46, 0.05, 0.46, BLACK],
-  [0.12, 0.46, -0.42, 0.44, 0.70, 0.44, RED_DARK],
-  [0.12, 0.46, -0.42, 0.48, 0.08, 0.48, ZINC],
-  [0.12, 0.82, -0.42, 0.46, 0.05, 0.46, BLACK],
-  // Snow drift on crate corner
-  [-0.52, 0.76, -0.10, 0.36, 0.06, 0.32, WHITE],
-];
+export const FLAG_SEGMENT_BOXES: readonly (readonly Box[])[] = [0, 1, 2, 3, 4].map((idx) => {
+  const w = FLAG_SEGMENT_WIDTH;
+  const cx = w / 2;
+  const thick = idx === 0 ? 0.07 : 0.055;
+  const base: Box[] = [
+    [cx, 0.36, 0, w + 0.02, 0.36, thick, SKY],
+    [cx, 0.0, 0, w + 0.02, 0.36, thick, WHITE],
+    [cx, -0.36, 0, w + 0.02, 0.36, thick, SKY],
+  ];
+  // Sol de Mayo across segments 1 and 2
+  if (idx === 1) {
+    base.push([cx + 0.06, 0.0, 0, 0.22, 0.22, thick + 0.025, LAMP]);
+    base.push([cx + 0.06, 0.0, 0, 0.28, 0.1, thick + 0.018, ORANGE]);
+  } else if (idx === 2) {
+    base.push([cx - 0.06, 0.0, 0, 0.22, 0.22, thick + 0.025, LAMP]);
+    base.push([cx - 0.06, 0.0, 0, 0.1, 0.28, thick + 0.018, ORANGE]);
+  } else {
+    base.push([cx, 0.53, 0, w, 0.03, thick + 0.006, ICE]);
+  }
+  return base;
+});
 
 /**
  * 9. Station Whaleboat / Chalupa pulled up on the gravel shore (+x bow, +y up).
@@ -866,13 +635,21 @@ export const STATION_BOAT_BOXES: readonly Box[] = [
  * 10. Voxel Icebergs (reused from sightingModels SEA_MODELS)
  * and Sea-Ice Floe slabs (16 boxes).
  */
-export const ICEBERG_TABULAR_BOXES: readonly Box[] = SEA_MODELS['iceberg-lg'];
-export const ICEBERG_PINNACLE_BOXES: readonly Box[] = SEA_MODELS['iceberg-sm'];
+export const ICEBERG_TABULAR_BOXES: readonly Box[] = new Proxy([] as unknown as Box[], {
+  get(_target, prop) {
+    return (SEA_MODELS['iceberg-lg'] as unknown as Record<string | symbol, unknown>)[prop];
+  },
+});
+export const ICEBERG_PINNACLE_BOXES: readonly Box[] = new Proxy([] as unknown as Box[], {
+  get(_target, prop) {
+    return (SEA_MODELS['iceberg-sm'] as unknown as Record<string | symbol, unknown>)[prop];
+  },
+});
 
 /**
- * Faceted voxel sea-ice floe (bandejón de hielo marino) with pressure-ridge rim. (16 boxes)
+ * Variant A: Faceted voxel sea-ice floe with pressure-ridge rim. (16 boxes)
  */
-export const SEA_ICE_FLOE_BOXES: readonly Box[] = [
+export const SEA_ICE_FLOE_A: readonly Box[] = [
   // Submerged pale-blue underside
   [0, -0.04, 0, 1.72, 0.08, 1.48, ICE_BLUE],
   // Main polygonal-feel stepped slab
@@ -894,6 +671,91 @@ export const SEA_ICE_FLOE_BOXES: readonly Box[] = [
   [0.98, 0.02, 0.36, 0.26, 0.08, 0.28, ICE],
   [-0.96, 0.02, -0.32, 0.28, 0.08, 0.24, WHITE],
   [0.18, 0.02, -0.94, 0.30, 0.08, 0.24, ICE_BLUE],
+];
+
+/**
+ * Variant B: Angular wedge floe with fractured edges and stepped snow drifts. (15 boxes)
+ */
+export const SEA_ICE_FLOE_B: readonly Box[] = [
+  // Submerged pale-blue underside
+  [-0.1, -0.04, 0, 1.6, 0.08, 1.4, ICE_BLUE],
+  // Main stepped wedge body
+  [0, 0.04, 0, 1.4, 0.10, 1.2, WHITE],
+  [-0.3, 0.04, 0.2, 1.1, 0.10, 0.9, ICE],
+  [-0.4, 0.04, -0.2, 1.0, 0.10, 0.8, WHITE],
+  [0.45, 0.04, 0.05, 0.65, 0.09, 0.7, ICE],
+  [0.8, 0.04, -0.05, 0.45, 0.08, 0.45, WHITE],
+  // Pressure ridges and snow crests
+  [-0.6, 0.11, 0.15, 0.35, 0.07, 0.8, WHITE],
+  [0.1, 0.11, 0.52, 0.85, 0.07, 0.28, ICE],
+  [0.05, 0.11, -0.48, 0.9, 0.07, 0.26, WHITE],
+  [-0.15, 0.10, 0.02, 0.65, 0.06, 0.55, WHITE],
+  [0.35, 0.12, -0.15, 0.3, 0.06, 0.25, ICE_BLUE],
+  // Small satellite brash fragments
+  [-0.85, 0.02, -0.5, 0.24, 0.07, 0.22, ICE],
+  [0.75, 0.02, 0.45, 0.26, 0.07, 0.25, WHITE],
+  [0.2, 0.02, -0.75, 0.22, 0.07, 0.22, ICE_BLUE],
+  [-0.2, 0.02, 0.8, 0.25, 0.07, 0.22, WHITE],
+];
+
+/**
+ * Variant C: Elongated lobed floe with indented perimeter and central snow hummock. (15 boxes)
+ */
+export const SEA_ICE_FLOE_C: readonly Box[] = [
+  // Submerged underside
+  [0, -0.04, 0, 1.9, 0.08, 1.1, ICE_BLUE],
+  // Elongated stepped body
+  [0, 0.04, 0, 1.8, 0.10, 1.0, WHITE],
+  [-0.45, 0.04, 0.15, 0.9, 0.10, 0.9, ICE],
+  [0.45, 0.04, -0.12, 0.95, 0.10, 0.85, WHITE],
+  [-0.1, 0.04, -0.25, 1.1, 0.09, 0.65, ICE],
+  [0.15, 0.04, 0.25, 1.0, 0.09, 0.65, WHITE],
+  // Raised rims and snow drifts
+  [-0.8, 0.10, 0.05, 0.28, 0.06, 0.75, WHITE],
+  [0.82, 0.10, -0.05, 0.26, 0.06, 0.68, ICE],
+  [0.05, 0.10, 0.44, 0.95, 0.06, 0.25, WHITE],
+  [-0.05, 0.10, -0.44, 0.95, 0.06, 0.25, ICE],
+  [-0.25, 0.11, 0.02, 0.55, 0.07, 0.45, WHITE],
+  [0.35, 0.12, 0.08, 0.32, 0.07, 0.28, ICE_BLUE],
+  // Brash chunks
+  [-1.02, 0.02, 0.32, 0.25, 0.07, 0.22, ICE_BLUE],
+  [1.02, 0.02, -0.28, 0.24, 0.07, 0.24, WHITE],
+  [0.48, 0.02, 0.58, 0.22, 0.07, 0.20, ICE],
+];
+
+/**
+ * Variant D: Composite floe of two fused irregular pans with pressure rubble seam. (16 boxes)
+ */
+export const SEA_ICE_FLOE_D: readonly Box[] = [
+  // Submerged underside
+  [0, -0.04, 0, 1.6, 0.08, 1.5, ICE_BLUE],
+  // Two main fused pans
+  [-0.38, 0.04, -0.05, 0.95, 0.10, 1.25, WHITE],
+  [0.38, 0.04, 0.08, 0.92, 0.10, 1.28, ICE],
+  [-0.1, 0.04, 0.35, 0.8, 0.09, 0.75, WHITE],
+  [0.1, 0.04, -0.35, 0.78, 0.09, 0.72, ICE],
+  // Pressure ridge seam where two pans fused
+  [0.02, 0.12, 0, 0.22, 0.09, 1.2, WHITE],
+  [0.05, 0.14, 0.15, 0.18, 0.07, 0.45, ICE_BLUE],
+  [-0.02, 0.13, -0.25, 0.16, 0.06, 0.5, WHITE],
+  // Perimeter ridges and hummocks
+  [-0.75, 0.10, -0.1, 0.28, 0.06, 0.82, ICE],
+  [0.75, 0.10, 0.15, 0.26, 0.06, 0.85, WHITE],
+  [-0.35, 0.11, 0.45, 0.5, 0.06, 0.25, WHITE],
+  [0.32, 0.11, -0.48, 0.52, 0.06, 0.24, ICE],
+  // Satellite brash fragments
+  [-0.88, 0.02, 0.52, 0.24, 0.07, 0.24, ICE],
+  [0.85, 0.02, -0.55, 0.25, 0.07, 0.22, ICE_BLUE],
+  [-0.15, 0.02, -0.85, 0.26, 0.07, 0.24, WHITE],
+  [0.2, 0.02, 0.88, 0.24, 0.07, 0.24, WHITE],
+];
+
+export const SEA_ICE_FLOE_BOXES = SEA_ICE_FLOE_A;
+export const SEA_ICE_FLOE_VARIANTS: readonly (readonly Box[])[] = [
+  SEA_ICE_FLOE_A,
+  SEA_ICE_FLOE_B,
+  SEA_ICE_FLOE_C,
+  SEA_ICE_FLOE_D,
 ];
 
 // ============================================================================
@@ -934,82 +796,118 @@ function fbm2D(x: number, z: number, seed: number): number {
   return val;
 }
 
+const lerpNumber = (a: number, b: number, t: number) => a + (b - a) * t;
+
 function smoothstep(edge0: number, edge1: number, x: number): number {
   const t = Math.max(0, Math.min(1, (x - edge0) / (edge1 - edge0)));
   return t * t * (3 - 2 * t);
 }
 
+/** Half side of the terrain square, in world units. */
+export const TERRAIN_HALF_EXTENT = STAGE_HALF_EXTENT;
+
 /**
- * Evaluates terrain elevation (y in world units, sea level = 0) and surface weights
- * [gravel, snow, rock] at world coordinates (x, z) on the Laurie Island isthmus.
+ * Rocky knoll of the penguin colony (reconstruction: no source places the colony). It sits on
+ * the left end of the stage, above Bahía Scotia, so the penguins can toboggan down to the water.
+ */
+export const PENGUIN_KNOLL = {
+  center: [-7.4, 1.0] as const,
+  /** Radius of the flat top where the nests are, in world units. */
+  topRadius: 1.4,
+  /** Radius where the knoll meets the ground. */
+  footRadius: 3.2,
+  /** Height of the top above the surrounding ground. */
+  height: 1.1,
+} as const;
+
+/** 0 to 1: how much a point belongs to the station pad (flat ground around each footprint). */
+function padWeight(x: number, z: number): number {
+  let w = 0;
+  for (const e of STATION_LAYOUT) {
+    if (e.id === 'boat') continue;
+    const r = Math.hypot(e.footprint[0], e.footprint[1]) / 2;
+    const d = Math.hypot(x - e.position[0], z - e.position[2]) - r;
+    w = Math.max(w, 1 - smoothstep(0.4, 1.8, d));
+  }
+  return w;
+}
+
+/** 0 to 1 height profile of the colony knoll: flat top, smooth flanks. */
+export function knollProfile(x: number, z: number): number {
+  const { center, topRadius, footRadius } = PENGUIN_KNOLL;
+  const r = Math.hypot(x - center[0], z - center[1]);
+  return 1 - smoothstep(topRadius, footRadius, r);
+}
+
+/**
+ * Terrain elevation (y in world units, sea level = 0) and surface weights [gravel, snow, rock]
+ * at world coordinates (x, z). Coast from OpenStreetMap; the relief of the hills and the colony
+ * knoll is a reconstruction (no elevation model was checked).
  */
 export function evaluateIsthmusTerrain(
   x: number,
   z: number,
   seed = 19040222
 ): { y: number; gravel: number; snow: number; rock: number } {
-  const nLow = fbm2D(x * 0.08, z * 0.08, seed);
-  const nMid = fbm2D(x * 0.22, z * 0.22, seed + 101);
+  // The diorama ends like a model on a table: the land sinks into the sea near the border.
+  const border = smoothstep(TERRAIN_HALF_EXTENT - 1, TERRAIN_HALF_EXTENT - 7, Math.max(Math.abs(x), Math.abs(z)));
+  const d = Math.min(worldCoastDistance(x, z), lerpNumber(-2, 40, border));
+  const nLow = fbm2D(x * 0.35, z * 0.35, seed);
 
-  // 1. Central isthmus saddle between Bahía Uruguay (-Z) and Bahía Scotia (+Z)
-  const isthmusXMask = 1 - smoothstep(14, 26, Math.abs(x));
-  const beachHalfWidth = 9.2 + 1.8 * smoothstep(6, 16, Math.abs(x)) + (nLow - 0.5) * 1.6;
-  const isthmusZProfile = Math.exp(-Math.pow(z / beachHalfWidth, 2) * 1.45);
-  const isthmusHeight = (2.35 * isthmusZProfile - 0.72) * isthmusXMask;
-
-  // Flatten the central station plateau around [-8..7, -4..4] so buildings sit cleanly at y = 1.45
-  const stationPad =
-    (1 - smoothstep(6.8, 11.8, Math.abs(x))) * (1 - smoothstep(3.8, 7.6, Math.abs(z)));
-
-  // 2. Western headland (Mossman Peninsula side, x < -11) — prominent glacier-draped ridge
-  const westAdvance = smoothstep(-9.5, -32, x);
-  const westZEnvelope = Math.exp(-Math.pow((z + 1.0) / 28, 2));
-  const westRidge =
-    westAdvance *
-    westZEnvelope *
-    (15.5 + 9.5 * nLow + 4.2 * Math.abs(nMid - 0.5));
-
-  // 3. Eastern mountain massif & outlet glacier (x > 9.5) — tall glaciated peaks framing the bay
-  const eastAdvance = smoothstep(9.0, 32, x);
-  const eastZEnvelope = Math.exp(-Math.pow((z - 0.5) / 30, 2));
-  const eastMassif =
-    eastAdvance *
-    eastZEnvelope *
-    (18.0 + 11.5 * nLow + 4.6 * Math.abs(nMid - 0.5));
-
-  // Penguin colony terrace on the lower SE slope around (8.8, 5.2)
-  const colonyDist = Math.hypot((x - 8.8) / 5.2, (z - 5.2) / 5.2);
-  const colonyTerrace = Math.max(0, 1 - colonyDist * colonyDist) * 1.65;
-
-  // Combine elevation
-  let y = isthmusHeight + westRidge + eastMassif + colonyTerrace;
-  if (stationPad > 0.01) {
-    y = y * (1 - stationPad * 0.72) + 1.45 * (stationPad * 0.72);
+  if (d < 0) {
+    return { y: Math.max(-3, d * 0.9), gravel: 0.8, snow: 0.1, rock: 0.1 };
   }
 
-  // Deepen open bays outside the headlands so northern & southern horizons stay clear ocean
-  const bayOpenMask =
-    (1 - smoothstep(11.5, 22, Math.abs(x))) * smoothstep(8.5, 15.5, Math.abs(z));
-  y -= bayOpenMask * 2.8;
+  // A gravel beach about 15 m wide rises to the station pad.
+  const beach = smoothstep(0, 1.3, d);
+  const pad = padWeight(x, z);
+  let y = beach * STATION_GROUND_Y;
 
-  // Surface category weights (separate channels: gravel, snow, rock)
-  const isGlacierValley =
-    smoothstep(7.5, 18.5, Math.abs(x)) * (1 - smoothstep(4, 20, Math.abs(z)));
-  const isSteep = smoothstep(2.8, 9.0, y) * (1 - isGlacierValley * 0.68);
-  const snowPatch = smoothstep(0.28, 0.50, nLow + y * 0.09 + isGlacierValley * 0.62);
+  // Hills close the stage at both ends of the isthmus; they slope down to the bays.
+  const ends = smoothstep(10, 24, Math.abs(x));
+  const hill = ends * smoothstep(0, 5, d) * (4 + 6 * nLow);
+  const knoll = knollProfile(x, z) * PENGUIN_KNOLL.height;
+  const bumps = (nLow - 0.5) * 0.5 * smoothstep(0.5, 2.5, d);
+  y += (hill + bumps) * (1 - pad) + knoll;
 
-  const rock = Math.min(1, Math.max(0, isSteep * 0.74));
-  const snow = Math.min(
-    1,
-    Math.max(0, (1 - rock * 0.52) * Math.max(snowPatch, smoothstep(2.2, 6.8, y)))
-  );
-  const gravel = Math.max(0.05, 1 - Math.min(0.95, rock + snow * 0.88));
-
+  // Surface: grey gravel on the pad and the beaches, rock on steep ground, snow up high and on
+  // the knoll's seaward flank, where the penguins toboggan.
+  const rise = y - STATION_GROUND_Y;
+  const slide = slideSnow(x, z);
+  // Snow covers the hills above an irregular line; bare rock shows only on the lower slopes.
+  const snowLine = smoothstep(0.25, 1.2, rise + (nLow - 0.5) * 1.4) * smoothstep(9.5, 13, Math.abs(x));
+  const rock =
+    Math.min(1, smoothstep(0.6, 2.4, rise) * 0.7 + knollProfile(x, z) * 0.55) * (1 - slide) * (1 - snowLine);
+  const snowPatch = smoothstep(0.5, 0.62, nLow + rise * 0.05) * (1 - pad);
+  const snow = Math.min(1, Math.max(snowPatch, snowLine, slide));
+  const gravel = Math.max(0.05, 1 - Math.min(0.95, rock + snow * 0.9));
   return { y, gravel, snow, rock };
 }
 
+/** Snow strip on the knoll's flank facing Bahía Uruguay, where the penguins slide. */
+function slideSnow(x: number, z: number): number {
+  const [cx, cz] = PENGUIN_KNOLL.center;
+  const [dx, dz] = SLIDE_DIRECTION;
+  const along = (x - cx) * dx + (z - cz) * dz;
+  const across = Math.abs((x - cx) * dz - (z - cz) * dx);
+  return 0.55 * (1 - smoothstep(0.32, 0.5, across)) * smoothstep(0.8, 1.4, along) * (1 - smoothstep(4.2, 5, along));
+}
+
+/** Unit vector from the knoll to the nearest water (down the coast-distance gradient). */
+export const SLIDE_DIRECTION: readonly [number, number] = (() => {
+  const [cx, cz] = PENGUIN_KNOLL.center;
+  const h = 0.05;
+  const gx = (worldCoastDistance(cx + h, cz) - worldCoastDistance(cx - h, cz)) / (2 * h);
+  const gz = (worldCoastDistance(cx, cz + h) - worldCoastDistance(cx, cz - h)) / (2 * h);
+  const g = Math.hypot(gx, gz);
+  return [-gx / g, -gz / g];
+})();
+
+/** Terrain plane covering the stage; 180 segments is about 0.55 units per segment. */
 export function createIsthmusTerrainGeometry(seed = 19040222): BufferGeometry {
-  const geo = new PlaneGeometry(130, 130, 56, 56);
+  const side = 2 * TERRAIN_HALF_EXTENT;
+  const segments = 180;
+  const geo = new PlaneGeometry(side, side, segments, segments);
   geo.rotateX(-Math.PI / 2);
 
   const pos = geo.attributes.position;
@@ -1017,9 +915,7 @@ export function createIsthmusTerrainGeometry(seed = 19040222): BufferGeometry {
   const surface = new Float32Array(count * 3);
 
   for (let i = 0; i < count; i++) {
-    const x = pos.getX(i);
-    const z = pos.getZ(i);
-    const { y, gravel, snow, rock } = evaluateIsthmusTerrain(x, z, seed);
+    const { y, gravel, snow, rock } = evaluateIsthmusTerrain(pos.getX(i), pos.getZ(i), seed);
     pos.setY(i, y);
     surface[i * 3] = gravel;
     surface[i * 3 + 1] = snow;
@@ -1032,132 +928,151 @@ export function createIsthmusTerrainGeometry(seed = 19040222): BufferGeometry {
   return geo;
 }
 
+/** Sea-ice plates in both bays; each appears when seaIce passes its threshold (near shore first). */
+/**
+ * How far from the shore the sea ice reaches for a given cover (illustrative simulation): the
+ * ice grows from the coast outwards. Returns the seaIce value at which a point `offshore` units
+ * from the coast starts to freeze. The water shader uses the same rule through `aCoast`.
+ */
+export function iceThreshold(offshore: number, jitter = 0): number {
+  return Math.min(0.97, Math.max(0.03, (offshore / ICE_REACH) * 0.9 + jitter * 0.12));
+}
+
+/** Offshore distance, in world units, that freezes last. */
+export const ICE_REACH = 14;
+/** Floes float in a band this wide (in seaIce units) ahead of the solid fast-ice sheet. */
+export const ICE_FLOE_BAND = 0.5;
+
+/** Floes of varied size and shape; only the visible part of both bays gets them. */
 export function generateSeaIcePlates(seed = 190406): SeaIcePlate[] {
   const rng = createSeededRng(seed);
   const plates: SeaIcePlate[] = [];
-
-  // Place faceted sea-ice floes across Bahía Scotia (+Z) and Bahía Uruguay (-Z),
-  // closing progressively from the coastline outward as seaIce goes from 0 -> 1.
-  for (const baySign of [1, -1]) {
-    for (let row = 0; row < 7; row++) {
-      const zBase = baySign * (10.2 + row * 4.2);
-      const cols = 9 + row * 2;
-      for (let col = 0; col < cols; col++) {
-        const spanX = 15 + row * 3.2;
-        const u = (col + 0.5) / cols - 0.5;
-        const x = u * spanX * 2 + (rng() - 0.5) * 2.1;
-        const z = zBase + (rng() - 0.5) * 1.9;
-        const { y } = evaluateIsthmusTerrain(x, z);
-        if (y > -0.12) continue;
-
-        // Shore-hugging floes freeze first (low threshold); outer bay freezes later
-        const distFromShore = row / 6.5;
-        const edgeBonus = Math.max(0, 0.16 - Math.abs(u) * 0.28);
-        const threshold = Math.min(
-          0.92,
-          Math.max(0.04, distFromShore * 0.72 + edgeBonus + (rng() - 0.5) * 0.12)
-        );
-        plates.push({
-          x,
-          z,
-          radius: 1.45 + rng() * 1.55,
-          rotY: rng() * Math.PI * 2,
-          threshold,
-        });
-      }
+  const step = 1.5;
+  for (let gx = -27; gx <= 27; gx += step) {
+    for (let gz = -22; gz <= 26; gz += step) {
+      const x = gx + (rng() - 0.5) * step * 0.9;
+      const z = gz + (rng() - 0.5) * step * 0.9;
+      const d = worldCoastDistance(x, z);
+      const size = 0.22 + rng() ** 2 * 0.62;
+      const aspect = 0.6 + rng() * 0.8;
+      const rotY = rng() * Math.PI * 2;
+      const jitter = rng() - 0.5;
+      // Keep floes off the beach: their whole extent must be at sea.
+      if (d >= -0.35 - size) continue;
+      plates.push({
+        x,
+        z,
+        sizeX: size * aspect,
+        sizeZ: size / aspect,
+        rotY,
+        threshold: iceThreshold(-d, jitter),
+        variant: Math.floor(rng() * 4),
+      });
     }
   }
-
   return plates;
 }
 
+/** 0..1 visibility of a floe for a sea-ice cover: it appears, drifts in the pack, then joins the sheet. */
+export function floeVisibility(threshold: number, seaIce: number): number {
+  const appear = Math.min(1, Math.max(0, (seaIce - threshold) / 0.08));
+  const merge = Math.min(1, Math.max(0, (threshold + ICE_FLOE_BAND - seaIce) / 0.08));
+  return Math.min(appear, merge);
+}
+
+/** A few icebergs grounded or drifting in both bays, at least 2.5 units off the coast. */
 export function generateIcebergs(seed = 190409): IcebergInstance[] {
   const rng = createSeededRng(seed);
   const coords: readonly [number, number, number, 'tabular' | 'pinnacle'][] = [
-    // Northern bay (Bahía Uruguay, -Z — directly in the camera's horizon view!)
-    [-8.5, -20.5, 1.65, 'tabular'],
-    [5.8, -23.5, 1.85, 'pinnacle'],
-    [-1.2, -29.0, 2.15, 'tabular'],
-    [13.2, -26.0, 1.55, 'pinnacle'],
-    [-15.5, -25.0, 1.60, 'pinnacle'],
-    // Southern bay (Bahía Scotia, +Z)
-    [-9.2, 20.5, 1.45, 'pinnacle'],
-    [7.5, 23.5, 1.65, 'tabular'],
-    [-2.0, 29.5, 1.90, 'tabular'],
-    [14.0, 27.0, 1.35, 'pinnacle'],
+    // Bahía Uruguay, behind the stage
+    [-7, -10, 1.1, 'tabular'],
+    [3, -13, 0.9, 'pinnacle'],
+    [11, -9, 1.2, 'tabular'],
+    // Bahía Scotia, in front
+    [-12, 10, 1.0, 'pinnacle'],
+    [10, 9, 1.1, 'tabular'],
   ];
+  return coords
+    .filter(([x, z]) => worldCoastDistance(x, z) < -2.5)
+    .map(([x, z, s, variant]) => ({
+      x,
+      z,
+      scaleX: s * (0.92 + rng() * 0.28),
+      scaleY: s * (0.88 + rng() * 0.34),
+      scaleZ: s * (0.9 + rng() * 0.28),
+      rotY: rng() * Math.PI * 2,
+      phase: rng() * Math.PI * 2,
+      variant,
+    }));
+}
 
-  return coords.map(([x, z, s, variant]) => ({
-    x,
-    z,
-    scaleX: s * (0.92 + rng() * 0.28),
-    scaleY: s * (0.88 + rng() * 0.34),
-    scaleZ: s * (0.90 + rng() * 0.28),
-    rotY: rng() * Math.PI * 2,
-    phase: rng() * Math.PI * 2,
-    variant,
-  }));
+/** Light grey gravel of the paths between the buildings (photos: grey gravel ground). */
+const PATH_GRAVEL = 0xa8a49b;
+const PATH_GRAVEL_LIGHT = 0xbdb9af;
+
+/** True when (x, z) is inside a building footprint grown by `margin` (world units). */
+function nearBuilding(x: number, z: number, margin: number): boolean {
+  return STATION_LAYOUT.some((e) => {
+    const dx = x - e.position[0];
+    const dz = z - e.position[2];
+    const c = Math.cos(e.rotationY);
+    const sn = Math.sin(e.rotationY);
+    const u = dx * c - dz * sn;
+    const v = dx * sn + dz * c;
+    return Math.abs(u) < e.footprint[0] / 2 + margin && Math.abs(v) < e.footprint[1] / 2 + margin;
+  });
 }
 
 /**
- * Generates a penguin colony on the eastern slope and beach path of Laurie Island:
- * - A clear marching line ('walk') of upright Adélie and Chinstrap penguins waddling in file
- * - Several penguins tobogganing on their bellies ('slide') down the snowy slope.
+ * Ground details of the stage (illustrative): a gravel path in front of the buildings with
+ * spurs to their doors, loose rocks and patches of old snow. World coordinates, one geometry.
  */
-export function generatePenguinColony(seed = 190411): PenguinInstance[] {
+export function buildStageDetailBoxes(seed = 190415): Box[] {
   const rng = createSeededRng(seed);
-  const penguins: PenguinInstance[] = [];
+  const boxes: Box[] = [];
+  const groundAt = (x: number, z: number) => evaluateIsthmusTerrain(x, z).y;
+  const [kx, kz] = PENGUIN_KNOLL.center;
+  const onKnoll = (x: number, z: number) => Math.hypot(x - kx, z - kz) < PENGUIN_KNOLL.footRadius + 0.3;
 
-  // 12 upright penguins marching in a winding line along the lower SE slope & beach terrace
-  const marchCount = 12;
-  for (let i = 0; i < marchCount; i++) {
-    const t = i / (marchCount - 1);
-    const x = 6.2 + t * 5.6 + Math.sin(t * Math.PI * 2) * 0.45;
-    const z = 7.4 - t * 4.2 + Math.cos(t * Math.PI * 1.5) * 0.35;
-    const nextT = Math.min(1, t + 0.08);
-    const nx = 6.2 + nextT * 5.6 + Math.sin(nextT * Math.PI * 2) * 0.45;
-    const nz = 7.4 - nextT * 4.2 + Math.cos(nextT * Math.PI * 1.5) * 0.35;
-    // Beak points to +x in local space, so rotY = atan2(-(nz - z), nx - x)
-    const heading = Math.atan2(-(nz - z), nx - x);
-    const { y } = evaluateIsthmusTerrain(x, z);
-    penguins.push({
-      x,
-      y: Math.max(0.42, y),
-      z,
-      rotY: heading + (rng() - 0.5) * 0.25,
-      phase: i * 0.65,
-      speed: 0.95 + (i % 3) * 0.12,
-      mode: 'walk',
-      species: i % 2 === 0 ? 'adelie' : 'chinstrap',
-      lineIndex: i,
-    });
+  // Gravel path along the front of the station, made of slightly uneven flat stones.
+  const pathZ = 2.35;
+  for (let x = -5.6; x <= 6.6; x += 0.42) {
+    const z = pathZ + Math.sin(x * 0.7) * 0.18 + (rng() - 0.5) * 0.08;
+    if (nearBuilding(x, z, 0.15)) continue;
+    boxes.push([x, groundAt(x, z) + 0.015, z, 0.36 + rng() * 0.08, 0.03, 0.3 + rng() * 0.1, rng() < 0.5 ? PATH_GRAVEL : PATH_GRAVEL_LIGHT]);
+  }
+  // Spurs from the path to the buildings that face it.
+  for (const id of ['screen', 'omond', 'module-360745961', 'module-360745962']) {
+    const e = STATION_LAYOUT.find((l) => l.id === id);
+    if (!e) continue;
+    const x0 = e.position[0];
+    const zFront = e.position[2] + e.footprint[1] / 2 + 0.2;
+    for (let z = zFront; z < pathZ - 0.15; z += 0.36) {
+      boxes.push([x0 + (rng() - 0.5) * 0.06, groundAt(x0, z) + 0.015, z, 0.3, 0.03, 0.3, PATH_GRAVEL_LIGHT]);
+    }
   }
 
-  // 4 penguins tobogganing on their bellies down the snow slope toward the beach
-  const slideCoords: readonly [number, number][] = [
-    [9.4, 5.8],
-    [10.8, 6.4],
-    [11.6, 5.1],
-    [8.2, 6.6],
-  ];
-  for (let i = 0; i < slideCoords.length; i++) {
-    const [x, z] = slideCoords[i];
-    const { y } = evaluateIsthmusTerrain(x, z);
-    penguins.push({
-      x,
-      y: Math.max(0.55, y),
-      z,
-      // Point downhill toward the southern beach (-x, +z)
-      rotY: -Math.PI * 0.68 + (rng() - 0.5) * 0.2,
-      phase: i * 1.4,
-      speed: 0.85 + rng() * 0.35,
-      mode: 'slide',
-      species: i % 2 === 0 ? 'adelie' : 'chinstrap',
-      lineIndex: marchCount + i,
-    });
+  // Loose rocks and patches of old snow on the isthmus, away from paths and buildings.
+  for (let i = 0; i < 140; i++) {
+    const x = -13 + rng() * 26;
+    const z = -3.6 + rng() * 7.4;
+    const d = worldCoastDistance(x, z);
+    if (d < 0.3 || onKnoll(x, z) || nearBuilding(x, z, 0.5) || Math.abs(z - pathZ) < 0.45) continue;
+    const y = groundAt(x, z);
+    if (rng() < 0.7) {
+      const sz = 0.08 + rng() ** 2 * 0.26;
+      const col = [ROCK, ROCK_DARK, ROCK_LIGHT][Math.floor(rng() * 3)];
+      boxes.push([x, y + sz * 0.35, z, sz * (1 + rng() * 0.6), sz * 0.7, sz * (0.8 + rng() * 0.5), col]);
+    } else if (d > 0.8 && rng() < 0.45) {
+      // Old snow lingers in small irregular drifts: two or three overlapping thin slabs.
+      const w = 0.22 + rng() * 0.32;
+      const col = rng() < 0.5 ? WHITE : ICE;
+      boxes.push([x, y + 0.012, z, w, 0.025, w * 0.6, col]);
+      boxes.push([x + w * 0.35, y + 0.014, z + w * 0.18, w * 0.6, 0.025, w * 0.45, col]);
+      if (rng() < 0.5) boxes.push([x - w * 0.3, y + 0.013, z - w * 0.15, w * 0.45, 0.025, w * 0.35, col]);
+    }
   }
-
-  return penguins;
+  return boxes;
 }
 
 export function generateSnowParticles(count: number, seed = 190412): Float32Array {

@@ -96,6 +96,9 @@ export function CloudPicker({
                   onSelectOktas(next);
                 }}
               >
+                <clipPath id={`${domeClipId}-s${idx}`}>
+                  <path d={d} />
+                </clipPath>
                 {/* Interactive sector hit area */}
                 <path
                   d={d}
@@ -105,9 +108,9 @@ export function CloudPicker({
                   strokeDasharray="3 2"
                 />
 
-                {/* Drawn Antarctic stratocumulus clouds inside covered sectors */}
+                {/* Drawn Antarctic stratocumulus clouds, cut to their own sector so each octa counts once */}
                 {isCloudCovered && (
-                  <g pointerEvents="none">
+                  <g pointerEvents="none" clipPath={`url(#${domeClipId}-s${idx})`}>
                     <circle
                       cx={outerCloud.x}
                       cy={outerCloud.y}
@@ -251,10 +254,10 @@ export function CloudPicker({
 
           <line x1="12" y1="104" x2="138" y2="104" stroke="#1F2A36" strokeWidth="0.8" strokeDasharray="3 2" />
 
-          <text x="75" y="124" textAnchor="middle" className="orc-obs-svg-hand">
+          <text x="75" y="120" textAnchor="middle" className="orc-obs-svg-hand">
             Tocá las partes del cielo
           </text>
-          <text x="75" y="142" textAnchor="middle" className="orc-obs-svg-hand">
+          <text x="75" y="136" textAnchor="middle" className="orc-obs-svg-hand">
             o usá el deslizador
           </text>
 
@@ -264,18 +267,18 @@ export function CloudPicker({
             onClick={() => onSelectOktas(0)}
           >
             <rect
-              x="22"
-              y="147"
-              width="106"
-              height="16"
-              rx="8"
+              x="12"
+              y="144"
+              width="126"
+              height="18"
+              rx="9"
               fill={draftOktas === 0 ? '#1E3E5C' : '#E7F0F5'}
               stroke="#1F2A36"
               strokeWidth="1"
             />
             <text
               x="75"
-              y="158"
+              y="157"
               textAnchor="middle"
               className="orc-obs-svg-scale-sub"
               fill={draftOktas === 0 ? '#F7FAFB' : '#1F2A36'}

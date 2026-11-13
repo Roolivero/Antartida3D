@@ -8,28 +8,73 @@
   max-width: 100%;
 }
 
-/* Instrument step / tab navigation */
+/* Instrument step / tab navigation (1 to 4 selector) */
 .orc-obs-tabs {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 6px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
 }
 
 .orc-obs-tab {
   min-height: 44px;
-  padding: 5px 8px;
-  border-radius: 8px 12px 6px 10px;
+  padding: 4px 4px;
+  border-radius: 6px 10px 6px 8px;
   border: 1.5px solid var(--ink);
   background: var(--paper);
   color: var(--ink);
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
   justify-content: center;
   gap: 1px;
-  text-align: left;
+  text-align: center;
   box-shadow: 1px 2px 0 rgba(31, 42, 54, 0.14);
   transition: transform 0.15s ease, background-color 0.15s ease;
+}
+
+.orc-obs-tab-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.orc-obs-tab-num {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.orc-obs-tab-check {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--deep);
+  line-height: 1;
+}
+
+.orc-obs-tab.is-active .orc-obs-tab-check {
+  color: var(--ocre);
+}
+
+.orc-obs-tab-title {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.orc-obs-tab-sub {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--deep);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 
 .orc-obs-tab:hover {
@@ -51,19 +96,6 @@
 
 .orc-obs-tab.is-off:not(.is-active) {
   border-color: var(--oxide);
-}
-
-.orc-obs-tab-title {
-  font-family: 'Fraunces', Georgia, serif;
-  font-size: 13px;
-  font-weight: 700;
-  line-height: 1.15;
-}
-
-.orc-obs-tab-sub {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--deep);
 }
 
 .orc-obs-tab.is-active .orc-obs-tab-sub {
@@ -88,9 +120,16 @@
 
 .orc-obs-stage-head {
   display: flex;
-  align-items: flex-start;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.orc-obs-stage-title-wrap {
+  display: flex;
+  align-items: center;
   justify-content: space-between;
   gap: 8px;
+  width: 100%;
 }
 
 .orc-obs-stage-title {
@@ -101,8 +140,24 @@
   color: var(--ink);
 }
 
+details.orc-obs-details {
+  margin-top: 2px;
+  border: 1px dashed rgba(31, 42, 54, 0.25);
+  border-radius: 6px;
+  padding: 4px 8px;
+  background: rgba(251, 244, 230, 0.6);
+}
+
+details.orc-obs-details > summary {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--deep);
+  cursor: pointer;
+  user-select: none;
+}
+
 .orc-obs-stage-desc {
-  margin: 2px 0 0;
+  margin: 4px 0 0;
   font-size: 12px;
   line-height: 1.32;
   color: var(--ink);
@@ -110,7 +165,7 @@
 
 .orc-obs-tol-pill {
   flex: none;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   padding: 3px 7px;
   border-radius: 10px;
@@ -135,76 +190,76 @@
   display: block;
   width: 100%;
   height: auto;
-  max-height: 185px;
+  max-height: 220px;
   user-select: none;
 }
 
 .orc-obs-svg-hand {
-  font-family: 'Caveat', cursive;
-  font-size: 15px;
+  font-family: 'Atkinson Hyperlegible', system-ui, sans-serif;
+  font-size: 13px;
   font-weight: 700;
   fill: var(--ink);
 }
 
 .orc-obs-svg-tag {
   font-family: 'Atkinson Hyperlegible', system-ui, sans-serif;
-  font-size: 10.5px;
+  font-size: 12.5px;
   font-weight: 700;
   fill: var(--ink);
 }
 
 .orc-obs-svg-scale-num {
   font-family: 'Fraunces', Georgia, serif;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
   fill: var(--ink);
 }
 
 .orc-obs-svg-scale-sub {
   font-family: 'Atkinson Hyperlegible', system-ui, sans-serif;
-  font-size: 9.5px;
+  font-size: 12px;
   font-weight: 700;
   fill: var(--pencil);
 }
 
 .orc-obs-svg-callout {
-  font-family: 'Caveat', cursive;
-  font-size: 14px;
+  font-family: 'Atkinson Hyperlegible', system-ui, sans-serif;
+  font-size: 12.5px;
   font-weight: 700;
 }
 
 .orc-obs-svg-dial-word {
   font-family: 'Fraunces', Georgia, serif;
-  font-size: 7.5px;
+  font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.04em;
+  letter-spacing: 0;
   fill: var(--pencil);
 }
 
 .orc-obs-svg-dial-num {
   font-family: 'Fraunces', Georgia, serif;
-  font-size: 9.5px;
+  font-size: 12.5px;
   font-weight: 700;
   fill: var(--ink);
 }
 
 .orc-obs-svg-rose-cardinal {
   font-family: 'Fraunces', Georgia, serif;
-  font-size: 10px;
+  font-size: 12.5px;
   font-weight: 700;
   fill: var(--ink);
 }
 
 .orc-obs-svg-rose-point {
   font-family: 'Atkinson Hyperlegible', system-ui, sans-serif;
-  font-size: 7.8px;
+  font-size: 12px;
   font-weight: 700;
   fill: var(--ink);
 }
 
 .orc-obs-svg-legend {
   font-family: 'Atkinson Hyperlegible', system-ui, sans-serif;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 700;
   fill: var(--ink);
 }
@@ -416,9 +471,32 @@
 .orc-obs-slider-limits {
   display: flex;
   justify-content: space-between;
-  font-size: 10.5px;
+  gap: 8px;
+  white-space: nowrap;
+  font-size: 12px;
   font-weight: 700;
   color: var(--ink);
+}
+
+.orc-obs-num-input {
+  width: 74px;
+  min-height: 44px;
+  padding: 4px 6px;
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 15px;
+  font-weight: 700;
+  text-align: center;
+  color: var(--ink);
+  background: var(--paper);
+  border: 1.5px solid var(--ink);
+  border-radius: 8px;
+  box-shadow: 1px 2px 0 rgba(31, 42, 54, 0.14);
+  flex: none;
+}
+
+.orc-obs-num-input:focus-visible {
+  outline: 3px solid var(--deep);
+  outline-offset: 1px;
 }
 
 .orc-obs-confirm-row {
@@ -541,14 +619,14 @@
 
 .orc-notebook-date {
   display: block;
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--deep);
 }
 
 .orc-notebook-count {
   flex: none;
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 700;
   padding: 2px 8px;
   border-radius: 10px;
@@ -583,7 +661,7 @@
 }
 
 .orc-notebook-cell-lbl {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--ink);
 }

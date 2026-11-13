@@ -199,9 +199,6 @@ export function WindMast({
             strokeWidth="1.4"
           />
 
-          <text x={roseCx} y="194" textAnchor="middle" className="orc-obs-svg-hand">
-            Veleta: rumbo {rumbo} ({windDirDeg}°)
-          </text>
         </g>
 
         {/* RIGHT TOP: Cup Anemometer (Anemómetro de cazoletas) */}
@@ -299,7 +296,7 @@ export function WindMast({
               textAnchor="middle"
               className="orc-obs-svg-tag"
             >
-              Contador · escala 1 km/h
+              Contador · km/h
             </text>
 
             {/* Baseline track */}
@@ -331,7 +328,7 @@ export function WindMast({
                     textAnchor="middle"
                     className="orc-obs-svg-scale-num"
                   >
-                    {v}k
+                    {v}
                   </text>
                 )}
                 {isFive && (

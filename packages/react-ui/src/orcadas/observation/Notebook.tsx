@@ -83,7 +83,7 @@ export function Notebook({
       <div className="orc-notebook-page">
         <div className="orc-notebook-head">
           <div>
-            <strong className="orc-notebook-title hand">
+            <strong className="orc-notebook-title">
               Planilla de observación diaria
             </strong>
             <span className="orc-notebook-date">
@@ -115,11 +115,11 @@ export function Notebook({
               >
                 <span className="orc-notebook-cell-lbl">{meta.title}</span>
                 {hasVal ? (
-                  <span className="orc-notebook-cell-val hand">
+                  <span className="orc-notebook-cell-val">
                     {formatRecorded(kind, val, reading)}
                   </span>
                 ) : (
-                  <span className="orc-notebook-cell-empty hand">— sin anotar —</span>
+                  <span className="orc-notebook-cell-empty">— sin anotar —</span>
                 )}
                 {status && (
                   <small className={`orc-notebook-cell-status is-${status}`}>
@@ -145,7 +145,7 @@ export function Notebook({
                 dangerouslySetInnerHTML={{ __html: SEAL_SVG }}
               />
               <div className="orc-notebook-stamp-txt">
-                <strong className="orc-notebook-stamp-title hand">
+                <strong className="orc-notebook-stamp-title">
                   Observación registrada
                 </strong>
                 <span>

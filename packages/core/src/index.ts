@@ -3,6 +3,8 @@ export * from './content/sea.ts';
 export * from './content/ushuaia.ts';
 export * from './content/orcadas.ts';
 export * from './content/orcadas-series.ts';
+export * from './content/orcadas-layout.ts';
+export * from './content/orcadas-site.ts';
 export * from './projection.ts';
 export * from './route.ts';
 export * from './storm.ts';

@@ -10,14 +10,11 @@ import {
 import {
   BackSide,
   Box3,
-  BoxGeometry,
   BufferAttribute,
   BufferGeometry,
   Color,
-  DoubleSide,
   Group,
   InstancedMesh,
-  MeshBasicMaterial,
   Object3D,
   PlaneGeometry,
   Points,
@@ -32,6 +29,11 @@ import { CameraControls, PerformanceMonitor } from '@react-three/drei';
 import { EffectComposer } from '@react-three/postprocessing';
 import {
   ORCADAS_LAT,
+  DIORAMA_METERS_PER_UNIT,
+  DIORAMA_PROP_SCALE,
+  DIORAMA_ELEMENTS,
+  layoutOf,
+  worldCoastDistance,
   midMonthDayOfYear,
   shouldTick,
   solarAzimuthDeg,
@@ -40,40 +42,65 @@ import {
 } from '@antartida/core';
 import { InkEffect } from '../map3d/InkEffect.ts';
 import { buildBoxGeometry, vehicleMaterial, type Box } from '../voyage/vehicles.ts';
-import { HOTSPOTS, poseForHotspot, type HotspotId } from './Hotspots.tsx';
-import { StationFallback } from './StationFallback.tsx';
 import {
-  ADELIE_PENGUIN_BOXES,
+  HOTSPOTS,
+  VIEW_BEARING_DEG,
+  VIEW_ELEVATION_DEG,
+  VIEW_MAX_ZOOM_OUT,
+  VIEW_ORBIT_DEG,
+  poseForHotspot,
+  type HotspotId,
+} from './Hotspots.tsx';
+import { StationFallback } from './StationFallback.tsx';
+import { PenguinColony } from './PenguinColony.tsx';
+import { beachPoint } from './penguins.ts';
+import {
   BIRD_WING_ROOT,
-  CHINSTRAP_PENGUIN_BOXES,
-  ELEPHANT_SEAL_BOXES,
   FLAGPOLE_BASE_BOXES,
+  FLAG_SEGMENT_BOXES,
+  FLAG_SEGMENT_WIDTH,
   ICEBERG_PINNACLE_BOXES,
   ICEBERG_TABULAR_BOXES,
-  SEA_ICE_FLOE_BOXES,
+  SEA_ICE_FLOE_VARIANTS,
   SKUA_MODEL,
-  SLIDING_PENGUIN_BOXES,
   SNOW_PETREL_MODEL,
   STATION_BOAT_BOXES,
   STEVENSON_SCREEN_BOXES,
-  SUPPLY_CRATES_BOXES,
-  WEDDELL_SEAL_BOXES,
+  VOXEL_PALETTE,
   WIND_CUPS_BOXES,
   WIND_MAST_BASE_BOXES,
   WIND_VANE_BOXES,
-  buildModernModulesBoxes,
-  buildMonetaBoxes,
+  buildModuleBoxes,
   buildOmondBoxes,
-  buildRadioMastsBoxes,
+  buildRadioTowerBoxes,
+  buildStageDetailBoxes,
   createIsthmusTerrainGeometry,
+  evaluateIsthmusTerrain,
   generateIcebergs,
-  generatePenguinColony,
+  floeVisibility,
   generateSeaIcePlates,
   generateSnowParticles,
+  type SeaIcePlate,
 } from './stationModels.ts';
 import {
-  stationFlagFragmentShader,
-  stationFlagVertexShader,
+  ELEPHANT_FLIPPER_L,
+  ELEPHANT_FLIPPER_R,
+  ELEPHANT_JAW,
+  ELEPHANT_NECK,
+  ELEPHANT_TAIL,
+  WEDDELL_FLIPPER_L,
+  WEDDELL_FLIPPER_R,
+  WEDDELL_NECK,
+  WEDDELL_TAIL,
+  buildSealColony,
+  elephantSealParts,
+  residentPose as sealResidentPose,
+  restPose as restSealPose,
+  travellerPose as sealTravellerPose,
+  weddellSealParts,
+  type SealPose,
+} from './seals.ts';
+import {
   stationSkyFragmentShader,
   stationSkyVertexShader,
   stationTerrainFragmentShader,
@@ -93,6 +120,7 @@ export interface StationSceneProps {
   animals: readonly string[];
   focus: HotspotId | null;
   reduced: boolean;
+  panelExpanded?: boolean;
   onReady?: () => void;
   overlayRef?: RefObject<HTMLDivElement | null>;
 }
@@ -221,6 +249,13 @@ function SkyAndLighting({
   );
 }
 
+/** Paths, loose rocks and snow patches of the stage: static boxes in one geometry. */
+function StageDetails() {
+  const geo = useMemo(() => buildBoxGeometry(buildStageDetailBoxes()), []);
+  useEffect(() => () => geo.dispose(), [geo]);
+  return <mesh geometry={geo} material={vehicleMaterial} />;
+}
+
 function IsthmusTerrain({
   sunDir,
   sunElevationDeg,
@@ -277,8 +312,13 @@ function BayOcean({
   reduced: boolean;
 }) {
   const waterGeo = useMemo(() => {
-    const g = new PlaneGeometry(130, 130, 36, 36);
+    // Fine enough near the stage for the shore-based ice and surf (about 1.25 units per cell).
+    const g = new PlaneGeometry(200, 200, 160, 160);
     g.rotateX(-Math.PI / 2);
+    const pos = g.attributes.position;
+    const coast = new Float32Array(pos.count);
+    for (let i = 0; i < pos.count; i++) coast[i] = worldCoastDistance(pos.getX(i), pos.getZ(i));
+    g.setAttribute('aCoast', new BufferAttribute(coast, 1));
     return g;
   }, []);
 
@@ -304,8 +344,18 @@ function BayOcean({
   );
 
   const plates = useMemo(() => generateSeaIcePlates(190406), []);
-  const plateGeo = useMemo(() => buildBoxGeometry(SEA_ICE_FLOE_BOXES), []);
-  const platesRef = useRef<InstancedMesh>(null);
+  const floeGeos = useMemo(
+    () => SEA_ICE_FLOE_VARIANTS.map((boxes) => buildBoxGeometry(boxes)),
+    []
+  );
+  const variantPlates = useMemo(() => {
+    const list: SeaIcePlate[][] = [[], [], [], []];
+    for (const p of plates) {
+      list[p.variant % 4].push(p);
+    }
+    return list;
+  }, [plates]);
+  const platesRefs = useRef<(InstancedMesh | null)[]>([]);
 
   const icebergs = useMemo(() => generateIcebergs(190409), []);
   const tabularBergs = useMemo(
@@ -326,11 +376,11 @@ function BayOcean({
     return () => {
       waterGeo.dispose();
       waterMat.dispose();
-      plateGeo.dispose();
+      for (const g of floeGeos) g.dispose();
       tabularGeo.dispose();
       pinnacleGeo.dispose();
     };
-  }, [waterGeo, waterMat, plateGeo, tabularGeo, pinnacleGeo]);
+  }, [waterGeo, waterMat, floeGeos, tabularGeo, pinnacleGeo]);
 
   useLayoutEffect(() => {
     uniforms.uSunDir.value.copy(sunDir);
@@ -341,20 +391,34 @@ function BayOcean({
 
   // Update sea-ice pancake plates whenever seaIce changes
   useLayoutEffect(() => {
-    const mesh = platesRef.current;
-    if (!mesh) return;
-    for (let i = 0; i < plates.length; i++) {
-      const p = plates[i];
-      const cov = Math.max(0, Math.min(1, (seaIce - p.threshold + 0.18) / 0.22));
-      const r = p.radius * cov;
-      dummy.position.set(p.x, 0.04, p.z);
-      dummy.rotation.set(0, p.rotY, 0);
-      dummy.scale.set(r, cov > 0.01 ? 1 : 0, r);
-      dummy.updateMatrix();
-      mesh.setMatrixAt(i, dummy.matrix);
-    }
-    mesh.instanceMatrix.needsUpdate = true;
-  }, [plates, seaIce, dummy]);
+    const isClosed = seaIce >= 0.9;
+    variantPlates.forEach((group, v) => {
+      const mesh = platesRefs.current[v];
+      if (!mesh) return;
+      for (let i = 0; i < group.length; i++) {
+        const p = group[i];
+        if (isClosed) {
+          // On the closed sheet (seaIce >= 0.9) keep only about 1 in 6 as low rubble, rest hidden
+          if (i % 6 === 0) {
+            dummy.position.set(p.x, 0.015, p.z);
+            dummy.rotation.set(0, p.rotY, 0);
+            dummy.scale.set(p.sizeX * 0.65, 0.22, p.sizeZ * 0.65);
+          } else {
+            dummy.scale.set(0, 0, 0);
+          }
+        } else {
+          const cov = floeVisibility(p.threshold, seaIce);
+          const k = cov / 0.9;
+          dummy.position.set(p.x, 0.02, p.z);
+          dummy.rotation.set(0, p.rotY, 0);
+          dummy.scale.set(p.sizeX * k, cov > 0.01 ? 0.8 : 0, p.sizeZ * k);
+        }
+        dummy.updateMatrix();
+        mesh.setMatrixAt(i, dummy.matrix);
+      }
+      mesh.instanceMatrix.needsUpdate = true;
+    });
+  }, [variantPlates, seaIce, dummy]);
 
   // Update icebergs initially and bob in useFrame when !reduced
   useLayoutEffect(() => {
@@ -362,7 +426,7 @@ function BayOcean({
       if (!mesh) return;
       for (let i = 0; i < list.length; i++) {
         const b = list[i];
-        dummy.position.set(b.x, 0.35, b.z);
+        dummy.position.set(b.x, 0.35 - seaIce * 0.2, b.z);
         dummy.rotation.set(0.08, b.rotY, -0.05);
         dummy.scale.set(b.scaleX, b.scaleY, b.scaleZ);
         dummy.updateMatrix();
@@ -372,21 +436,22 @@ function BayOcean({
     };
     initBergs(tabularRef.current, tabularBergs);
     initBergs(pinnacleRef.current, pinnacleBergs);
-  }, [tabularBergs, pinnacleBergs, dummy]);
+  }, [tabularBergs, pinnacleBergs, dummy, seaIce]);
 
   useFrame(({ clock }) => {
     if (reduced) return;
     const t = clock.getElapsedTime();
     uniforms.uTime.value = t;
 
-    const damp = 1 - seaIce * 0.7;
+    // Icebergs stop rocking as the bay closes; frozen in, they sit lower in the ice.
+    const damp = 1 - seaIce;
     const updateBergs = (mesh: InstancedMesh | null, list: typeof tabularBergs) => {
       if (!mesh) return;
       for (let i = 0; i < list.length; i++) {
         const b = list[i];
         const bob = Math.sin(t * 1.1 + b.phase) * 0.08 * damp;
         const tilt = Math.cos(t * 0.9 + b.phase) * 0.04 * damp;
-        dummy.position.set(b.x, 0.35 + bob, b.z);
+        dummy.position.set(b.x, 0.35 - seaIce * 0.2 + bob, b.z);
         dummy.rotation.set(0.06 + tilt, b.rotY, -0.04 + tilt);
         dummy.scale.set(b.scaleX, b.scaleY, b.scaleZ);
         dummy.updateMatrix();
@@ -401,11 +466,16 @@ function BayOcean({
   return (
     <group>
       <mesh geometry={waterGeo} material={waterMat} position={[0, 0, 0]} />
-      <instancedMesh
-        ref={platesRef}
-        args={[plateGeo, vehicleMaterial, plates.length]}
-        frustumCulled={false}
-      />
+      {variantPlates.map((group, v) => (
+        <instancedMesh
+          key={v}
+          ref={(node) => {
+            platesRefs.current[v] = node;
+          }}
+          args={[floeGeos[v], vehicleMaterial, group.length]}
+          frustumCulled={false}
+        />
+      ))}
       <instancedMesh
         ref={tabularRef}
         args={[tabularGeo, vehicleMaterial, tabularBergs.length]}
@@ -420,25 +490,81 @@ function BayOcean({
   );
 }
 
-function EraBuildings({
+/**
+ * The flag as a chain of 5 box segments: each one hangs from the end of the previous one, so a
+ * small turn at every hinge adds up to a wave along the cloth.
+ */
+function FlagChain({
+  geos,
+  jointRefs,
+  index,
+}: {
+  geos: readonly BufferGeometry[];
+  jointRefs: RefObject<(Group | null)[]>;
+  index: number;
+}) {
+  if (index >= geos.length) return null;
+  return (
+    <group
+      ref={(node) => {
+        jointRefs.current[index] = node;
+      }}
+      position={[index === 0 ? 0 : FLAG_SEGMENT_WIDTH, 0, 0]}
+    >
+      <mesh geometry={geos[index]} material={vehicleMaterial} />
+      <FlagChain geos={geos} jointRefs={jointRefs} index={index + 1} />
+    </group>
+  );
+}
+
+/** Turns each hinge of the flag: a travelling wave that grows and quickens with the wind. */
+function waveFlag(joints: (Group | null)[], t: number, windKmh: number) {
+  const strength = Math.min(1, windKmh / 60);
+  const amp = 0.06 + strength * 0.24;
+  const speed = 2.2 + strength * 5;
+  joints.forEach((joint, i) => {
+    if (!joint) return;
+    joint.rotation.y = Math.sin(t * speed - i * 1.1) * amp * (0.6 + i * 0.15);
+    // Light wind lets the free end droop a little.
+    joint.rotation.z = i === 0 ? 0 : -(1 - strength) * 0.05;
+  });
+}
+
+/** The boat model is 2.3 units long; the measured boat is 5 m. */
+const BOAT_SCALE = 5 / DIORAMA_METERS_PER_UNIT / 2.3;
+
+const ERA_BUILDING_IDS: readonly BuildingId[] = [
+  'omond',
+  'flag',
+  'windMast',
+  'radioMast',
+  'modern',
+];
+
+function StationElements({
   buildings,
   isNight,
-  windVec,
+  windKmh,
+  windDirDeg,
   reduced,
+  seaIce,
 }: {
   buildings: readonly BuildingId[];
   isNight: boolean;
-  windVec: Vector2;
+  windKmh: number;
+  windDirDeg: number;
   reduced: boolean;
+  seaIce: number;
 }) {
-  const omondRef = useRef<Group>(null);
-  const monetaRef = useRef<Group>(null);
-  const radioRef = useRef<Group>(null);
-  const modernRef = useRef<Group>(null);
-  const smokeRef = useRef<Group>(null);
+  const vaneRef = useRef<Group>(null);
+  const cupsRef = useRef<Group>(null);
+  const boatRef = useRef<Group>(null);
+  const elementRefs = useRef<Record<string, Group | null>>({});
 
   const presences = useRef<Record<BuildingId, number>>({
     omond: buildings.includes('omond') ? 1 : 0,
+    flag: buildings.includes('flag') ? 1 : 0,
+    windMast: buildings.includes('windMast') ? 1 : 0,
     moneta: buildings.includes('moneta') ? 1 : 0,
     radioMast: buildings.includes('radioMast') ? 1 : 0,
     modern: buildings.includes('modern') ? 1 : 0,
@@ -446,27 +572,208 @@ function EraBuildings({
 
   const invalidate = useThree((s) => s.invalidate);
 
+  const buildingElements = useMemo(
+    () => DIORAMA_ELEMENTS.filter((e) => e.kind !== 'boat'),
+    []
+  );
+
+  const boatLayout = useMemo(() => layoutOf('boat'), []);
+  const [bx, , bz] = boatLayout.position;
+  const bRotY = boatLayout.rotationY;
+  const isFrozen = seaIce >= 0.5;
+
+  // Pulled up for the winter onto the flat gravel above the beach, so the chocks stay short.
+  const boatBeachRest = useMemo(() => {
+    const [bx, bz] = beachPoint([boatLayout.position[0], boatLayout.position[2]], 1.9);
+    const c = Math.cos(bRotY);
+    const s = Math.sin(bRotY);
+    let maxGroundY = -Infinity;
+    for (let u = -0.7; u <= 0.7; u += 0.08) {
+      for (let v = -0.25; v <= 0.25; v += 0.06) {
+        const wx = bx + u * c + v * s;
+        const wz = bz - u * s + v * c;
+        const gy = evaluateIsthmusTerrain(wx, wz).y;
+        if (gy > maxGroundY) maxGroundY = gy;
+      }
+    }
+    const chockTopY = maxGroundY + 0.04;
+    const chockBoxes: Box[] = [];
+    for (const u of [0.35, -0.35]) {
+      const wx = bx + u * c;
+      const wz = bz - u * s;
+      const gy = evaluateIsthmusTerrain(wx, wz).y;
+      const h = Math.max(0.04, chockTopY - gy);
+      const midY = gy + h / 2;
+      chockBoxes.push(
+        [wx, midY, wz, 0.12, h, 0.52, VOXEL_PALETTE.WOOD],
+        [wx + 0.03 * c, chockTopY - 0.02, wz - 0.03 * s + 0.22, 0.14, 0.06, 0.1, VOXEL_PALETTE.WOOD_LIGHT],
+        [wx + 0.03 * c, chockTopY - 0.02, wz - 0.03 * s - 0.22, 0.14, 0.06, 0.1, VOXEL_PALETTE.WOOD_LIGHT]
+      );
+    }
+    return { x: bx, z: bz, chockTopY, chockGeo: buildBoxGeometry(chockBoxes) };
+  }, [boatLayout, bRotY]);
+
+  const mooredPoint = useMemo(() => {
+    const pt = beachPoint([bx, bz], -0.9);
+    return [pt[0], -0.02, pt[1]] as const;
+  }, [bx, bz]);
+
+  const bollardGeo = useMemo(() => {
+    const gy = evaluateIsthmusTerrain(bx, bz).y;
+    const boxes: Box[] = [
+      [bx, gy + 0.12, bz, 0.1, 0.24, 0.1, VOXEL_PALETTE.WOOD],
+      [bx, gy + 0.23, bz, 0.14, 0.04, 0.14, VOXEL_PALETTE.WOOD_LIGHT],
+    ];
+    return buildBoxGeometry(boxes);
+  }, [bx, bz]);
+
+  const mooringLineGeo = useMemo(() => {
+    const bowX = mooredPoint[0] + 1.18 * BOAT_SCALE * Math.cos(bRotY);
+    const bowY = mooredPoint[1] + 0.36 * BOAT_SCALE;
+    const bowZ = mooredPoint[2] - 1.18 * BOAT_SCALE * Math.sin(bRotY);
+    const bollardX = bx;
+    const bollardY = evaluateIsthmusTerrain(bx, bz).y + 0.22;
+    const bollardZ = bz;
+    const boxes: Box[] = [];
+    const segments = 8;
+    for (let i = 0; i < segments; i++) {
+      const t0 = i / segments;
+      const t1 = (i + 1) / segments;
+      const x0 = bowX + (bollardX - bowX) * t0;
+      const y0 = bowY + (bollardY - bowY) * t0 - Math.sin(t0 * Math.PI) * 0.08;
+      const z0 = bowZ + (bollardZ - bowZ) * t0;
+      const x1 = bowX + (bollardX - bowX) * t1;
+      const y1 = bowY + (bollardY - bowY) * t1 - Math.sin(t1 * Math.PI) * 0.08;
+      const z1 = bowZ + (bollardZ - bowZ) * t1;
+      const mx = (x0 + x1) / 2;
+      const my = (y0 + y1) / 2;
+      const mz = (z0 + z1) / 2;
+      boxes.push([
+        mx,
+        my,
+        mz,
+        Math.max(0.025, Math.abs(x1 - x0) + 0.015),
+        Math.max(0.025, Math.abs(y1 - y0) + 0.015),
+        Math.max(0.025, Math.abs(z1 - z0) + 0.015),
+        VOXEL_PALETTE.CREAM,
+      ]);
+    }
+    return buildBoxGeometry(boxes);
+  }, [mooredPoint, bx, bz, bRotY]);
+
+  const boatGeo = useMemo(() => buildBoxGeometry(STATION_BOAT_BOXES), []);
+
+  const geometries = useMemo(() => {
+    const map = new Map<string, BufferGeometry>();
+    for (const el of buildingElements) {
+      let boxes: readonly Box[];
+      const [length, width] = layoutOf(el.id).footprint;
+      const height = el.heightM / DIORAMA_METERS_PER_UNIT;
+      switch (el.kind) {
+        case 'omond':
+          boxes = buildOmondBoxes(isNight);
+          break;
+        case 'module':
+          boxes = buildModuleBoxes(
+            length,
+            width,
+            height,
+            el.colour ?? 'unknown',
+            el.roof ?? 'flat',
+            isNight
+          );
+          break;
+        case 'radioTower':
+          boxes = buildRadioTowerBoxes(height);
+          break;
+        case 'screen':
+          boxes = STEVENSON_SCREEN_BOXES;
+          break;
+        case 'windMast':
+          boxes = WIND_MAST_BASE_BOXES;
+          break;
+        case 'flag':
+          boxes = FLAGPOLE_BASE_BOXES;
+          break;
+        default:
+          boxes = [];
+      }
+      map.set(el.id, buildBoxGeometry(boxes));
+    }
+    return map;
+  }, [buildingElements, isNight]);
+
+  const vaneGeo = useMemo(() => buildBoxGeometry(WIND_VANE_BOXES), []);
+  const cupsGeo = useMemo(() => buildBoxGeometry(WIND_CUPS_BOXES), []);
+
+  const flagGeos = useMemo(() => FLAG_SEGMENT_BOXES.map((boxes) => buildBoxGeometry(boxes)), []);
+  const flagJointRefs = useRef<(Group | null)[]>([]);
+
+  useEffect(() => {
+    return () => {
+      for (const geo of geometries.values()) {
+        geo.dispose();
+      }
+      vaneGeo.dispose();
+      cupsGeo.dispose();
+      for (const g of flagGeos) g.dispose();
+      boatBeachRest.chockGeo.dispose();
+      bollardGeo.dispose();
+      mooringLineGeo.dispose();
+      boatGeo.dispose();
+    };
+  }, [geometries, vaneGeo, cupsGeo, flagGeos, boatBeachRest, bollardGeo, mooringLineGeo, boatGeo]);
+
   useLayoutEffect(() => {
+    if (reduced) waveFlag(flagJointRefs.current, 0, windKmh);
+    if (vaneRef.current) {
+      vaneRef.current.rotation.y = (-windDirDeg * Math.PI) / 180;
+    }
+    if (boatRef.current) {
+      if (isFrozen) {
+        boatRef.current.position.set(boatBeachRest.x, boatBeachRest.chockTopY, boatBeachRest.z);
+        boatRef.current.rotation.set(0, bRotY, 0);
+      } else {
+        boatRef.current.position.set(mooredPoint[0], mooredPoint[1], mooredPoint[2]);
+        boatRef.current.rotation.set(0, bRotY, 0);
+      }
+    }
     if (reduced) {
-      presences.current.omond = buildings.includes('omond') ? 1 : 0;
-      presences.current.moneta = buildings.includes('moneta') ? 1 : 0;
-      presences.current.radioMast = buildings.includes('radioMast') ? 1 : 0;
-      presences.current.modern = buildings.includes('modern') ? 1 : 0;
+      for (const id of ERA_BUILDING_IDS) {
+        presences.current[id] = buildings.includes(id) ? 1 : 0;
+      }
+      for (const el of buildingElements) {
+        const grp = elementRefs.current[el.id];
+        if (grp) {
+          const p = el.era ? (buildings.includes(el.era) ? 1 : 0) : 1;
+          grp.visible = p > 0.01;
+          grp.scale.set(p, p, p);
+        }
+      }
     }
     invalidate();
-  }, [buildings, reduced, invalidate]);
+  }, [buildings, windKmh, windDirDeg, reduced, invalidate, isFrozen, bx, bz, bRotY, boatBeachRest, mooredPoint, buildingElements]);
 
   useFrame(({ clock }, delta) => {
-    const ids: BuildingId[] = ['omond', 'moneta', 'radioMast', 'modern'];
-    const refs: Record<BuildingId, RefObject<Group | null>> = {
-      omond: omondRef,
-      moneta: monetaRef,
-      radioMast: radioRef,
-      modern: modernRef,
-    };
+    if (!reduced) {
+      waveFlag(flagJointRefs.current, clock.getElapsedTime(), windKmh);
+      if (cupsRef.current) {
+        const spinRate = 0.6 + (windKmh / 15) * 3.2;
+        cupsRef.current.rotation.y += delta * spinRate;
+      }
+      if (!isFrozen && boatRef.current) {
+        const t = clock.getElapsedTime();
+        const swell = Math.min(1.0, Math.max(0.12, windKmh / 35));
+        const bob = Math.sin(t * 1.8) * 0.032 * swell;
+        const roll = Math.cos(t * 1.4) * 0.055 * swell;
+        const pitch = Math.sin(t * 1.1 + 0.4) * 0.024 * swell;
+        boatRef.current.position.set(mooredPoint[0], mooredPoint[1] + bob, mooredPoint[2]);
+        boatRef.current.rotation.set(pitch, bRotY, roll);
+      }
+    }
 
     let moving = false;
-    for (const id of ids) {
+    for (const id of ERA_BUILDING_IDS) {
       const target = buildings.includes(id) ? 1 : 0;
       const cur = presences.current[id];
       const next = reduced
@@ -476,234 +783,112 @@ function EraBuildings({
           : cur + (target - cur) * Math.min(1, delta * 6.5);
       if (next !== cur) moving = true;
       presences.current[id] = next;
-
-      const grp = refs[id].current;
-      if (grp) {
-        grp.visible = next > 0.01;
-        const s = Math.max(0.001, next);
-        grp.scale.set(s, s, s);
-      }
     }
 
-    // Animate chimney smoke puffs on Casa Moneta when visible and !reduced
-    if (!reduced && smokeRef.current && presences.current.moneta > 0.2) {
-      const t = clock.getElapsedTime();
-      const children = smokeRef.current.children;
-      for (let i = 0; i < children.length; i++) {
-        const puff = children[i];
-        const cycle = (t * 0.65 + i * 0.25) % 1;
-        puff.position.set(
-          windVec.x * cycle * 1.4,
-          cycle * 1.8,
-          windVec.y * cycle * 1.4
-        );
-        const sc = 0.16 + cycle * 0.28;
-        puff.scale.set(sc, sc, sc);
-      }
+    for (const el of buildingElements) {
+      const grp = elementRefs.current[el.id];
+      if (!grp) continue;
+      const p = el.era ? presences.current[el.era] : 1;
+      grp.visible = p > 0.01;
+      const s = Math.max(0.001, p);
+      grp.scale.set(s, s, s);
     }
 
     if (moving) invalidate();
-  });
-
-  const omondGeo = useMemo(() => buildBoxGeometry(buildOmondBoxes(isNight)), [isNight]);
-  const monetaGeo = useMemo(() => buildBoxGeometry(buildMonetaBoxes(isNight)), [isNight]);
-  const radioGeo = useMemo(() => buildBoxGeometry(buildRadioMastsBoxes()), []);
-  const modernGeo = useMemo(() => buildBoxGeometry(buildModernModulesBoxes(isNight)), [isNight]);
-  const smokeGeo = useMemo(() => new BoxGeometry(1, 1, 1), []);
-  const smokeMat = useMemo(
-    () => new MeshBasicMaterial({ color: 0xf3ebdd, transparent: true, opacity: 0.55 }),
-    []
-  );
-
-  useEffect(() => {
-    return () => {
-      omondGeo.dispose();
-      monetaGeo.dispose();
-      radioGeo.dispose();
-      modernGeo.dispose();
-      smokeGeo.dispose();
-      smokeMat.dispose();
-    };
-  }, [omondGeo, monetaGeo, radioGeo, modernGeo, smokeGeo, smokeMat]);
-
-  return (
-    <group>
-      {/* 1. Omond House (1903 stone cabin) */}
-      <group ref={omondRef} position={[-1.4, 1.45, -1.6]}>
-        <mesh geometry={omondGeo} material={vehicleMaterial} />
-      </group>
-
-      {/* 2. Casa Moneta (1905 wooden house with smoking chimney) */}
-      <group ref={monetaRef} position={[2.6, 1.45, -1.5]}>
-        <mesh geometry={monetaGeo} material={vehicleMaterial} />
-        {/* Chimney smoke puffs inclined by wind */}
-        <group ref={smokeRef} position={[0.95, 2.95, -0.35]}>
-          {[0, 1, 2, 3].map((i) => {
-            const sc = 0.16 + i * 0.06;
-            return (
-              <mesh
-                key={i}
-                position={[i * 0.14, i * 0.36, 0]}
-                scale={[sc, sc, sc]}
-                geometry={smokeGeo}
-                material={smokeMat}
-              />
-            );
-          })}
-        </group>
-      </group>
-
-      {/* 3. Radio Telegraphy Masts (1927 lattice towers + wire antenna) */}
-      <group ref={radioRef} position={[0, 1.45, -3.6]}>
-        <mesh geometry={radioGeo} material={vehicleMaterial} />
-      </group>
-
-      {/* 4. Modern Station Modules (pavilions + science lab) */}
-      <group ref={modernRef} position={[5.8, 1.45, 1.8]}>
-        <mesh geometry={modernGeo} material={vehicleMaterial} />
-      </group>
-    </group>
-  );
-}
-
-function StationInstruments({
-  windKmh,
-  windDirDeg,
-  reduced,
-}: {
-  windKmh: number;
-  windDirDeg: number;
-  reduced: boolean;
-}) {
-  const cupsRef = useRef<Group>(null);
-  const vaneRef = useRef<Group>(null);
-
-  const screenGeo = useMemo(() => buildBoxGeometry(STEVENSON_SCREEN_BOXES), []);
-  const mastBaseGeo = useMemo(() => buildBoxGeometry(WIND_MAST_BASE_BOXES), []);
-  const vaneGeo = useMemo(() => buildBoxGeometry(WIND_VANE_BOXES), []);
-  const cupsGeo = useMemo(() => buildBoxGeometry(WIND_CUPS_BOXES), []);
-  const flagpoleGeo = useMemo(() => buildBoxGeometry(FLAGPOLE_BASE_BOXES), []);
-  const cratesGeo = useMemo(() => buildBoxGeometry(SUPPLY_CRATES_BOXES), []);
-  const boatGeo = useMemo(() => buildBoxGeometry(STATION_BOAT_BOXES), []);
-
-  const flagGeo = useMemo(() => {
-    const g = new PlaneGeometry(1.75, 1.05, 16, 8);
-    g.translate(0.875, 0, 0);
-    return g;
-  }, []);
-
-  const flagUniforms = useMemo(
-    () => ({
-      uTime: { value: 0 },
-      uWindSpeed: { value: 20 },
-    }),
-    []
-  );
-
-  const flagMat = useMemo(
-    () =>
-      new ShaderMaterial({
-        vertexShader: stationFlagVertexShader,
-        fragmentShader: stationFlagFragmentShader,
-        uniforms: flagUniforms,
-        side: DoubleSide,
-      }),
-    [flagUniforms]
-  );
-
-  useEffect(() => {
-    return () => {
-      screenGeo.dispose();
-      mastBaseGeo.dispose();
-      vaneGeo.dispose();
-      cupsGeo.dispose();
-      flagpoleGeo.dispose();
-      cratesGeo.dispose();
-      boatGeo.dispose();
-      flagGeo.dispose();
-      flagMat.dispose();
-    };
-  }, [
-    screenGeo,
-    mastBaseGeo,
-    vaneGeo,
-    cupsGeo,
-    flagpoleGeo,
-    cratesGeo,
-    boatGeo,
-    flagGeo,
-    flagMat,
-  ]);
-
-  useLayoutEffect(() => {
-    flagUniforms.uWindSpeed.value = windKmh;
-    if (vaneRef.current) {
-      vaneRef.current.rotation.y = (-windDirDeg * Math.PI) / 180;
-    }
-  }, [windKmh, windDirDeg, flagUniforms]);
-
-  useFrame(({ clock }, delta) => {
-    if (reduced) return;
-    flagUniforms.uTime.value = clock.getElapsedTime();
-    if (cupsRef.current) {
-      const spinRate = 0.6 + (windKmh / 15) * 3.2;
-      cupsRef.current.rotation.y += delta * spinRate;
-    }
   });
 
   const windToRad = ((-windDirDeg + 90) * Math.PI) / 180;
 
   return (
     <group>
-      {/* 1. Stevenson Meteorological Screen ('screen' hotspot at [-4.5, 1.45, 2.2]) */}
-      <group position={[-4.5, 1.45, 2.2]}>
-        <mesh geometry={screenGeo} material={vehicleMaterial} />
-      </group>
+      {buildingElements.map((el) => {
+        const layout = layoutOf(el.id);
+        const geo = geometries.get(el.id);
+        const isProp = el.kind === 'screen' || el.kind === 'windMast' || el.kind === 'flag';
+        const scale = isProp ? DIORAMA_PROP_SCALE : 1;
+        const [x, y, z] = layout.position;
+        return (
+          <group
+            key={el.id}
+            ref={(node) => {
+              elementRefs.current[el.id] = node;
+            }}
+            position={[x, y, z]}
+            rotation={[0, layout.rotationY, 0]}
+          >
+            <group scale={scale}>
+              {geo && <mesh geometry={geo} material={vehicleMaterial} />}
+              {el.id === 'windMast' && (
+                <>
+                  <group ref={vaneRef} position={[0, 3.85, 0]}>
+                    <mesh geometry={vaneGeo} material={vehicleMaterial} />
+                  </group>
+                  <group ref={cupsRef} position={[0, 4.25, 0]}>
+                    <mesh geometry={cupsGeo} material={vehicleMaterial} />
+                  </group>
+                </>
+              )}
+              {el.id === 'flag' && (
+                <group position={[0, 3.95, 0]} rotation={[0, windToRad, 0]}>
+                  <FlagChain geos={flagGeos} jointRefs={flagJointRefs} index={0} />
+                </group>
+              )}
+            </group>
+          </group>
+        );
+      })}
 
-      {/* 2. Wind Mast with Vane & Spinning Cups ('mast' hotspot at [-7.2, 1.45, -1.2]) */}
-      <group position={[-7.2, 1.45, -1.2]}>
-        <mesh geometry={mastBaseGeo} material={vehicleMaterial} />
-        {/* Wind direction vane */}
-        <group ref={vaneRef} position={[0, 3.85, 0]}>
-          <mesh geometry={vaneGeo} material={vehicleMaterial} />
+      {/* Whaleboat: pulled up on chocks when frozen, moored off beach when open */}
+      <mesh geometry={bollardGeo} material={vehicleMaterial} />
+      {!isFrozen && <mesh geometry={mooringLineGeo} material={vehicleMaterial} />}
+      {isFrozen && <mesh geometry={boatBeachRest.chockGeo} material={vehicleMaterial} />}
+      <group
+        ref={boatRef}
+        position={isFrozen ? [boatBeachRest.x, boatBeachRest.chockTopY, boatBeachRest.z] : [mooredPoint[0], mooredPoint[1], mooredPoint[2]]}
+        rotation={[0, bRotY, 0]}
+      >
+        <group scale={BOAT_SCALE}>
+          <mesh geometry={boatGeo} material={vehicleMaterial} />
         </group>
-        {/* 3-cup anemometer rotor */}
-        <group ref={cupsRef} position={[0, 4.25, 0]}>
-          <mesh geometry={cupsGeo} material={vehicleMaterial} />
-        </group>
-      </group>
-
-      {/* 3. Argentine Flagpole ('flag' hotspot at [0.2, 1.45, 3.6]) */}
-      <group position={[0.2, 1.45, 3.6]}>
-        <mesh geometry={flagpoleGeo} material={vehicleMaterial} />
-        {/* Waving flag cloth */}
-        <mesh
-          position={[0, 3.95, 0]}
-          rotation={[0, windToRad, 0]}
-          geometry={flagGeo}
-          material={flagMat}
-        />
-      </group>
-
-      {/* 4. Historic supply crates beside Casa Moneta */}
-      <group position={[4.6, 1.45, -0.6]}>
-        <mesh geometry={cratesGeo} material={vehicleMaterial} />
-      </group>
-
-      {/* 5. Station whaleboat pulled onto Scotia Bay shore */}
-      <group position={[-2.8, 0.42, 8.2]} rotation={[0, 0.35, 0]}>
-        <mesh geometry={boatGeo} material={vehicleMaterial} />
       </group>
     </group>
   );
 }
 
+interface SealRig {
+  root: Group | null;
+  tilt: Group | null;
+  neck: Group | null;
+  jaw: Group | null;
+  flipR: Group | null;
+  flipL: Group | null;
+  tail: Group | null;
+}
+
+const STILL_TIME = 2.0;
+
+function applySealPose(rig: SealRig, p: SealPose) {
+  const { root, tilt, neck, jaw, flipR, flipL, tail } = rig;
+  if (!root || !tilt || !neck || !flipR || !flipL || !tail) return;
+  root.position.set(p.x, p.y, p.z);
+  root.rotation.y = p.yaw;
+  tilt.rotation.set(p.pitch, 0, p.roll);
+  tilt.scale.set(1 + p.hump * 0.08, p.stretch, 1 - p.hump * 0.06);
+  neck.rotation.set(p.headPitch, p.headYaw, p.headRoll);
+  if (jaw) jaw.rotation.z = -p.jawOpen * 0.35;
+  flipR.rotation.set(p.flipRPitch, 0, p.flipRRoll);
+  flipL.rotation.set(p.flipLPitch, 0, p.flipLRoll);
+  tail.rotation.set(p.tailPitch, p.tailYaw, 0);
+}
+
 function StationFauna({
   animals,
   reduced,
+  seaIce,
 }: {
   animals: readonly string[];
   reduced: boolean;
+  seaIce: number;
 }) {
   const showPenguins =
     animals.includes('adelie') || animals.includes('chinstrap');
@@ -712,17 +897,65 @@ function StationFauna({
   const showBirds =
     animals.includes('skua') || animals.includes('snowPetrel');
 
-  const penguins = useMemo(() => generatePenguinColony(190411), []);
-  const penguinGroupRef = useRef<Group>(null);
   const birdsGroupRef = useRef<Group>(null);
-  const sealsGroupRef = useRef<Group>(null);
 
-  const adelieGeo = useMemo(() => buildBoxGeometry(ADELIE_PENGUIN_BOXES), []);
-  const chinstrapGeo = useMemo(() => buildBoxGeometry(CHINSTRAP_PENGUIN_BOXES), []);
-  const slideGeo = useMemo(() => buildBoxGeometry(SLIDING_PENGUIN_BOXES), []);
+  const sealColony = useMemo(() => buildSealColony((x, z) => evaluateIsthmusTerrain(x, z).y), []);
 
-  const weddellGeo = useMemo(() => buildBoxGeometry(WEDDELL_SEAL_BOXES), []);
-  const elephantGeo = useMemo(() => buildBoxGeometry(ELEPHANT_SEAL_BOXES), []);
+  const weddellParts = useMemo(() => weddellSealParts(), []);
+  const elephantParts = useMemo(() => elephantSealParts(), []);
+
+  const weddellGeos = useMemo(
+    () => ({
+      body: buildBoxGeometry(weddellParts.body),
+      head: buildBoxGeometry(weddellParts.head),
+      flipperR: buildBoxGeometry(weddellParts.flipperR),
+      flipperL: buildBoxGeometry(weddellParts.flipperL),
+      tail: buildBoxGeometry(weddellParts.tail),
+    }),
+    [weddellParts]
+  );
+
+  const elephantGeos = useMemo(
+    () => ({
+      body: buildBoxGeometry(elephantParts.body),
+      head: buildBoxGeometry(elephantParts.head),
+      jaw: elephantParts.jaw ? buildBoxGeometry(elephantParts.jaw) : null,
+      flipperR: buildBoxGeometry(elephantParts.flipperR),
+      flipperL: buildBoxGeometry(elephantParts.flipperL),
+      tail: buildBoxGeometry(elephantParts.tail),
+    }),
+    [elephantParts]
+  );
+
+  const seals = useMemo(
+    () => [
+      ...sealColony.residents.map((r) => ({
+        species: r.species,
+        pose: (t: number, o: SealPose) => sealResidentPose(r, t, o),
+      })),
+      {
+        species: sealColony.traveller.species,
+        pose: (t: number, o: SealPose) =>
+          seaIce >= 0.5
+            ? sealResidentPose(sealColony.traveller.rest, t, o)
+            : sealTravellerPose(sealColony.traveller.route, t, o),
+      },
+    ],
+    [sealColony, seaIce]
+  );
+
+  const sealRigs = useRef<SealRig[]>(
+    seals.map(() => ({
+      root: null,
+      tilt: null,
+      neck: null,
+      jaw: null,
+      flipR: null,
+      flipL: null,
+      tail: null,
+    }))
+  );
+  const tempSealPose = useMemo(() => restSealPose(), []);
 
   const mirrorZ = (boxes: readonly Box[]): Box[] =>
     boxes.map(([x, y, z, ...rest]) => [x, y, -z, ...rest]);
@@ -737,11 +970,18 @@ function StationFauna({
 
   useEffect(() => {
     return () => {
-      adelieGeo.dispose();
-      chinstrapGeo.dispose();
-      slideGeo.dispose();
-      weddellGeo.dispose();
-      elephantGeo.dispose();
+      weddellGeos.body.dispose();
+      weddellGeos.head.dispose();
+      weddellGeos.flipperR.dispose();
+      weddellGeos.flipperL.dispose();
+      weddellGeos.tail.dispose();
+      elephantGeos.body.dispose();
+      elephantGeos.head.dispose();
+      elephantGeos.jaw?.dispose();
+      elephantGeos.flipperR.dispose();
+      elephantGeos.flipperL.dispose();
+      elephantGeos.tail.dispose();
+
       skuaBodyGeo.dispose();
       skuaRightWingGeo.dispose();
       skuaLeftWingGeo.dispose();
@@ -750,11 +990,8 @@ function StationFauna({
       petrelLeftWingGeo.dispose();
     };
   }, [
-    adelieGeo,
-    chinstrapGeo,
-    slideGeo,
-    weddellGeo,
-    elephantGeo,
+    weddellGeos,
+    elephantGeos,
     skuaBodyGeo,
     skuaRightWingGeo,
     skuaLeftWingGeo,
@@ -763,33 +1000,17 @@ function StationFauna({
     petrelLeftWingGeo,
   ]);
 
+  useLayoutEffect(() => {
+    if (reduced) {
+      seals.forEach((s, i) =>
+        applySealPose(sealRigs.current[i], s.pose(STILL_TIME, tempSealPose))
+      );
+    }
+  }, [reduced, seals, tempSealPose]);
+
   useFrame(({ clock }) => {
     if (reduced) return;
     const t = clock.getElapsedTime();
-
-    if (showPenguins && penguinGroupRef.current) {
-      const nodes = penguinGroupRef.current.children;
-      for (let i = 0; i < penguins.length; i++) {
-        const p = penguins[i];
-        const node = nodes[i];
-        if (!node) continue;
-        if (p.mode === 'walk') {
-          const waddle = Math.sin(t * 4.5 * p.speed + p.phase) * 0.14;
-          const stepX = Math.cos(t * 0.8 * p.speed + p.phase) * 0.35;
-          const stepZ = Math.sin(t * 0.8 * p.speed + p.phase) * 0.35;
-          node.position.set(p.x + stepX, p.y, p.z + stepZ);
-          node.rotation.set(0, p.rotY + waddle * 0.5, waddle);
-        } else {
-          // Belly tobogganing down the snow slope
-          const slideProgress = (t * 0.38 * p.speed + p.phase) % 1;
-          const sx = p.x + slideProgress * 1.4;
-          const sz = p.z + slideProgress * 2.2;
-          const sy = Math.max(0.25, p.y - slideProgress * 0.85);
-          node.position.set(sx, sy, sz);
-          node.rotation.set(0.22, p.rotY, 0);
-        }
-      }
-    }
 
     if (showBirds && birdsGroupRef.current) {
       const nodes = birdsGroupRef.current.children;
@@ -813,55 +1034,60 @@ function StationFauna({
       }
     }
 
-    if (showSeals && sealsGroupRef.current) {
-      const nodes = sealsGroupRef.current.children;
-      for (let i = 0; i < nodes.length; i++) {
-        const seal = nodes[i];
-        const breath = Math.sin(t * 1.6 + i * 2) * 0.04;
-        seal.scale.set(1 + breath * 0.3, 1 + breath, 1 + breath * 0.3);
-      }
+    if (showSeals) {
+      seals.forEach((s, i) =>
+        applySealPose(sealRigs.current[i], s.pose(t, tempSealPose))
+      );
     }
   });
 
   return (
     <group>
-      {/* Penguin colony on the eastern rookery terrace */}
-      {showPenguins && (
-        <group ref={penguinGroupRef}>
-          {penguins.map((p, i) => {
-            const geo =
-              p.mode === 'slide'
-                ? slideGeo
-                : p.species === 'adelie'
-                  ? adelieGeo
-                  : chinstrapGeo;
-            return (
-              <group
-                key={i}
-                position={[p.x, p.y, p.z]}
-                rotation={[p.mode === 'slide' ? 0.22 : 0, p.rotY, 0]}
-              >
-                <mesh geometry={geo} material={vehicleMaterial} />
-              </group>
-            );
-          })}
-        </group>
-      )}
+      {showPenguins && <PenguinColony reduced={reduced} />}
 
-      {/* Seals resting on the southern beach of Bahía Scotia */}
+      {/* Seals on the front beach of Bahía Scotia */}
       {showSeals && (
-        <group ref={sealsGroupRef}>
-          {[
-            { pos: [-3.4, 0.42, 9.2] as const, rot: 0.4, type: 'weddell' as const },
-            { pos: [-1.6, 0.38, 9.6] as const, rot: -0.25, type: 'elephant' as const },
-            { pos: [1.1, 0.44, 9.1] as const, rot: 0.75, type: 'weddell' as const },
-          ].map((s, i) => {
-            const isElephant =
-              s.type === 'elephant' && animals.includes('elephant');
-            const geo = isElephant ? elephantGeo : weddellGeo;
+        <group>
+          {seals.map((s, i) => {
+            if (s.species === 'elephant' && !animals.includes('elephant')) return null;
+            if (s.species === 'weddell' && !animals.includes('weddell')) return null;
+            const isElephant = s.species === 'elephant';
+            const geos = isElephant ? elephantGeos : weddellGeos;
+            const rig = sealRigs.current[i];
+            const neckPivot = isElephant ? ELEPHANT_NECK : WEDDELL_NECK;
+            const flipRPivot = isElephant ? ELEPHANT_FLIPPER_R : WEDDELL_FLIPPER_R;
+            const flipLPivot = isElephant ? ELEPHANT_FLIPPER_L : WEDDELL_FLIPPER_L;
+            const tailPivot = isElephant ? ELEPHANT_TAIL : WEDDELL_TAIL;
+
             return (
-              <group key={i} position={s.pos} rotation={[0, s.rot, 0]}>
-                <mesh geometry={geo} material={vehicleMaterial} />
+              <group key={i} ref={(n) => void (rig.root = n)}>
+                <group ref={(n) => void (rig.tilt = n)}>
+                  <mesh geometry={geos.body} material={vehicleMaterial} />
+                  <group ref={(n) => void (rig.neck = n)} position={neckPivot}>
+                    <mesh geometry={geos.head} material={vehicleMaterial} />
+                    {isElephant && elephantGeos.jaw && (
+                      <group
+                        ref={(n) => void (rig.jaw = n)}
+                        position={[
+                          ELEPHANT_JAW[0] - ELEPHANT_NECK[0],
+                          ELEPHANT_JAW[1] - ELEPHANT_NECK[1],
+                          0,
+                        ]}
+                      >
+                        <mesh geometry={elephantGeos.jaw} material={vehicleMaterial} />
+                      </group>
+                    )}
+                  </group>
+                  <group ref={(n) => void (rig.flipR = n)} position={flipRPivot}>
+                    <mesh geometry={geos.flipperR} material={vehicleMaterial} />
+                  </group>
+                  <group ref={(n) => void (rig.flipL = n)} position={flipLPivot}>
+                    <mesh geometry={geos.flipperL} material={vehicleMaterial} />
+                  </group>
+                  <group ref={(n) => void (rig.tail = n)} position={tailPivot}>
+                    <mesh geometry={geos.tail} material={vehicleMaterial} />
+                  </group>
+                </group>
               </group>
             );
           })}
@@ -983,11 +1209,13 @@ function SnowAndSpindrift({
 function StationCameraAndProjection({
   focus,
   reduced,
+  panelExpanded,
   overlayRef,
   onReady,
 }: {
   focus: HotspotId | null;
   reduced: boolean;
+  panelExpanded?: boolean;
   overlayRef?: RefObject<HTMLDivElement | null>;
   onReady?: () => void;
 }) {
@@ -1001,62 +1229,55 @@ function StationCameraAndProjection({
   const buttonMapRef = useRef<Map<string, HTMLElement>>(new Map());
   const lastCamPos = useRef<Vector3 | null>(null);
   const lastSize = useRef<{ width: number; height: number }>({ width: 0, height: 0 });
+  const projectedRef = useRef(false);
 
-  const mobile = size.width < 820;
+  const isPortrait = size.width < 900 && size.height > size.width;
+  const mobile = isPortrait;
 
   useLayoutEffect(() => {
-    if (typeof window !== 'undefined') {
-      (window as unknown as { __orcadasReady?: boolean }).__orcadasReady = true;
-    }
-    onReady?.();
     invalidate();
-  }, [invalidate, onReady]);
+  }, [invalidate]);
 
   useLayoutEffect(() => {
     const cc = controlsRef.current;
     if (!cc) return;
     (window as unknown as { __orcadasCamera?: CameraControls }).__orcadasCamera = cc;
-    cc.minPolarAngle = 0.14;
-    cc.maxPolarAngle = Math.PI * 0.47;
-    cc.minDistance = 4.5;
-    cc.maxDistance = 75;
+    // The diorama is always seen from Bahía Scotia: a little orbit, no top view, limited zoom.
+    const deg = Math.PI / 180;
+    const azimuth = (180 - VIEW_BEARING_DEG) * deg;
+    cc.minAzimuthAngle = azimuth - VIEW_ORBIT_DEG * deg;
+    cc.maxAzimuthAngle = azimuth + VIEW_ORBIT_DEG * deg;
+    cc.minPolarAngle = (90 - VIEW_ELEVATION_DEG[1]) * deg;
+    cc.maxPolarAngle = (90 - VIEW_ELEVATION_DEG[0]) * deg;
+    cc.minDistance = 3;
+    // Never farther than a little beyond the entry view: the stage ends past it.
+    const entry = poseForHotspot(null, mobile, Boolean(panelExpanded));
+    cc.maxDistance =
+      Math.hypot(
+        entry.pos[0] - entry.target[0],
+        entry.pos[1] - entry.target[1],
+        entry.pos[2] - entry.target[2]
+      ) * VIEW_MAX_ZOOM_OUT;
     cc.smoothTime = 0.32;
-    cc.setBoundary(new Box3(new Vector3(-55, -15, -55), new Vector3(55, 45, 65)));
+    cc.setBoundary(new Box3(new Vector3(-20, -1, -14), new Vector3(20, 24, 60)));
 
-    const pose = poseForHotspot(focus, mobile);
+    const pose = poseForHotspot(focus, mobile, Boolean(panelExpanded));
     if (!initializedRef.current) {
+      // Every visit starts from the same view, without an entry flight.
       initializedRef.current = true;
-      if (!reduced && (!focus || focus === 'overview')) {
-        // Entry camera presentation flight from higher over the bay down to overview
-        cc.setLookAt(
-          pose.pos[0] * 1.25,
-          pose.pos[1] * 1.35,
-          pose.pos[2] * 1.25,
-          pose.target[0],
-          pose.target[1],
-          pose.target[2],
-          false
-        );
-        void cc.setLookAt(
-          pose.pos[0],
-          pose.pos[1],
-          pose.pos[2],
-          pose.target[0],
-          pose.target[1],
-          pose.target[2],
-          true
-        );
-      } else {
-        void cc.setLookAt(
-          pose.pos[0],
-          pose.pos[1],
-          pose.pos[2],
-          pose.target[0],
-          pose.target[1],
-          pose.target[2],
-          false
-        );
-      }
+      camera.position.set(pose.pos[0], pose.pos[1], pose.pos[2]);
+      camera.lookAt(new Vector3(pose.target[0], pose.target[1], pose.target[2]));
+      camera.updateMatrixWorld(true);
+      camera.updateProjectionMatrix();
+      void cc.setLookAt(
+        pose.pos[0],
+        pose.pos[1],
+        pose.pos[2],
+        pose.target[0],
+        pose.target[1],
+        pose.target[2],
+        false
+      );
     } else {
       void cc.setLookAt(
         pose.pos[0],
@@ -1069,7 +1290,7 @@ function StationCameraAndProjection({
       );
     }
     invalidate();
-  }, [focus, mobile, reduced, invalidate]);
+  }, [focus, mobile, reduced, panelExpanded, invalidate]);
 
   // Keyboard orbit (Arrow keys) and zoom (+ / -)
   useEffect(() => {
@@ -1111,38 +1332,16 @@ function StationCameraAndProjection({
   }, [reduced, invalidate]);
 
   useFrame(() => {
-    if (!readyFiredRef.current) {
-      readyFiredRef.current = true;
-      if (typeof window !== 'undefined') {
-        (window as unknown as { __orcadasReady?: boolean }).__orcadasReady = true;
-      }
-      onReady?.();
-    }
-
     const cc = controlsRef.current;
     if (cc && cc.active) {
       invalidate();
     }
 
     const overlay = overlayRef?.current;
-    if (!overlay) return;
-
-    const camPos = camera.position;
-    const moving = Boolean(cc && cc.active);
-    const posChanged =
-      !lastCamPos.current || lastCamPos.current.distanceToSquared(camPos) > 1e-5;
-    const sizeChanged =
-      lastSize.current.width !== size.width ||
-      lastSize.current.height !== size.height;
-
-    if (!moving && !posChanged && !sizeChanged) {
+    if (!overlay) {
+      invalidate();
       return;
     }
-
-    if (!lastCamPos.current) lastCamPos.current = new Vector3();
-    lastCamPos.current.copy(camPos);
-    lastSize.current.width = size.width;
-    lastSize.current.height = size.height;
 
     const map = buttonMapRef.current;
     if (map.size !== HOTSPOTS.length) {
@@ -1153,7 +1352,35 @@ function StationCameraAndProjection({
         );
         if (btn) map.set(spot.id, btn);
       }
+      if (map.size === 0) {
+        invalidate();
+        return;
+      }
     }
+
+    const camPos = camera.position;
+    const moving = Boolean(cc && cc.active);
+    const posChanged =
+      !lastCamPos.current || lastCamPos.current.distanceToSquared(camPos) > 1e-5;
+    const sizeChanged =
+      lastSize.current.width !== size.width ||
+      lastSize.current.height !== size.height;
+
+    if (projectedRef.current && !moving && !posChanged && !sizeChanged) {
+      return;
+    }
+
+    projectedRef.current = true;
+    if (!lastCamPos.current) lastCamPos.current = new Vector3();
+    lastCamPos.current.copy(camPos);
+    lastSize.current.width = size.width;
+    lastSize.current.height = size.height;
+
+    // Dots never go under the month strip (it sits above them so its «Saber más» stays usable).
+    const strip = document.querySelector('.orc-month-strip-wrap');
+    const minY = strip
+      ? strip.getBoundingClientRect().bottom - overlay.getBoundingClientRect().top + 24
+      : 116;
 
     for (const spot of HOTSPOTS) {
       const btn = map.get(spot.id);
@@ -1165,29 +1392,49 @@ function StationCameraAndProjection({
       const xBound = size.width >= 900 ? 1.08 : 1.45;
       const yBound = size.width >= 900 ? 1.08 : 1.45;
       const visible =
-        projVec.z < 1.0 &&
+        projVec.z < 1.01 &&
         projVec.x >= -xBound &&
         projVec.x <= xBound &&
         projVec.y >= -yBound &&
         projVec.y <= yBound;
 
-      if (!visible) {
+      const rawSx = ((projVec.x + 1) * size.width) / 2;
+      const rawSy = ((-projVec.y + 1) * size.height) / 2;
+      // A dot that would sit under the month strip is hidden, except the focused one, which is
+      // pulled down; pulling them all would stack several dots on the same line.
+      const underStrip = rawSy < minY && spot.id !== focus;
+
+      if (!visible || underStrip) {
         btn.style.opacity = '0';
         btn.style.pointerEvents = 'none';
         continue;
       }
 
-      const rawSx = ((projVec.x + 1) * size.width) / 2;
-      const rawSy = ((-projVec.y + 1) * size.height) / 2;
       const maxX = size.width >= 900 ? size.width - 560 : size.width - 68;
-      const maxY = size.width >= 900 ? size.height - 64 : size.height * 0.52;
+      const maxY = isPortrait
+        ? (panelExpanded ? size.height * 0.14 : size.height * 0.52)
+        : size.height - 64;
       const sx = Math.max(58, Math.min(maxX, rawSx));
-      const sy = Math.max(116, Math.min(maxY, rawSy));
+      const sy = Math.max(Math.min(minY, maxY), Math.min(maxY, rawSy));
       btn.style.opacity = '1';
       btn.style.pointerEvents = 'auto';
       btn.style.left = '0px';
       btn.style.top = '0px';
       btn.style.transform = `translate3d(${sx.toFixed(1)}px, ${sy.toFixed(1)}px, 0px) translate(-50%, -50%)`;
+    }
+
+    const screenBtn = map.get('screen');
+    const screenReady = screenBtn && screenBtn.style.pointerEvents === 'auto';
+    if (!readyFiredRef.current) {
+      if (screenReady) {
+        readyFiredRef.current = true;
+        if (typeof window !== 'undefined') {
+          (window as unknown as { __orcadasReady?: boolean }).__orcadasReady = true;
+        }
+        onReady?.();
+      } else {
+        invalidate();
+      }
     }
   });
 
@@ -1237,6 +1484,7 @@ export const StationScene = memo(function StationScene({
   animals,
   focus,
   reduced,
+  panelExpanded,
   onReady,
   overlayRef,
 }: StationSceneProps) {
@@ -1290,8 +1538,8 @@ export const StationScene = memo(function StationScene({
         camera={{
           fov: 42,
           near: 0.5,
-          far: 220,
-          position: [-13.5, 14.5, 31.0],
+          far: 400,
+          position: [20, 9, 26],
         }}
         onCreated={({ gl }) => {
           const dom = gl.domElement;
@@ -1322,6 +1570,7 @@ export const StationScene = memo(function StationScene({
           reduced={reduced}
         />
         <IsthmusTerrain sunDir={sunDir} sunElevationDeg={sunElevationDeg} />
+        <StageDetails />
         <BayOcean
           sunDir={sunDir}
           windKmh={windKmh}
@@ -1329,18 +1578,19 @@ export const StationScene = memo(function StationScene({
           seaIce={seaIce}
           reduced={reduced}
         />
-        <EraBuildings
+        <StationElements
           buildings={buildings}
           isNight={isNight}
-          windVec={windVec}
-          reduced={reduced}
-        />
-        <StationInstruments
           windKmh={windKmh}
           windDirDeg={windDirDeg}
+          seaIce={seaIce}
           reduced={reduced}
         />
-        <StationFauna animals={animals} reduced={reduced} />
+        <StationFauna
+          animals={animals}
+          seaIce={seaIce}
+          reduced={reduced}
+        />
         <SnowAndSpindrift
           windKmh={windKmh}
           windVec={windVec}
@@ -1355,6 +1605,7 @@ export const StationScene = memo(function StationScene({
         <StationCameraAndProjection
           focus={focus}
           reduced={reduced}
+          panelExpanded={panelExpanded}
           overlayRef={overlayRef}
           onReady={onReady}
         />

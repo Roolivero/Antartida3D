@@ -35,9 +35,10 @@ export function StationFallback({
   const sunCy = Math.max(60, Math.min(270, 235 - sunEl * 4.2));
 
   const hasOmond = buildings.includes('omond');
-  const hasMoneta = buildings.includes('moneta');
   const hasRadio = buildings.includes('radioMast');
   const hasModern = buildings.includes('modern');
+  const hasWindMast = buildings.includes('windMast');
+  const hasFlag = buildings.includes('flag');
 
   return (
     <div className="orc-fallback" role="img" aria-label="Ilustración del istmo de la Estación Orcadas">
@@ -188,54 +189,6 @@ export function StationFallback({
           </g>
         )}
 
-        {/* Casa Moneta (1905 wooden gable house) */}
-        {hasMoneta && (
-          <g transform="translate(495, 252)">
-            <rect
-              x="0"
-              y="18"
-              width="66"
-              height="32"
-              fill="#C89B6E"
-              stroke="#1F2A36"
-              strokeWidth="2"
-            />
-            <polygon
-              points="-5,18 33,-2 71,18"
-              fill="#A4471F"
-              stroke="#1F2A36"
-              strokeWidth="2"
-            />
-            <rect
-              x="46"
-              y="-6"
-              width="8"
-              height="16"
-              fill="#7A3B24"
-              stroke="#1F2A36"
-              strokeWidth="1.6"
-            />
-            <rect
-              x="12"
-              y="26"
-              width="12"
-              height="12"
-              fill={isNight ? '#F5C469' : '#D6E5EF'}
-              stroke="#1F2A36"
-              strokeWidth="1.5"
-            />
-            <rect
-              x="38"
-              y="26"
-              width="12"
-              height="12"
-              fill={isNight ? '#F5C469' : '#D6E5EF'}
-              stroke="#1F2A36"
-              strokeWidth="1.5"
-            />
-          </g>
-        )}
-
         {/* Modern Station Modules (2000+) */}
         {hasModern && (
           <g transform="translate(578, 264)">
@@ -292,30 +245,34 @@ export function StationFallback({
         </g>
 
         {/* Wind Mast & Anemometer */}
-        <g transform="translate(238, 210)">
-          <line x1="16" y1="10" x2="16" y2="96" stroke="#1F2A36" strokeWidth="2.4" />
-          <line x1="4" y1="20" x2="28" y2="20" stroke="#1F2A36" strokeWidth="2" />
-          <circle cx="4" cy="20" r="3" fill="#1F2A36" />
-          <circle cx="28" cy="20" r="3" fill="#1F2A36" />
-        </g>
+        {hasWindMast && (
+          <g transform="translate(238, 210)">
+            <line x1="16" y1="10" x2="16" y2="96" stroke="#1F2A36" strokeWidth="2.4" />
+            <line x1="4" y1="20" x2="28" y2="20" stroke="#1F2A36" strokeWidth="2" />
+            <circle cx="4" cy="20" r="3" fill="#1F2A36" />
+            <circle cx="28" cy="20" r="3" fill="#1F2A36" />
+          </g>
+        )}
 
         {/* Flagpole & Argentine Flag */}
-        <g transform="translate(462, 206)">
-          <line x1="0" y1="0" x2="0" y2="96" stroke="#1F2A36" strokeWidth="2.4" />
-          <rect x="0" y="4" width="34" height="7" fill="#74ACDF" />
-          <rect x="0" y="11" width="34" height="7" fill="#F7FAFB" />
-          <rect x="0" y="18" width="34" height="7" fill="#74ACDF" />
-          <circle cx="16" cy="14.5" r="2.5" fill="#C0862F" />
-          <rect
-            x="0"
-            y="4"
-            width="34"
-            height="21"
-            fill="none"
-            stroke="#1F2A36"
-            strokeWidth="1.5"
-          />
-        </g>
+        {hasFlag && (
+          <g transform="translate(462, 206)">
+            <line x1="0" y1="0" x2="0" y2="96" stroke="#1F2A36" strokeWidth="2.4" />
+            <rect x="0" y="4" width="34" height="7" fill="#74ACDF" />
+            <rect x="0" y="11" width="34" height="7" fill="#F7FAFB" />
+            <rect x="0" y="18" width="34" height="7" fill="#74ACDF" />
+            <circle cx="16" cy="14.5" r="2.5" fill="#C0862F" />
+            <rect
+              x="0"
+              y="4"
+              width="34"
+              height="21"
+              fill="none"
+              stroke="#1F2A36"
+              strokeWidth="1.5"
+            />
+          </g>
+        )}
 
         {/* Penguin Colony on Eastern Slope */}
         <g transform="translate(700, 286)">

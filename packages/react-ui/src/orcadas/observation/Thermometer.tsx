@@ -23,8 +23,8 @@ export function Thermometer({
   const centerDeg = Math.round(tempC);
   const pxPerDeg = 50;
   const lensCx = 274;
-  const lensCy = 104;
-  const lensR = 76;
+  const lensCy = 98;
+  const lensR = 70;
 
   // In the lens: y increases downward, temperature increases upward
   const yForTemp = (t: number) => lensCy - (t - centerDeg) * pxPerDeg;
@@ -349,17 +349,9 @@ export function Thermometer({
           />
           {/* Meniscus pointer triangle */}
           <polygon
-            points={`${lensCx + 14},${meniscusY} ${lensCx + 23},${meniscusY - 4.5} ${lensCx + 23},${meniscusY + 4.5}`}
+            points={`${lensCx + 11},${meniscusY} ${lensCx + 19},${meniscusY - 4.5} ${lensCx + 19},${meniscusY + 4.5}`}
             fill="#A4471F"
           />
-          <text
-            x={lensCx + 26}
-            y={meniscusY + 3.5}
-            className="orc-obs-svg-callout"
-            fill="#A4471F"
-          >
-            menisco
-          </text>
 
           {/* User's movable reading guide cursor (draftC) */}
           <g className="orc-obs-user-guide">
@@ -388,6 +380,7 @@ export function Thermometer({
           />
         </g>
 
+
         {/* Brass rim and handle of the magnifying glass */}
         <circle
           cx={lensCx}
@@ -413,10 +406,23 @@ export function Thermometer({
           stroke="#1F2A36"
           strokeWidth="1.5"
         />
+        {/* Drawn after the lens rim, so the word is never cut by it; a paper halo keeps it legible */}
+        <text
+          x={lensCx + 21}
+          y={meniscusY + 3.5}
+          className="orc-obs-svg-callout"
+          fill="#A4471F"
+          stroke="#FBF4E6"
+          strokeWidth="3"
+          paintOrder="stroke"
+        >
+          menisco
+        </text>
+
         {/* Lens caption */}
         <rect
           x={lensCx - 54}
-          y="12"
+          y={lensCy + lensR + 8}
           width="108"
           height="19"
           rx="9"
@@ -424,7 +430,7 @@ export function Thermometer({
           stroke="#1F2A36"
           strokeWidth="1.2"
         />
-        <text x={lensCx} y="25" textAnchor="middle" className="orc-obs-svg-tag">
+        <text x={lensCx} y={lensCy + lensR + 21} textAnchor="middle" className="orc-obs-svg-tag">
           Lupa ×5 · escala 0,1 °C
         </text>
       </svg>

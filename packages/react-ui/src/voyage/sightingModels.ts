@@ -1,6 +1,20 @@
 import type { BufferGeometry, Object3D } from 'three';
 import { createSeededRng, type Sighting } from '@antartida/core';
 import { buildBoxGeometry, type Box } from './vehicles.ts';
+import {
+  buildModuleBoxes,
+  buildOmondBoxes,
+  buildRadioTowerBoxes,
+  FLAGPOLE_BASE_BOXES,
+  FLAG_SEGMENT_BOXES,
+  FLAG_SEGMENT_WIDTH,
+  SEA_ICE_FLOE_A,
+  SEA_ICE_FLOE_B,
+  SEA_ICE_FLOE_C,
+  SEA_ICE_FLOE_D,
+} from '../orcadas/stationModels.ts';
+import { assemblePenguinBoxes, buildRookeryBoxes } from '../orcadas/penguins.ts';
+import { assembleWeddellSealBoxes, assembleElephantSealBoxes } from '../orcadas/seals.ts';
 
 // Approximate colors. The models are illustrations, not portraits: one unit is about the length of the model.
 const BLACK = 0x1f2a36;
@@ -551,6 +565,58 @@ export const SCENE_MODELS: Readonly<Record<string, readonly Box[]>> = {
   ...Object.fromEntries(Object.entries(SEA_MODELS).map(([id, boxes]) => [`sea:${id}`, boxes])),
   ushuaia: TOWN,
   orcadas: ORCADAS_SITE,
+  // Orcadas station models: getters, because stationModels.ts imports this module (cycle).
+  get moduleRound() {
+    return buildModuleBoxes(4.8, 1.7, 0.67, 'orange', 'round', false);
+  },
+  get moduleGabled() {
+    return buildModuleBoxes(3.2, 1.8, 0.5, 'orange', 'gabled', false);
+  },
+  get moduleFlat() {
+    return buildModuleBoxes(6.2, 1.6, 0.5, 'unknown', 'flat', false);
+  },
+  get omond() {
+    return buildOmondBoxes(false);
+  },
+  get radioTower() {
+    return buildRadioTowerBoxes(5);
+  },
+  get orcadasAdelie() {
+    return assemblePenguinBoxes('adelie');
+  },
+  get orcadasChinstrap() {
+    return assemblePenguinBoxes('chinstrap');
+  },
+  get orcadasFlag() {
+    // Pole and the 5 flag segments laid flat, side by side as at rest.
+    return [
+      ...FLAGPOLE_BASE_BOXES,
+      ...FLAG_SEGMENT_BOXES.flatMap((seg, i) =>
+        seg.map(([x, y, z, sx, sy, sz, c]) => [x + i * FLAG_SEGMENT_WIDTH, y + 3.95, z, sx, sy, sz, c] as Box)
+      ),
+    ];
+  },
+  get rookery() {
+    return buildRookeryBoxes();
+  },
+  get orcadasFloeA() {
+    return SEA_ICE_FLOE_A;
+  },
+  get orcadasFloeB() {
+    return SEA_ICE_FLOE_B;
+  },
+  get orcadasFloeC() {
+    return SEA_ICE_FLOE_C;
+  },
+  get orcadasFloeD() {
+    return SEA_ICE_FLOE_D;
+  },
+  get orcadasWeddellSeal() {
+    return assembleWeddellSealBoxes();
+  },
+  get orcadasElephantSeal() {
+    return assembleElephantSealBoxes();
+  },
 };
 
 export const buildSeaGeometry = (id: SeaModelId) => buildBoxGeometry(SEA_MODELS[id]);

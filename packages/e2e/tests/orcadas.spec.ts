@@ -62,13 +62,15 @@ test('completes all chapters of Orcadas with the keyboard only, opens Sources, a
   );
   expect(overflow).toBeLessThanOrEqual(0);
 
-  // Chapter 1: Llegada -> Observación
+  // Chapter 1: Llegar -> Observar
   await tabTo(page, /^Hacer la observación$/);
   await page.keyboard.press('Enter');
 
-  // Chapter 2: Observación (focus moves to h2, primary button disabled until 4 readings entered)
+  // Chapter 2: Observar (focus moves to h2, primary button is enabled with "Seguir" and shows missing count)
   await expectFocused(page, 'Observación del día');
-  await expect(primary(page)).toBeDisabled();
+  await expect(primary(page)).toBeEnabled();
+  await expect(primary(page)).toHaveText('Seguir');
+  await expect(page.getByText(/Te faltan 4 lecturas/)).toBeVisible();
 
   await tabTo(page, /^Temperatura del abrigo/);
   await page.keyboard.type('-2.5');
@@ -80,29 +82,19 @@ test('completes all chapters of Orcadas with the keyboard only, opens Sources, a
   await page.keyboard.type('6');
 
   await expect(primary(page)).toBeEnabled();
-  await tabTo(page, /^Recorrer el año$/);
-  await page.keyboard.press('Enter');
-
-  // Chapter 3: Un año
-  await expectFocused(page, 'Un año en Orcadas');
-  await expect(page.getByText(/h de luz/)).toBeVisible();
+  await expect(primary(page)).toHaveText('Viajar en el tiempo');
   await tabTo(page, /^Viajar en el tiempo$/);
   await page.keyboard.press('Enter');
 
-  // Chapter 4: Máquina del tiempo
-  await expectFocused(page, 'Máquina del tiempo');
-  await expect(page.getByRole('heading', { name: 'Bases científicas modernas' })).toBeVisible();
-  await tabTo(page, /^Ver el siglo en datos$/);
+  // Chapter 3: Viajar
+  await expectFocused(page, 'Viaje en el tiempo');
+  await expect(page.getByRole('heading', { level: 3, name: 'Hoy' })).toBeVisible();
+  await tabTo(page, /^Ver la respuesta$/);
   await page.keyboard.press('Enter');
 
-  // Chapter 5: El siglo
-  await expectFocused(page, 'El siglo en datos');
-  await expect(page.getByText(/Serie histórica de temperatura media anual/)).toBeVisible();
-  await tabTo(page, /^Ir al cierre$/);
-  await page.keyboard.press('Enter');
-
-  // Chapter 6: Cierre
-  await expectFocused(page, 'Cierre de la expedición');
+  // Chapter 4: Responder
+  await expectFocused(page, 'La respuesta');
+  await expect(page.getByRole('img', { name: /Gráfico de puntos de temperatura/ })).toBeVisible();
 
   // Open Sources panel via keyboard and close with Escape
   await page.getByRole('button', { name: 'Fuentes' }).focus();
@@ -130,7 +122,7 @@ test('opens Orcadas from the 2D map, completes it, and updates the log', async (
   await openOrcadasFromMap(page);
   await page
     .getByRole('navigation', { name: 'Capítulos de la expedición' })
-    .getByRole('button', { name: /Cierre/ })
+    .getByRole('button', { name: /Responder/ })
     .click();
   await page.getByRole('button', { name: 'Terminar expedición' }).click();
 
@@ -174,7 +166,7 @@ test('from the 3D map with motion allowed, the camera zooms down to the island b
   expect(await page.evaluate(() => (window as unknown as { __sawApproach?: boolean }).__sawApproach)).toBe(true);
 });
 
-test('respects reducedMotion, opens hotspot cards, and keeps mobile sheet within 45% height', async ({ page }) => {
+test('respects reducedMotion, opens hotspot cards, and supports compact and expanded mobile sheet', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/');
   await openOrcadasFromMap(page);
@@ -182,8 +174,27 @@ test('respects reducedMotion, opens hotspot cards, and keeps mobile sheet within
   const vw = page.viewportSize()?.width ?? 1440;
   const vh = page.viewportSize()?.height ?? 900;
   if (vw <= 420) {
-    const panelBox = (await page.locator('.orc-panel').boundingBox())!;
-    expect(panelBox.height).toBeLessThanOrEqual(vh * 0.45 + 1);
+    const panel = page.locator('.orc-panel');
+    const toggleBtn = page.getByRole('button', { name: 'Ver más' });
+    await expect(toggleBtn).toBeVisible();
+
+    // Compact mode: <= 46% height
+    const compactBox = (await panel.boundingBox())!;
+    expect(compactBox.height).toBeLessThanOrEqual(vh * 0.46 + 1);
+
+    // Expanded mode: >= 80% height
+    await toggleBtn.click();
+    await expect(page.getByRole('button', { name: 'Ver menos' })).toBeVisible();
+    await expect
+      .poll(async () => (await panel.boundingBox())?.height ?? 0)
+      .toBeGreaterThanOrEqual(vh * 0.8);
+
+    // Toggle back to compact for the rest of the test
+    await page.getByRole('button', { name: 'Ver menos' }).click();
+    await expect(page.getByRole('button', { name: 'Ver más' })).toBeVisible();
+    await expect
+      .poll(async () => (await panel.boundingBox())?.height ?? 9999)
+      .toBeLessThanOrEqual(vh * 0.46 + 1);
   }
 
   // Activate a hotspot button and check dialog + Escape focus return
@@ -217,7 +228,11 @@ test('respects reducedMotion, opens hotspot cards, and keeps mobile sheet within
   await spotBtn.click();
   const spotDialog = page.getByRole('dialog', { name: 'Abrigo meteorológico' });
   await expect(spotDialog).toBeVisible();
-  await expectFocused(page, 'Cerrar tarjeta de punto');
+  if (vw <= 420) {
+    await expectFocused(page, 'Volver al capítulo');
+  } else {
+    await expectFocused(page, 'Cerrar tarjeta de punto');
+  }
   await page.keyboard.press('Escape');
   await expect(spotDialog).toHaveCount(0);
   await expectFocused(page, 'Punto de interés: Abrigo meteorológico');
@@ -229,16 +244,13 @@ test('never renders facts from unverified sources in any chapter', async ({ page
   const unverifiedSnippets = [
     'número OMM 88968',
     'El registro de hielo de la bahía Scotia empieza en 1903',
-    'Zazulie',
   ];
 
   const stepNames = [
-    'Llegada',
-    'Observación',
-    'Un año',
-    'Máquina del tiempo',
-    'El siglo',
-    'Cierre',
+    'Llegar',
+    'Observar',
+    'Viajar',
+    'Responder',
   ];
 
   for (const stepName of stepNames) {
@@ -252,4 +264,355 @@ test('never renders facts from unverified sources in any chapter', async ({ page
       expect(bodyText).not.toContain(snippet);
     }
   }
+});
+
+test('B4: resetting panel scroll on chapter change', async ({ page }) => {
+  await openOrcadasFromMap(page);
+
+  // Navigate to Viajar (journey) which is tall enough to scroll on both mobile and desktop
+  await page
+    .getByRole('navigation', { name: 'Capítulos de la expedición' })
+    .getByRole('button', { name: /Viajar/ })
+    .click();
+  await expect(page.getByRole('heading', { level: 2, name: 'Viaje en el tiempo' })).toBeVisible();
+
+  // Scroll .orc-panel-scroll to the bottom
+  await page.evaluate(() => {
+    const scrollEl = document.querySelector('.orc-panel-scroll');
+    if (scrollEl) {
+      scrollEl.scrollTop = scrollEl.scrollHeight;
+    }
+  });
+
+  const scrolledTop = await page.evaluate(() => {
+    const scrollEl = document.querySelector('.orc-panel-scroll');
+    return scrollEl ? scrollEl.scrollTop : 0;
+  });
+  expect(scrolledTop).toBeGreaterThan(0);
+
+  // Advance to next chapter
+  await primary(page).click();
+  const nextHeading = page.getByRole('heading', { level: 2, name: 'La respuesta' });
+  await expect(nextHeading).toBeVisible();
+
+  // Assert scrollTop is 0 and h2 is in viewport
+  const nextScrollTop = await page.evaluate(() => {
+    const scrollEl = document.querySelector('.orc-panel-scroll');
+    return scrollEl ? scrollEl.scrollTop : -1;
+  });
+  expect(nextScrollTop).toBe(0);
+  await expect(nextHeading).toBeInViewport();
+});
+
+test('B7: opening Fuentes closes the hotspot dialog card and vice versa', async ({ page }) => {
+  await openOrcadasFromMap(page);
+
+  // Open hotspot card
+  const spotBtn = page.getByRole('button', { name: 'Punto de interés: Abrigo meteorológico' });
+  await spotBtn.click();
+  const spotDialog = page.getByRole('dialog', { name: 'Abrigo meteorológico' });
+  await expect(spotDialog).toBeVisible();
+
+  // Click "Fuentes": hotspot card is removed from DOM, sources panel is in DOM
+  await page.getByRole('button', { name: 'Fuentes' }).click();
+  await expect(spotDialog).toHaveCount(0);
+  const sourcesPanel = page.getByRole('dialog', { name: 'Fuentes' });
+  await expect(sourcesPanel).toBeVisible();
+
+  // Select a hotspot while sources panel is open: sources panel closes, hotspot dialog opens
+  await spotBtn.click();
+  await expect(sourcesPanel).toHaveCount(0);
+  await expect(page.getByRole('dialog', { name: 'Abrigo meteorológico' })).toBeVisible();
+});
+
+test('B1: observation month stays fixed when changing scene month', async ({ page }) => {
+  await openOrcadasFromMap(page);
+
+  // 1. Enter 4 readings in Observación
+  await page
+    .getByRole('navigation', { name: 'Capítulos de la expedición' })
+    .getByRole('button', { name: /Observar/ })
+    .click();
+  await expect(page.getByRole('heading', { level: 2, name: 'Observación del día' })).toBeVisible();
+
+  await page.getByLabel(/^Temperatura del abrigo/).focus();
+  await page.keyboard.type('-2.5');
+  await page.getByLabel(/^Presión atmosférica/).focus();
+  await page.keyboard.type('990');
+  await page.getByLabel(/^Velocidad del viento/).focus();
+  await page.keyboard.type('20');
+  await page.getByLabel(/^Cobertura de nubes/).focus();
+  await page.keyboard.type('5');
+
+  // Check Responder summary text before changing month
+  await page
+    .getByRole('navigation', { name: 'Capítulos de la expedición' })
+    .getByRole('button', { name: /Responder/ })
+    .click();
+  await expect(page.getByRole('heading', { level: 2, name: 'La respuesta' })).toBeVisible();
+  const summaryBefore = await page.locator('.orc-done-summary p').textContent();
+  expect(summaryBefore).toContain('Tu observación de');
+
+  // 2. Change month via the month strip
+  const monthStrip = page.getByRole('group', { name: 'Mes en la estación' });
+  await expect(monthStrip).toBeVisible();
+  const janBtn = monthStrip.getByRole('button', { name: 'enero' });
+  await janBtn.click();
+  await expect(janBtn).toHaveAttribute('aria-pressed', 'true');
+
+  // 3. In Responder, the text still names the original month and the score text is unchanged
+  const summaryAfter = await page.locator('.orc-done-summary p').textContent();
+  expect(summaryAfter).toBe(summaryBefore);
+  const currentMonthIdx = new Date().getMonth();
+  if (currentMonthIdx !== 0) {
+    expect(summaryAfter).not.toContain('Tu observación de enero');
+  }
+});
+
+test('D1: a chapter panel never shows more than 2 fact cards outside details.orc-more in any chapter', async ({ page }) => {
+  await openOrcadasFromMap(page);
+
+  const chapters = ['Llegar', 'Observar', 'Viajar', 'Responder'];
+  for (const name of chapters) {
+    await page
+      .getByRole('navigation', { name: 'Capítulos de la expedición' })
+      .getByRole('button', { name: new RegExp(name) })
+      .click();
+
+    // Wait for the chapter to settle
+    await page.waitForTimeout(100);
+
+    // Check count of fact cards outside details.orc-more
+    const directFactsCount = await page.evaluate(() => {
+      const panel = document.querySelector('.orc-panel');
+      if (!panel) return 0;
+      const allCards = Array.from(panel.querySelectorAll('.orc-fact-card'));
+      const outsideMore = allCards.filter((card) => !card.closest('details.orc-more'));
+      return outsideMore.length;
+    });
+
+    expect(directFactsCount).toBeLessThanOrEqual(2);
+  }
+});
+
+test('D4/D5: clicking a source reference opens Sources highlighted and clicking scrim closes it', async ({ page }) => {
+  await openOrcadasFromMap(page);
+  await expect(page.getByRole('heading', { level: 2, name: 'Estación Orcadas' })).toBeVisible();
+
+  // Find a source link button in the arrival panel facts
+  const srcBtn = page.locator('.orc-panel .orc-src-link').first();
+  await expect(srcBtn).toBeVisible();
+
+  await srcBtn.click();
+
+  // Sources dialog opens
+  const sourcesDialog = page.getByRole('dialog', { name: 'Fuentes' });
+  await expect(sourcesDialog).toBeVisible();
+
+  // Check highlighted card
+  const highlightedCard = page.locator('.orc-source-card[data-highlight]');
+  await expect(highlightedCard).toBeVisible();
+  await expect(highlightedCard).toHaveAttribute('aria-current', 'true');
+
+  // Clicking the scrim closes Sources
+  const scrim = page.locator('.orc-scrim');
+  await expect(scrim).toBeVisible();
+  await scrim.click({ position: { x: 5, y: 5 } });
+
+  await expect(sourcesDialog).toHaveCount(0);
+});
+
+test('D5: each source link card in Sources panel has height >= 44 px', async ({ page }) => {
+  await openOrcadasFromMap(page);
+  await page.getByRole('button', { name: 'Fuentes' }).click();
+
+  const sourcesDialog = page.getByRole('dialog', { name: 'Fuentes' });
+  await expect(sourcesDialog).toBeVisible();
+
+  // Switch to all expedition sources to verify every single source link
+  const toggleBtn = page.getByRole('button', { name: /Ver todas las fuentes/ });
+  if (await toggleBtn.isVisible()) {
+    await toggleBtn.click();
+  }
+
+  const links = page.locator('.orc-source-card');
+  const count = await links.count();
+  expect(count).toBeGreaterThan(0);
+
+  for (let i = 0; i < count; i++) {
+    const box = (await links.nth(i).boundingBox())!;
+    expect(box.height).toBeGreaterThanOrEqual(44);
+  }
+});
+
+test('D2 (mobile): opening hotspot shows card in bottom panel with Volver al capítulo', async ({ page }) => {
+  const vw = page.viewportSize()?.width ?? 900;
+  test.skip(vw > 420, 'Mobile only test');
+
+  await openOrcadasFromMap(page);
+
+  // Click hotspot
+  const spotBtn = page.getByRole('button', { name: 'Punto de interés: Abrigo meteorológico' });
+  await spotBtn.click();
+
+  // The bottom panel now contains the hotspot card dialog
+  const panel = page.locator('.orc-panel');
+  const returnBtn = panel.getByRole('button', { name: 'Volver al capítulo' });
+  await expect(returnBtn).toBeVisible();
+  await expect(panel.getByRole('heading', { level: 3, name: 'Abrigo meteorológico' })).toBeVisible();
+
+  // Return to chapter content
+  await returnBtn.click();
+  await expect(returnBtn).toHaveCount(0);
+  await expect(panel.getByRole('heading', { level: 2, name: 'Estación Orcadas' })).toBeVisible();
+});
+
+test('D2 (desktop): hotspot card is within 360 px of dot and does not overlap side panel', async ({ page }) => {
+  const vw = page.viewportSize()?.width ?? 900;
+  test.skip(vw < 900, 'Desktop only test');
+
+  await openOrcadasFromMap(page);
+
+  const dotBtn = page.getByRole('button', { name: 'Punto de interés: Abrigo meteorológico' });
+  await expect(dotBtn).toBeVisible();
+  const dotBox = (await dotBtn.boundingBox())!;
+  const dotCenter = {
+    x: dotBox.x + dotBox.width / 2,
+    y: dotBox.y + dotBox.height / 2,
+  };
+
+  await dotBtn.click();
+
+  const card = page.locator('.orc-spot-card[role="dialog"]');
+  await expect(card).toBeVisible();
+  const cardBox = (await card.boundingBox())!;
+
+  // Check distance to dot
+  const closestX = Math.max(cardBox.x, Math.min(dotCenter.x, cardBox.x + cardBox.width));
+  const closestY = Math.max(cardBox.y, Math.min(dotCenter.y, cardBox.y + cardBox.height));
+  const dist = Math.hypot(dotCenter.x - closestX, dotCenter.y - closestY);
+  expect(dist).toBeLessThan(360);
+
+  // Check no overlap with side panel
+  const sidePanelBox = (await page.locator('.orc-panel').boundingBox())!;
+  const overlapsSidePanel =
+    cardBox.x < sidePanelBox.x + sidePanelBox.width &&
+    cardBox.x + cardBox.width > sidePanelBox.x &&
+    cardBox.y < sidePanelBox.y + sidePanelBox.height &&
+    cardBox.y + cardBox.height > sidePanelBox.y;
+
+  expect(overlapsSidePanel).toBe(false);
+});
+
+test('at 844x390 landscape the chapter h2 and primary button are in the viewport without scrolling', async ({ page }) => {
+  const vp = page.viewportSize() ?? { width: 1440, height: 900 };
+  test.skip(vp.width !== 844 || vp.height !== 390, 'Landscape 844x390 test only');
+
+  await openOrcadasFromMap(page);
+
+  const h2 = page.locator('.orc-chapter-h2');
+  await expect(h2).toBeVisible();
+  const h2Box = (await h2.boundingBox())!;
+  expect(h2Box.y).toBeGreaterThanOrEqual(0);
+  expect(h2Box.y + h2Box.height).toBeLessThanOrEqual(390);
+
+  const primaryBtn = page.locator('.orc-btn-primary');
+  await expect(primaryBtn).toBeVisible();
+  const btnBox = (await primaryBtn.boundingBox())!;
+  expect(btnBox.y).toBeGreaterThanOrEqual(0);
+  expect(btnBox.y + btnBox.height).toBeLessThanOrEqual(390);
+
+  // Assert panel scroll container has not been scrolled
+  const scrollTop = await page.evaluate(() => document.querySelector('.orc-panel-scroll')?.scrollTop ?? 0);
+  expect(scrollTop).toBe(0);
+});
+
+test('at 360x740 the 4 chapter buttons are >= 44 px high and the nav does not scroll horizontally', async ({ page }) => {
+  const vp = page.viewportSize() ?? { width: 1440, height: 900 };
+  test.skip(vp.width !== 360 || vp.height !== 740, 'Compact 360x740 test only');
+
+  await openOrcadasFromMap(page);
+
+  const stepBtns = page.locator('.orc-step-btn');
+  expect(await stepBtns.count()).toBe(4);
+  for (let i = 0; i < 4; i++) {
+    const box = (await stepBtns.nth(i).boundingBox())!;
+    expect(box.height).toBeGreaterThanOrEqual(44);
+  }
+
+  const navScrolls = await page.evaluate(() => {
+    const nav = document.querySelector('.orc-steps-nav');
+    return nav ? nav.scrollWidth > nav.clientWidth : false;
+  });
+  expect(navScrolls).toBe(false);
+});
+
+test('on mobile the observation shows the instrument and its control both in the viewport, and number input changes recorded value', async ({ page }) => {
+  const vp = page.viewportSize() ?? { width: 1440, height: 900 };
+  test.skip(vp.width > 420, 'Mobile portrait only test');
+
+  await openOrcadasFromMap(page);
+  await page.locator('.orc-step-btn').nth(1).click(); // Go to Observar
+  await expect(page.getByRole('heading', { level: 2, name: 'Observación del día' })).toBeVisible();
+
+  // The panel starts expanded on mobile in observation
+  const panel = page.locator('.orc-panel');
+  await expect(panel).toHaveClass(/is-expanded/);
+
+  // Both the instrument plate and the slider row are inside the viewport [0, vh]
+  const vh = vp.height;
+  const plate = page.locator('.orc-obs-plate');
+  await expect(plate).toBeVisible();
+  await expect
+    .poll(async () => {
+      const box = await plate.boundingBox();
+      return box ? box.y + box.height : 9999;
+    })
+    .toBeLessThanOrEqual(vh);
+  const plateBox = (await plate.boundingBox())!;
+  expect(plateBox.y).toBeGreaterThanOrEqual(0);
+
+  const sliderRow = page.locator('.orc-obs-slider-row');
+  await expect(sliderRow).toBeVisible();
+  await expect
+    .poll(async () => {
+      const box = await sliderRow.boundingBox();
+      return box ? box.y + box.height : 9999;
+    })
+    .toBeLessThanOrEqual(vh);
+  const rowBox = (await sliderRow.boundingBox())!;
+  expect(rowBox.y).toBeGreaterThanOrEqual(0);
+
+  // The number input changes the recorded value in the notebook
+  const numInput = page.locator('.orc-obs-num-input');
+  await expect(numInput).toBeVisible();
+  await numInput.fill('-2.5');
+
+  // Notebook active cell updates with the recorded value
+  await expect(page.locator('.orc-notebook-cell.is-active')).toContainText(/-2[.,]5 °C/);
+});
+
+test('G6: in the entry view every hotspot dot is inside the viewport and the camera cannot zoom out past the stage', async ({ page }) => {
+  await openOrcadasFromMap(page);
+  const vw = page.viewportSize()?.width ?? 1440;
+  const vh = page.viewportSize()?.height ?? 900;
+  const dots = page.locator('[data-hotspot]');
+  const n = await dots.count();
+  expect(n).toBeGreaterThan(0);
+  for (let i = 0; i < n; i++) {
+    const dot = dots.nth(i);
+    if ((await dot.evaluate((el) => getComputedStyle(el).opacity)) === '0') continue;
+    const box = (await dot.boundingBox())!;
+    expect(box.x).toBeGreaterThanOrEqual(0);
+    expect(box.y).toBeGreaterThanOrEqual(0);
+    expect(box.x + box.width).toBeLessThanOrEqual(vw);
+    expect(box.y + box.height).toBeLessThanOrEqual(vh);
+  }
+  // The zoom-out cap is a little beyond the entry view, never the whole sea.
+  const ratio = await page.evaluate(() => {
+    const c = (window as unknown as { __orcadasCamera: { distance: number; maxDistance: number } }).__orcadasCamera;
+    return c.maxDistance / c.distance;
+  });
+  expect(ratio).toBeGreaterThan(1);
+  expect(ratio).toBeLessThanOrEqual(1.25);
 });

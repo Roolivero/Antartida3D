@@ -2,10 +2,18 @@ import { describe, expect, it } from 'vitest';
 import {
   FACT_KIND_LABEL,
   MONTH_NAMES,
+  CHAPTER_HEADINGS,
+  CHAPTER_NAMES,
   ORCADAS_ERAS,
+  ORCADAS_GUIDING_QUESTION,
+  journeyFacts,
+  PANEL_VISIBLE_FACTS,
+  panelFacts,
   ORCADAS_FACTS,
   ORCADAS_FAUNA,
+  ORCADAS_HOTSPOT_FACTS,
   ORCADAS_SOURCES,
+  hotspotFacts,
   eraAt,
   factsFor,
   isPublishable,
@@ -18,7 +26,7 @@ import {
   ORCADAS_CLIMATE,
   ORCADAS_MONTHLY_TEMP,
 } from '../src/content/orcadas-series.ts';
-import { CHAPTERS } from '../src/orcadas.ts';
+import { CHAPTERS, ORCADAS_TREND_SPLIT_YEAR, segmentedTrend } from '../src/orcadas.ts';
 
 describe('orcadas content and sources', () => {
   it('has unique ids in sources and facts', () => {
@@ -73,12 +81,36 @@ describe('orcadas content and sources', () => {
     }
 
     expect(eraAt(1903).id).toBe('omond');
-    expect(eraAt(1904).id).toBe('omond');
+    expect(eraAt(1904).id).toBe('traspaso');
     expect(eraAt(1905).id).toBe('moneta');
     expect(eraAt(1926).id).toBe('moneta');
     expect(eraAt(1927).id).toBe('radio');
     expect(eraAt(1951).id).toBe('navy');
     expect(eraAt(2026).id).toBe('today');
+  });
+
+  it('shows no flag nor land wind mast before the 1904 handover (B2)', () => {
+    expect(eraAt(1903).buildings).not.toContain('flag');
+    expect(eraAt(1903).buildings).not.toContain('windMast');
+    expect(eraAt(1904).buildings).toContain('flag');
+    expect(eraAt(2026).buildings).toEqual(
+      expect.arrayContaining(['omond', 'flag', 'windMast', 'moneta', 'radioMast', 'modern'])
+    );
+  });
+
+  it('gives each hotspot explicit publishable facts, never shared between hotspots (B5)', () => {
+    const seen = new Set<string>();
+    for (const [spot, ids] of Object.entries(ORCADAS_HOTSPOT_FACTS)) {
+      expect(ids.length).toBeGreaterThan(0);
+      for (const id of ids) {
+        const fact = ORCADAS_FACTS.find((f) => f.id === id);
+        expect(fact, `${spot}: ${id}`).toBeDefined();
+        expect(isPublishable(fact!)).toBe(true);
+        expect(seen.has(id), `${id} repeated`).toBe(false);
+        seen.add(id);
+      }
+      expect(hotspotFacts(spot as keyof typeof ORCADAS_HOTSPOT_FACTS)).toHaveLength(ids.length);
+    }
   });
 
   it('seaIceAt stays within 0..1 for months 1..12', () => {
@@ -89,11 +121,29 @@ describe('orcadas content and sources', () => {
     }
   });
 
-  it('has at least one publishable fact per chapter', () => {
+  it('has at least one publishable fact per chapter except observation, and for the month strip', () => {
     for (const chapter of CHAPTERS) {
-      const facts = factsFor(chapter);
-      expect(facts.length).toBeGreaterThan(0);
+      if (chapter === 'observation') continue;
+      expect(factsFor(chapter).length, chapter).toBeGreaterThan(0);
     }
+    expect(factsFor('months').length).toBeGreaterThan(0);
+  });
+
+  it('filters the journey facts by the active era', () => {
+    expect(journeyFacts(1903).map((f) => f.id)).toEqual(['eras-expedicion-bruce']);
+    expect(journeyFacts(1930).map((f) => f.id)).toContain('century-record-frio');
+    expect(journeyFacts(1903).map((f) => f.id)).not.toContain('century-record-frio');
+    const allJourney = new Set(factsFor('journey').map((f) => f.id));
+    const inEras = new Set(ORCADAS_ERAS.flatMap((e) => e.factIds));
+    expect(inEras).toEqual(allJourney);
+  });
+
+  it('names every chapter once and asks the guiding question', () => {
+    for (const chapter of CHAPTERS) {
+      expect(CHAPTER_NAMES[chapter].length).toBeGreaterThan(0);
+      expect(CHAPTER_HEADINGS[chapter].length).toBeGreaterThan(0);
+    }
+    expect(ORCADAS_GUIDING_QUESTION.endsWith('?')).toBe(true);
   });
 
   it('has consistent labels and metadata', () => {
@@ -103,6 +153,74 @@ describe('orcadas content and sources', () => {
     }
     expect(MONTH_NAMES).toHaveLength(12);
     expect(ORCADAS_FAUNA.length).toBeGreaterThan(0);
+  });
+});
+
+describe('orcadas content without repetition (C3)', () => {
+  it('lists each era fact once, only in eras, and never a closing fact', () => {
+    const seen = new Set<string>();
+    for (const era of ORCADAS_ERAS) {
+      for (const id of era.factIds) {
+        expect(seen.has(id), `${id} in two eras`).toBe(false);
+        seen.add(id);
+        expect(ORCADAS_FACTS.find((f) => f.id === id)?.chapter).toBe('journey');
+      }
+    }
+  });
+
+  it('merges the two «oldest base» facts into one with both sources', () => {
+    expect(ORCADAS_FACTS.some((f) => f.id === 'arrival-base-mas-antigua')).toBe(false);
+    expect(ORCADAS_FACTS.find((f) => f.id === 'arrival-antiguedad')?.sourceIds).toEqual([
+      'cancilleria',
+      'armada',
+    ]);
+  });
+
+  it('marks the today era start as illustrative (C2)', () => {
+    const today = ORCADAS_ERAS[ORCADAS_ERAS.length - 1];
+    expect(today.illustrativeStart).toBe(true);
+    expect(ORCADAS_ERAS.filter((e) => e.illustrativeStart)).toEqual([today]);
+  });
+});
+
+describe('orcadas panels without saturation (D1, D2)', () => {
+  it('shows at most two facts per panel and never a hotspot fact', () => {
+    const onHotspots = new Set(Object.values(ORCADAS_HOTSPOT_FACTS).flat());
+    const places = [...CHAPTERS, 'months'] as const;
+    for (const place of places) {
+      const { visible, more } = panelFacts(factsFor(place));
+      expect(visible.length, place).toBeLessThanOrEqual(PANEL_VISIBLE_FACTS);
+      for (const f of [...visible, ...more]) expect(onHotspots.has(f.id), f.id).toBe(false);
+    }
+    for (let year = 1903; year <= 2026; year++) {
+      const { visible, more } = panelFacts(journeyFacts(year));
+      expect(visible.length).toBeLessThanOrEqual(PANEL_VISIBLE_FACTS);
+      for (const f of [...visible, ...more]) expect(onHotspots.has(f.id), f.id).toBe(false);
+    }
+  });
+
+  it('gives each hotspot exactly one fact and moves the diorama note to the scene label', () => {
+    for (const ids of Object.values(ORCADAS_HOTSPOT_FACTS)) expect(ids).toHaveLength(1);
+    expect(factsFor('scene').map((f) => f.id)).toEqual(['arrival-diorama']);
+    expect(factsFor('arrival').some((f) => f.id === 'arrival-diorama')).toBe(false);
+  });
+
+  it('gives every source a short name for the fact footer', () => {
+    for (const src of ORCADAS_SOURCES) expect(src.short.trim().length, src.id).toBeGreaterThan(0);
+  });
+});
+
+describe('orcadas two-segment trend (C1)', () => {
+  it('matches the control slopes of 1903-1950 and 1951-2025', () => {
+    const [early, late] = segmentedTrend(ORCADAS_ANNUAL_TEMP, ORCADAS_TREND_SPLIT_YEAR);
+    expect(early.fromYear).toBe(1904);
+    expect(early.toYear).toBe(1950);
+    expect(early.n).toBe(47);
+    expect(early.slopePerDecade).toBeCloseTo(-0.022, 3);
+    expect(late.fromYear).toBe(1951);
+    expect(late.toYear).toBe(2025);
+    expect(late.n).toBe(66);
+    expect(late.slopePerDecade).toBeCloseTo(0.129, 3);
   });
 });
 

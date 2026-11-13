@@ -1,14 +1,18 @@
 import { useMemo, useRef } from 'react';
 import {
   ORCADAS_ERAS,
-  ORCADAS_FACTS,
   ORCADAS_FIRST_YEAR,
   eraAt,
-  isPublishable,
-  sourcesOf,
-  type OrcadasFact,
+  journeyFacts,
+  recordSpanText,
 } from '@antartida/core';
+import { FactList } from './FactList.tsx';
 import { KindChip } from './KindChip.tsx';
+import { CenturySvg } from './century/CenturySvg.tsx';
+import {
+  computeCenturyDataset,
+  formatSlope,
+} from './century/centuryData.ts';
 import { BUILDING_LABELS } from './time/timeMath.ts';
 
 const DIGIT_STRIP = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9] as const;
@@ -26,7 +30,7 @@ function YearCounter({ year }: { year: number }) {
         {digits.map((d, idx) => (
           <span key={idx} className="orc-digit-window">
             <span
-              className="orc-digit-track hand"
+              className="orc-digit-track"
               style={{ transform: `translate3d(0, -${d * 10}%, 0)` }}
             >
               {DIGIT_STRIP.map((n) => (
@@ -42,7 +46,7 @@ function YearCounter({ year }: { year: number }) {
   );
 }
 
-export function TimeMachine({
+export function Journey({
   year,
   maxYear,
   onYear,
@@ -58,19 +62,13 @@ export function TimeMachine({
   const clampedYear = Math.max(ORCADAS_FIRST_YEAR, Math.min(safeMaxYear, Math.trunc(year)));
   const currentEra = eraAt(clampedYear);
   const eraIndex = ORCADAS_ERAS.findIndex((e) => e.id === currentEra.id);
-  const continuousYears = Math.max(0, clampedYear - ORCADAS_FIRST_YEAR);
 
-  // Filter era facts through isPublishable
-  const eraFacts = useMemo(() => {
-    const byId = new Map<string, OrcadasFact>(ORCADAS_FACTS.map((f) => [f.id, f]));
-    return currentEra.factIds
-      .map((id) => byId.get(id))
-      .filter((f): f is OrcadasFact => f !== undefined && isPublishable(f));
-  }, [currentEra]);
+  const eraFacts = useMemo(() => journeyFacts(clampedYear), [clampedYear]);
+  const centuryData = useMemo(() => computeCenturyDataset(), []);
 
   const rulerGeom = useMemo(() => {
     const w = 336;
-    const h = 74;
+    const h = 84;
     const padL = 18;
     const padR = 18;
     const plotW = w - padL - padR;
@@ -94,6 +92,7 @@ export function TimeMachine({
         id: era.id,
         fromYear: era.fromYear,
         title: era.title,
+        illustrativeStart: era.illustrativeStart,
         x1,
         x2,
         width: Math.max(2, x2 - x1),
@@ -128,16 +127,8 @@ export function TimeMachine({
         <div className="orc-tm-record-box">
           <KindChip kind="calc" />
           <strong className="orc-tm-record-num">
-            {continuousYears === 0
-              ? 'Inicio del registro (1903)'
-              : `${continuousYears} ${
-                  continuousYears === 1 ? 'año' : 'años'
-                } de registro continuo`}
+            {recordSpanText(clampedYear)}
           </strong>
-          <span className="orc-tm-record-formula">
-            {clampedYear} − {ORCADAS_FIRST_YEAR} = {continuousYears}{' '}
-            {continuousYears === 1 ? 'año' : 'años'} sin pausa
-          </span>
         </div>
       </div>
 
@@ -252,8 +243,7 @@ export function TimeMachine({
           {/* Era milestone notches and labels */}
           {rulerGeom.eraSpans.map((sp, i) => {
             const isActive = sp.id === currentEra.id;
-            // 1905 sits two years after 1903: its label goes on a second row so they do not overlap.
-            const labelY = i === 1 ? 61 : 51;
+            const labelY = 51 + (i <= 2 ? i : 0) * 10;
             return (
               <g key={sp.id}>
                 <line
@@ -272,11 +262,11 @@ export function TimeMachine({
                   x={sp.x1}
                   y={labelY}
                   textAnchor={i === 0 ? 'start' : 'middle'}
-                  fontSize="8.5"
+                  fontSize="13"
                   fontWeight="800"
                   fill={isActive ? '#A4471F' : '#1F2A36'}
                 >
-                  {sp.fromYear}
+                  {sp.illustrativeStart ? sp.title : sp.fromYear}
                 </text>
               </g>
             );
@@ -287,7 +277,7 @@ export function TimeMachine({
             x={rulerGeom.w - rulerGeom.padR}
             y="51"
             textAnchor="end"
-            fontSize="8.5"
+            fontSize="13"
             fontWeight="700"
             fill="#5E656C"
           >
@@ -326,7 +316,7 @@ export function TimeMachine({
         </svg>
       </div>
 
-      {/* Era navigation: Era anterior / Era siguiente + quick era milestones */}
+      {/* Era navigation buttons */}
       <div className="orc-era-nav-row">
         <button
           type="button"
@@ -370,19 +360,64 @@ export function TimeMachine({
               aria-pressed={active}
               onClick={() => onYear(era.fromYear)}
             >
-              <span>{era.fromYear}</span>
+              <span>{era.illustrativeStart ? era.title : era.fromYear}</span>
             </button>
           );
         })}
       </div>
 
-      {/* Current Era Card + publishable facts */}
+      {/* Annual Series Chart from CenturySvg */}
+      <div className="orc-century-chart-block">
+        <CenturySvg
+          data={centuryData}
+          selectedYear={clampedYear}
+          onSelectYear={onYear}
+        />
+
+        <div className="orc-century-legend-block">
+          <div className="orc-century-legend-items" aria-label="Referencias del gráfico anual">
+            <span className="orc-legend-item">
+              <i className="orc-swatch orc-swatch-annual" aria-hidden="true" />
+              Media de cada año (dato real; la línea se corta en los años incompletos)
+            </span>
+            <span className="orc-legend-item">
+              <i className="orc-swatch orc-swatch-ma11" aria-hidden="true" />
+              Media móvil de 11 años (cálculo)
+            </span>
+            <span className="orc-legend-item">
+              <i className="orc-swatch orc-swatch-trend" aria-hidden="true" />
+              Tendencia en dos tramos (cálculo)
+            </span>
+          </div>
+
+          {centuryData.trendSegments.length > 0 && (
+            <div className="orc-century-trend-banner">
+              <div className="orc-century-trend-copy">
+                <strong>
+                  Recta de tendencia:{' '}
+                  {centuryData.trendSegments
+                    .map((seg) => `${seg.fromYear}–${seg.toYear}: ${formatSlope(seg.slopePerDecade)}`)
+                    .join(' · ')}
+                </strong>
+                <span>
+                  Si la tendencia es significativa lo dice el estudio citado (Zazulie,
+                  Rusticucci y Solomon, 2010), no este cálculo.
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Current Era Card */}
       <article className="orc-era-card" aria-live="polite">
         <div className="orc-era-head">
           <div className="orc-era-head-top">
-            <span className="orc-era-from hand">Desde {currentEra.fromYear}</span>
-            {eraFacts.length === 0 ? (
-              <KindChip kind="recon" label="Reconstrucción" />
+            <span className="orc-era-from">
+              {currentEra.illustrativeStart ? currentEra.title : `Desde ${currentEra.fromYear}`}
+            </span>
+            {currentEra.illustrativeStart ? (
+              <KindChip kind="recon" label="Fecha ilustrativa" />
             ) : (
               <KindChip kind="recon" label="Diorama de época" />
             )}
@@ -392,7 +427,6 @@ export function TimeMachine({
 
         <p className="orc-era-summary">{currentEra.summary}</p>
 
-        {/* Active buildings in the 3D scene for this era */}
         <div className="orc-era-buildings" aria-label="Construcciones en escena">
           {currentEra.buildings.map((bId) => (
             <span key={bId} className="orc-building-tag">
@@ -401,30 +435,8 @@ export function TimeMachine({
           ))}
         </div>
 
-        {/* Publishable facts for the current era */}
-        {eraFacts.length > 0 && (
-          <div className="orc-era-facts">
-            {eraFacts.map((fact) => {
-              const srcs = sourcesOf(fact);
-              return (
-                <div key={fact.id} className="orc-era-fact-item">
-                  <div className="orc-fact-top">
-                    <KindChip kind={fact.kind} />
-                    {fact.title && (
-                      <strong className="orc-fact-title">{fact.title}</strong>
-                    )}
-                  </div>
-                  <p className="orc-fact-text">{fact.text}</p>
-                  {srcs.length > 0 && (
-                    <small className="orc-fact-src">
-                      Fuente: {srcs.map((s) => `${s.label} (${s.org})`).join(' · ')}
-                    </small>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
+        {/* Fact cards of active era */}
+        <FactList facts={eraFacts} />
       </article>
     </div>
   );

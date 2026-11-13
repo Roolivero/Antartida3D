@@ -249,12 +249,14 @@ export function SunArc({
             stroke={isNight ? '#7FA8C4' : '#1F2A36'}
             strokeWidth="1.4"
           />
+          {/* Label inside the night band, away from the sun curve above the horizon */}
           <text
-            x={geom.padL + 4}
-            y={geom.horizonY - 3}
-            fontSize="8.5"
+            x={geom.w - geom.padR - 6}
+            y={geom.horizonY + 15}
+            fontSize="12"
             fontWeight="700"
-            fill={isNight ? '#D6E5EF' : '#1F2A36'}
+            textAnchor="end"
+            fill="#D6E5EF"
           >
             Horizonte 0°
           </text>
@@ -375,7 +377,7 @@ export function SunArc({
                 x={x}
                 y={geom.h - 3}
                 textAnchor="middle"
-                fontSize="8.5"
+                fontSize="13"
                 fontWeight="700"
                 fill="#2B3640"
               >

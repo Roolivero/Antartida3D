@@ -19,6 +19,12 @@ import {
   observationDone,
   observationFor,
   orcadasReducer as reduce,
+  readingFor,
+  answerFor,
+  sameMonthSeries,
+  sunsetHour,
+  recordSpan,
+  recordSpanText,
   scoreObservation,
   solarAzimuthDeg,
   solarDeclinationDeg,
@@ -50,46 +56,70 @@ describe('chapters and state', () => {
     expect(s.visited).toEqual(['arrival']);
     expect(s.guesses).toEqual({});
     expect(s.month).toBe(11);
+    expect(s.obsMonth).toBe(11);
     expect(s.hour).toBe(12);
     expect(s.year).toBe(2026);
     expect(s.maxYear).toBe(2026);
     expect(s.panel).toBe(false);
-    expect(CHAPTERS.map(chapterIndex)).toEqual([0, 1, 2, 3, 4, 5]);
+    expect(CHAPTERS.map(chapterIndex)).toEqual(CHAPTERS.map((_, i) => i));
   });
 
-  it('blocks next on observation until all 4 readings are recorded, and stops at done', () => {
+  it('lets the user leave the observation with 0 readings, and stops at done', () => {
+    // Requirement changed (plan B3): the chapter buttons skipped the lock anyway, and the
+    // closing chapter already handles a missing observation, so the lock is gone.
     let s = initialOrcadas(1, 2025);
     expect(canAdvanceOrcadas(s)).toBe(true);
     s = reduce(s, { type: 'next' });
     expect(s.chapter).toBe('observation');
     expect(observationDone(s)).toBe(false);
-    expect(canAdvanceOrcadas(s)).toBe(false);
-    expect(reduce(s, { type: 'next' }).chapter).toBe('observation');
+    expect(canAdvanceOrcadas(s)).toBe(true);
+    expect(reduce(s, { type: 'next' }).chapter).toBe(CHAPTERS[2]);
 
     s = run(
       [
         { type: 'guess', kind: 'temp', value: 0.5 },
         { type: 'guess', kind: 'pressure', value: 990 },
         { type: 'guess', kind: 'wind', value: 20 },
+        { type: 'guess', kind: 'clouds', value: 6 },
       ],
       s
     );
-    expect(observationDone(s)).toBe(false);
-    expect(reduce(s, { type: 'next' }).chapter).toBe('observation');
-
-    s = reduce(s, { type: 'guess', kind: 'clouds', value: 6 });
     expect(observationDone(s)).toBe(true);
-    expect(canAdvanceOrcadas(s)).toBe(true);
 
-    s = run([{ type: 'next' }, { type: 'next' }, { type: 'next' }, { type: 'next' }], s);
-    expect(s.chapter).toBe('done');
+    s = run(Array.from({ length: CHAPTERS.length }, () => ({ type: 'next' }) as const), s);
+    expect(s.chapter).toBe('answer');
     expect(canAdvanceOrcadas(s)).toBe(false);
-    expect(reduce(s, { type: 'next' }).chapter).toBe('done');
+    expect(reduce(s, { type: 'next' }).chapter).toBe('answer');
     expect(s.visited).toEqual(CHAPTERS);
 
     const cleared = reduce(s, { type: 'clearGuesses' });
     expect(cleared.guesses).toEqual({});
     expect(observationDone(cleared)).toBe(false);
+  });
+
+  it('keeps the reading and the score fixed when the scene month changes (B1)', () => {
+    const seed = 20261112;
+    let s = run(
+      [{ type: 'next' }],
+      initialOrcadas(11, 2026)
+    );
+    const before = readingFor(s, seed);
+    s = run(
+      [
+        { type: 'guess', kind: 'temp', value: before.tempC },
+        { type: 'guess', kind: 'pressure', value: before.pressureHpa },
+        { type: 'guess', kind: 'wind', value: before.windKmh },
+        { type: 'guess', kind: 'clouds', value: before.cloudOktas },
+      ],
+      s
+    );
+    expect(scoreObservation(s.guesses, readingFor(s, seed))).toBe(4);
+
+    s = reduce(s, { type: 'month', month: s.month + 1 });
+    expect(s.month).toBe(12);
+    expect(s.obsMonth).toBe(11);
+    expect(readingFor(s, seed)).toEqual(before);
+    expect(scoreObservation(s.guesses, readingFor(s, seed))).toBe(4);
   });
 
   it('does not go back from arrival and accumulates visited without duplicates', () => {
@@ -98,15 +128,15 @@ describe('chapters and state', () => {
 
     const jumped = run(
       [
-        { type: 'goto', chapter: 'eras' },
-        { type: 'goto', chapter: 'year' },
-        { type: 'goto', chapter: 'eras' },
+        { type: 'goto', chapter: 'answer' },
+        { type: 'goto', chapter: 'journey' },
+        { type: 'goto', chapter: 'answer' },
         { type: 'back' },
       ],
       init
     );
-    expect(jumped.chapter).toBe('year');
-    expect(jumped.visited).toEqual(['arrival', 'eras', 'year']);
+    expect(jumped.chapter).toBe('journey');
+    expect(jumped.visited).toEqual(['arrival', 'answer', 'journey']);
   });
 
   it('normalizes month circularly, clamps hour to 0..23 and year to [1903, maxYear]', () => {
@@ -321,6 +351,46 @@ describe('solar astronomy at Orcadas (60.74° S)', () => {
     // Morning in the East (~90°), afternoon in the West (~270°)
     expect(solarAzimuthDeg(ORCADAS_LAT, mar21, 6)).toBeCloseTo(90, 0);
     expect(solarAzimuthDeg(ORCADAS_LAT, mar21, 18)).toBeCloseTo(270, 0);
+  });
+});
+
+describe('answer to the guiding question', () => {
+  it('counts November years as cold as -3.0 °C in each segment (control values)', () => {
+    const [early, late] = answerFor(-3.0, 11);
+    expect(early).toEqual({ fromYear: early.fromYear, toYear: 1950, years: 48, asCold: 16 });
+    expect(early.fromYear).toBeLessThanOrEqual(1904);
+    expect(late.fromYear).toBe(1951);
+    expect(late.years).toBe(70);
+    expect(late.asCold).toBe(4);
+  });
+
+  it('returns the same month across years from the monthly series', () => {
+    const nov = sameMonthSeries(11);
+    expect(nov[0].year).toBe(1903);
+    expect(nov.filter((p) => p.value !== null).length).toBe(118);
+  });
+});
+
+describe('sunset hour', () => {
+  it('is later in summer than in winter and stays in 12..23', () => {
+    expect(sunsetHour(12)).toBeGreaterThan(sunsetHour(6));
+    for (let m = 1; m <= 12; m++) {
+      expect(sunsetHour(m)).toBeGreaterThanOrEqual(12);
+      expect(sunsetHour(m)).toBeLessThanOrEqual(23);
+    }
+  });
+});
+
+describe('record span (B6)', () => {
+  it('counts years since 1903 and complete annual means before the given year', () => {
+    expect(recordSpan(1903)).toEqual({ years: 0, completeYears: 0 });
+    const span = recordSpan(2026);
+    expect(span.years).toBe(123);
+    expect(span.completeYears).toBeGreaterThan(100);
+    expect(span.completeYears).toBeLessThanOrEqual(span.years);
+    expect(recordSpanText(2026)).toBe(
+      `Registro desde 1903: 123 años, ${span.completeYears} de ellos completos`
+    );
   });
 });
 

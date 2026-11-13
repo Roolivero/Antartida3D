@@ -1,6 +1,11 @@
 import { createSeededRng } from './rng.ts';
+import {
+  ORCADAS_ANNUAL_TEMP,
+  ORCADAS_CLIMATE,
+  ORCADAS_MONTHLY_TEMP,
+} from './content/orcadas-series.ts';
 
-export const CHAPTERS = ['arrival', 'observation', 'year', 'eras', 'century', 'done'] as const;
+export const CHAPTERS = ['arrival', 'observation', 'journey', 'answer'] as const;
 export type Chapter = (typeof CHAPTERS)[number];
 
 export const READING_KINDS = ['temp', 'pressure', 'wind', 'clouds'] as const;
@@ -13,8 +18,10 @@ export interface OrcadasState {
   chapter: Chapter;
   visited: readonly Chapter[];
   guesses: Partial<Record<ReadingKind, number>>;
-  /** Month of the year (1..12). */
+  /** Month shown by the scene and the month controls (1..12). */
   month: number;
+  /** Month of the day's observation (1..12). Fixed at start: the scene month never changes the reading. */
+  obsMonth: number;
   /** Solar hour (0..23). */
   hour: number;
   year: number;
@@ -62,10 +69,9 @@ export function observationDone(s: OrcadasState): boolean {
   });
 }
 
+/** The observation is optional: the closing chapter covers a missing one. */
 export function canAdvanceOrcadas(s: OrcadasState): boolean {
-  if (s.chapter === 'done') return false;
-  if (s.chapter === 'observation') return observationDone(s);
-  return true;
+  return s.chapter !== 'answer';
 }
 
 export function initialOrcadas(month: number, year: number): OrcadasState {
@@ -75,6 +81,7 @@ export function initialOrcadas(month: number, year: number): OrcadasState {
     visited: ['arrival'],
     guesses: {},
     month: normalizeMonth(month),
+    obsMonth: normalizeMonth(month),
     hour: 12,
     year: clampYear(year, maxYear),
     maxYear,
@@ -225,6 +232,16 @@ export function observationFor(seed: number, climate: MonthClimate): Reading {
     windDirDeg,
     cloudOktas,
   };
+}
+
+/** Monthly climate normals for `month` (1..12). */
+export function climateFor(month: number): MonthClimate {
+  return ORCADAS_CLIMATE[normalizeMonth(month) - 1] ?? ORCADAS_CLIMATE[0];
+}
+
+/** The day's simulated reading. Depends on `obsMonth` only, never on the scene month. */
+export function readingFor(s: OrcadasState, seed: number): Reading {
+  return observationFor(seed + s.obsMonth, climateFor(s.obsMonth));
 }
 
 export const TOLERANCE: Record<ReadingKind, number> = {
@@ -396,6 +413,14 @@ export function solarAzimuthDeg(latDeg: number, dayOfYear: number, solarHour: nu
   return ((az % 360) + 360) % 360;
 }
 
+/** Solar hour (0..23) half an hour before sunset at Orcadas, mid-month; 20 when the sun never sets. */
+export function sunsetHour(month: number): number {
+  const day = dayLengthHours(ORCADAS_LAT, midMonthDayOfYear(month));
+  if (day >= 24) return 20;
+  if (day <= 0) return 12;
+  return clampHour(Math.floor(12 + day / 2 - 0.5));
+}
+
 const MID_MONTH_DAY_OF_YEAR = [15, 46, 74, 105, 135, 166, 196, 227, 258, 288, 319, 349] as const;
 
 /** Day of year (1..365) of the 15th of `month` (1..12) in a non-leap year. */
@@ -468,6 +493,37 @@ export function linearTrend(
   };
 }
 
+export interface TrendSegment {
+  fromYear: number;
+  toYear: number;
+  slopePerDecade: number;
+  intercept: number;
+  n: number;
+}
+
+/**
+ * Least-squares trend of two segments split after `splitYear`: [first year, splitYear] and
+ * [splitYear + 1, last year with a value]. A segment with fewer than two values is left out.
+ */
+export function segmentedTrend(series: readonly YearValue[], splitYear: number): TrendSegment[] {
+  const valid = series.filter((p) => p.value !== null && Number.isFinite(p.value));
+  if (valid.length === 0) return [];
+  const parts = [
+    valid.filter((p) => p.year <= splitYear),
+    valid.filter((p) => p.year > splitYear),
+  ];
+  const out: TrendSegment[] = [];
+  for (const part of parts) {
+    const t = linearTrend(part);
+    if (!t) continue;
+    out.push({ fromYear: part[0].year, toYear: part[part.length - 1].year, ...t });
+  }
+  return out;
+}
+
+/** Split year of the two-segment trend: Zazulie, Rusticucci y Solomon (2010) find no significant trend up to 1950. */
+export const ORCADAS_TREND_SPLIT_YEAR = 1950;
+
 export function movingAverage(series: readonly YearValue[], window: number): YearValue[] {
   const w = Math.max(1, Math.trunc(window));
   const halfLeft = Math.floor((w - 1) / 2);
@@ -494,4 +550,58 @@ export function movingAverage(series: readonly YearValue[], window: number): Yea
     }
     return { year: item.year, value: sum / validCount };
   });
+}
+
+/** Years since the record started and how many of them have a complete annual mean. */
+export function recordSpan(untilYear: number): { years: number; completeYears: number } {
+  const last = Math.trunc(untilYear);
+  return {
+    years: Math.max(0, last - ORCADAS_FIRST_YEAR),
+    completeYears: ORCADAS_ANNUAL_TEMP.filter(
+      (p) => p.year < last && p.value !== null && Number.isFinite(p.value)
+    ).length,
+  };
+}
+
+/** One sentence for the record length, shared by every chapter that counts years. */
+export function recordSpanText(untilYear: number): string {
+  const { years, completeYears } = recordSpan(untilYear);
+  if (years === 0) return `Registro desde ${ORCADAS_FIRST_YEAR}: primer año`;
+  const yearsWord = years === 1 ? 'año' : 'años';
+  return `Registro desde ${ORCADAS_FIRST_YEAR}: ${years} ${yearsWord}, ${completeYears} de ellos completos`;
+}
+
+/** Mean temperature of `month` (1..12) in every year of the record; null where the month has no data. */
+export function sameMonthSeries(month: number): YearValue[] {
+  const idx = normalizeMonth(month) - 1;
+  return ORCADAS_MONTHLY_TEMP.map((row) => ({ year: row.year, value: row.months[idx] ?? null }));
+}
+
+export interface AnswerSegment {
+  fromYear: number;
+  toYear: number;
+  /** Years with data for the month. */
+  years: number;
+  /** Of those, years as cold as the reading or colder. */
+  asCold: number;
+}
+
+/**
+ * Answer to the guiding question: in how many years of each segment (up to ORCADAS_TREND_SPLIT_YEAR
+ * and after it) the same month was as cold as `tempC` or colder.
+ */
+export function answerFor(tempC: number, month: number): [AnswerSegment, AnswerSegment] {
+  const series = sameMonthSeries(month).filter(
+    (p): p is { year: number; value: number } => p.value !== null && Number.isFinite(p.value)
+  );
+  const build = (part: { year: number; value: number }[]): AnswerSegment => ({
+    fromYear: part[0]?.year ?? 0,
+    toYear: part[part.length - 1]?.year ?? 0,
+    years: part.length,
+    asCold: part.filter((p) => p.value <= tempC).length,
+  });
+  return [
+    build(series.filter((p) => p.year <= ORCADAS_TREND_SPLIT_YEAR)),
+    build(series.filter((p) => p.year > ORCADAS_TREND_SPLIT_YEAR)),
+  ];
 }

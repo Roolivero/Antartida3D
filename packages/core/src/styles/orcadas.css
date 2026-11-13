@@ -2,9 +2,11 @@
 
 .orc {
   position: absolute;
-  inset: 0;
+  inset: 0 0 auto 0;
   width: 100%;
-  height: 100%;
+  /* The shared .app has min-height: 600px; on a landscape phone the expedition must still fit
+     the screen, or the bottom of the scene and its hotspots fall below it. */
+  height: min(100%, 100dvh);
   overflow: hidden;
   background: var(--paper);
   color: var(--ink);
@@ -26,13 +28,90 @@
   height: 100%;
 }
 
-/* Always-visible reconstruction chip on the scene */
+/* Always-visible reconstruction chip on the scene with help button */
 .orc-scene-badge {
   position: absolute;
   left: 12px;
-  top: 104px;
-  z-index: 3;
+  bottom: calc(45dvh + 10px);
+  top: auto;
+  z-index: 5;
   pointer-events: none;
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: flex-start;
+}
+
+.orc.is-panel-expanded .orc-scene-badge {
+  bottom: calc(85dvh + 10px);
+}
+
+.orc-scene-badge-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.orc-scene-help-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1.5px solid var(--ink);
+  background: var(--paper);
+  color: var(--ink);
+  font-family: 'Atkinson Hyperlegible', system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  pointer-events: auto;
+}
+
+.orc-scene-help-btn:focus-visible {
+  outline: 2px solid var(--deep);
+  outline-offset: 2px;
+}
+
+.orc-scene-help-popover {
+  pointer-events: auto;
+  margin-top: 6px;
+  max-width: 280px;
+  background: #FBF4E6;
+  border: 1.5px solid var(--ink);
+  border-radius: 6px 12px 8px 10px;
+  padding: 8px 10px;
+  font-size: 12px;
+  line-height: 1.35;
+  color: var(--ink);
+  box-shadow: 2px 3px 0 rgba(31, 42, 54, 0.2);
+}
+
+.orc-scene-help-popover p {
+  margin: 0;
+}
+
+.orc-scene-help-popover p + p {
+  margin-top: 6px;
+}
+
+.orc-scene-sources-link {
+  appearance: none;
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: var(--navy, #274666);
+  text-decoration: underline;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.orc-scene-sources-link:hover,
+.orc-scene-sources-link:focus-visible {
+  color: var(--teal, #1a7f72);
 }
 
 /* KindChip: color + shape + border + text */
@@ -137,10 +216,16 @@
   text-overflow: ellipsis;
 }
 
+@media (max-width: 420px) {
+  .orc-top-title span {
+    display: none;
+  }
+}
+
 /* Chapter step navigation */
 .orc-steps-nav {
   width: 100%;
-  overflow-x: auto;
+  overflow-x: hidden;
   scrollbar-width: none;
 }
 
@@ -152,27 +237,32 @@
   list-style: none;
   margin: 0;
   padding: 2px 0;
-  display: flex;
-  gap: 5px;
-  min-width: min-content;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 3px;
+  width: 100%;
 }
 
 .orc-step-item {
-  flex: 1 0 auto;
+  width: 100%;
+  min-width: 0;
 }
 
 .orc-step-btn {
-  min-height: 36px;
-  padding: 4px 9px;
+  width: 100%;
+  min-height: 44px;
+  padding: 4px 1px;
   border-radius: 18px;
   border: 1.5px solid rgba(31, 42, 54, 0.45);
   background: rgba(251, 244, 230, 0.92);
   color: var(--ink);
   font-size: 12px;
+  letter-spacing: -0.02em;
   font-weight: 700;
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  justify-content: center;
+  gap: 2px;
   white-space: nowrap;
   transition: transform 0.15s ease, background-color 0.15s ease;
 }
@@ -200,7 +290,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 11px;
+  font-size: 12px;
+  flex: none;
 }
 
 .orc-step-btn.is-current .orc-step-num {
@@ -212,7 +303,7 @@
 .orc-hotspots {
   position: absolute;
   inset: 0;
-  z-index: 2;
+  z-index: 11;
   pointer-events: none;
 }
 
@@ -220,15 +311,26 @@
   position: absolute;
   min-width: 44px;
   min-height: 44px;
-  padding: 4px 8px;
+  padding: 0;
   border: 0;
   background: transparent;
   pointer-events: auto;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
   transform: translate(-50%, -50%);
   will-change: transform;
+}
+
+.orc-hs.is-dimmed {
+  opacity: 0.38;
+}
+
+.orc-hs.is-dimmed:hover,
+.orc-hs.is-dimmed:focus-visible,
+.orc-hs.is-dimmed.is-active {
+  opacity: 1;
 }
 
 .orc-hs-dot {
@@ -249,10 +351,11 @@
 
 .orc-hs-ring {
   position: absolute;
-  left: 6px;
+  left: 50%;
   top: 50%;
   width: 22px;
   height: 22px;
+  margin-left: -11px;
   margin-top: -11px;
   border-radius: 50%;
   border: 2px solid var(--ocre);
@@ -272,8 +375,9 @@
 }
 
 .orc-hs-lbl {
-  font-family: 'Caveat', cursive;
-  font-size: 18px;
+  display: none;
+  font-family: 'Atkinson Hyperlegible', system-ui, sans-serif;
+  font-size: 13px;
   font-weight: 700;
   line-height: 1.05;
   color: var(--ink);
@@ -285,13 +389,16 @@
   white-space: nowrap;
 }
 
-/* Hotspot floating fact card */
+.orc-hs.is-active .orc-hs-lbl {
+  display: inline-block;
+}
+
+/* Hotspot floating fact card (desktop) */
 .orc-spot-card {
   position: absolute;
-  left: 12px;
-  right: 12px;
-  top: 102px;
-  max-height: 44dvh;
+  max-width: 320px;
+  width: 320px;
+  max-height: 60dvh;
   overflow-y: auto;
   z-index: 8;
   background: #FBF4E6;
@@ -300,6 +407,30 @@
   padding: 12px 14px;
   box-shadow: 3px 5px 0 rgba(31, 42, 54, 0.22);
   animation: orc-card-in 0.24s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
+
+/* Hotspot card inside bottom panel (mobile) */
+.orc-spot-panel-card {
+  position: static;
+  width: 100%;
+  max-width: none;
+  max-height: none;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 16px 16px 20px;
+  animation: none;
+}
+
+.orc-btn-return {
+  padding: 4px 10px;
+  font-size: 13px;
+  border: 1.5px solid var(--ink);
+  border-radius: 6px;
+  background: var(--paper);
+  color: var(--ink);
+  cursor: pointer;
 }
 
 @keyframes orc-card-in {
@@ -347,7 +478,8 @@
   left: 0;
   right: 0;
   bottom: 0;
-  max-height: 44dvh;
+  height: 45dvh;
+  max-height: 45dvh;
   z-index: 6;
   background: var(--paper);
   border-top: 2px solid var(--ink);
@@ -356,6 +488,51 @@
   display: flex;
   flex-direction: column;
   padding-bottom: env(safe-area-inset-bottom, 0px);
+  transition: height 0.22s cubic-bezier(0.2, 0.85, 0.3, 1), max-height 0.22s cubic-bezier(0.2, 0.85, 0.3, 1);
+}
+
+.orc-panel.is-expanded {
+  height: 85dvh;
+  max-height: 85dvh;
+  z-index: 15;
+}
+
+.orc-panel-toggle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  width: 100%;
+  min-height: 44px;
+  padding: 4px 12px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid rgba(31, 42, 54, 0.1);
+  color: var(--deep);
+  font-family: 'Atkinson Hyperlegible', system-ui, sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  flex: none;
+}
+
+.orc-panel-toggle:focus-visible {
+  outline: 2px solid var(--deep);
+  outline-offset: -2px;
+}
+
+.orc-panel-toggle-bar {
+  display: block;
+  width: 32px;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(31, 42, 54, 0.3);
+}
+
+.orc-panel-toggle-text {
+  font-size: 12px;
+  line-height: 1;
 }
 
 .orc-panel-scroll {
@@ -398,6 +575,15 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+.orc-question {
+  margin: 0;
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--deep);
 }
 
 .orc-lead {
@@ -443,11 +629,95 @@
   color: var(--ink);
 }
 
-.orc-fact-src {
-  display: block;
+.orc-fact-srcs {
+  margin-top: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.orc-src-prefix {
+  color: #5E656C;
+  font-size: 12px;
+}
+
+.orc-src-link {
+  appearance: none;
+  background: none;
+  border: none;
+  padding: 4px 8px;
+  margin: 1px 0;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--deep);
+  text-decoration: underline;
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 3px;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.orc-src-link:hover {
+  color: var(--ocre);
+}
+
+.orc-src-link:focus-visible {
+  outline: 2px solid var(--deep);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+details.orc-more {
   margin-top: 4px;
-  font-size: 11px;
-  color: #3B4651;
+  border: 1px dashed rgba(31, 42, 54, 0.3);
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: rgba(251, 244, 230, 0.6);
+}
+
+details.orc-more > summary {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--deep);
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+details.orc-more > summary::-webkit-details-marker {
+  display: none;
+}
+
+details.orc-more > summary::before {
+  content: '▸';
+  display: inline-block;
+  transition: transform 0.2s ease;
+  font-size: 12px;
+}
+
+details.orc-more[open] > summary::before {
+  transform: rotate(90deg);
+}
+
+details.orc-more > summary:focus-visible {
+  outline: 2px solid var(--deep);
+  outline-offset: 2px;
+}
+
+.orc-more-facts {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 /* Activity blocks */
@@ -605,67 +875,197 @@
   cursor: pointer;
 }
 
-.orc-stats-cards {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 6px;
+/* MonthStrip */
+.orc-month-strip-wrap {
+  position: absolute;
+  /* Below the header and the chapter buttons, which end at 116 px on a portrait phone. */
+  top: 122px;
+  left: 8px;
+  right: 8px;
+  max-width: calc(100vw - 16px);
+  /* Above the hotspots (11), so the open «Saber más» is never covered by a dot. */
+  z-index: 12;
 }
 
-.orc-stat-box {
+.orc-month-strip {
+  display: flex;
+  align-items: stretch;
+  gap: 2px;
   background: var(--paper);
-  border: 1px solid rgba(31, 42, 54, 0.3);
+  border: 1.5px solid var(--ink);
   border-radius: 8px;
-  padding: 6px 8px;
+  padding: 3px;
+  box-shadow: 2px 3px 0 rgba(31, 42, 54, 0.12);
 }
 
-.orc-stat-box small {
-  display: block;
-  font-size: 11px;
-  color: #3B4651;
-}
-
-.orc-stat-box strong {
-  display: block;
-  font-family: 'Fraunces', Georgia, serif;
-  font-size: 14px;
+.orc-month-btn {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 44px;
+  padding: 3px 2px 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 3px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
   color: var(--ink);
 }
 
-.orc-stat-box span {
-  display: block;
-  font-size: 11px;
-  color: #2B3640;
+.orc-month-btn:hover {
+  background: rgba(31, 42, 54, 0.08);
 }
 
-.orc-fauna-box {
+.orc-month-btn.is-active,
+.orc-month-btn[aria-pressed="true"] {
+  background: var(--ink);
+  color: var(--ice);
+}
+
+.orc-month-btn:focus-visible {
+  outline: 2px solid var(--deep);
+  outline-offset: 1px;
+}
+
+.orc-month-short {
+  display: block;
+  text-align: center;
+  font-size: 12px;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+/* Hours of daylight: a bar that grows from the bottom of a fixed track (0 to 24 h). */
+.orc-month-daylight-track {
+  position: relative;
+  display: block;
+  height: 16px;
+  border-radius: 2px;
+  background: rgba(31, 42, 54, 0.08);
+  overflow: hidden;
+}
+
+.orc-month-daylight-bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #E8A838;
+}
+
+.orc-month-btn[aria-pressed="true"] .orc-month-daylight-track {
+  background: rgba(247, 250, 251, 0.18);
+}
+
+.orc-month-btn[aria-pressed="true"] .orc-month-daylight-bar {
+  background: #FFD479;
+}
+
+/* Sea ice of the bay (simulation): stronger blue, more ice. */
+.orc-month-ice-stripe {
+  display: block;
+  height: 4px;
+  border-radius: 2px;
+  background: #5C8FB3;
+}
+
+.orc-month-ice-stripe[data-ice="no"] {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px rgba(31, 42, 54, 0.18);
+}
+
+.orc-month-btn[aria-pressed="true"] .orc-month-ice-stripe {
+  background: #A8D1ED;
+}
+
+.orc-month-btn[aria-pressed="true"] .orc-month-ice-stripe[data-ice="no"] {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px rgba(247, 250, 251, 0.35);
+}
+
+.orc-month-legend {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 6px;
+  margin: 4px 0 0;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink);
+  background: rgba(251, 244, 230, 0.92);
+  border-radius: 6px;
+}
+
+.orc-month-legend-sun,
+.orc-month-legend-ice {
+  display: inline-block;
+  width: 10px;
+  border-radius: 2px;
+}
+
+.orc-month-legend-sun {
+  height: 10px;
+  background: #E8A838;
+}
+
+.orc-month-legend-ice {
+  height: 4px;
+  margin-left: 6px;
+  background: #5C8FB3;
+}
+
+.orc-month-details {
+  margin-top: 4px;
+  background: #FBF4E6;
+  border: 1.5px solid var(--ink);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 12px;
+  box-shadow: 2px 3px 0 rgba(31, 42, 54, 0.12);
+  /* On a portrait phone it ends above the bottom panel (45dvh) instead of running under it. */
+  max-height: calc(55dvh - 200px);
+  overflow-y: auto;
+}
+
+.orc-month-summary-toggle {
+  cursor: pointer;
+  font-weight: 700;
+  color: var(--deep);
+}
+
+.orc-month-summary-toggle:focus-visible {
+  outline: 2px solid var(--deep);
+  outline-offset: 2px;
+}
+
+.orc-month-details-body {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.orc-month-info-row {
   display: flex;
   flex-direction: column;
   gap: 4px;
-}
-
-.orc-sub-label {
-  font-size: 11px;
-  font-weight: 700;
-  color: #2B3640;
-}
-
-.orc-fauna-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-}
-
-.orc-fauna-pill {
-  font-size: 11px;
-  font-weight: 700;
-  padding: 2px 8px;
-  border-radius: 10px;
-  background: #E2EDF3;
-  border: 1px solid var(--deep);
+  font-size: 12px;
   color: var(--ink);
 }
 
-/* TimeMachine eras */
+.orc-month-ice-text {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Journey eras */
 .orc-era-pills {
   display: flex;
   flex-wrap: wrap;
@@ -711,7 +1111,13 @@
   line-height: 1.35;
 }
 
-/* CenturyChart */
+/* Answer & Century Charts */
+.orc-answer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 .orc-century-summary {
   margin: 0;
   font-size: 13px;
@@ -728,26 +1134,51 @@
 .orc-chart-svg {
   display: block;
   width: 100%;
-  height: 76px;
+  height: auto;
 }
 
-.orc-chart-axis {
-  display: flex;
-  justify-content: space-between;
-  font-size: 11px;
-  color: #3B4651;
-  margin-top: 2px;
-}
-
-.orc-user-obs-note {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  background: var(--paper);
-  border: 1px dashed var(--deep);
+.orc-answer-sentence-block {
+  background: #FBF4E6;
+  border: 1.5px solid var(--ink);
   border-radius: 8px;
-  padding: 5px 8px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.orc-answer-sentence {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.38;
+  color: var(--ink);
+}
+
+.orc-answer-cta-row {
+  margin: 2px 0;
+}
+
+.orc-btn-goto-obs {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--deep);
+  border: 1.5px solid var(--deep);
+  padding: 4px 10px;
+  border-radius: 6px;
+}
+
+.orc-swatch-dot {
+  background: #3D6B8E;
+  border-radius: 50%;
+}
+
+.orc-swatch-dot-warm {
+  background: #CE8F3A;
+  border-radius: 50%;
+}
+
+.orc-swatch-thresh {
+  background: #A4471F;
 }
 
 /* Done chapter */
@@ -839,14 +1270,45 @@
   padding: 0 14px;
 }
 
+/* The primary button fills the bar, so it is centred whether «Atrás» is there or not. */
+.orc-panel .orc-bar .btn.primary {
+  flex: 1 1 auto;
+  width: auto;
+  max-width: none;
+}
+
+.orc-panel .orc-obs-status {
+  display: block;
+  padding: 0 14px 8px;
+  background: var(--paper);
+  font-size: 12px;
+  text-align: center;
+  color: var(--ink);
+  opacity: 0.8;
+}
+
+.orc-scrim {
+  position: fixed;
+  inset: 0;
+  background: rgba(31, 42, 54, 0.45);
+  backdrop-filter: blur(1.5px);
+  z-index: 10;
+  animation: orc-fade-in 0.2s ease-out both;
+}
+
+@keyframes orc-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
 /* Sources dialog panel */
 .orc-sources {
   position: absolute;
   left: 12px;
   right: 12px;
   bottom: 12px;
-  max-height: 76dvh;
-  z-index: 15;
+  max-height: 44dvh;
+  z-index: 20;
   background: #FBF4E6;
   border: 2px solid var(--ink);
   border-radius: 16px;
@@ -855,6 +1317,7 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
+  overflow-y: auto;
   animation: orc-card-in 0.24s cubic-bezier(0.2, 0.8, 0.3, 1) both;
 }
 
@@ -864,10 +1327,32 @@
   flex: none;
 }
 
-.orc-sources-chips {
+.orc-sources-defs {
+  margin: 4px 0 8px;
+  padding: 8px 10px;
+  background: rgba(251, 244, 230, 0.7);
+  border: 1px dashed rgba(31, 42, 54, 0.3);
+  border-radius: 8px;
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 6px;
+}
+
+.orc-sources-def {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.orc-sources-def dt {
+  flex-shrink: 0;
+}
+
+.orc-sources-def dd {
+  margin: 0;
+  color: #3B4651;
 }
 
 .orc-sources-list {
@@ -881,29 +1366,69 @@
 }
 
 .orc-source-item {
-  background: var(--paper);
-  border: 1px solid rgba(31, 42, 54, 0.32);
-  border-radius: 8px;
-  padding: 8px 10px;
+  margin: 0;
+  padding: 0;
+}
+
+.orc-source-card {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  min-height: 44px;
+  padding: 8px 10px;
+  background: var(--paper);
+  border: 1px solid rgba(31, 42, 54, 0.32);
+  border-radius: 8px;
+  text-decoration: none;
+  color: inherit;
+  box-sizing: border-box;
 }
 
-.orc-source-link {
+.orc-source-card:hover {
+  border-color: var(--deep);
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.orc-source-card:focus-visible {
+  outline: 2px solid var(--deep);
+  outline-offset: 2px;
+}
+
+.orc-source-card[data-highlight] {
+  outline: 2.5px solid var(--ocre);
+  outline-offset: 2px;
+}
+
+.orc-source-label {
   font-weight: 700;
   font-size: 14px;
   color: var(--deep);
+  line-height: 1.25;
 }
 
 .orc-source-org {
-  font-size: 13px;
+  font-size: 12.5px;
   color: var(--ink);
+  line-height: 1.25;
 }
 
 .orc-source-meta {
-  font-size: 11.5px;
-  color: #3B4651;
+  font-size: 11px;
+  color: #5E656C;
+}
+
+.orc-sources-footer {
+  margin-top: 6px;
+  padding-top: 8px;
+  border-top: 1px dashed rgba(31, 42, 54, 0.25);
+  display: flex;
+  justify-content: center;
+}
+
+.orc-sources-toggle-btn {
+  font-size: 13px;
+  padding: 6px 14px;
+  min-height: 44px;
 }
 
 /* Desktop layout (>= 900px): side notebook column */
@@ -936,16 +1461,50 @@
     justify-content: center;
   }
 
+  .orc-steps {
+    display: flex;
+    gap: 5px;
+    width: auto;
+  }
+
+  .orc-step-item {
+    width: auto;
+  }
+
   .orc-step-btn {
     min-height: 40px;
     padding: 6px 12px;
     font-size: 13px;
   }
 
+  .orc-panel-toggle {
+    display: none;
+  }
+
   .orc-scene-badge {
     left: 24px;
     top: auto;
     bottom: 24px;
+    display: flex;
+    flex-direction: column-reverse;
+    align-items: flex-start;
+  }
+
+  .orc-scene-badge .orc-scene-help-popover {
+    margin-top: 0;
+    margin-bottom: 6px;
+  }
+
+  .orc-month-strip-wrap {
+    top: 86px;
+    left: 24px;
+    right: auto;
+    width: 380px;
+    z-index: 15;
+  }
+
+  .orc-month-details {
+    max-height: calc(100dvh - 240px);
   }
 
   .orc-panel {
@@ -954,6 +1513,7 @@
     bottom: 24px;
     left: auto;
     width: 480px;
+    height: auto;
     max-height: calc(100dvh - 110px);
     border: 2px solid var(--ink);
     border-radius: 10px 18px 12px 16px;
@@ -968,12 +1528,19 @@
     font-size: 26px;
   }
 
+  /* Only the spots that matter in this chapter keep their label; the rest show it on hover or
+     focus, so six labels do not compete with the scene. */
+  .orc-hs:not(.is-dimmed) .orc-hs-lbl,
+  .orc-hs:hover .orc-hs-lbl,
+  .orc-hs:focus-visible .orc-hs-lbl {
+    display: inline-block;
+  }
+
   .orc-spot-card {
-    left: 24px;
     right: auto;
-    top: auto;
-    bottom: 68px;
-    width: 390px;
+    bottom: auto;
+    max-width: 320px;
+    width: 320px;
     max-height: 60dvh;
   }
 
@@ -986,15 +1553,140 @@
   }
 }
 
+/* Landscape phones (max-height: 500px): use desktop side panel on right */
+@media ((orientation: landscape) and (max-height: 500px)) {
+  .orc-top {
+    padding: 6px 12px 8px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .orc-top-r1 {
+    flex: 0 0 auto;
+    gap: 8px;
+  }
+
+  .orc-top-btn {
+    min-height: 36px;
+    padding: 0 10px;
+    font-size: 13px;
+  }
+
+  .orc-top-title {
+    text-align: left;
+  }
+
+  .orc-top-title strong {
+    font-size: 15px;
+  }
+
+  .orc-top-title span {
+    font-size: 12px;
+    display: block;
+  }
+
+  .orc-steps-nav {
+    width: auto;
+    flex: 1;
+    display: flex;
+    justify-content: center;
+  }
+
+  .orc-steps {
+    display: flex;
+    gap: 4px;
+    width: auto;
+  }
+
+  .orc-step-item {
+    width: auto;
+  }
+
+  .orc-step-btn {
+    min-height: 36px;
+    padding: 4px 8px;
+    font-size: 12px;
+  }
+
+  .orc-panel-toggle {
+    display: none;
+  }
+
+  .orc-panel {
+    top: 52px;
+    right: 8px;
+    bottom: 8px;
+    left: auto;
+    width: 46%;
+    height: auto;
+    max-height: calc(100dvh - 60px);
+    border: 2px solid var(--ink);
+    border-radius: 10px 16px 12px 14px;
+    box-shadow: 3px 5px 0 rgba(31, 42, 54, 0.2);
+  }
+
+  .orc-panel-scroll {
+    padding: 8px 12px 6px;
+  }
+
+  .orc-chapter-h2 {
+    font-size: 18px;
+  }
+
+  .orc-kicker {
+    font-size: 13px;
+  }
+
+  .orc-bar.ebar {
+    padding: 6px 10px;
+  }
+
+  .orc-month-details {
+    max-height: calc(100dvh - 160px);
+  }
+
+  .orc-month-strip-wrap {
+    top: 58px;
+    left: 8px;
+    right: auto;
+    width: calc(52% - 16px);
+    max-width: 380px;
+    z-index: 15;
+  }
+
+  .orc-scene-badge {
+    left: 8px;
+    bottom: 8px;
+  }
+
+  .orc-hs:not(.is-dimmed) .orc-hs-lbl,
+  .orc-hs:hover .orc-hs-lbl,
+  .orc-hs:focus-visible .orc-hs-lbl {
+    display: inline-block;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .orc-hs-ring {
     animation: none;
     display: none;
   }
+  .orc-panel,
   .orc-spot-card,
   .orc-sources,
   .orc-step-btn {
     animation: none;
     transition: none;
+  }
+}
+
+/* Mobile portrait with the panel expanded: the scene is a thin strip under the month strip,
+   so the hotspots and the scene label would pile up over it. Hide them until it is compact. */
+@media (max-width: 899px) and (orientation: portrait) {
+  .orc.is-panel-expanded .orc-scene-badge,
+  .orc.is-panel-expanded .orc-hotspots {
+    visibility: hidden;
   }
 }

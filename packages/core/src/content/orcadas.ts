@@ -1,5 +1,22 @@
 import type { Chapter } from '../orcadas.ts';
 
+export const ORCADAS_GUIDING_QUESTION = '¿Cuánto cambió el clima de la isla Laurie en 120 años?';
+
+/** Short chapter names (buttons, Sources panel) and panel headings. Single source for the UI. */
+export const CHAPTER_NAMES: Record<Chapter, string> = {
+  arrival: 'Llegar',
+  observation: 'Observar',
+  journey: 'Viajar',
+  answer: 'Responder',
+};
+
+export const CHAPTER_HEADINGS: Record<Chapter, string> = {
+  arrival: 'Estación Orcadas',
+  observation: 'Observación del día',
+  journey: 'Viaje en el tiempo',
+  answer: 'La respuesta',
+};
+
 export type FactKind = 'real' | 'sim' | 'recon' | 'calc';
 
 export const FACT_KIND_LABEL: Record<FactKind, string> = {
@@ -12,6 +29,8 @@ export const FACT_KIND_LABEL: Record<FactKind, string> = {
 export interface OrcadasSource {
   id: string;
   label: string;
+  /** Short name for the clickable reference under each fact. */
+  short: string;
   org: string;
   url: string;
   consulted: string;
@@ -19,9 +38,15 @@ export interface OrcadasSource {
   verified: boolean;
 }
 
+/**
+ * Where a fact is shown: a chapter, the month strip that stays on screen in every chapter,
+ * or the scene label («Reconstrucción ilustrada»).
+ */
+export type FactPlace = Chapter | 'months' | 'scene';
+
 export interface OrcadasFact {
   id: string;
-  chapter: Chapter;
+  chapter: FactPlace;
   kind: FactKind;
   title?: string;
   text: string;
@@ -32,6 +57,7 @@ export const ORCADAS_SOURCES: readonly OrcadasSource[] = [
   {
     id: 'cancilleria',
     label: 'Base Orcadas',
+    short: 'Cancillería',
     org: 'Cancillería Argentina · Dirección Nacional del Antártico',
     url: 'https://cancilleria.gob.ar/es/iniciativas/dna/antartida-argentina/bases/orcadas',
     consulted: '11 de noviembre de 2026',
@@ -40,6 +66,7 @@ export const ORCADAS_SOURCES: readonly OrcadasSource[] = [
   {
     id: 'armada',
     label: 'Bases permanentes',
+    short: 'Armada',
     org: 'Armada Argentina',
     url: 'https://www.argentina.gob.ar/armada/antartida/bases-permanentes',
     consulted: '11 de noviembre de 2026',
@@ -48,6 +75,7 @@ export const ORCADAS_SOURCES: readonly OrcadasSource[] = [
   {
     id: 'reader',
     label: 'READER: datos de superficie de Orcadas',
+    short: 'SCAR READER',
     org: 'SCAR · British Antarctic Survey',
     url: 'https://legacy.bas.ac.uk/met/READER/surface/Orcadas.All.temperature.html',
     consulted: '11 de noviembre de 2026',
@@ -57,6 +85,7 @@ export const ORCADAS_SOURCES: readonly OrcadasSource[] = [
   {
     id: 'zazulie2010',
     label: 'Zazulie, Rusticucci y Solomon (2010)',
+    short: 'Zazulie y otros (2010)',
     org: 'Journal of Climate 23(1)',
     url: 'https://doi.org/10.1175/2009JCLI3074.1',
     consulted: '11 de noviembre de 2026',
@@ -65,6 +94,7 @@ export const ORCADAS_SOURCES: readonly OrcadasSource[] = [
   {
     id: 'mossman1907',
     label: 'R. C. Mossman (1907)',
+    short: 'Mossman (1907)',
     org: 'Report on the Scientific Results of the Voyage of S.Y. Scotia, vol. II, Meteorology',
     url: 'https://archive.org/details/reportonscientif02scot',
     consulted: '12 de noviembre de 2026',
@@ -73,6 +103,7 @@ export const ORCADAS_SOURCES: readonly OrcadasSource[] = [
   {
     id: 'oscar',
     label: 'OMM · OSCAR/Surface, estación 88968',
+    short: 'OMM',
     org: 'OMM',
     url: 'https://oscar.wmo.int/surface/#/search/station/stationReportDetails/12480',
     consulted: '11 de noviembre de 2026',
@@ -81,6 +112,7 @@ export const ORCADAS_SOURCES: readonly OrcadasSource[] = [
   {
     id: 'comnap',
     label: 'Antarctic Station Catalogue (Argentina)',
+    short: 'COMNAP',
     org: 'COMNAP',
     url: 'https://www.comnap.aq/s/Argentina_Catalogue_Aug2017.pdf',
     consulted: '12 de noviembre de 2026',
@@ -89,6 +121,7 @@ export const ORCADAS_SOURCES: readonly OrcadasSource[] = [
   {
     id: 'hsm42',
     label: 'Sitio y Monumento Histórico N.º 42',
+    short: 'Tratado Antártico',
     org: 'Secretaría del Tratado Antártico',
     url: 'https://www.ats.aq/devph/en/apa-database/119',
     consulted: '12 de noviembre de 2026',
@@ -114,9 +147,9 @@ export const ORCADAS_FACTS: readonly OrcadasFact[] = [
     id: 'arrival-antiguedad',
     chapter: 'arrival',
     kind: 'real',
-    title: 'Presencia humana continua',
-    text: 'Es la presencia humana estable más antigua de la Antártida.',
-    sourceIds: ['cancilleria'],
+    title: 'La base más antigua',
+    text: 'Es la presencia humana estable más antigua de la Antártida y la más antigua de todas sus bases.',
+    sourceIds: ['cancilleria', 'armada'],
   },
   {
     id: 'arrival-coordenadas',
@@ -124,14 +157,6 @@ export const ORCADAS_FACTS: readonly OrcadasFact[] = [
     kind: 'real',
     title: 'Coordenadas',
     text: 'Coordenadas 60° 45′ S, 44° 43′ O.',
-    sourceIds: ['armada'],
-  },
-  {
-    id: 'arrival-base-mas-antigua',
-    chapter: 'arrival',
-    kind: 'real',
-    title: 'La base más antigua',
-    text: 'La describe como la más antigua de todas las bases de la Antártida.',
     sourceIds: ['armada'],
   },
   {
@@ -147,12 +172,12 @@ export const ORCADAS_FACTS: readonly OrcadasFact[] = [
     chapter: 'arrival',
     kind: 'real',
     title: 'Elevación',
-    text: 'La base está a 8 m sobre el nivel del mar.',
-    sourceIds: ['comnap'],
+    text: 'La base está a 8 m sobre el nivel del mar, y el barómetro de la estación meteorológica, a 12 m.',
+    sourceIds: ['comnap', 'oscar'],
   },
   {
     id: 'arrival-diorama',
-    chapter: 'arrival',
+    chapter: 'scene',
     kind: 'recon',
     title: 'Diorama de la estación',
     text: 'El diorama de la estación es una reconstrucción ilustrada, no un modelo a escala.',
@@ -193,10 +218,10 @@ export const ORCADAS_FACTS: readonly OrcadasFact[] = [
     sourceIds: ['mossman1907'],
   },
 
-  // year
+  // months (month strip)
   {
     id: 'year-sol-luz',
-    chapter: 'year',
+    chapter: 'months',
     kind: 'calc',
     title: 'Luz solar',
     text: 'Las horas de luz y la altura del sol son un cálculo astronómico para 60° 44′ S.',
@@ -204,25 +229,33 @@ export const ORCADAS_FACTS: readonly OrcadasFact[] = [
   },
   {
     id: 'year-hielo-bahia',
-    chapter: 'year',
+    chapter: 'months',
     kind: 'sim',
     title: 'Hielo en la bahía',
-    text: 'El hielo de la bahía por mes es una simulación ilustrativa.',
+    text: 'Cuánto hielo cubre la bahía cada mes es una simulación ilustrativa, no una medición.',
     sourceIds: [],
   },
   {
+    id: 'year-hielo-octubre',
+    chapter: 'months',
+    kind: 'real',
+    title: 'Deshielo',
+    text: 'El hielo marino frente a la estación se rompe en octubre.',
+    sourceIds: ['comnap'],
+  },
+  {
     id: 'year-fauna-meses',
-    chapter: 'year',
+    chapter: 'months',
     kind: 'sim',
     title: 'Presencia de fauna',
     text: 'La presencia de animales por mes es ilustrativa.',
     sourceIds: [],
   },
 
-  // eras
+  // journey: eras
   {
     id: 'eras-expedicion-bruce',
-    chapter: 'eras',
+    chapter: 'journey',
     kind: 'real',
     title: 'Expedición escocesa',
     text: 'La expedición escocesa de William Speirs Bruce inauguró el observatorio el 1 de abril de 1903.',
@@ -230,7 +263,7 @@ export const ORCADAS_FACTS: readonly OrcadasFact[] = [
   },
   {
     id: 'eras-decreto-1904',
-    chapter: 'eras',
+    chapter: 'journey',
     kind: 'real',
     title: 'Decreto 3073',
     text: 'El decreto 3073 del 2 de enero de 1904 aceptó las instalaciones y las asignó a la Oficina Meteorológica Argentina.',
@@ -238,7 +271,7 @@ export const ORCADAS_FACTS: readonly OrcadasFact[] = [
   },
   {
     id: 'eras-traspaso-1904',
-    chapter: 'eras',
+    chapter: 'journey',
     kind: 'real',
     title: 'Bandera argentina ininterrumpida',
     text: 'El 22 de febrero de 1904 pasó a manos argentinas y desde entonces la bandera flamea sin interrupción.',
@@ -246,7 +279,7 @@ export const ORCADAS_FACTS: readonly OrcadasFact[] = [
   },
   {
     id: 'eras-hugo-acuna',
-    chapter: 'eras',
+    chapter: 'journey',
     kind: 'real',
     title: 'Hugo Acuña',
     text: 'Hugo Acuña, joven estafeta a cargo de la oficina postal, integró esa primera dotación y escribió un diario de su invernada.',
@@ -254,7 +287,7 @@ export const ORCADAS_FACTS: readonly OrcadasFact[] = [
   },
   {
     id: 'eras-casa-moneta-1905',
-    chapter: 'eras',
+    chapter: 'journey',
     kind: 'real',
     title: 'Casa Moneta',
     text: 'En 1905 se sumó una casa principal al observatorio de piedra de 1903 (Casa Omond); hoy es museo y se llama Casa Moneta.',
@@ -262,7 +295,7 @@ export const ORCADAS_FACTS: readonly OrcadasFact[] = [
   },
   {
     id: 'eras-radio-1927',
-    chapter: 'eras',
+    chapter: 'journey',
     kind: 'real',
     title: 'Estación radiotelegráfica',
     text: 'En 1927 se inauguró la primera estación radiotelegráfica antártica, con la primera comunicación por radio entre la Antártida y el territorio argentino americano.',
@@ -270,7 +303,7 @@ export const ORCADAS_FACTS: readonly OrcadasFact[] = [
   },
   {
     id: 'eras-dotacion-nativa-1927',
-    chapter: 'eras',
+    chapter: 'journey',
     kind: 'real',
     title: 'Primera dotación nativa',
     text: 'En 1927 fue la primera dotación integrada por argentinos nativos, con José Moneta como jefe.',
@@ -278,7 +311,7 @@ export const ORCADAS_FACTS: readonly OrcadasFact[] = [
   },
   {
     id: 'eras-jose-moneta',
-    chapter: 'eras',
+    chapter: 'journey',
     kind: 'real',
     title: 'José Manuel Moneta',
     text: 'José Manuel Moneta, técnico del Servicio Meteorológico, invernó cuatro años, escribió «Cuatro años en las Orcadas del Sur» y filmó en 1927 «Entre los hielos de las Islas Orcadas».',
@@ -286,7 +319,7 @@ export const ORCADAS_FACTS: readonly OrcadasFact[] = [
   },
   {
     id: 'eras-unica-base',
-    chapter: 'eras',
+    chapter: 'journey',
     kind: 'real',
     title: 'Presencia solitaria',
     text: 'Durante cuarenta años fue la única base argentina y la única de las Orcadas del Sur.',
@@ -294,17 +327,17 @@ export const ORCADAS_FACTS: readonly OrcadasFact[] = [
   },
   {
     id: 'eras-traspaso-armada',
-    chapter: 'eras',
+    chapter: 'journey',
     kind: 'real',
     title: 'Destacamento Naval',
     text: 'En 1951 el observatorio pasó a jurisdicción de la Armada como Destacamento Naval Orcadas del Sur (1951 según la Armada, 1952 según Cancillería).',
     sourceIds: ['armada', 'cancilleria'],
   },
 
-  // century
+  // journey: century
   {
     id: 'century-promedios-temp',
-    chapter: 'century',
+    chapter: 'journey',
     kind: 'calc',
     title: 'Promedios térmicos',
     text: 'Mes más frío promedio: julio (-10,0 °C); más cálido: febrero (+0,8 °C).',
@@ -312,7 +345,7 @@ export const ORCADAS_FACTS: readonly OrcadasFact[] = [
   },
   {
     id: 'century-record-frio',
-    chapter: 'century',
+    chapter: 'journey',
     kind: 'real',
     title: 'Récord de frío',
     text: 'Mes más frío del registro: julio de 1930 (-21,2 °C).',
@@ -320,17 +353,17 @@ export const ORCADAS_FACTS: readonly OrcadasFact[] = [
   },
   {
     id: 'century-tendencia-zazulie',
-    chapter: 'century',
+    chapter: 'journey',
     kind: 'real',
     title: 'Tendencia estacional',
     text: 'Un estudio del registro diario de Orcadas no encontró tendencias significativas entre 1903 y 1950, y sí un calentamiento significativo en las cuatro estaciones del año desde 1950.',
     sourceIds: ['zazulie2010'],
   },
 
-  // done
+  // answer
   {
     id: 'done-monumento-hsm42',
-    chapter: 'done',
+    chapter: 'answer',
     kind: 'real',
     title: 'Sitio y Monumento Histórico N.º 42',
     text: 'Casa Moneta, Casa Omond y un cementerio contiguo forman el Sitio y Monumento Histórico N.º 42 del Tratado Antártico.',
@@ -338,7 +371,7 @@ export const ORCADAS_FACTS: readonly OrcadasFact[] = [
   },
   {
     id: 'done-laborc-actual',
-    chapter: 'done',
+    chapter: 'answer',
     kind: 'real',
     title: 'Ciencia actual y LABORC',
     text: 'Hoy se estudia meteorología de superficie y de altura, geología, glaciología, geofísica, magnetismo, atmósfera y biología; gran parte en el laboratorio LABORC.',
@@ -353,7 +386,7 @@ export function isPublishable(fact: OrcadasFact): boolean {
   return fact.sourceIds.every((id) => SOURCE_MAP.get(id)?.verified === true);
 }
 
-export function factsFor(chapter: Chapter): OrcadasFact[] {
+export function factsFor(chapter: FactPlace): OrcadasFact[] {
   return ORCADAS_FACTS.filter((fact) => fact.chapter === chapter && isPublishable(fact));
 }
 
@@ -363,12 +396,14 @@ export function sourcesOf(fact: OrcadasFact): OrcadasSource[] {
     .filter((src): src is OrcadasSource => src !== undefined);
 }
 
-export type BuildingId = 'omond' | 'moneta' | 'radioMast' | 'modern';
-export type EraId = 'omond' | 'moneta' | 'radio' | 'navy' | 'today';
+export type BuildingId = 'omond' | 'flag' | 'windMast' | 'moneta' | 'radioMast' | 'modern';
+export type EraId = 'omond' | 'traspaso' | 'moneta' | 'radio' | 'navy' | 'today';
 
 export interface OrcadasEra {
   id: EraId;
   fromYear: number;
+  /** True when `fromYear` is only an illustrative boundary without a source: the UI hides the year. */
+  illustrativeStart?: boolean;
   title: string;
   summary: string;
   buildings: readonly BuildingId[];
@@ -381,15 +416,25 @@ export const ORCADAS_ERAS: readonly OrcadasEra[] = [
     fromYear: 1903,
     title: 'Casa Omond',
     summary: 'Observatorio meteorológico de piedra inaugurado por la expedición escocesa de Bruce.',
+    // In 1903 the anemometer stood on the Scotia's deck, not on land (Mossman 1907), and no flag flew yet.
     buildings: ['omond'],
-    factIds: ['eras-expedicion-bruce', 'eras-decreto-1904', 'eras-traspaso-1904', 'eras-hugo-acuna'],
+    factIds: ['eras-expedicion-bruce'],
+  },
+  {
+    id: 'traspaso',
+    fromYear: 1904,
+    title: 'Traspaso a la Argentina',
+    summary: 'El observatorio pasa a manos argentinas y se iza la bandera.',
+    buildings: ['omond', 'flag'],
+    factIds: ['eras-decreto-1904', 'eras-traspaso-1904', 'eras-hugo-acuna'],
   },
   {
     id: 'moneta',
     fromYear: 1905,
     title: 'Casa Moneta',
     summary: 'Se suma la casa de madera principal junto al observatorio de piedra.',
-    buildings: ['omond', 'moneta'],
+    // The land wind mast from 1905 is a reconstruction: its start year is [Fuente a definir].
+    buildings: ['omond', 'flag', 'windMast', 'moneta'],
     factIds: ['eras-casa-moneta-1905'],
   },
   {
@@ -397,27 +442,83 @@ export const ORCADAS_ERAS: readonly OrcadasEra[] = [
     fromYear: 1927,
     title: 'Primera estación de radio',
     summary: 'Primera estación radiotelegráfica antártica y dotación de argentinos nativos.',
-    buildings: ['omond', 'moneta', 'radioMast'],
-    factIds: ['eras-radio-1927', 'eras-dotacion-nativa-1927', 'eras-jose-moneta', 'eras-unica-base'],
+    buildings: ['omond', 'flag', 'windMast', 'moneta', 'radioMast'],
+    factIds: [
+      'eras-radio-1927',
+      'eras-dotacion-nativa-1927',
+      'eras-jose-moneta',
+      'eras-unica-base',
+      'century-record-frio',
+    ],
   },
   {
     id: 'navy',
     fromYear: 1951,
     title: 'Destacamento Naval',
     summary: 'El observatorio pasa a jurisdicción de la Armada Argentina.',
-    buildings: ['omond', 'moneta', 'radioMast'],
-    factIds: ['eras-traspaso-armada'],
+    buildings: ['omond', 'flag', 'windMast', 'moneta', 'radioMast'],
+    factIds: ['eras-traspaso-armada', 'century-tendencia-zazulie'],
   },
   {
-    // The year 2000 is an illustrative boundary for the modern scientific era.
+    // No sourced date was found for LABORC or the current modules (Cancillería, COMNAP, Nov 2026):
+    // 2000 is only the internal boundary of the era and is never shown as a date.
     id: 'today',
     fromYear: 2000,
-    title: 'Bases científicas modernas',
+    illustrativeStart: true,
+    title: 'Hoy',
     summary: 'Investigación multidisciplinaria en el laboratorio LABORC y monitoreo ambiental.',
-    buildings: ['omond', 'moneta', 'radioMast', 'modern'],
-    factIds: ['done-laborc-actual', 'done-monumento-hsm42'],
+    buildings: ['omond', 'flag', 'windMast', 'moneta', 'radioMast', 'modern'],
+    factIds: ['century-promedios-temp'],
   },
 ] as const;
+
+export type OrcadasHotspotId = 'screen' | 'mast' | 'house' | 'flag' | 'bay' | 'colony';
+
+/** Facts shown on each scene hotspot card. Explicit ids: one fact never appears on two hotspots. */
+export const ORCADAS_HOTSPOT_FACTS: Record<OrcadasHotspotId, readonly string[]> = {
+  screen: ['obs-instrumental-1903'],
+  mast: ['obs-estacion-centenaria'],
+  house: ['arrival-coordenadas'],
+  flag: ['arrival-antiguedad'],
+  bay: ['year-hielo-octubre'],
+  colony: ['arrival-fauna'],
+};
+
+/** Facts a panel shows at once; the rest go folded under «Saber más». */
+export const PANEL_VISIBLE_FACTS = 2;
+
+/**
+ * Facts for a panel (a chapter or the month strip): never the ones a hotspot card shows,
+ * so the same fact is not on screen twice. Split into the visible ones and the folded rest.
+ */
+export function panelFacts(facts: readonly OrcadasFact[]): {
+  visible: OrcadasFact[];
+  more: OrcadasFact[];
+} {
+  const onHotspots = new Set(Object.values(ORCADAS_HOTSPOT_FACTS).flat());
+  const own = facts.filter((f) => !onHotspots.has(f.id));
+  return { visible: own.slice(0, PANEL_VISIBLE_FACTS), more: own.slice(PANEL_VISIBLE_FACTS) };
+}
+
+/** Publishable facts of a hotspot, in declared order. */
+export function hotspotFacts(id: OrcadasHotspotId): OrcadasFact[] {
+  return ORCADAS_HOTSPOT_FACTS[id]
+    .map((factId) => ORCADAS_FACTS.find((f) => f.id === factId))
+    .filter((f): f is OrcadasFact => f !== undefined && isPublishable(f));
+}
+
+/** Scene element a hotspot points at, when that element depends on the era. */
+export const HOTSPOT_BUILDING: Partial<Record<OrcadasHotspotId, BuildingId>> = {
+  flag: 'flag',
+  mast: 'windMast',
+};
+
+/** Facts of the journey chapter for the active era, in the era's order. */
+export function journeyFacts(year: number): OrcadasFact[] {
+  return eraAt(year)
+    .factIds.map((id) => ORCADAS_FACTS.find((f) => f.id === id))
+    .filter((f): f is OrcadasFact => f !== undefined && isPublishable(f));
+}
 
 export function eraAt(year: number): OrcadasEra {
   for (let i = ORCADAS_ERAS.length - 1; i >= 0; i--) {
