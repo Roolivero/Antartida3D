@@ -14,7 +14,7 @@ description: Ante un bug, buscar si ya está registrado o arreglado en otra rama
 2. Según lo que encuentres:
    - **Issue abierto y asignado a otra persona:** no lo arregles. Comenta en el issue si aportas datos nuevos y avisa a quien te usa.
    - **Issue abierto y asignado a quien te usa:** trabajalo en la rama de ese issue.
-   - **Issue abierto sin asignar:** avisa a quien te usa. No lo reclames por tu cuenta.
+   - **Issue abierto sin asignar:** tómalo para quien te usa (`gh issue edit <N> --add-assignee @me` y el comentario «Lo tomo.») y avísale.
    - **PR abierto en otra rama:** no lo rehagas. Espera ese merge o avisa a quien te usa si te bloquea.
    - **Issue cerrado como `COMPLETED`, PR `MERGED` o commit en `origin/main`:** el arreglo ya está. Con el árbol de trabajo limpio, corre `git fetch` y `git rebase origin/main`. Si el bug sigue después de eso, comenta en el issue con la evidencia en vez de abrir uno nuevo.
    - **Commit solo en otra rama:** el arreglo existe pero no está mergeado. No lo rehagas; avisa a quien te usa.
@@ -25,8 +25,8 @@ description: Ante un bug, buscar si ya está registrado o arreglado en otra rama
    gh issue create --label bug --assignee @me --title "..." --body "..."
    ```
 
-   Asígnalo **solo a la persona que te usa** y avísale. No reasignes ni cierres issues de otras personas ni tomes issues existentes por tu cuenta (regla central de `AGENTS.md`).
-4. Un issue de bug recién registrado **no cuenta como «issue en curso»** hasta que se empieza a trabajar. Si quien te usa no lo va a arreglar pronto, se libera (`gh issue edit <N> --remove-assignee @me`, con un comentario del estado) para que otra persona lo tome.
+   Asígnalo **solo a la persona que te usa** y avísale. No reasignes ni cierres issues de otras personas, ni tomes un issue que ya tiene otra persona asignada (regla central de `AGENTS.md`).
+4. Si quien te usa no va a arreglar el bug pronto, el issue se libera (`gh issue edit <N> --remove-assignee @me`, con un comentario del estado) para que otra persona lo tome.
 5. Un bug, un issue, una rama (`gh issue develop <N> --base main --checkout`) y un PR con `Closes #<N>`. Si el arreglo es chico y bloquea tu trabajo, pregunta a quien te usa si lo haces en una rama aparte (por ejemplo con `git worktree`) en lugar de mezclarlo con el issue en curso.
 6. Vuelve a buscar duplicados justo antes de abrir el PR: otra rama pudo registrarlo mientras trabajabas.
 7. No inventes bugs. Si no pudiste reproducirlo, dilo en el issue como «no reproducido».
