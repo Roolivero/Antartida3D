@@ -21,7 +21,8 @@ export type HotspotId =
   | 'house'
   | 'bay'
   | 'colony'
-  | 'flag';
+  | 'flag'
+  | 'boat';
 
 export interface CameraPose {
   pos: readonly [number, number, number];
@@ -111,10 +112,17 @@ const mastLayout = layoutOf('windMast');
 const omondLayout = layoutOf('omond');
 const flagLayout = layoutOf('flag');
 
-/** A point in Bahía Scotia, a little off the beach where the boat rests. */
+/** The Zodiac, beached with its bow on the gravel (StationScene strands it at the same point). */
+const boatPoint: [number, number, number] = (() => {
+  const boat = layoutOf('boat').position;
+  const [x, z] = beachPoint([boat[0], boat[2]], -0.03);
+  return [x, 0.45, z];
+})();
+
+/** A point in Bahía Scotia off the beach, to one side of the boat so the two dots never stack. */
 const bayPoint: [number, number, number] = (() => {
   const boat = layoutOf('boat').position;
-  const [x, z] = beachPoint([boat[0], boat[2]], -2.2);
+  const [x, z] = beachPoint([boat[0] - 3, boat[2]], -2.2);
   return [x, 0.4, z];
 })();
 
@@ -185,6 +193,15 @@ export const HOTSPOTS: readonly HotspotDef[] = [
     worldPos: bayPoint,
     pose: orbit([bayPoint[0], 0.3, bayPoint[2]], 12, 180, 16, 2.5),
     fallbackPct: [30, 66],
+  },
+  {
+    id: 'boat',
+    label: 'Bote Zodiac',
+    shortLabel: 'Zodiac',
+    subtitle: 'Bote neumático con motor fuera de borda: la base no tiene muelle',
+    worldPos: boatPoint,
+    pose: orbit([boatPoint[0], 0.2, boatPoint[2]], 6, 180, 14, 1.0),
+    fallbackPct: [40, 60],
   },
   {
     id: 'colony',

@@ -183,6 +183,8 @@ Criterio de terminado del issue:
 
 > Enmienda (pedido de Lk tras probarlo): «Saber más» de cada parada muestra lo que la frase deja afuera y cambia con cada «Siguiente»; ya no repite la frase ni existe el «Saber más del capítulo» en los capítulos con paradas. Responder suma la lista de lo hecho, al estilo del cuaderno de «Desde Ushuaia». El abrigo de Observar se redibujó con volumen (puerta con canto y celosías dobles).
 
+> Enmienda (pedido de Lk): el bote pasa a ser un Zodiac varado en la playa con animación de llegada, porque COMNAP indica que la base no tiene muelle y usa dos Zodiac en playas aptas para botes chicos; no se dibuja un muelle porque no hay fuente que lo respalde.
+
 ## Riesgos y decisiones abiertas
 
 - **Paradas sin ficha con fuente:** si un `spot` no tiene una ficha publicable que sirva de `line`, la parada no se crea. Nunca se inventa el texto.

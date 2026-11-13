@@ -169,6 +169,14 @@ export const ORCADAS_FACTS: readonly OrcadasFact[] = [
     sourceIds: ['cancilleria'],
   },
   {
+    id: 'arrival-transporte',
+    chapter: 'arrival',
+    kind: 'real',
+    title: 'Cómo se llega',
+    text: 'A la base se llega en buque o en helicóptero, con unas 25 visitas de buques por año entre noviembre y marzo. No tiene muelle: cuenta con dos botes Zodiac con motor fuera de borda y con playas aptas para desembarcar botes chicos.',
+    sourceIds: ['comnap'],
+  },
+  {
     id: 'arrival-elevacion',
     chapter: 'arrival',
     kind: 'real',
@@ -242,14 +250,6 @@ export const ORCADAS_FACTS: readonly OrcadasFact[] = [
     kind: 'real',
     title: 'Deshielo',
     text: 'El hielo marino frente a la estación se rompe en octubre.',
-    sourceIds: ['comnap'],
-  },
-  {
-    id: 'year-zodiac',
-    chapter: 'months',
-    kind: 'real',
-    title: 'Sin muelle',
-    text: 'La base no tiene muelle: usa dos botes Zodiac con motor fuera de borda y desembarca en playas aptas para botes chicos.',
     sourceIds: ['comnap'],
   },
   {
@@ -481,7 +481,7 @@ export const ORCADAS_ERAS: readonly OrcadasEra[] = [
   },
 ] as const;
 
-export type OrcadasHotspotId = 'screen' | 'mast' | 'house' | 'flag' | 'bay' | 'colony';
+export type OrcadasHotspotId = 'screen' | 'mast' | 'house' | 'flag' | 'bay' | 'colony' | 'boat';
 
 export interface OrcadasTourStop {
   id: string;
@@ -620,7 +620,8 @@ export const ORCADAS_HOTSPOT_FACTS: Record<OrcadasHotspotId, readonly string[]> 
   mast: ['obs-estacion-centenaria'],
   house: ['arrival-coordenadas'],
   flag: ['arrival-antiguedad'],
-  bay: ['year-zodiac'],
+  bay: ['year-hielo-octubre'],
+  boat: ['arrival-transporte'],
   colony: ['arrival-fauna'],
 };
 

@@ -44,6 +44,11 @@ export const VOXEL_PALETTE = {
   SEAL_DARK: 0x4f5a63,
   SEAL_BELLY: 0x9aa6ae,
   SEAL_SPOT: 0xc9d0d4,
+  ZODIAC_TUBE: 0xb3bcc4,
+  ZODIAC_TUBE_DARK: 0x87919a,
+  ZODIAC_HULL: 0x3a434c,
+  ZODIAC_FLOOR: 0x737d86,
+  ZODIAC_MOTOR: 0x1a222b,
 } as const;
 
 const {
@@ -69,6 +74,11 @@ const {
   SEAL_DARK,
   SEAL_BELLY,
   SEAL_SPOT,
+  ZODIAC_TUBE,
+  ZODIAC_TUBE_DARK,
+  ZODIAC_HULL,
+  ZODIAC_FLOOR,
+  ZODIAC_MOTOR,
 } = VOXEL_PALETTE;
 
 export interface SeaIcePlate {
@@ -581,54 +591,100 @@ export const FLAG_SEGMENT_BOXES: readonly (readonly Box[])[] = [0, 1, 2, 3, 4].m
     [cx, 0.0, 0, w + 0.02, 0.36, thick, WHITE],
     [cx, -0.36, 0, w + 0.02, 0.36, thick, SKY],
   ];
-  // Sol de Mayo across segments 1 and 2
-  if (idx === 1) {
-    base.push([cx + 0.06, 0.0, 0, 0.22, 0.22, thick + 0.025, LAMP]);
-    base.push([cx + 0.06, 0.0, 0, 0.28, 0.1, thick + 0.018, ORANGE]);
-  } else if (idx === 2) {
-    base.push([cx - 0.06, 0.0, 0, 0.22, 0.22, thick + 0.025, LAMP]);
-    base.push([cx - 0.06, 0.0, 0, 0.1, 0.28, thick + 0.018, ORANGE]);
-  } else {
-    base.push([cx, 0.53, 0, w, 0.03, thick + 0.006, ICE]);
+  // The top edge catches the light on every segment.
+  base.push([cx, 0.53, 0, w, 0.03, thick + 0.006, ICE]);
+  // One Sol de Mayo in the middle of the flag: the middle segment of five, so it never splits in two.
+  if (idx === 2) {
+    const face = thick + 0.03;
+    const rays = thick + 0.02;
+    base.push([cx, 0.0, 0, 0.2, 0.2, face, LAMP]);
+    base.push([cx, 0.0, 0, 0.34, 0.07, rays, ORANGE]);
+    base.push([cx, 0.0, 0, 0.07, 0.32, rays, ORANGE]);
+    for (const [dx, dy] of [[0.11, 0.11], [-0.11, 0.11], [0.11, -0.11], [-0.11, -0.11]]) {
+      base.push([cx + dx, dy, 0, 0.06, 0.06, rays, ORANGE]);
+    }
   }
   return base;
 });
 
 /**
- * 9. Station Whaleboat / Chalupa pulled up on the gravel shore (+x bow, +y up).
- * 24 boxes.
+ * 9. Station 5 m Zodiac RIB with outboard motor (+x bow, +y up, base at y = 0).
+ * Stepped tubular grey pontoons curving up to a joined bow, rigid V-hull, deck floor,
+ * central helm console & jockey seat, lifelines/handles, coiled bow line, and stern outboard.
  */
 export const STATION_BOAT_BOXES: readonly Box[] = [
-  // Keel, stem (+x) and sternpost (-x)
-  [0, 0.06, 0, 2.30, 0.12, 0.16, BROWN_DARK],
-  [1.18, 0.28, 0, 0.18, 0.48, 0.16, BROWN_DARK],
-  [-1.16, 0.26, 0, 0.18, 0.44, 0.18, BROWN_DARK],
-  // Stepped red lower hull
-  [0, 0.16, 0, 1.92, 0.16, 0.82, RED],
-  [0.82, 0.18, 0, 0.48, 0.16, 0.56, RED],
-  [-0.82, 0.18, 0, 0.48, 0.16, 0.58, RED],
-  [1.06, 0.22, 0, 0.24, 0.18, 0.32, RED],
-  [-1.04, 0.22, 0, 0.24, 0.18, 0.36, RED],
-  // White upper hull strakes (port & starboard)
-  [0, 0.32, 0.42, 1.88, 0.16, 0.10, WHITE],
-  [0, 0.32, -0.42, 1.88, 0.16, 0.10, WHITE],
-  [0.84, 0.34, 0.26, 0.46, 0.16, 0.10, WHITE],
-  [0.84, 0.34, -0.26, 0.46, 0.16, 0.10, WHITE],
-  [-0.84, 0.34, 0.26, 0.46, 0.16, 0.10, WHITE],
-  [-0.84, 0.34, -0.26, 0.46, 0.16, 0.10, WHITE],
-  // Wooden gunwale trim & interior floorboards
-  [0, 0.42, 0.44, 1.92, 0.06, 0.12, WOOD],
-  [0, 0.42, -0.44, 1.92, 0.06, 0.12, WOOD],
-  [0, 0.20, 0, 1.72, 0.06, 0.66, WOOD_LIGHT],
-  // 4 wooden rowing thwarts (benches)
-  [-0.62, 0.32, 0, 0.18, 0.06, 0.72, WOOD_LIGHT],
-  [-0.18, 0.32, 0, 0.18, 0.06, 0.80, WOOD_LIGHT],
-  [0.26, 0.32, 0, 0.18, 0.06, 0.80, WOOD_LIGHT],
-  [0.68, 0.32, 0, 0.18, 0.06, 0.64, WOOD_LIGHT],
-  // Pair of wooden oars resting across thwarts + coiled bow rope
-  [-0.08, 0.38, 0.16, 1.48, 0.05, 0.07, WOOD],
-  [-0.08, 0.38, -0.16, 1.48, 0.05, 0.07, WOOD],
-  [0.98, 0.36, 0, 0.22, 0.08, 0.22, CREAM],
+  // Rigid V-hull keel & rising bow forefoot (base at y = 0)
+  [-0.09, 0.035, 0, 1.62, 0.07, 0.16, ZODIAC_HULL],
+  [-0.08, 0.075, 0, 1.54, 0.08, 0.42, ZODIAC_HULL],
+  [-0.10, 0.125, 0, 1.52, 0.08, 0.62, ZODIAC_HULL],
+  [0.76, 0.075, 0, 0.22, 0.07, 0.28, ZODIAC_HULL],
+  [0.90, 0.135, 0, 0.20, 0.08, 0.20, ZODIAC_HULL],
+  [1.03, 0.215, 0, 0.14, 0.09, 0.12, ZODIAC_HULL],
+  // Rigid stern transom & aluminum cap
+  [-0.90, 0.20, 0, 0.08, 0.26, 0.58, ZODIAC_HULL],
+  [-0.90, 0.34, 0, 0.09, 0.03, 0.54, ZINC],
+  // Non-slip interior floor & ribs
+  [-0.08, 0.165, 0, 1.52, 0.04, 0.54, ZODIAC_FLOOR],
+  [0.72, 0.185, 0, 0.34, 0.04, 0.34, ZODIAC_FLOOR],
+  [-0.50, 0.19, 0, 0.06, 0.015, 0.46, ZODIAC_TUBE_DARK],
+  [0.28, 0.19, 0, 0.06, 0.015, 0.46, ZODIAC_TUBE_DARK],
+  // Port & starboard tubular pontoons (stepped rounded profile + black rubbing strake + lifelines)
+  ...([-1, 1] as const).flatMap((s): Box[] => [
+    // Main straight tube
+    [-0.22, 0.24, s * 0.38, 1.52, 0.14, 0.26, ZODIAC_TUBE],
+    [-0.22, 0.24, s * 0.38, 1.52, 0.26, 0.14, ZODIAC_TUBE],
+    [-0.22, 0.24, s * 0.515, 1.50, 0.055, 0.03, BLACK],
+    // Tapered stern cone behind transom
+    [-1.02, 0.24, s * 0.38, 0.10, 0.18, 0.18, ZODIAC_TUBE_DARK],
+    [-1.08, 0.24, s * 0.38, 0.06, 0.11, 0.11, BLACK],
+    // Bow curve segment 1 (inward & upward)
+    [0.64, 0.265, s * 0.31, 0.24, 0.13, 0.23, ZODIAC_TUBE],
+    [0.64, 0.265, s * 0.31, 0.24, 0.23, 0.13, ZODIAC_TUBE],
+    [0.64, 0.265, s * 0.43, 0.24, 0.05, 0.03, BLACK],
+    // Bow curve segment 2 (further inward & higher)
+    [0.84, 0.305, s * 0.19, 0.22, 0.12, 0.21, ZODIAC_TUBE],
+    [0.84, 0.305, s * 0.19, 0.22, 0.21, 0.12, ZODIAC_TUBE],
+    [0.84, 0.305, s * 0.30, 0.22, 0.05, 0.03, BLACK],
+    // Grab handles & lifeline rope
+    [0.32, 0.38, s * 0.38, 0.14, 0.03, 0.04, BLACK],
+    [-0.36, 0.38, s * 0.38, 0.14, 0.03, 0.04, BLACK],
+    [0.0, 0.335, s * 0.47, 1.18, 0.022, 0.022, CREAM],
+    [-0.56, 0.33, s * 0.455, 0.06, 0.04, 0.03, BLACK],
+    [0.0, 0.33, s * 0.455, 0.06, 0.04, 0.03, BLACK],
+    [0.56, 0.33, s * 0.455, 0.06, 0.04, 0.03, BLACK],
+  ]),
+  // Joined upturned bow collar & nose bumper
+  [0.98, 0.34, 0, 0.18, 0.14, 0.26, ZODIAC_TUBE],
+  [0.98, 0.34, 0, 0.18, 0.22, 0.18, ZODIAC_TUBE],
+  [1.08, 0.365, 0, 0.10, 0.14, 0.16, ZODIAC_TUBE_DARK],
+  [1.13, 0.37, 0, 0.03, 0.08, 0.12, BLACK],
+  // Central jockey seat & helm console with grab rail + steering wheel
+  [-0.22, 0.24, 0, 0.34, 0.12, 0.28, ZODIAC_TUBE_DARK],
+  [-0.22, 0.32, 0, 0.36, 0.05, 0.26, BLACK],
+  [0.08, 0.29, 0, 0.22, 0.22, 0.28, ZODIAC_TUBE_DARK],
+  [0.10, 0.42, 0, 0.18, 0.08, 0.26, ZODIAC_FLOOR],
+  [0.12, 0.54, 0, 0.03, 0.03, 0.28, ZINC],
+  [0.12, 0.48, 0.125, 0.03, 0.10, 0.03, ZINC],
+  [0.12, 0.48, -0.125, 0.03, 0.10, 0.03, ZINC],
+  [-0.02, 0.41, 0, 0.03, 0.13, 0.13, BLACK],
+  // Bow locker bench & aft fuel tank
+  [0.54, 0.23, 0, 0.22, 0.09, 0.36, ZODIAC_TUBE_DARK],
+  [-0.64, 0.23, 0.12, 0.22, 0.10, 0.16, RED],
+  // Coiled bow rope on forward deck
+  [0.80, 0.225, 0, 0.17, 0.05, 0.17, CREAM],
+  [0.80, 0.255, 0, 0.08, 0.02, 0.08, ZODIAC_TUBE_DARK],
+  [0.95, 0.30, 0, 0.14, 0.025, 0.035, CREAM],
+  // Outboard motor at stern (clamp, cowling, shaft/leg, lower unit, propeller)
+  [-0.95, 0.33, 0, 0.10, 0.12, 0.14, ZINC],
+  [-1.06, 0.43, 0, 0.22, 0.18, 0.19, ZODIAC_MOTOR],
+  [-1.07, 0.535, 0, 0.18, 0.04, 0.15, ZODIAC_TUBE_DARK],
+  [-1.06, 0.44, 0, 0.226, 0.03, 0.196, ZINC],
+  [-0.89, 0.41, -0.06, 0.16, 0.035, 0.035, BLACK],
+  [-1.04, 0.21, 0, 0.09, 0.28, 0.065, ZODIAC_MOTOR],
+  [-1.06, 0.06, 0, 0.14, 0.075, 0.065, ZODIAC_MOTOR],
+  [-1.04, 0.015, 0, 0.08, 0.03, 0.02, ZODIAC_MOTOR],
+  [-1.145, 0.06, 0, 0.03, 0.11, 0.03, ZINC],
+  [-1.145, 0.06, 0, 0.03, 0.03, 0.11, ZINC],
 ];
 
 /**
@@ -943,8 +999,37 @@ export const ICE_REACH = 14;
 /** Floes float in a band this wide (in seaIce units) ahead of the solid fast-ice sheet. */
 export const ICE_FLOE_BAND = 0.5;
 
+/** Conservative horizontal bounding radius (world units) of a sea-ice floe plate at peak cover. */
+export function seaIcePlateRadius(p: Pick<SeaIcePlate, 'sizeX' | 'sizeZ'>): number {
+  return (1.25 * Math.max(p.sizeX, p.sizeZ)) / 0.9;
+}
+
+/** Conservative horizontal bounding radius (world units) of an iceberg instance. */
+export function icebergRadius(b: Pick<IcebergInstance, 'scaleX' | 'scaleZ'>): number {
+  return 0.8 * Math.max(b.scaleX, b.scaleZ);
+}
+
+function insideCorridor(
+  x: number,
+  z: number,
+  radius: number,
+  avoid: readonly (readonly [number, number])[]
+): boolean {
+  const r2 = radius * radius;
+  for (let i = 0; i < avoid.length; i++) {
+    const dx = x - avoid[i][0];
+    const dz = z - avoid[i][1];
+    if (dx * dx + dz * dz < r2) return true;
+  }
+  return false;
+}
+
 /** Floes of varied size and shape; only the visible part of both bays gets them. */
-export function generateSeaIcePlates(seed = 190406): SeaIcePlate[] {
+export function generateSeaIcePlates(
+  seed = 190406,
+  avoid: readonly (readonly [number, number])[] = [],
+  clearance = 0
+): SeaIcePlate[] {
   const rng = createSeededRng(seed);
   const plates: SeaIcePlate[] = [];
   const step = 1.5;
@@ -959,7 +1044,7 @@ export function generateSeaIcePlates(seed = 190406): SeaIcePlate[] {
       const jitter = rng() - 0.5;
       // Keep floes off the beach: their whole extent must be at sea.
       if (d >= -0.35 - size) continue;
-      plates.push({
+      const plate: SeaIcePlate = {
         x,
         z,
         sizeX: size * aspect,
@@ -967,7 +1052,11 @@ export function generateSeaIcePlates(seed = 190406): SeaIcePlate[] {
         rotY,
         threshold: iceThreshold(-d, jitter),
         variant: Math.floor(rng() * 4),
-      });
+      };
+      if (avoid.length > 0 && insideCorridor(x, z, seaIcePlateRadius(plate) + clearance, avoid)) {
+        continue;
+      }
+      plates.push(plate);
     }
   }
   return plates;
@@ -981,7 +1070,11 @@ export function floeVisibility(threshold: number, seaIce: number): number {
 }
 
 /** A few icebergs grounded or drifting in both bays, at least 2.5 units off the coast. */
-export function generateIcebergs(seed = 190409): IcebergInstance[] {
+export function generateIcebergs(
+  seed = 190409,
+  avoid: readonly (readonly [number, number])[] = [],
+  clearance = 0
+): IcebergInstance[] {
   const rng = createSeededRng(seed);
   const coords: readonly [number, number, number, 'tabular' | 'pinnacle'][] = [
     // Bahía Uruguay, behind the stage
@@ -1003,12 +1096,14 @@ export function generateIcebergs(seed = 190409): IcebergInstance[] {
       rotY: rng() * Math.PI * 2,
       phase: rng() * Math.PI * 2,
       variant,
-    }));
+    }))
+    .filter((b) => avoid.length === 0 || !insideCorridor(b.x, b.z, icebergRadius(b) + clearance, avoid));
 }
 
 /** Light grey gravel of the paths between the buildings (photos: grey gravel ground). */
 const PATH_GRAVEL = 0xa8a49b;
 const PATH_GRAVEL_LIGHT = 0xbdb9af;
+const PATH_GRAVEL_DARK = 0x8c887f;
 
 /** True when (x, z) is inside a building footprint grown by `margin` (world units). */
 function nearBuilding(x: number, z: number, margin: number): boolean {
@@ -1034,21 +1129,59 @@ export function buildStageDetailBoxes(seed = 190415): Box[] {
   const [kx, kz] = PENGUIN_KNOLL.center;
   const onKnoll = (x: number, z: number) => Math.hypot(x - kx, z - kz) < PENGUIN_KNOLL.footRadius + 0.3;
 
-  // Gravel path along the front of the station, made of slightly uneven flat stones.
+  // A slab of gravel that follows the ground: its top clears the highest corner and its bottom
+  // reaches below the lowest, so on a slope it neither sinks into the ground nor floats.
+  const slab = (x: number, z: number, sx: number, sz: number, colour: number, lift = 0.018): number => {
+    const ys = [
+      groundAt(x, z),
+      groundAt(x - sx / 2, z - sz / 2),
+      groundAt(x + sx / 2, z - sz / 2),
+      groundAt(x - sx / 2, z + sz / 2),
+      groundAt(x + sx / 2, z + sz / 2),
+    ];
+    const top = Math.max(...ys) + lift;
+    const bottom = Math.min(...ys) - 0.03;
+    boxes.push([x, (top + bottom) / 2, z, sx, top - bottom, sz, colour]);
+    return top;
+  };
+  // Grain on top of a slab: a few lighter and darker stones, and loose stones along its edges.
+  const grain = (x: number, z: number, top: number, alongX: boolean, half: number) => {
+    for (let i = 0; i < 2; i++) {
+      const [u, v] = [(rng() - 0.5) * 0.18, (rng() - 0.5) * half * 1.6];
+      const sz = 0.04 + rng() * 0.05;
+      boxes.push([x + (alongX ? u : v), top + 0.005, z + (alongX ? v : u), sz, 0.012, sz * 0.8, rng() < 0.6 ? PATH_GRAVEL_LIGHT : PATH_GRAVEL_DARK]);
+    }
+    if (rng() < 0.45) {
+      const side = rng() < 0.5 ? -1 : 1;
+      const sz = 0.07 + rng() * 0.06;
+      const [ex, ez] = alongX ? [x, z + side * (half + 0.03)] : [x + side * (half + 0.03), z];
+      boxes.push([ex, groundAt(ex, ez) + sz * 0.3, ez, sz, sz * 0.6, sz * 0.9, rng() < 0.5 ? ROCK_DARK : ROCK]);
+    }
+  };
+
+  // Gravel path along the front of the station: short overlapping slabs along a gentle curve,
+  // so it reads as one continuous track (photos: grey gravel ground, no paving).
   const pathZ = 2.35;
-  for (let x = -5.6; x <= 6.6; x += 0.42) {
-    const z = pathZ + Math.sin(x * 0.7) * 0.18 + (rng() - 0.5) * 0.08;
-    if (nearBuilding(x, z, 0.15)) continue;
-    boxes.push([x, groundAt(x, z) + 0.015, z, 0.36 + rng() * 0.08, 0.03, 0.3 + rng() * 0.1, rng() < 0.5 ? PATH_GRAVEL : PATH_GRAVEL_LIGHT]);
+  const pathZAt = (x: number) => pathZ + Math.sin(x * 0.7) * 0.18;
+  const PATH_STEP = 0.18;
+  const PATH_HALF = 0.25;
+  for (let x = -5.6; x <= 6.6; x += PATH_STEP) {
+    const z = pathZAt(x);
+    if (nearBuilding(x, z, 0.1)) continue;
+    const top = slab(x, z, PATH_STEP + 0.06, PATH_HALF * 2, PATH_GRAVEL);
+    grain(x, z, top, true, PATH_HALF);
   }
-  // Spurs from the path to the buildings that face it.
+  // Spurs from the path to the doors of the buildings that face it, a little narrower.
+  const spurs: [number, number, number][] = [];
   for (const id of ['screen', 'omond', 'module-360745961', 'module-360745962']) {
     const e = STATION_LAYOUT.find((l) => l.id === id);
     if (!e) continue;
     const x0 = e.position[0];
-    const zFront = e.position[2] + e.footprint[1] / 2 + 0.2;
-    for (let z = zFront; z < pathZ - 0.15; z += 0.36) {
-      boxes.push([x0 + (rng() - 0.5) * 0.06, groundAt(x0, z) + 0.015, z, 0.3, 0.03, 0.3, PATH_GRAVEL_LIGHT]);
+    const zFront = e.position[2] + e.footprint[1] / 2 + 0.1;
+    spurs.push([x0, zFront, pathZAt(x0)]);
+    for (let z = zFront; z < pathZAt(x0); z += PATH_STEP) {
+      const top = slab(x0, z, 0.36, PATH_STEP + 0.06, PATH_GRAVEL);
+      grain(x0, z, top, false, 0.18);
     }
   }
 
@@ -1057,7 +1190,8 @@ export function buildStageDetailBoxes(seed = 190415): Box[] {
     const x = -13 + rng() * 26;
     const z = -3.6 + rng() * 7.4;
     const d = worldCoastDistance(x, z);
-    if (d < 0.3 || onKnoll(x, z) || nearBuilding(x, z, 0.5) || Math.abs(z - pathZ) < 0.45) continue;
+    const onSpur = spurs.some(([sx, z0, z1]) => Math.abs(x - sx) < 0.4 && z > z0 - 0.2 && z < z1);
+    if (d < 0.3 || onKnoll(x, z) || nearBuilding(x, z, 0.5) || onSpur || Math.abs(z - pathZAt(x)) < 0.45) continue;
     const y = groundAt(x, z);
     if (rng() < 0.7) {
       const sz = 0.08 + rng() ** 2 * 0.26;

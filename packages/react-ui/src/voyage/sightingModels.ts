@@ -12,6 +12,7 @@ import {
   SEA_ICE_FLOE_B,
   SEA_ICE_FLOE_C,
   SEA_ICE_FLOE_D,
+  STATION_BOAT_BOXES,
 } from '../orcadas/stationModels.ts';
 import { assemblePenguinBoxes, buildRookeryBoxes } from '../orcadas/penguins.ts';
 import { assembleWeddellSealBoxes, assembleElephantSealBoxes } from '../orcadas/seals.ts';
@@ -553,7 +554,7 @@ export const ORCADAS_SITE: Box[] = [
   [0.17, 0.54, 0.28, 0.16, 0.04, 0.01, SKY],
   [0.17, 0.5, 0.28, 0.16, 0.04, 0.01, WHITE],
   [0.17, 0.46, 0.28, 0.16, 0.04, 0.01, SKY],
-  [0.15, 0.5, 0.28, 0.04, 0.04, 0.012, LAMP],
+  [0.17, 0.5, 0.28, 0.04, 0.04, 0.012, LAMP],
   // Two penguins standing on the rock terrace (Adélie and Chinstrap)
   ...penguinAt(-0.15, 0.35, 0.32, 'ring'),
   ...penguinAt(0.12, -0.32, 0.32, 'strap'),
@@ -616,6 +617,9 @@ export const SCENE_MODELS: Readonly<Record<string, readonly Box[]>> = {
   },
   get orcadasElephantSeal() {
     return assembleElephantSealBoxes();
+  },
+  get orcadasBoat() {
+    return STATION_BOAT_BOXES;
   },
 };
 

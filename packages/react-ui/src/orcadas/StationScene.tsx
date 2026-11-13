@@ -53,7 +53,12 @@ import {
 } from './Hotspots.tsx';
 import { StationFallback } from './StationFallback.tsx';
 import { PenguinColony } from './PenguinColony.tsx';
-import { beachPoint } from './penguins.ts';
+import {
+  PENGUIN_SWIM_CLEARANCE,
+  beachPoint,
+  buildPenguinRoute,
+  penguinSwimCorridor,
+} from './penguins.ts';
 import {
   BIRD_WING_ROOT,
   FLAGPOLE_BASE_BOXES,
@@ -343,7 +348,14 @@ function BayOcean({
     [uniforms]
   );
 
-  const plates = useMemo(() => generateSeaIcePlates(190406), []);
+  const swimCorridor = useMemo(
+    () => penguinSwimCorridor(buildPenguinRoute((x, z) => evaluateIsthmusTerrain(x, z).y)),
+    []
+  );
+  const plates = useMemo(
+    () => generateSeaIcePlates(190406, swimCorridor, PENGUIN_SWIM_CLEARANCE),
+    [swimCorridor]
+  );
   const floeGeos = useMemo(
     () => SEA_ICE_FLOE_VARIANTS.map((boxes) => buildBoxGeometry(boxes)),
     []
@@ -357,7 +369,10 @@ function BayOcean({
   }, [plates]);
   const platesRefs = useRef<(InstancedMesh | null)[]>([]);
 
-  const icebergs = useMemo(() => generateIcebergs(190409), []);
+  const icebergs = useMemo(
+    () => generateIcebergs(190409, swimCorridor, PENGUIN_SWIM_CLEARANCE),
+    [swimCorridor]
+  );
   const tabularBergs = useMemo(
     () => icebergs.filter((b) => b.variant === 'tabular'),
     [icebergs]
@@ -530,8 +545,32 @@ function waveFlag(joints: (Group | null)[], t: number, windKmh: number) {
   });
 }
 
-/** The boat model is 2.3 units long; the measured boat is 5 m. */
+/** The boat model is 2.3 units long; the measured Zodiac is 5 m. */
 const BOAT_SCALE = 5 / DIORAMA_METERS_PER_UNIT / 2.3;
+const BOAT_ARRIVAL_DURATION = 6.0;
+const BOAT_ARRIVAL_DISTANCE = 8.0;
+const WAKE_COUNT = 26;
+
+function clamp01(v: number): number {
+  return v < 0 ? 0 : v > 1 ? 1 : v;
+}
+
+function smooth01(t: number): number {
+  const c = clamp01(t);
+  return c * c * (3 - 2 * c);
+}
+
+function zodiacBottomY(localX: number, localZ: number): number {
+  const az = Math.abs(localZ);
+  let base = 0;
+  if (localX > 0.98) base = 0.17;
+  else if (localX > 0.85) base = 0.095;
+  else if (localX > 0.65) base = 0.04;
+  if (az > 0.31) base = Math.max(base, 0.11);
+  else if (az > 0.21) base = Math.max(base, 0.085);
+  else if (az > 0.08) base = Math.max(base, 0.035);
+  return base;
+}
 
 const ERA_BUILDING_IDS: readonly BuildingId[] = [
   'omond',
@@ -559,6 +598,7 @@ function StationElements({
   const vaneRef = useRef<Group>(null);
   const cupsRef = useRef<Group>(null);
   const boatRef = useRef<Group>(null);
+  const wakeRef = useRef<InstancedMesh>(null);
   const elementRefs = useRef<Record<string, Group | null>>({});
 
   const presences = useRef<Record<BuildingId, number>>({
@@ -580,18 +620,26 @@ function StationElements({
   const boatLayout = useMemo(() => layoutOf('boat'), []);
   const [bx, , bz] = boatLayout.position;
   const bRotY = boatLayout.rotationY;
+  const fwdX = Math.cos(bRotY);
+  const fwdZ = -Math.sin(bRotY);
+  const rightX = Math.sin(bRotY);
+  const rightZ = Math.cos(bRotY);
   const isFrozen = seaIce >= 0.5;
+
+  const arrivalRef = useRef<{ active: boolean; elapsed: number }>({
+    active: !isFrozen && !reduced,
+    elapsed: 0,
+  });
+  const prevFrozenRef = useRef<boolean>(isFrozen);
 
   // Pulled up for the winter onto the flat gravel above the beach, so the chocks stay short.
   const boatBeachRest = useMemo(() => {
-    const [bx, bz] = beachPoint([boatLayout.position[0], boatLayout.position[2]], 1.9);
-    const c = Math.cos(bRotY);
-    const s = Math.sin(bRotY);
+    const [rx, rz] = beachPoint([boatLayout.position[0], boatLayout.position[2]], 1.9);
     let maxGroundY = -Infinity;
     for (let u = -0.7; u <= 0.7; u += 0.08) {
-      for (let v = -0.25; v <= 0.25; v += 0.06) {
-        const wx = bx + u * c + v * s;
-        const wz = bz - u * s + v * c;
+      for (let v = -0.32; v <= 0.32; v += 0.08) {
+        const wx = rx + u * fwdX + v * rightX;
+        const wz = rz + u * fwdZ + v * rightZ;
         const gy = evaluateIsthmusTerrain(wx, wz).y;
         if (gy > maxGroundY) maxGroundY = gy;
       }
@@ -599,69 +647,53 @@ function StationElements({
     const chockTopY = maxGroundY + 0.04;
     const chockBoxes: Box[] = [];
     for (const u of [0.35, -0.35]) {
-      const wx = bx + u * c;
-      const wz = bz - u * s;
+      const wx = rx + u * fwdX;
+      const wz = rz + u * fwdZ;
       const gy = evaluateIsthmusTerrain(wx, wz).y;
       const h = Math.max(0.04, chockTopY - gy);
       const midY = gy + h / 2;
       chockBoxes.push(
         [wx, midY, wz, 0.12, h, 0.52, VOXEL_PALETTE.WOOD],
-        [wx + 0.03 * c, chockTopY - 0.02, wz - 0.03 * s + 0.22, 0.14, 0.06, 0.1, VOXEL_PALETTE.WOOD_LIGHT],
-        [wx + 0.03 * c, chockTopY - 0.02, wz - 0.03 * s - 0.22, 0.14, 0.06, 0.1, VOXEL_PALETTE.WOOD_LIGHT]
+        [wx + 0.03 * fwdX, chockTopY - 0.02, wz + 0.03 * fwdZ + 0.22, 0.14, 0.06, 0.1, VOXEL_PALETTE.WOOD_LIGHT],
+        [wx + 0.03 * fwdX, chockTopY - 0.02, wz + 0.03 * fwdZ - 0.22, 0.14, 0.06, 0.1, VOXEL_PALETTE.WOOD_LIGHT]
       );
     }
-    return { x: bx, z: bz, chockTopY, chockGeo: buildBoxGeometry(chockBoxes) };
-  }, [boatLayout, bRotY]);
+    return { x: rx, z: rz, chockTopY, chockGeo: buildBoxGeometry(chockBoxes) };
+  }, [boatLayout, fwdX, fwdZ, rightX, rightZ]);
 
-  const mooredPoint = useMemo(() => {
-    const pt = beachPoint([bx, bz], -0.9);
-    return [pt[0], -0.02, pt[1]] as const;
-  }, [bx, bz]);
+  // Open-water stranded pose: bow resting on the gravel beach, stern floating in the bay.
+  const strandedPose = useMemo(() => {
+    const [sx, sz] = beachPoint([bx, bz], -0.03);
+    const roll = 0.08;
+    const sternU = -0.82 * BOAT_SCALE;
+    const sternWaterY = -0.025;
+    let maxSlope = 0.06;
 
-  const bollardGeo = useMemo(() => {
-    const gy = evaluateIsthmusTerrain(bx, bz).y;
-    const boxes: Box[] = [
-      [bx, gy + 0.12, bz, 0.1, 0.24, 0.1, VOXEL_PALETTE.WOOD],
-      [bx, gy + 0.23, bz, 0.14, 0.04, 0.14, VOXEL_PALETTE.WOOD_LIGHT],
-    ];
-    return buildBoxGeometry(boxes);
-  }, [bx, bz]);
-
-  const mooringLineGeo = useMemo(() => {
-    const bowX = mooredPoint[0] + 1.18 * BOAT_SCALE * Math.cos(bRotY);
-    const bowY = mooredPoint[1] + 0.36 * BOAT_SCALE;
-    const bowZ = mooredPoint[2] - 1.18 * BOAT_SCALE * Math.sin(bRotY);
-    const bollardX = bx;
-    const bollardY = evaluateIsthmusTerrain(bx, bz).y + 0.22;
-    const bollardZ = bz;
-    const boxes: Box[] = [];
-    const segments = 8;
-    for (let i = 0; i < segments; i++) {
-      const t0 = i / segments;
-      const t1 = (i + 1) / segments;
-      const x0 = bowX + (bollardX - bowX) * t0;
-      const y0 = bowY + (bollardY - bowY) * t0 - Math.sin(t0 * Math.PI) * 0.08;
-      const z0 = bowZ + (bollardZ - bowZ) * t0;
-      const x1 = bowX + (bollardX - bowX) * t1;
-      const y1 = bowY + (bollardY - bowY) * t1 - Math.sin(t1 * Math.PI) * 0.08;
-      const z1 = bowZ + (bollardZ - bowZ) * t1;
-      const mx = (x0 + x1) / 2;
-      const my = (y0 + y1) / 2;
-      const mz = (z0 + z1) / 2;
-      boxes.push([
-        mx,
-        my,
-        mz,
-        Math.max(0.025, Math.abs(x1 - x0) + 0.015),
-        Math.max(0.025, Math.abs(y1 - y0) + 0.015),
-        Math.max(0.025, Math.abs(z1 - z0) + 0.015),
-        VOXEL_PALETTE.CREAM,
-      ]);
+    for (let localX = -0.3; localX <= 1.04; localX += 0.06) {
+      const u = localX * BOAT_SCALE;
+      const zSpan = localX > 0.72 ? 0.14 : 0.36;
+      for (const localZ of [-zSpan, -0.15, 0, 0.15, zSpan]) {
+        const v = localZ * BOAT_SCALE;
+        const bottomY = zodiacBottomY(localX, localZ) * BOAT_SCALE - v * Math.sin(roll);
+        const wx = sx + u * fwdX + v * rightX;
+        const wz = sz + u * fwdZ + v * rightZ;
+        const gy = evaluateIsthmusTerrain(wx, wz).y;
+        const slope = (gy - bottomY - sternWaterY) / (u - sternU);
+        if (slope > maxSlope) maxSlope = slope;
+      }
     }
-    return buildBoxGeometry(boxes);
-  }, [mooredPoint, bx, bz, bRotY]);
+
+    const pitch = Math.atan(maxSlope);
+    const y = sternWaterY - sternU * maxSlope;
+    return { x: sx, y, z: sz, pitch, roll };
+  }, [bx, bz, fwdX, fwdZ, rightX, rightZ]);
 
   const boatGeo = useMemo(() => buildBoxGeometry(STATION_BOAT_BOXES), []);
+  const wakeGeo = useMemo(
+    () => buildBoxGeometry([[0, 0, 0, 1, 1, 1, VOXEL_PALETTE.WHITE]]),
+    []
+  );
+  const wakeDummy = useMemo(() => new Object3D(), []);
 
   const geometries = useMemo(() => {
     const map = new Map<string, BufferGeometry>();
@@ -718,26 +750,44 @@ function StationElements({
       cupsGeo.dispose();
       for (const g of flagGeos) g.dispose();
       boatBeachRest.chockGeo.dispose();
-      bollardGeo.dispose();
-      mooringLineGeo.dispose();
       boatGeo.dispose();
+      wakeGeo.dispose();
     };
-  }, [geometries, vaneGeo, cupsGeo, flagGeos, boatBeachRest, bollardGeo, mooringLineGeo, boatGeo]);
+  }, [geometries, vaneGeo, cupsGeo, flagGeos, boatBeachRest, boatGeo, wakeGeo]);
 
   useLayoutEffect(() => {
     if (reduced) waveFlag(flagJointRefs.current, 0, windKmh);
     if (vaneRef.current) {
       vaneRef.current.rotation.y = (-windDirDeg * Math.PI) / 180;
     }
+
+    const wasFrozen = prevFrozenRef.current;
+    prevFrozenRef.current = isFrozen;
+
     if (boatRef.current) {
+      boatRef.current.rotation.order = 'YXZ';
       if (isFrozen) {
+        arrivalRef.current.active = false;
         boatRef.current.position.set(boatBeachRest.x, boatBeachRest.chockTopY, boatBeachRest.z);
         boatRef.current.rotation.set(0, bRotY, 0);
-      } else {
-        boatRef.current.position.set(mooredPoint[0], mooredPoint[1], mooredPoint[2]);
-        boatRef.current.rotation.set(0, bRotY, 0);
+      } else if (reduced) {
+        arrivalRef.current.active = false;
+        boatRef.current.position.set(strandedPose.x, strandedPose.y, strandedPose.z);
+        boatRef.current.rotation.set(strandedPose.roll, bRotY, strandedPose.pitch);
+      } else if (wasFrozen || (arrivalRef.current.active && arrivalRef.current.elapsed === 0)) {
+        arrivalRef.current = { active: true, elapsed: 0 };
+        boatRef.current.position.set(
+          strandedPose.x - BOAT_ARRIVAL_DISTANCE * fwdX,
+          -0.025,
+          strandedPose.z - BOAT_ARRIVAL_DISTANCE * fwdZ
+        );
+        boatRef.current.rotation.set(0, bRotY, 0.03);
       }
     }
+    if (wakeRef.current && (isFrozen || reduced || !arrivalRef.current.active)) {
+      wakeRef.current.visible = false;
+    }
+
     if (reduced) {
       for (const id of ERA_BUILDING_IDS) {
         presences.current[id] = buildings.includes(id) ? 1 : 0;
@@ -752,23 +802,130 @@ function StationElements({
       }
     }
     invalidate();
-  }, [buildings, windKmh, windDirDeg, reduced, invalidate, isFrozen, bx, bz, bRotY, boatBeachRest, mooredPoint, buildingElements]);
+  }, [
+    buildings,
+    windKmh,
+    windDirDeg,
+    reduced,
+    invalidate,
+    isFrozen,
+    bRotY,
+    fwdX,
+    fwdZ,
+    boatBeachRest,
+    strandedPose,
+    buildingElements,
+  ]);
 
   useFrame(({ clock }, delta) => {
+    const t = clock.getElapsedTime();
+    let arrivalMoving = false;
+
     if (!reduced) {
-      waveFlag(flagJointRefs.current, clock.getElapsedTime(), windKmh);
+      waveFlag(flagJointRefs.current, t, windKmh);
       if (cupsRef.current) {
         const spinRate = 0.6 + (windKmh / 15) * 3.2;
         cupsRef.current.rotation.y += delta * spinRate;
       }
       if (!isFrozen && boatRef.current) {
-        const t = clock.getElapsedTime();
-        const swell = Math.min(1.0, Math.max(0.12, windKmh / 35));
-        const bob = Math.sin(t * 1.8) * 0.032 * swell;
-        const roll = Math.cos(t * 1.4) * 0.055 * swell;
-        const pitch = Math.sin(t * 1.1 + 0.4) * 0.024 * swell;
-        boatRef.current.position.set(mooredPoint[0], mooredPoint[1] + bob, mooredPoint[2]);
-        boatRef.current.rotation.set(pitch, bRotY, roll);
+        boatRef.current.rotation.order = 'YXZ';
+        if (arrivalRef.current.active) {
+          arrivalRef.current.elapsed += Math.min(delta, 0.05);
+          const u = clamp01(arrivalRef.current.elapsed / BOAT_ARRIVAL_DURATION);
+          const ease = 1 - (1 - u) ** 2.3;
+          const speedNorm = (1 - u) ** 1.3;
+          const backDist = BOAT_ARRIVAL_DISTANCE * (1 - ease);
+          const px = strandedPose.x - backDist * fwdX;
+          const pz = strandedPose.z - backDist * fwdZ;
+
+          const waveDamp = 1 - smooth01((u - 0.65) / 0.31);
+          const swell = Math.min(1.0, Math.max(0.22, windKmh / 35));
+          const waveBob = Math.sin(t * 2.8) * 0.025 * swell * waveDamp;
+          const wavePitch = Math.sin(t * 3.2 + 0.5) * 0.045 * swell * waveDamp + 0.035 * speedNorm;
+          const waveRoll = Math.cos(t * 2.4) * 0.055 * swell * waveDamp;
+
+          const climb = smooth01((u - 0.68) / 0.32);
+          const py = -0.025 + waveBob + (strandedPose.y - (-0.025 + waveBob)) * climb;
+          const pitch = wavePitch + (strandedPose.pitch - wavePitch) * climb;
+          const roll = waveRoll + (strandedPose.roll - waveRoll) * climb;
+          boatRef.current.position.set(px, py, pz);
+          boatRef.current.rotation.set(roll, bRotY, pitch);
+
+          const wakeMesh = wakeRef.current;
+          if (wakeMesh) {
+            const wakeFade = speedNorm * (1 - smooth01((u - 0.68) / 0.24));
+            if (wakeFade > 0.02) {
+              wakeMesh.visible = true;
+              for (let i = 0; i < WAKE_COUNT; i++) {
+                let lag: number;
+                let side: number;
+                let sx: number;
+                let sy: number;
+                let sz: number;
+                let wy: number;
+                let yawOffset = 0;
+
+                if (i < 10) {
+                  const k = i / 9;
+                  lag = 0.72 + k * 2.4;
+                  side = Math.sin(i * 2.4 + t * 8) * 0.055 * (1 + k);
+                  const s = wakeFade * (1 - k * 0.55) * (0.85 + 0.25 * Math.sin(t * 10 - i * 1.3));
+                  sx = 0.20 * s;
+                  sy = 0.036 * s;
+                  sz = 0.17 * s;
+                  wy = 0.016;
+                } else {
+                  const arm = i < 18 ? -1 : 1;
+                  const idx = i < 18 ? i - 10 : i - 18;
+                  const k = idx / 7;
+                  lag = 0.50 + k * 2.5;
+                  side = arm * (0.24 + k * 0.58);
+                  const s = wakeFade * (1 - k * 0.5);
+                  sx = 0.26 * s;
+                  sy = 0.026 * s;
+                  sz = 0.11 * s;
+                  wy = 0.012;
+                  yawOffset = arm * 0.24;
+                }
+
+                const wx = px - lag * fwdX + side * rightX;
+                const wz = pz - lag * fwdZ + side * rightZ;
+                if (worldCoastDistance(wx, wz) >= -0.04) {
+                  wakeDummy.scale.set(0, 0, 0);
+                } else {
+                  wakeDummy.position.set(wx, wy, wz);
+                  wakeDummy.rotation.set(0, bRotY + yawOffset, 0);
+                  wakeDummy.scale.set(sx, sy, sz);
+                }
+                wakeDummy.updateMatrix();
+                wakeMesh.setMatrixAt(i, wakeDummy.matrix);
+              }
+              wakeMesh.instanceMatrix.needsUpdate = true;
+            } else {
+              wakeMesh.visible = false;
+            }
+          }
+
+          if (u >= 1) {
+            arrivalRef.current.active = false;
+            if (wakeRef.current) wakeRef.current.visible = false;
+          } else {
+            arrivalMoving = true;
+          }
+        } else {
+          // Stranded: bow stays planted on the gravel beach, stern breathes gently in the swell.
+          if (wakeRef.current) wakeRef.current.visible = false;
+          const swell = Math.min(1.0, Math.max(0.12, windKmh / 40));
+          const sternBob = Math.sin(t * 1.4) * 0.004 * swell;
+          const bowU = 0.72 * BOAT_SCALE;
+          const sternU = -0.82 * BOAT_SCALE;
+          const pivotSpan = bowU - sternU;
+          const dPitch = -sternBob / pivotSpan;
+          const dY = (sternBob * bowU) / pivotSpan;
+          const dRoll = Math.cos(t * 1.1) * 0.008 * swell;
+          boatRef.current.position.set(strandedPose.x, strandedPose.y + dY, strandedPose.z);
+          boatRef.current.rotation.set(strandedPose.roll + dRoll, bRotY, strandedPose.pitch + dPitch);
+        }
       }
     }
 
@@ -794,7 +951,7 @@ function StationElements({
       grp.scale.set(s, s, s);
     }
 
-    if (moving) invalidate();
+    if (moving || arrivalMoving) invalidate();
   });
 
   const windToRad = ((-windDirDeg + 90) * Math.PI) / 180;
@@ -838,15 +995,15 @@ function StationElements({
         );
       })}
 
-      {/* Whaleboat: pulled up on chocks when frozen, moored off beach when open */}
-      <mesh geometry={bollardGeo} material={vehicleMaterial} />
-      {!isFrozen && <mesh geometry={mooringLineGeo} material={vehicleMaterial} />}
+      {/* Zodiac boat: pulled up on chocks when frozen, stranded on beach when open */}
       {isFrozen && <mesh geometry={boatBeachRest.chockGeo} material={vehicleMaterial} />}
-      <group
-        ref={boatRef}
-        position={isFrozen ? [boatBeachRest.x, boatBeachRest.chockTopY, boatBeachRest.z] : [mooredPoint[0], mooredPoint[1], mooredPoint[2]]}
-        rotation={[0, bRotY, 0]}
-      >
+      <instancedMesh
+        ref={wakeRef}
+        args={[wakeGeo, vehicleMaterial, WAKE_COUNT]}
+        visible={false}
+        frustumCulled={false}
+      />
+      <group ref={boatRef}>
         <group scale={BOAT_SCALE}>
           <mesh geometry={boatGeo} material={vehicleMaterial} />
         </group>
@@ -1043,7 +1200,7 @@ function StationFauna({
 
   return (
     <group>
-      {showPenguins && <PenguinColony reduced={reduced} />}
+      {showPenguins && <PenguinColony reduced={reduced} seaIce={seaIce} />}
 
       {/* Seals on the front beach of Bahía Scotia */}
       {showSeals && (
@@ -1464,9 +1621,16 @@ const SCENE_FPS = 60;
 const LOW_QUALITY_FPS = 30;
 /**
  * Quality monitor bounds: [decline below, incline above]. A 90 or 144 Hz screen under the 60 fps
- * cap draws 45 to 48 fps, which must still count as fast. Low quality never reaches the upper one.
+ * cap draws 45 to 48 fps, which must still count as fast. Low quality is capped at 30 fps, so its
+ * bounds sit under that cap: drawing the full 30 means the slowdown is over (for example, the
+ * window was covered while the visitor looked at another one) and full quality comes back.
  */
-const QUALITY_FPS_BOUNDS: [number, number] = [36, 42];
+const qualityFpsBounds = (lowQuality: boolean): [number, number] =>
+  lowQuality ? [LOW_QUALITY_FPS * 0.8, LOW_QUALITY_FPS * 0.9] : [36, 42];
+/** How long a lost WebGL context has to come back before the scene falls back to 2D. */
+const CONTEXT_RESTORE_MS = 4000;
+/** Quality changes allowed before the monitor settles on low quality: a slow GPU stops flickering. */
+const QUALITY_FLIPFLOPS = 4;
 
 /**
  * Keeps the demand-driven canvas drawing while the scene animates. Without it the snow, sea and
@@ -1509,6 +1673,22 @@ export const StationScene = memo(function StationScene({
   const [webglOk, setWebglOk] = useState<boolean>(() => canUseWebGL());
   const [lowQuality, setLowQuality] = useState(false);
   const [enablePost, setEnablePost] = useState(false);
+  // Back on the page (another window or tab was in front), quality is measured again from scratch:
+  // the slow frames of a covered window say nothing about the GPU.
+  const [monitorRun, setMonitorRun] = useState(0);
+  useEffect(() => {
+    const remeasure = () => {
+      if (document.hidden) return;
+      setLowQuality(false);
+      setMonitorRun((n) => n + 1);
+    };
+    window.addEventListener('focus', remeasure);
+    document.addEventListener('visibilitychange', remeasure);
+    return () => {
+      window.removeEventListener('focus', remeasure);
+      document.removeEventListener('visibilitychange', remeasure);
+    };
+  }, []);
 
   const { dir: sunDir, elevationDeg: sunElevationDeg } = useMemo(
     () => computeSunDirection(month, hour),
@@ -1561,19 +1741,27 @@ export const StationScene = memo(function StationScene({
         }}
         onCreated={({ gl }) => {
           const dom = gl.domElement;
-          const handleLost = (e: Event) => {
+          // A browser may drop the context of a page in the background and give it back on return:
+          // wait for it before falling back to the 2D drawing, which would stay until a reload.
+          let fallbackTimer = 0;
+          dom.addEventListener('webglcontextlost', (e) => {
             e.preventDefault();
-            setWebglOk(false);
-          };
-          dom.addEventListener('webglcontextlost', handleLost, { once: true });
+            fallbackTimer = window.setTimeout(() => setWebglOk(false), CONTEXT_RESTORE_MS);
+          });
+          dom.addEventListener('webglcontextrestored', () => window.clearTimeout(fallbackTimer));
         }}
       >
         <SceneClock reduced={reduced} lowQuality={lowQuality} />
         {/* Reduced motion draws on demand: sparse frames would read as a slow GPU. */}
         {!reduced && (
           <PerformanceMonitor
-            bounds={() => QUALITY_FPS_BOUNDS}
-            onIncline={() => setEnablePost(true)}
+            key={monitorRun}
+            bounds={() => qualityFpsBounds(lowQuality)}
+            flipflops={QUALITY_FLIPFLOPS}
+            onIncline={() => {
+              setLowQuality(false);
+              setEnablePost(true);
+            }}
             onDecline={() => {
               setLowQuality(true);
               setEnablePost(false);
