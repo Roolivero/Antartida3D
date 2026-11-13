@@ -21,6 +21,7 @@ import {
   type VoyageSource,
   type VoyageSourceCode,
 } from '@antartida/core';
+import { BottomSheet } from '../BottomSheet.tsx';
 import { useFocusReturn } from '../hooks.ts';
 import { Icon } from '../ui.tsx';
 import { Fact, type OpenSources } from './Fact.tsx';
@@ -87,14 +88,7 @@ function Picker({ onStart, onExit, onSource, preview, reduced }: {
     <>
     {/* Touching the map outside the sheet closes it, like the sheet of a point. */}
     <div className="scrim vscrim" onClick={onExit} />
-    <section
-      className="sheet voyage"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="voyage-title"
-      ref={ref}
-      onKeyDown={(e) => e.key === 'Escape' && onExit()}
-    >
+    <BottomSheet className="voyage" labelledBy="voyage-title" sheetRef={ref} onClose={onExit}>
       <div className="row vhead">
         <h2 id="voyage-title">Desde Ushuaia</h2>
         <button type="button" className="iconbtn" onClick={onExit} aria-label="Cerrar y volver al mapa">{Icon.close}</button>
@@ -124,7 +118,7 @@ function Picker({ onStart, onExit, onSource, preview, reduced }: {
         </button>
         <button type="button" className="btn" onClick={onExit}>Volver al mapa</button>
       </div>
-    </section>
+    </BottomSheet>
     </>
   );
 }

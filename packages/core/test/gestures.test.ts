@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { moveTwoFingers, startTwoFingers, type TwoFingerState } from '../src/index.ts';
+import { SHEET_SNAP_PX, moveTwoFingers, sheetAfterDrag, startTwoFingers, type TwoFingerState } from '../src/index.ts';
 
 type Point = { x: number; y: number };
 /** Runs a gesture through its moves and adds up what it did. */
@@ -73,5 +73,25 @@ describe('two fingers on the 3D map', () => {
     const sideways = run(a, b, steps(10, (i) => [{ x: 150 + i * 6, y: 400 + i }, { x: 250 + i * 6, y: 400 + i }]));
     expect(sideways.mode).not.toBe('tilt');
     expect(sideways.tilt).toBe(0);
+  });
+});
+
+describe('bottom sheet handle', () => {
+  it('switches sizes on a tap', () => {
+    expect(sheetAfterDrag(false, 0)).toBe(true);
+    expect(sheetAfterDrag(true, 3)).toBe(false);
+  });
+
+  it('goes where it is dragged, past the snap distance', () => {
+    expect(sheetAfterDrag(false, SHEET_SNAP_PX)).toBe(true);
+    expect(sheetAfterDrag(true, -SHEET_SNAP_PX)).toBe(false);
+    // Dragging an expanded sheet further up, or a small one further down, changes nothing.
+    expect(sheetAfterDrag(true, 200)).toBe(true);
+    expect(sheetAfterDrag(false, -200)).toBe(false);
+  });
+
+  it('falls back to the size it had after a short drag', () => {
+    expect(sheetAfterDrag(false, SHEET_SNAP_PX - 1)).toBe(false);
+    expect(sheetAfterDrag(true, -(SHEET_SNAP_PX - 1))).toBe(true);
   });
 });

@@ -65,3 +65,20 @@ export function moveTwoFingers(state: TwoFingerState, a: Point, b: Point): TwoFi
   if (mode === 'tilt') return { state: next, zoom: 1, turn: 0, tilt: (a.y - from[0].y + b.y - from[1].y) / 2 };
   return { state: next, zoom: distance(now) / Math.max(distance(from), 1), turn: turnBetween(angle(from), angle(now)), tilt: 0 };
 }
+
+/** Px a sheet is dragged by its handle before it snaps to the other size. */
+export const SHEET_SNAP_PX = 40;
+/** A press that moves less than this is a tap, not a drag. */
+export const SHEET_TAP_PX = 6;
+
+/**
+ * Whether a bottom sheet ends up expanded after its handle is let go. `draggedUp` is how far the
+ * finger went, in px, up the screen positive. A tap switches sizes; a drag past SHEET_SNAP_PX goes
+ * where it was dragged; a shorter one falls back to the size it had.
+ */
+export function sheetAfterDrag(expanded: boolean, draggedUp: number): boolean {
+  if (Math.abs(draggedUp) < SHEET_TAP_PX) return !expanded;
+  if (draggedUp >= SHEET_SNAP_PX) return true;
+  if (draggedUp <= -SHEET_SNAP_PX) return false;
+  return expanded;
+}

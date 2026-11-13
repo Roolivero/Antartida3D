@@ -127,6 +127,15 @@ button:focus-visible,[tabindex]:focus-visible{outline:3px solid #1E3E5C;outline-
 .sheet{position:absolute;left:0;right:0;bottom:0;max-height:86%;overflow:auto;background:var(--paper);border-top:2px solid var(--ink);border-radius:22px 22px 0 0;padding:10px 20px 24px;box-shadow:0 -10px 30px rgba(31,42,54,.2);animation:up .32s cubic-bezier(.2,.8,.3,1) both;z-index:20}
 @keyframes up{from{transform:translateY(40px);opacity:0}to{transform:none;opacity:1}}
 .grab{width:44px;height:5px;border-radius:3px;background:rgba(31,42,54,.25);margin:0 auto 12px}
+/* A sheet that grows (BottomSheet): its handle is dragged up to make it taller, down to bring it back. */
+.sheet.grows{transition:max-height .28s cubic-bezier(.2,.8,.3,1)}
+/* Tall, it goes over the title and the log at the top of the screen: it must be on top of them to take presses. */
+.sheet.grows.full,.sheet.grows.dragging{max-height:92%;z-index:21}
+.sheet.grows.dragging{transition:none}
+.sheet-handle{position:sticky;top:-10px;z-index:2;display:flex;align-items:center;justify-content:center;width:calc(100% + 40px);height:34px;margin:-10px -20px 0;padding:0;border:0;border-radius:22px 22px 0 0;background:var(--paper);cursor:grab;touch-action:none}
+.sheet-handle span{width:44px;height:5px;border-radius:3px;background:rgba(31,42,54,.35)}
+.sheet-handle:active{cursor:grabbing}
+.sheet-handle:active span{background:rgba(31,42,54,.6)}
 .sheet h2{margin:6px 0 2px;font-family:'Fraunces',Georgia,serif;font-size:26px;line-height:1.1}
 .sheet .place{margin:0 0 14px;color:#3B4651}
 .sheet-sources{margin:12px 0 0;padding-top:10px;border-top:1px dashed rgba(31,42,54,.3)}
@@ -279,6 +288,8 @@ button:focus-visible,[tabindex]:focus-visible{outline:3px solid #1E3E5C;outline-
   .top{padding:22px 28px 40px}
   .bottom{padding:24px 28px 24px}
   .sheet{left:auto;right:24px;bottom:24px;width:400px;border:2px solid var(--ink);border-radius:18px}
+  /* A card in a corner has nothing to be dragged to. */
+  .sheet-handle{display:none}
   .hint{top:120px}
   .toast{top:120px}
   .etop{padding:16px 28px 26px}
@@ -295,5 +306,6 @@ button:focus-visible,[tabindex]:focus-visible{outline:3px solid #1E3E5C;outline-
   .mk.ta .pulse,.cloud{animation:none}
   .pl{transition:none}
   .sheet,.kp,.mcard,.toast{animation:fadein .2s ease both}
+  .sheet.grows{transition:none}
   .stage.ret{animation:fadein .4s ease both}
 }

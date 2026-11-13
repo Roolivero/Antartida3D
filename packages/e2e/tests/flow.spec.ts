@@ -81,3 +81,40 @@ test('has no horizontal scroll', async ({ page }) => {
     page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   expect(await overflow()).toBeLessThanOrEqual(0);
 });
+
+test('on a phone the trip picker grows when its handle is dragged up and shrinks back', async ({ page, isMobile }) => {
+  test.skip(!isMobile, 'the handle belongs to the phone layout; on wide screens the sheet is a card');
+  await page.getByRole('button', { name: 'Ver como lista' }).click();
+  await page.getByRole('button', { name: /Desde Ushuaia/ }).first().click();
+  const sheet = page.locator('.sheet.voyage');
+  const handle = page.locator('.sheet-handle');
+  await expect(handle).toBeVisible();
+  await expect(handle).toHaveAttribute('aria-expanded', 'false');
+  const height = () => sheet.evaluate((el) => el.getBoundingClientRect().height);
+  const small = await height();
+
+  const cdp = await page.context().newCDPSession(page);
+  /** One finger drags the handle by `dy` px. */
+  const drag = async (dy: number) => {
+    const box = (await handle.boundingBox())!;
+    const [x, y] = [box.x + box.width / 2, box.y + box.height / 2];
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y }] });
+    for (let i = 1; i <= 8; i++) await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x, y: y + (dy * i) / 8 }] });
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  };
+
+  await drag(-250);
+  await expect(handle).toHaveAttribute('aria-expanded', 'true');
+  await expect.poll(height).toBeGreaterThan(small + 150);
+
+  await drag(200);
+  await expect(handle).toHaveAttribute('aria-expanded', 'false');
+  await expect.poll(height).toBeCloseTo(small, 0);
+
+  // With the keyboard, Enter on the handle switches sizes; the picker still starts the trip.
+  await handle.focus();
+  await page.keyboard.press('Enter');
+  await expect(handle).toHaveAttribute('aria-expanded', 'true');
+  await page.getByRole('button', { name: 'Zarpar' }).click();
+  await expect(page.locator('#voyage-title')).toHaveText(/Ushuaia y el Canal Beagle/);
+});

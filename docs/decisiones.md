@@ -184,6 +184,26 @@ Pedido de quien lleva el issue: los carteles de los marcadores no están abierto
 - **Reemplaza** lo que decía `docs/diseno/HANDOFF.md` sobre etiquetas siempre visibles y la nota «Marcadores del mar» de más arriba en lo que hace al toque en celular.
 
 
+### Panel inferior que se agranda (`BottomSheet`, #46, 12-11-2026)
+
+Pedido de quien lleva el issue: en el celular, el panel que sale desde abajo tiene una rayita arriba; al arrastrarla hacia arriba el panel se agranda para ver más información. Tiene que ser un componente reutilizable. Por ahora se usa solo en el selector de transporte de «Desde Ushuaia».
+
+- **Componente:** `BottomSheet` en `packages/react-ui/src/BottomSheet.tsx`. Recibe las clases extra, el id del título, la referencia al panel, `onClose` (Escape) y el contenido. Dibuja el panel (`role="dialog"`) y el tirador. El fondo oscuro (`.scrim`) lo sigue poniendo quien lo usa.
+- **Dos tamaños:** el chico es el `max-height` que el panel ya tenía en CSS (54 % en el selector). El grande es el 92 % del alto (`.sheet.grows.full`). Si el contenido es más corto, el panel no crece más que su contenido.
+- **Cómo se usa el tirador:**
+  - Arrastrar hacia arriba: el panel sigue al dedo. Al soltar, si se arrastró 40 px o más queda grande; si no, vuelve.
+  - Arrastrar hacia abajo: lo mismo, hacia el tamaño chico.
+  - Un toque cambia de tamaño.
+  - Teclado y lector de pantalla: el tirador es un botón con nombre («Agrandar el panel para ver más» / «Achicar el panel») y `aria-expanded`. Enter o Espacio cambian de tamaño.
+- **Regla en `@antartida/core`:** `sheetAfterDrag(expanded, draggedUp)` en `core/src/gestures.ts`, con pruebas.
+- **Por encima del título:** el panel grande tapa el título y el registro de exploración. Mientras está grande o se arrastra sube a `z-index: 21`; si no, el título quedaba encima y el tirador no recibía toques.
+- **Pantallas anchas:** el panel es una tarjeta en una esquina y el tirador no se muestra.
+- **Movimiento reducido:** cambia de tamaño sin animación.
+- **No hace (todavía):** arrastrar hacia abajo desde el tamaño chico no cierra el panel. Se cierra con la X, con «Volver al mapa», con Escape o tocando el mapa.
+- **Para usarlo en otro panel:** reemplazar su `<section className="sheet ...">` por `<BottomSheet className="..." labelledBy="..." sheetRef={ref} onClose={...}>`. `PointSheet` y las fichas de los hitos siguen como estaban.
+- **Verificación:** prueba e2e en el perfil de celular (`flow.spec.ts`): arrastre hacia arriba y hacia abajo con un toque simulado, y Enter.
+
+
 ## Benchmark
 
 - Lighthouse, peso, pan y pinch corren en Chromium headless sin GPU. Las cifras de frames e interacción sirven para comparar las apps entre sí, no como valores absolutos de un teléfono real.
