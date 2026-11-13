@@ -243,6 +243,12 @@ Plan: `.agents/plans/plan-helipuerto-orcadas.md`.
 - **Helicóptero en temporada de visitas:** Sea King voxel posado sobre la losa, visible solo entre noviembre y marzo (`helicopterOnPad(month)` en `@antartida/core`), según COMNAP (2017).
 - **Qué es ilustrativo:** el tipo de helicóptero, sus colores, su escala y su ubicación en el escenario. La leyenda de la escena lo declara.
 
+### La lista tapa todo el mapa (#48, 13-11-2026)
+
+- **Problema:** con «Ver como lista» abierta, los marcadores (2D y 3D), la barra de arriba, la de abajo y la pista «arrastrá para mover» quedaban encima de la lista. En el celular, el registro de exploración tapaba el botón «Ver mapa». Pasaba porque `.vp` no crea contexto de apilamiento: los `z-index` de los marcadores (1 a 3, y 20 cuando el cartel está abierto) competían con `.listview`, que no tenía `z-index`.
+- **Arreglo:** `.listview` lleva `z-index: 21`, por encima de todo lo del mapa. La lista y la ficha (`.sheet`, 20 y 21) nunca están abiertas a la vez: abrir la lista cierra la ficha y elegir un punto cierra la lista. La lista de fuentes del viaje (`.listview.vsources`, 8) no cambia.
+- **Descartado: `isolation: isolate` en `.vp`.** Encerraría los marcadores debajo de las barras, y el cartel abierto (#54) dejaría de verse por encima de la barra de arriba.
+
 ## Benchmark
 
 - Lighthouse, peso, pan y pinch corren en Chromium headless sin GPU. Las cifras de frames e interacción sirven para comparar corridas entre sí, no como valores absolutos de un teléfono real.

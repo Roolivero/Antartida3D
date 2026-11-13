@@ -159,7 +159,8 @@ button:focus-visible,[tabindex]:focus-visible{outline:3px solid #1E3E5C;outline-
 .row{display:flex;gap:10px;flex-wrap:wrap}
 .anno{font-family:'Caveat',cursive;font-size:19px;color:#1E3E5C;line-height:1.1}
 
-.listview{position:absolute;inset:0;background:var(--paper);overflow:auto;animation:fadein .25s ease both}
+/* .vp is not a stacking context, so map markers (20 when shown) compete with the list: stay above them and the bars (#48). */
+.listview{position:absolute;inset:0;background:var(--paper);overflow:auto;animation:fadein .25s ease both;z-index:21}
 .listview .inner{max-width:680px;margin:0 auto;padding:16px 16px 40px}
 .listhead{position:sticky;top:0;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:6px 0 12px;background:var(--paper);z-index:1}
 .listhead h2{margin:0;font-family:'Fraunces',Georgia,serif;font-size:26px}
