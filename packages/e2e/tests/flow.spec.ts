@@ -94,9 +94,9 @@ test('on a phone the trip picker grows when its handle is dragged up, shrinks ba
   const small = await height();
 
   const cdp = await page.context().newCDPSession(page);
-  /** One finger drags the handle by `dy` px. */
-  const drag = async (dy: number) => {
-    const box = (await handle.boundingBox())!;
+  /** One finger drags the handle, or another part of the sheet, by `dy` px. */
+  const drag = async (dy: number, from = handle) => {
+    const box = (await from.boundingBox())!;
     const [x, y] = [box.x + box.width / 2, box.y + box.height / 2];
     await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y }] });
     for (let i = 1; i <= 8; i++) await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x, y: y + (dy * i) / 8 }] });
@@ -118,8 +118,17 @@ test('on a phone the trip picker grows when its handle is dragged up, shrinks ba
   await page.keyboard.press('Enter');
   await expect(handle).toHaveAttribute('aria-expanded', 'false');
 
-  // Dragged down from its small size, the sheet closes and the map is back.
-  await drag(200);
+  // The sheet itself is dragged too, not only its handle: up from its title, down from its text.
+  await drag(-250, page.locator('#voyage-title'));
+  await expect(handle).toHaveAttribute('aria-expanded', 'true');
+  await expect.poll(height).toBeGreaterThan(small + 150);
+  await drag(200, page.locator('.sheet.voyage .place'));
+  await expect(handle).toHaveAttribute('aria-expanded', 'false');
+
+  // Dragged down from its small size it closes and the map is back. The drag starts on the
+  // button that starts the trip: a drag is not a press, so the trip does not start.
+  await drag(200, page.getByRole('button', { name: 'Zarpar' }));
   await expect(sheet).toHaveCount(0);
+  await expect(page.locator('.vbar')).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Ver como lista' })).toBeVisible();
 });

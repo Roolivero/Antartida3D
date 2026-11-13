@@ -194,14 +194,17 @@ Pedido de quien lleva el issue: en el celular, el panel que sale desde abajo tie
   - Arrastrar hacia arriba: el panel sigue al dedo. Al soltar, si se arrastró 40 px o más queda grande; si no, vuelve.
   - Arrastrar hacia abajo: lo mismo, hacia el tamaño chico.
   - Arrastrar hacia abajo desde el tamaño chico: el panel se cierra (llama a `onClose`). Pedido de quien lleva el issue. Desde el tamaño grande solo baja al chico, por más lejos que se arrastre.
-  - Un toque cambia de tamaño.
+  - Un toque en el tirador cambia de tamaño.
+  - **Se arrastra desde cualquier parte del panel, no solo desde el tirador** (pedido de quien lleva el issue: al tirar hacia abajo fuera del tirador, el celular recargaba la página). Con el panel chico, el dedo lo arrastra hacia arriba o hacia abajo desde cualquier lugar; el texto no se desplaza en ese tamaño. Con el panel grande, el texto se desplaza normal; tirar hacia abajo cuando el texto está arriba de todo baja el panel.
+  - Un arrastre que empieza sobre un botón no lo aprieta: es un arrastre, no un toque.
   - Teclado y lector de pantalla: el tirador es un botón con nombre («Agrandar el panel para ver más» / «Achicar el panel») y `aria-expanded`. Enter o Espacio cambian de tamaño.
 - **Regla en `@antartida/core`:** `sheetAfterDrag(expanded, draggedUp)` en `core/src/gestures.ts`, con pruebas.
 - **Por encima del título:** el panel grande tapa el título y el registro de exploración. Mientras está grande o se arrastra sube a `z-index: 21`; si no, el título quedaba encima y el tirador no recibía toques.
+- **Sin recarga al tirar hacia abajo:** `html` y `body` llevan `overscroll-behavior: none` (`painted.css`). La app ocupa toda la pantalla y maneja sus propios gestos; vale para toda la app, no solo para el panel. El panel además lleva `overscroll-behavior: contain`.
 - **Pantallas anchas:** el panel es una tarjeta en una esquina y el tirador no se muestra.
 - **Movimiento reducido:** cambia de tamaño sin animación.
 - **Para usarlo en otro panel:** reemplazar su `<section className="sheet ...">` por `<BottomSheet className="..." labelledBy="..." sheetRef={ref} onClose={...}>`. `PointSheet` y las fichas de los hitos siguen como estaban.
-- **Verificación:** prueba e2e en el perfil de celular (`flow.spec.ts`): arrastre hacia arriba, hacia abajo y cierre con un toque simulado, y Enter.
+- **Verificación:** prueba e2e en el perfil de celular (`flow.spec.ts`): arrastre hacia arriba, hacia abajo y cierre con un toque simulado, desde el tirador y desde el cuerpo del panel, y Enter. La recarga al tirar hacia abajo no se puede probar con toques simulados: hay que confirmarla en un teléfono real.
 
 
 ## Benchmark

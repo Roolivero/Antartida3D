@@ -1,4 +1,6 @@
 /* Painted look, layout, keyframes and markers, copied from design/Main.dc.html. Tokens live in tokens.css. */
+/* The app fills the screen and handles its own gestures: a pull down must not reload the page. */
+html,body{overscroll-behavior:none}
 body{margin:0;background:#F3EBDD}
 a{color:#1E3E5C}a:hover{color:#A4471F}
 *{box-sizing:border-box}
@@ -128,7 +130,9 @@ button:focus-visible,[tabindex]:focus-visible{outline:3px solid #1E3E5C;outline-
 @keyframes up{from{transform:translateY(40px);opacity:0}to{transform:none;opacity:1}}
 .grab{width:44px;height:5px;border-radius:3px;background:rgba(31,42,54,.25);margin:0 auto 12px}
 /* A sheet that grows (BottomSheet): its handle is dragged up to make it taller, down to bring it back. */
-.sheet.grows{transition:max-height .28s cubic-bezier(.2,.8,.3,1)}
+/* Small, a finger drags the whole sheet; tall, its text scrolls. It never hands the pull on to the page. */
+.sheet.grows{transition:max-height .28s cubic-bezier(.2,.8,.3,1);touch-action:none;overscroll-behavior:contain}
+.sheet.grows.full{touch-action:pan-y}
 /* Tall, it goes over the title and the log at the top of the screen: it must be on top of them to take presses. */
 .sheet.grows.full,.sheet.grows.dragging{max-height:92%;z-index:21}
 .sheet.grows.dragging{transition:none}
