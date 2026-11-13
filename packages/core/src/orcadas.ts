@@ -519,6 +519,12 @@ export function midMonthDayOfYear(month: number): number {
   return MID_MONTH_DAY_OF_YEAR[normalizeMonth(month) - 1];
 }
 
+/** True during the ship/helicopter visit season (November to March, months 1..12). */
+export function helicopterOnPad(month: number): boolean {
+  const m = normalizeMonth(month);
+  return m >= 11 || m <= 3;
+}
+
 export interface YearValue {
   year: number;
   value: number | null;

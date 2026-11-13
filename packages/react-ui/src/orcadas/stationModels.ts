@@ -692,10 +692,15 @@ export const STATION_BOAT_BOXES: readonly Box[] = [
  * 9b. Station helipad (OSM way 1198904156, 13.5 x 13.5 m): grey concrete slab resting on y = 0,
  * light perimeter curb, white H marking (3 boxes), and 8 edge lights (corners + side midpoints).
  */
+const HELIPAD_SLAB_H = 0.07;
+const HELIPAD_CURB_H = 0.018;
+/** Top of the helipad curb: where a landed helicopter rests. */
+export const HELIPAD_TOP_Y = HELIPAD_SLAB_H + HELIPAD_CURB_H;
+
 export function buildHelipadBoxes(side: number): Box[] {
-  const padH = 0.07;
+  const padH = HELIPAD_SLAB_H;
   const borderW = side * 0.055;
-  const borderH = 0.018;
+  const borderH = HELIPAD_CURB_H;
   const borderY = padH + borderH / 2;
   const hH = 0.014;
   const hY = padH + hH / 2;

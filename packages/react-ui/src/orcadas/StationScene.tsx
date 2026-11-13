@@ -32,6 +32,7 @@ import {
   DIORAMA_METERS_PER_UNIT,
   DIORAMA_PROP_SCALE,
   DIORAMA_ELEMENTS,
+  helicopterOnPad,
   layoutOf,
   worldCoastDistance,
   midMonthDayOfYear,
@@ -64,6 +65,8 @@ import {
   FLAGPOLE_BASE_BOXES,
   FLAG_SEGMENT_BOXES,
   FLAG_SEGMENT_WIDTH,
+  HELICOPTER_BOXES,
+  HELIPAD_TOP_Y,
   ICEBERG_PINNACLE_BOXES,
   ICEBERG_TABULAR_BOXES,
   SEA_ICE_FLOE_VARIANTS,
@@ -75,6 +78,7 @@ import {
   WIND_CUPS_BOXES,
   WIND_MAST_BASE_BOXES,
   WIND_VANE_BOXES,
+  buildHelipadBoxes,
   buildModuleBoxes,
   buildOmondBoxes,
   buildRadioTowerBoxes,
@@ -550,6 +554,8 @@ const BOAT_SCALE = 5 / DIORAMA_METERS_PER_UNIT / 2.3;
 const BOAT_ARRIVAL_DURATION = 6.0;
 const BOAT_ARRIVAL_DISTANCE = 8.0;
 const WAKE_COUNT = 26;
+/** Rotor blade length in HELICOPTER_BOXES; scaled so the rotor matches the helipad side. */
+const HELICOPTER_ROTOR_SPAN = 0.84;
 
 function clamp01(v: number): number {
   return v < 0 ? 0 : v > 1 ? 1 : v;
@@ -587,6 +593,7 @@ function StationElements({
   windDirDeg,
   reduced,
   seaIce,
+  showHelicopter,
 }: {
   buildings: readonly BuildingId[];
   isNight: boolean;
@@ -594,6 +601,7 @@ function StationElements({
   windDirDeg: number;
   reduced: boolean;
   seaIce: number;
+  showHelicopter: boolean;
 }) {
   const vaneRef = useRef<Group>(null);
   const cupsRef = useRef<Group>(null);
@@ -727,6 +735,9 @@ function StationElements({
         case 'flag':
           boxes = FLAGPOLE_BASE_BOXES;
           break;
+        case 'helipad':
+          boxes = buildHelipadBoxes(length);
+          break;
         default:
           boxes = [];
       }
@@ -737,6 +748,7 @@ function StationElements({
 
   const vaneGeo = useMemo(() => buildBoxGeometry(WIND_VANE_BOXES), []);
   const cupsGeo = useMemo(() => buildBoxGeometry(WIND_CUPS_BOXES), []);
+  const heliGeo = useMemo(() => buildBoxGeometry(HELICOPTER_BOXES), []);
 
   const flagGeos = useMemo(() => FLAG_SEGMENT_BOXES.map((boxes) => buildBoxGeometry(boxes)), []);
   const flagJointRefs = useRef<(Group | null)[]>([]);
@@ -748,12 +760,13 @@ function StationElements({
       }
       vaneGeo.dispose();
       cupsGeo.dispose();
+      heliGeo.dispose();
       for (const g of flagGeos) g.dispose();
       boatBeachRest.chockGeo.dispose();
       boatGeo.dispose();
       wakeGeo.dispose();
     };
-  }, [geometries, vaneGeo, cupsGeo, flagGeos, boatBeachRest, boatGeo, wakeGeo]);
+  }, [geometries, vaneGeo, cupsGeo, heliGeo, flagGeos, boatBeachRest, boatGeo, wakeGeo]);
 
   useLayoutEffect(() => {
     if (reduced) waveFlag(flagJointRefs.current, 0, windKmh);
@@ -815,6 +828,7 @@ function StationElements({
     boatBeachRest,
     strandedPose,
     buildingElements,
+    showHelicopter,
   ]);
 
   useFrame(({ clock }, delta) => {
@@ -988,6 +1002,14 @@ function StationElements({
               {el.id === 'flag' && (
                 <group position={[0, 3.95, 0]} rotation={[0, windToRad, 0]}>
                   <FlagChain geos={flagGeos} jointRefs={flagJointRefs} index={0} />
+                </group>
+              )}
+              {el.id === 'helipad' && showHelicopter && (
+                <group
+                  position={[0, HELIPAD_TOP_Y, 0]}
+                  scale={layout.footprint[0] / HELICOPTER_ROTOR_SPAN}
+                >
+                  <mesh geometry={heliGeo} material={vehicleMaterial} />
                 </group>
               )}
             </group>
@@ -1791,6 +1813,7 @@ export const StationScene = memo(function StationScene({
           windDirDeg={windDirDeg}
           seaIce={seaIce}
           reduced={reduced}
+          showHelicopter={helicopterOnPad(month)}
         />
         <StationFauna
           animals={animals}
