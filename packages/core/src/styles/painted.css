@@ -60,6 +60,10 @@ button:focus-visible,[tabindex]:focus-visible{outline:3px solid #1E3E5C;outline-
 .mk.cluster .dot::before{content:'';position:absolute;inset:-6px;border-radius:50%;border:1.5px dashed #3B4651;opacity:.55}
 .mlabel{position:absolute;left:44px;top:50%;transform:translateY(-50%);white-space:nowrap;background:rgba(247,250,251,.94);border:1px solid rgba(31,42,54,.35);border-radius:4px 10px 6px 9px;padding:3px 8px 4px;text-align:left;line-height:1.15;pointer-events:none;box-shadow:1px 2px 0 rgba(31,42,54,.12)}
 .mk.lbl-left .mlabel{left:auto;right:44px}
+/* In the 3D map a marker stands on a thin stick over its place, so it does not cover the block
+   model drawn there. The stick ends exactly on the place; only the dot takes presses. */
+.m3d .ov .mk:not(.cluster){--stick:34px;transform:translateY(calc(-1 * var(--stick)))}
+.m3d .ov .mk:not(.cluster)::after{content:'';position:absolute;left:50%;top:50%;width:2px;height:var(--stick);margin-left:-1px;background:var(--ink);box-shadow:0 0 0 1px rgba(243,235,221,.75);border-radius:1px;z-index:-1;pointer-events:none}
 /* Labels are closed: one shows on a first touch (.shown), under the mouse or with the keyboard focus. */
 .mk .mlabel{display:none}
 .mk.shown .mlabel,.mk:focus-visible .mlabel{display:block}
