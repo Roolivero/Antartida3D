@@ -206,7 +206,7 @@ Pedido de quien lleva el issue: el avión pasa por encima de la tormenta, en el 
 - **Vale para los dos aviones:** el del viaje y el Hércules de ambiente del mapa abierto usan el mismo perfil (`heightOf`). No hubo que tocar `SeaLife.tsx`.
 - **Nubes con tope:** `Storm3D.tsx` no deja que ninguna nube pase de `cloudTop`.
 - **Cámara del viaje en avión:** ya no baja debajo de las nubes al entrar en la tormenta. Eso queda solo para el barco. La cámara sigue al avión, arriba.
-- **El avión ya no se sacude en la tormenta:** vuela por encima, en aire calmo. El barco sí se sigue sacudiendo.
+- **El avión ya no se sacude en la tormenta:** vuela por encima, en aire calmo. El barco sí se sigue sacudiendo. (Cambiado el 13-11-2026: vuelve a sacudirse, menos que antes. Ver «Turbulencia del Hércules sobre el Drake».)
 - **Es ilustrativo:** la altura del avión sobre la tormenta no es un nivel de vuelo real, igual que la altura de las nubes no es un dato. La altura de crucero dibujada (10.000 pies a ×10) sigue valiendo fuera de la tormenta.
 - **Prueba cambiada:** «climbs little by little» en `core/test/voyage.test.ts` pedía que el avión estuviera a altura de crucero al 30 % del viaje. Ahí ahora está sobre la tormenta. La prueba pide que suba sin saltos y que después de la tormenta vuelva a la altura de crucero. Prueba nueva: el avión está por encima del tope de las nubes en todo el tramo de tormenta.
 - **Verificación:** capturas del viaje en avión a 1440 px y a 390 px, en «Pasaje de Drake» y «Convergencia Antártica». El Hércules de ambiente del mapa abierto no se capturó: usa la misma función, cubierta por la prueba.
@@ -221,3 +221,18 @@ Pedido de quien lleva el issue: el pin del hito «Cabo de Hornos» estaba en el 
 - **La cámara va al cabo mientras la ficha está abierta** y vuelve al buque al continuar. Es el mismo comportamiento que ya tenían los lugares lejanos de los avistajes (`Voyage3D.tsx`). Sin esto, en el celular (390 px) el cabo quedaba fuera de pantalla.
 - **Coordenada `[-67.27, -55.97]`:** es la punta sur de la isla Hornos tal como la dibuja el relieve de este mapa (IBCSO v2, `fuegia-mesh-hi.bin`): el vértice de tierra más austral de esa isla está en 55,974° S, 67,268° O. Se eligió así para que el pin toque la tierra que se ve. **Pendiente `[Fuente a definir]`:** no se consiguió una fuente primaria con la coordenada oficial del cabo (la lista de faros de la NGA y la de la Armada de Chile no se pudieron abrir el 13-11-2026). Páginas no primarias dan 55°58′48″ S, 67°17′21″ O, a menos de 2 km de la coordenada usada. Ver `desde-ushuaia-fuentes.md`, «Fuentes de cálculos».
 - **Verificación:** prueba en `core/test/voyage.test.ts` (el pin del cabo está en la coordenada y fuera de la ruta; los demás pines están sobre la ruta). Controlado con capturas a 1440 y 390 px: el pin toca la punta sur de la isla más austral del grupo y la cámara vuelve al buque.
+
+### Turbulencia del Hércules sobre el Drake (13-11-2026)
+
+Pedido de quien lleva el issue: el avión se sacude un poco cuando pasa por arriba del Pasaje de Drake. Cambia la decisión del 12-11-2026, que lo dejaba en aire calmo.
+
+- **Qué hace:** sobre la tormenta el avión se ladea hasta 0,035 rad (unos 2°), cabecea hasta 0,012 rad y sube y baja hasta un 2 % de su largo. Es la mitad de lo que se ladeaba antes del 12-11-2026 (0,07 rad). Los topes están en `PLANE_TURBULENCE` y el movimiento en `planeTurbulence(time, rough)`, los dos en `core/src/storm.ts`.
+- **Ritmo irregular:** cada eje mezcla dos ritmos (entre 0,7 y 1,8 sacudidas por segundo), para que no se mueva como un péndulo.
+- **Dónde:** usa `stormAt(x, y)`, la misma medida que sacude al barco. Empieza de a poco en el borde de la tormenta y se apaga al salir. Fuera de la tormenta queda el vaivén suave de siempre.
+- **Solo el avión del viaje:** se aplica en `react-ui/src/voyage/Voyage3D.tsx`. El Hércules de ambiente del mapa abierto (`SeaLife.tsx`) no cambia: se ve de lejos y la sacudida no se notaría.
+- **La cámara no se sacude:** sigue la ruta del avión, no su balanceo.
+- **Movimiento reducido:** el avión no se sacude (el tiempo queda en 0 y la función da 0).
+- **Es ilustrativo:** no hay fuente sobre turbulencia a esa altura sobre el Drake. Es parte del dibujo de la tormenta, que la ficha del hito ya declara ilustrativa. No se agregó texto a la interfaz.
+- **Prueba nueva** en `core/test/voyage.test.ts`: no hay sacudida fuera de la tormenta ni con movimiento reducido, nunca pasa de sus topes, crece con la tormenta y el avión pasa por el centro de la tormenta.
+- **Verificación:** capturas del viaje en avión en el hito «Pasaje de Drake», a 1440 px y a 390 px, seis cuadros seguidos en cada tamaño. El avión se mueve unos 4 px entre cuadros en escritorio y unos 2 px en celular, sin errores en la consola. Con movimiento reducido, dos capturas tomadas con 2 segundos de diferencia son idénticas.
+- **Bug aparte, no causado por este cambio:** con movimiento reducido la cámara no va al vehículo al saltar a un hito (#76). Se reproduce en `main`.

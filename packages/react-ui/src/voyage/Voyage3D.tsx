@@ -7,6 +7,7 @@ import {
   TRANSPORTS,
   flightClearance,
   heightAt,
+  planeTurbulence,
   sightingsInView,
   stormAt,
   voyageAt,
@@ -190,11 +191,16 @@ export function Voyage3D({ bus, reduced, overlay }: {
     const rough = stormAt(p.x, p.y);
     // Bow up and down over each wave; the hull rises with it and rolls out of step.
     const wave = time * 2.1;
-    // The plane flies over the storm, in calm air.
     if (s.kind === 'ship') {
       sway.pitch += rough * Math.sin(wave) * 0.24;
       sway.roll += rough * Math.sin(wave * 0.63 + 1) * 0.22;
       sway.lift += rough * Math.sin(wave - 0.9) * 0.1;
+    } else {
+      // The plane flies over the storm, and the rough air shakes it a little.
+      const shake = planeTurbulence(time, rough);
+      sway.roll += shake.roll;
+      sway.pitch += shake.pitch;
+      sway.lift += shake.lift;
     }
     // Spray bursts when the bow comes down into the water.
     const burst = s.kind === 'ship' ? rough * Math.max(0, -Math.sin(wave + 0.5)) ** 2 : 0;

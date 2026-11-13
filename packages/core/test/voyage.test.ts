@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import {
   DRAKE_STORM,
   FLIGHT_CRUISE,
+  PLANE_TURBULENCE,
   FUEGIA_MIN_DISTANCE,
   FUEGIA_LAND_MASK,
   GEAR_TAP_MS,
@@ -33,6 +34,7 @@ import {
   routeAt,
   sightingsInView,
   parseTerrainMesh,
+  planeTurbulence,
   project,
   skipToNextStop,
   startVoyage,
@@ -430,6 +432,29 @@ describe('storm over the Drake Passage', () => {
       const [a, b] = [voyageAt('plane', (i - 1) / 400), voyageAt('plane', i / 400)];
       expect(Math.abs(stormCeiling(b.x, b.y) - stormCeiling(a.x, a.y)), `step ${i}`).toBeLessThan(1);
     }
+  });
+
+  it('shakes the plane a little over it: not outside it, not with reduced motion, never past its limit', () => {
+    const axes = ['roll', 'pitch', 'lift'] as const;
+    // The plane is well inside the storm at some point of its trip.
+    expect(Math.max(...Array.from({ length: 401 }, (_, i) => at('plane', i / 400)))).toBe(1);
+    const moved = { roll: 0, pitch: 0, lift: 0 };
+    for (let i = 0; i <= 600; i++) {
+      const time = i / 30;
+      const shake = planeTurbulence(time, 1);
+      for (const axis of axes) {
+        // Outside the storm the air is calm, at any time.
+        expect(Math.abs(planeTurbulence(time, 0)[axis]), `${axis} outside`).toBe(0);
+        expect(Math.abs(shake[axis]), `${axis} at ${time}`).toBeLessThanOrEqual(PLANE_TURBULENCE[axis]);
+        // It builds up with the storm: half the storm, half the shake.
+        expect(planeTurbulence(time, 0.5)[axis]).toBeCloseTo(shake[axis] / 2, 12);
+        moved[axis] = Math.max(moved[axis], Math.abs(shake[axis]));
+      }
+    }
+    // It does move, on its three axes.
+    for (const axis of axes) expect(moved[axis], axis).toBeGreaterThan(0.6 * PLANE_TURBULENCE[axis]);
+    // Reduced motion draws every frame at time 0: the plane stays still.
+    for (const axis of axes) expect(Math.abs(planeTurbulence(0, 1)[axis]), `${axis} reduced`).toBe(0);
   });
 
   it('is where the ship and the plane are when the card of the Drake opens', () => {
