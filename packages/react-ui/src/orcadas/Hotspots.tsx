@@ -87,11 +87,14 @@ export const OVERVIEW_POSE_DESKTOP: CameraPose = orbit(STATION_CENTRE, 22, VIEW_
 /** Entry view on desktop with the side panel hidden; the station sits centred. */
 export const OVERVIEW_POSE_DESKTOP_FULL: CameraPose = orbit(STATION_CENTRE, 22, VIEW_BEARING_DEG, 12, 0);
 
+/** Portrait phones frame the whole row, from the penguin knoll to the helipad. */
+const MOBILE_CENTRE_X = 0.4;
+
 /** Portrait phone: farther back, the station high on the screen above the bottom panel. */
-export const OVERVIEW_POSE_MOBILE: CameraPose = orbit([STATION_CENTRE[0], 0.4, STATION_CENTRE[2]], 44, VIEW_BEARING_DEG, 15, 0, 6);
+export const OVERVIEW_POSE_MOBILE: CameraPose = orbit([MOBILE_CENTRE_X, 0.4, STATION_CENTRE[2]], 50, VIEW_BEARING_DEG, 15, 0, 6);
 
 /** Portrait phone with the panel expanded: only a strip at the top is left. */
-export const OVERVIEW_POSE_MOBILE_EXPANDED: CameraPose = orbit([STATION_CENTRE[0], 0.4, STATION_CENTRE[2]], 52, VIEW_BEARING_DEG, 20, 0, 14);
+export const OVERVIEW_POSE_MOBILE_EXPANDED: CameraPose = orbit([MOBILE_CENTRE_X, 0.4, STATION_CENTRE[2]], 58, VIEW_BEARING_DEG, 20, 0, 14);
 
 /** Phone on its side: a short, wide screen with the panel on the right; closer, so no two dots overlap. */
 export const OVERVIEW_POSE_LANDSCAPE: CameraPose = orbit(STATION_CENTRE, 16, VIEW_BEARING_DEG, 12, 4.6);
