@@ -268,3 +268,16 @@ Pedido de quien lleva el issue, para dejar lista la llegada antes de empezar la 
 - Diseño previsto: el recorrido del helicóptero es una función pura en `core/src/voyage.ts` (de la cubierta de vuelo del buque a la base, sin pasar por debajo del relieve), con su prueba. `useVoyage.ts` guarda si el traslado no empezó, está en vuelo o terminó. `Voyage3D.tsx` dibuja el helicóptero y lleva la cámara con él. En `VoyagePanel.tsx`, al responder la pregunta aparece «Ver el traslado»; durante el vuelo la ficha se achica a una barra con «Saltar»; al posarse se abre la ficha de llegada.
 - El Irízar lleva dos Sea King `[O16]`: uno vuela y el otro queda dibujado en la cubierta.
 - La animación es ilustrativa y la ficha lo dice.
+
+### Vuelta suave de la cámara al vehículo (13-11-2026)
+
+Pedido de quien lleva el issue: al cerrar la ficha de «Cabo de Hornos» y seguir avanzando, la cámara volvía al barco de forma muy brusca.
+
+- **Qué pasaba:** la ficha de un lugar fuera de la ruta lleva la cámara a ese lugar. Al cerrarla, la cámara volvía con la transición corta de los controles (0,25 s) hacia el punto donde estaba el barco en ese momento. Si el barco ya avanzaba, al terminar la transición la cámara saltaba a su posición nueva. Medido en el navegador sin pantalla: casi 5 unidades de mapa en un solo cuadro y un pico de 14 unidades por segundo.
+- **Qué hace ahora:** la vuelta dura 2 segundos (`CAMERA_RETURN_SECONDS`). El punto que mira la cámara sale del lugar en reposo, acelera de a poco y termina sobre el vehículo, esté donde esté, moviéndose con él. La cuenta está en `cameraReturn(from, vehicle, u)`, en `core/src/camera.ts`, y se aplica en `react-ui/src/voyage/Voyage3D.tsx`.
+- **Vale para todo lugar lejano:** el Cabo de Hornos y los avistajes con lugar propio que quedan lejos de la ruta (por ejemplo el Faro San Juan de Salvamento). Todos usan el mismo camino del código.
+- **La ida no cambió:** al abrir la ficha, la cámara va al lugar con la transición de siempre.
+- **Movimiento reducido:** la cámara vuelve de una vez, sin animación, como antes.
+- **Cuadros largos:** si un cuadro tarda más de 0,1 s, la vuelta avanza como si hubiera tardado 0,1 s. En un equipo muy lento la vuelta dura más, pero no salta.
+- **Pruebas nuevas** en `core/test/camera.test.ts`: sale del lugar y termina sobre el vehículo; arranca desde el reposo; llega a la velocidad del vehículo; nunca va a más del doble de su velocidad media. Con el vehículo quieto y navegando.
+- **Verificación:** medición del punto que mira la cámara, cuadro a cuadro, manteniendo «avanzar» después de cerrar la ficha del cabo. A 390 px: sube de 0,2 a 6,1 unidades por segundo en 1,4 s, baja y queda en unas 3,6, la velocidad del barco, sin salto. El paso más grande entre cuadros bajó de 4,67 a 0,64 unidades. A 1440 px el pico fue de 2,7 (el navegador sin pantalla dibuja a menos de 4 cuadros por segundo ahí).

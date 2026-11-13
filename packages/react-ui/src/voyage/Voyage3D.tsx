@@ -3,8 +3,10 @@ import { BoxGeometry, BufferGeometry, Group, Line, LineDashedMaterial, Mesh, Mes
 import { useFrame, useThree } from '@react-three/fiber';
 import type { CameraControls } from '@react-three/drei';
 import {
+  CAMERA_RETURN_SECONDS,
   DRAKE_STORM,
   TRANSPORTS,
+  cameraReturn,
   flightClearance,
   heightAt,
   planeTurbulence,
@@ -105,8 +107,8 @@ export function Voyage3D({ bus, reduced, overlay }: {
   const trailMesh = useRef<Mesh>(null);
   const [transport, setTransport] = useState<TransportId | null>(bus.state?.transport ?? null);
   const drawn = useRef({ t: -1, transport: null as TransportId | null });
-  // Far place the camera is at, and whether it is on its way back to the vehicle.
-  const visit = useRef({ id: null as string | null, returning: false });
+  // Far place the camera is at, and its way back to the vehicle: where it left from and the fraction of the time gone.
+  const visit = useRef({ id: null as string | null, back: null as { from: Vector3; u: number } | null });
   const spray = useRef<(Mesh | null)[]>([]);
   // Whether the vehicle is in the storm, and the camera distance to go back to when it leaves.
   const storm = useRef({ inside: false, distance: null as number | null });
@@ -166,7 +168,7 @@ export function Voyage3D({ bus, reduced, overlay }: {
   const pinGeometry = useMemo(buildPinGeometry, []);
   useEffect(() => () => Object.values(pinGeometry).forEach((g) => g.dispose()), [pinGeometry]);
 
-  useFrame(({ camera }) => {
+  useFrame(({ camera }, delta) => {
     const s = bus.state;
     const g = group.current;
     if (!s) storm.current = { inside: false, distance: null };
@@ -274,26 +276,40 @@ export function Voyage3D({ bus, reduced, overlay }: {
         const far = open?.sighting.place && Math.hypot(open.x - p.x, open.y - p.y) > VISIT_DISTANCE
           ? { id: open.sighting.id, x: open.x, y: open.y }
           : stop && place ? { id: stop.milestone.id, ...place } : null;
+        const vehicle = { x: g.position.x, y: Math.max(0, height), z: g.position.z };
         if (far) {
           // Opening a far place takes the camera there, to see it; the trip waits.
           if (visit.current.id !== far.id) {
-            visit.current = { id: far.id, returning: false };
+            visit.current = { id: far.id, back: null };
             moved = true;
             void controls.moveTo(far.x - 500, 0, far.y - 500, !reduced);
           }
-        } else if (visit.current.id) {
-          // Closing it brings the camera back to the vehicle.
-          const state = { id: null, returning: true };
-          visit.current = state;
-          moved = true;
-          void controls.moveTo(g.position.x, Math.max(0, height), g.position.z, !reduced).then(() => void (state.returning = false));
-        } else if (s.t > 0 && !visit.current.returning) {
-          // With reduced motion nothing else moves: follow only when the vehicle moved, or each move would
-          // ask for a frame and the canvas would never rest. Otherwise the sway keeps it drawing, as before.
-          const goal = followGoal.set(g.position.x, Math.max(0, height), g.position.z);
-          if (!reduced || controls.getTarget(followTarget).distanceToSquared(goal) > FOLLOW_EPSILON ** 2) {
+        } else {
+          if (visit.current.id) {
+            // Closing it brings the camera back to the vehicle: at once with reduced motion, else little by little.
+            visit.current = { id: null, back: reduced ? null : { from: controls.getTarget(new Vector3(), false), u: 0 } };
+            if (reduced) {
+              moved = true;
+              void controls.moveTo(vehicle.x, vehicle.y, vehicle.z, false);
+            }
+          }
+          const back = visit.current.back;
+          if (back) {
+            // The vehicle may be moving again: the camera goes to where it is now, not to where it was.
+            // A long frame does not make it leap.
+            back.u = Math.min(1, back.u + Math.min(delta, 0.1) / CAMERA_RETURN_SECONDS);
+            const at = cameraReturn(back.from, vehicle, back.u);
             moved = true;
-            void controls.moveTo(goal.x, goal.y, goal.z, false);
+            void controls.moveTo(at.x, at.y, at.z, false);
+            if (back.u >= 1) visit.current.back = null;
+          } else if (s.t > 0) {
+            // With reduced motion nothing else moves: follow only when the vehicle moved, or each move would
+            // ask for a frame and the canvas would never rest. Otherwise the sway keeps it drawing, as before.
+            const goal = followGoal.set(vehicle.x, vehicle.y, vehicle.z);
+            if (!reduced || controls.getTarget(followTarget).distanceToSquared(goal) > FOLLOW_EPSILON ** 2) {
+              moved = true;
+              void controls.moveTo(goal.x, goal.y, goal.z, false);
+            }
           }
         }
       }

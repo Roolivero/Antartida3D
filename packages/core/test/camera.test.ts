@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
+  CAMERA_RETURN_SECONDS,
   FOV,
   MAX_POLAR_DEG,
+  cameraReturn,
   OCEAN_SIZE,
   PAN_LIMIT,
   WORLD_FADE_END,
@@ -207,5 +209,53 @@ describe('camera limits and the drawn world', () => {
     expect(fromPole).toBeLessThan(WORLD_FADE_END);
     // The ocean plane follows the camera target.
     expect(fromTarget).toBeLessThan(OCEAN_SIZE / 2);
+  });
+});
+
+describe('trip camera coming back to the vehicle from a place off the path', () => {
+  const cape = { x: -40, y: 0, z: 110 };
+  /** A ship that sails on while the camera comes back: `speed` world units per second along x. */
+  const ship = (seconds: number, speed: number) => ({ x: -34 + speed * seconds, y: 0, z: 112 });
+  const FPS = 60;
+  /** Looked-at point on each frame of the way back, and how far it moved since the frame before. */
+  const fly = (speed: number) => {
+    const frames = Math.round(CAMERA_RETURN_SECONDS * FPS);
+    const points = Array.from({ length: frames + 1 }, (_, i) => cameraReturn(cape, ship(i / FPS, speed), i / frames));
+    const steps = points.slice(1).map((p, i) => Math.hypot(p.x - points[i].x, p.z - points[i].z));
+    return { points, steps };
+  };
+
+  it('leaves the place and ends on the vehicle, wherever the vehicle is by then', () => {
+    expect(cameraReturn(cape, ship(0, 4), 0)).toEqual(cape);
+    expect(cameraReturn(cape, ship(CAMERA_RETURN_SECONDS, 4), 1)).toEqual(ship(CAMERA_RETURN_SECONDS, 4));
+    // Out of range it stays at either end.
+    expect(cameraReturn(cape, ship(0, 4), -1)).toEqual(cape);
+    expect(cameraReturn(cape, ship(9, 4), 2)).toEqual(ship(9, 4));
+  });
+
+  it('starts from rest and speeds up little by little, with the vehicle stopped or sailing', () => {
+    for (const speed of [0, 4, 14]) {
+      const { steps } = fly(speed);
+      const whole = Math.hypot(ship(CAMERA_RETURN_SECONDS, speed).x - cape.x, ship(CAMERA_RETURN_SECONDS, speed).z - cape.z);
+      // The first tenth of the time covers less than a hundredth of the way: no lurch when the card closes.
+      const first = steps.slice(0, steps.length / 10).reduce((a, b) => a + b, 0);
+      expect(first, `speed ${speed}`).toBeLessThan(whole / 100);
+      // No frame moves much more than the one before it.
+      for (let i = 1; i < steps.length; i++) expect(steps[i] - steps[i - 1], `speed ${speed}, frame ${i}`).toBeLessThan(whole / 400);
+    }
+  });
+
+  it('reaches the vehicle at the speed of the vehicle: no jump when the camera goes on following it', () => {
+    for (const speed of [0, 4, 14]) {
+      const { steps } = fly(speed);
+      // The last frames move as much as the vehicle does in a frame.
+      for (const step of steps.slice(-3)) expect(step, `speed ${speed}`).toBeCloseTo(speed / FPS, 2);
+    }
+  });
+
+  it('is never faster than about twice its average speed', () => {
+    const { steps } = fly(0);
+    const whole = steps.reduce((a, b) => a + b, 0);
+    expect(Math.max(...steps)).toBeLessThan((2 * whole) / steps.length);
   });
 });
