@@ -142,5 +142,7 @@ En cumplimiento con las bases de la hackatón, se declara el uso de herramientas
   > Redactado con asistencia de IA a partir del código y la documentación del repositorio, con revisión del equipo. No agrega datos nuevos.
 - **Bordes del mapa 3D, resto del mundo hasta 60° N y gestos de la cámara (#46):**
   > Planificación, implementación y pruebas con asistencia de IA, con revisión del equipo. Las siluetas salen de Natural Earth y su color de Natural Earth II (ambos de dominio público); son contexto geográfico, no datos.
+- **Expedición «Desde Ushuaia»: turbulencia del Hércules, llegada a la Base Marambio y traslado en helicóptero (#46):**
+  > Planificación, implementación, pruebas y verificación con capturas con asistencia de IA, con revisión del equipo. El traslado en helicóptero cita a la Armada Argentina (30 dic 2025). El lugar donde espera el buque, el recorrido del helicóptero y su tamaño son ilustrativos, y la interfaz lo dice. La turbulencia del avión es un efecto visual, no un dato. El modelo del helicóptero es el de #68.
 - **Cámara del viaje con movimiento reducido (#76):**
   > Diagnóstico, arreglo y prueba e2e con asistencia de IA, con revisión del equipo. No se agregaron datos ni fuentes.

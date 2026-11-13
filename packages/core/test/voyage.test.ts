@@ -22,6 +22,7 @@ import {
   VOYAGE_SOURCE_CODES,
   voyageSourceNumber,
   VOYAGE_TOURISM_NOTE,
+  VOYAGE_TRANSFER,
   advanceVoyage,
   closeVoyageCard,
   flightClearance,
@@ -41,6 +42,7 @@ import {
   startVoyage,
   stormAt,
   stormCeiling,
+  transferAt,
   unproject,
   voyageArrived,
   voyageAt,
@@ -61,6 +63,7 @@ const facts: VoyageFact[] = [
   ...MILESTONES.flatMap((m) => [m.essential, ...m.more]),
   ...SIGHTINGS.map((s) => s.fact),
   ...Object.values(EXPEDITION).flatMap((stop) => stop.notes.map((n) => n.fact)),
+  ...VOYAGE_TRANSFER.facts,
 ];
 
 describe('voyage content', () => {
@@ -208,6 +211,55 @@ describe('arrival of a ship off Marambio', () => {
     let water = 0;
     while (water < 400 && !onLand(routeAt(end + ((water + 1) / 400) * (1 - end)))) water++;
     expect((water / 400) * SHIP_ANCHORAGE).toBeGreaterThan(SHIP_ANCHORAGE / 2);
+  });
+
+  describe('helicopter hop from the ship to the base', () => {
+    // The flight deck of the ship where it waits: a little above the water, nose as the ship's.
+    const ship = voyageAt('ship', 1);
+    const deck = { ...ship, height: 0.4, heading: voyageHeading('ship', 1) };
+    const ground = (p: { x: number; y: number }) => Math.max(0, worldHeight(heightAt(p.x, p.y, terrain)));
+    const hop = Array.from({ length: 201 }, (_, i) => transferAt(deck, i / 200, terrain));
+
+    it('lifts off the deck of the ship and lands on the plateau of the base', () => {
+      expect(hop[0]).toEqual(deck);
+      const end = hop[200];
+      expect(Math.hypot(end.x - MARAMBIO.x, end.y - MARAMBIO.y)).toBeLessThan(0.01);
+      expect(end.height).toBeGreaterThan(0);
+      expect(end.height).toBeCloseTo(ground(MARAMBIO), 6);
+    });
+
+    it('never flies under the relief, and passes well over it on the way', () => {
+      for (const [i, at] of hop.entries()) expect(at.height, `step ${i}`).toBeGreaterThanOrEqual(ground(at));
+      const top = Math.max(...hop.map((at) => at.height));
+      expect(top).toBeGreaterThan(Math.max(...hop.map(ground)) + 0.5);
+    });
+
+    it('goes straight up first and straight down last, without a leap in between', () => {
+      expect(hop[10].x).toBe(deck.x);
+      expect(hop[10].height).toBeGreaterThan(deck.height);
+      expect(hop[190].x).toBeCloseTo(MARAMBIO.x, 6);
+      expect(hop[190].height).toBeGreaterThan(hop[200].height);
+      const whole = Math.hypot(MARAMBIO.x - deck.x, MARAMBIO.y - deck.y);
+      for (let i = 1; i <= 200; i++) {
+        const step = Math.hypot(hop[i].x - hop[i - 1].x, hop[i].y - hop[i - 1].y, hop[i].height - hop[i - 1].height);
+        expect(step, `step ${i}`).toBeLessThan(whole / 50);
+      }
+    });
+
+    it('turns its nose to the base the short way round', () => {
+      const bearing = Math.atan2(MARAMBIO.y - deck.y, MARAMBIO.x - deck.x);
+      expect(Math.cos(hop[200].heading - bearing)).toBeCloseTo(1, 6);
+      // Starting almost opposite, it does not go the long way: the turn is never more than half a circle.
+      const back = transferAt({ ...deck, heading: bearing + 3 }, 1, terrain);
+      expect(Math.abs(back.heading - (bearing + 3))).toBeLessThan(Math.PI);
+      expect(Math.cos(back.heading - bearing)).toBeCloseTo(1, 6);
+    });
+  });
+
+  it('plays the hop only on the Irízar, and says that it is a drawing', () => {
+    expect(VOYAGE_TRANSFER.transport).toBe('irizar');
+    expect(VOYAGE_TRANSFER.facts.map((f) => f.kind)).toEqual(['real', 'illustrative']);
+    expect(VOYAGE_TRANSFER.facts[0].sources).toEqual(['O24']);
   });
 });
 

@@ -12,6 +12,7 @@ import {
   VOYAGE_SOURCES_CONSULTED,
   VOYAGE_SOURCE_CODES,
   VOYAGE_TOURISM_NOTE,
+  VOYAGE_TRANSFER,
   voyageArrived,
   voyageProgress,
   voyageSightings,
@@ -198,6 +199,8 @@ function MilestoneCard({ voyage, animated, onExit, onSource }: {
   const score = quizScore(state.transport, voyage.answers);
   const last = voyageArrived(state);
   const next = () => (last ? onExit(true) : voyage.closeCard());
+  // The hop of the helicopter shows the answer of the arrival: offered once the question is answered.
+  const transfer = animated && last && answered && state.transport === VOYAGE_TRANSFER.transport;
   return (
     <section
       className="sheet voyage"
@@ -249,12 +252,41 @@ function MilestoneCard({ voyage, animated, onExit, onSource }: {
       {last && voyageSightings(state.kind).length > 0 && <Notebook voyage={voyage} animated={animated} />}
       {last && <p className="anno">Si te quedó curiosidad por otro medio, volvé a hacer la expedición.</p>}
       <div className="row vactions">
+        {/* With the buttons that stay in view, not under the notes. The main one until the hop was seen. */}
+        {transfer && (
+          <button type="button" className={'btn vwatch' + (voyage.transfer === 'none' ? ' primary' : '')} onClick={voyage.startTransfer}>
+            Ver el traslado
+          </button>
+        )}
         <button type="button" className="btn primary" onClick={next}>{last ? 'Terminar el viaje' : 'Continuar'}</button>
         <button type="button" className="btn ghost" aria-expanded={more} onClick={() => setMore((m) => !m)}>
           {more ? 'Ver menos' : 'Saber más'}
         </button>
       </div>
     </section>
+  );
+}
+
+/** Shown while the helicopter flies from the ship to the base: the arrival card steps aside, so the map shows. */
+function TransferBar({ voyage, onSource }: { voyage: VoyageController; onSource: OpenSources }) {
+  const ref = useRef<HTMLDivElement>(null);
+  useFocusReturn(true, ref, '.btn.primary');
+  return (
+    <div
+      className="vbar"
+      role="group"
+      aria-label={VOYAGE_TRANSFER.title}
+      ref={ref}
+      onKeyDown={(e) => e.key === 'Escape' && voyage.skipTransfer()}
+    >
+      <p className="vnext"><strong>{VOYAGE_TRANSFER.title}</strong></p>
+      <ul className="vfacts">
+        {VOYAGE_TRANSFER.facts.map((f) => <Fact key={f.text} fact={f} onSource={onSource} />)}
+      </ul>
+      <div className="row">
+        <button type="button" className="btn primary" onClick={voyage.skipTransfer}>Saltar</button>
+      </div>
+    </div>
   );
 }
 
@@ -425,6 +457,8 @@ export function VoyagePanel({ voyage, animated, webgl, reduced, onExit }: {
     ? <SightingCard voyage={voyage} onSource={setSources} />
     : !state
       ? <Picker onStart={voyage.start} onExit={() => onExit(false)} onSource={setSources} preview={webgl} reduced={reduced} />
+    : voyage.transfer === 'flying'
+      ? <TransferBar voyage={voyage} onSource={setSources} />
     : state.card >= 0
       ? <MilestoneCard key={state.card} voyage={voyage} animated={animated} onExit={onExit} onSource={setSources} />
       : <TravelBar voyage={voyage} animated={animated} onExit={() => onExit(false)} />;

@@ -6,12 +6,14 @@ import {
   CAMERA_RETURN_SECONDS,
   DRAKE_STORM,
   TRANSPORTS,
+  VOYAGE_TRANSFER,
   cameraReturn,
   flightClearance,
   heightAt,
   planeTurbulence,
   sightingsInView,
   stormAt,
+  transferAt,
   voyageArrived,
   voyageAt,
   voyageHeading,
@@ -22,8 +24,9 @@ import {
   type TransportId,
   type TransportKind,
 } from '@antartida/core';
+import { HELICOPTER_BOXES, HELICOPTER_ROTOR_BOXES, HELICOPTER_ROTOR_ORIGIN } from '../orcadas/stationModels.ts';
 import { buildPinGeometry, pinMaterial } from './pins.ts';
-import { buildVehicleGeometry, vehicleMaterial } from './vehicles.ts';
+import { buildBoxGeometry, buildVehicleGeometry, vehicleMaterial } from './vehicles.ts';
 import { Sighting3D } from './Sighting3D.tsx';
 import { buildTrailGeometry, trailMaterial, updateTrail } from './trail.ts';
 import { NARROW_PX, type VoyageBus } from './useVoyage.ts';
@@ -90,6 +93,19 @@ const FOLLOW_EPSILON = 1e-4;
 const followGoal = new Vector3();
 const followTarget = new Vector3();
 
+/** Flight deck of the icebreaker in its model: how far aft of the middle it is and how high, in ship lengths. */
+const DECK_AFT = 0.33;
+const DECK_TOP = 0.091;
+/**
+ * Length of the helicopter that flies to the base, in ship lengths. A real Sea King is about a
+ * seventh of the ship: it is drawn larger, as every model of the map, to be seen from the trip camera.
+ */
+const HELICOPTER_SIZE = 0.55;
+/** Nose down while it flies forward, in radians at the middle of the hop. */
+const HELICOPTER_TILT = 0.14;
+/** Turns of the main rotor, in radians per second. */
+const ROTOR_SPEED = 22;
+
 const routeMaterial = new LineDashedMaterial({ color: 0x1f2a36, dashSize: 0.8, gapSize: 0.6, transparent: true, opacity: 0.75 });
 
 /** The vehicle travelling on the live map, its path and the camera, which stays centered on it. */
@@ -110,6 +126,8 @@ export function Voyage3D({ bus, reduced, overlay }: {
   // Far place the camera is at, and its way back to the vehicle: where it left from and the fraction of the time gone.
   const visit = useRef({ id: null as string | null, back: null as { from: Vector3; u: number } | null });
   const spray = useRef<(Mesh | null)[]>([]);
+  const helicopter = useRef<Group>(null);
+  const rotor = useRef<Group>(null);
   // Whether the vehicle is in the storm, and the camera distance to go back to when it leaves.
   const storm = useRef({ inside: false, distance: null as number | null });
   // Ids of the animals in view and of the ones already spotted, joined: React re-renders only when they change.
@@ -158,6 +176,18 @@ export function Voyage3D({ bus, reduced, overlay }: {
     return line;
   }, [kind]);
   useEffect(() => () => route?.geometry.dispose(), [route]);
+
+  // The Sea King that takes people and cargo from the icebreaker to the base: the model of the Orcadas helipad.
+  const seaKing = useMemo(
+    () => (transport === VOYAGE_TRANSFER.transport
+      ? { body: buildBoxGeometry(HELICOPTER_BOXES), rotor: buildBoxGeometry(HELICOPTER_ROTOR_BOXES) }
+      : null),
+    [transport],
+  );
+  useEffect(() => () => {
+    seaKing?.body.dispose();
+    seaKing?.rotor.dispose();
+  }, [seaKing]);
 
   const trail = useMemo(() => (kind ? buildTrailGeometry(kind) : null), [kind]);
   useEffect(() => () => trail?.dispose(), [trail]);
@@ -221,6 +251,27 @@ export function Voyage3D({ bus, reduced, overlay }: {
     g.rotation.set(sway.roll, -heading, pitch + sway.pitch, 'YZX');
     g.scale.setScalar(size);
 
+    // The helicopter shows once its hop to the base starts, and stays on the base after it lands.
+    const heli = helicopter.current;
+    if (heli) {
+      const flown = bus.transfer;
+      heli.visible = flown !== null;
+      if (flown !== null) {
+        const deck = {
+          x: p.x - Math.cos(heading) * DECK_AFT * size,
+          y: p.y - Math.sin(heading) * DECK_AFT * size,
+          height: g.position.y + DECK_TOP * size,
+          heading,
+        };
+        const at = transferAt(deck, flown);
+        heli.position.set(at.x - 500, at.height, at.y - 500);
+        heli.rotation.set(0, -at.heading, -HELICOPTER_TILT * Math.sin(Math.PI * flown), 'YZX');
+        heli.scale.setScalar(size * HELICOPTER_SIZE);
+        // The rotor turns while it flies and stops once it is down.
+        if (rotor.current && flown < 1) rotor.current.rotation.y = time * ROTOR_SPEED;
+      }
+    }
+
     pins.forEach((at, i) => {
       const pin = pinGroups.current[i];
       if (!pin) return;
@@ -229,6 +280,8 @@ export function Voyage3D({ bus, reduced, overlay }: {
       pin.scale.setScalar(Math.max(MIN_PIN, camera.position.distanceTo(pin.position) * PIN_PER_DISTANCE));
       pin.quaternion.copy(camera.quaternion); // always facing the camera
       (pin.children[0] as Mesh).material = i + 1 < s.reached ? pinMaterial.reached : pinMaterial.ahead;
+      // A pin is drawn over everything: the one of the base would cover the helicopter that lands on it.
+      pin.visible = bus.transfer === null || i < pins.length - 1;
     });
 
     if (trailMesh.current) trailMesh.current.visible = !bus.back;
@@ -351,6 +404,14 @@ export function Voyage3D({ bus, reduced, overlay }: {
           <mesh key={i} ref={(m) => void (spray.current[i] = m)} geometry={sprayGeometry} material={sprayMaterial} scale={0} />
         ))}
       </group>
+      {seaKing && (
+        <group ref={helicopter} visible={false}>
+          <mesh geometry={seaKing.body} material={vehicleMaterial} />
+          <group ref={rotor} position={HELICOPTER_ROTOR_ORIGIN}>
+            <mesh geometry={seaKing.rotor} material={vehicleMaterial} />
+          </group>
+        </group>
+      )}
     </>
   );
 }

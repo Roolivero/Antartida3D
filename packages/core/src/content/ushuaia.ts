@@ -373,7 +373,20 @@ export const EXPEDITION: Readonly<Record<string, ExpeditionStop>> = {
   },
 };
 
-export type SightingIcon = 'bird' | 'penguin' | 'whale' | 'dolphin' | 'seal' | 'lighthouse';
+/**
+ * The hop of the helicopter from the ship to Base Marambio, played on the arrival once its question
+ * is answered. Only on the Irízar: source O24 is about it. The facts show while the hop plays.
+ */
+export const VOYAGE_TRANSFER: { transport: TransportId; title: string; facts: readonly VoyageFact[] } = {
+  transport: 'irizar',
+  title: 'Del Irízar a la base',
+  facts: [
+    real('Un helicóptero Sea King lleva la carga y el personal del rompehielos a la base.', 'O24'),
+    { text: 'La animación es ilustrativa: no muestra un vuelo real ni su recorrido. El helicóptero está agrandado para que se vea.', kind: 'illustrative', sources: [] },
+  ],
+};
+
+export type SightingIcon ='bird' | 'penguin' | 'whale' | 'dolphin' | 'seal' | 'lighthouse';
 
 /** An animal the traveller may spot from a ship. Only species with an open, read source. */
 export interface Sighting {

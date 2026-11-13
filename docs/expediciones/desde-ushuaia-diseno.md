@@ -260,14 +260,23 @@ Pedido de quien lleva el issue, para dejar lista la llegada antes de empezar la 
 - **Pruebas:** en `core/test/voyage.test.ts`, el buque termina en el agua y a `SHIP_ANCHORAGE` de la base por la ruta; el pin está en la base; la pregunta es solo del Irízar; el puntaje cuenta 3, 2 y 2. Prueba E2E nueva, `e2e/tests/voyage-arrival.spec.ts`, a 390 y 1440 px.
 - **Verificación:** `pnpm test`, `pnpm typecheck` y `pnpm build`. La prueba E2E nueva pasa a 390 y 1440 px; no se corrió el resto de la suite E2E. Capturas de la llegada en 3D: Irízar a 1440 y 390 px (el buque queda en el agua, el pin en la base y los dos se ven por encima de la ficha) y Hércules a 390 px (llega a la base, como antes). El Puerto Argentino no se capturó: usa el mismo recorrido que el Irízar.
 
-**Etapa 2 (pendiente, depende de #68):**
+**Etapa 2 (hecha el 13-11-2026, con #68 ya en `main`):**
 
-- Animación corta del traslado del Irízar a la base en helicóptero Sea King, después de responder la pregunta.
-- Reutiliza el Sea King de la rama del issue #68 (`HELICOPTER_BOXES`, `HELICOPTER_ROTOR_BOXES` y `HELICOPTER_ROTOR_ORIGIN`, en `react-ui/src/orcadas/stationModels.ts`). No se dibuja otro modelo. Se hace cuando #68 esté en `main`.
-- Sin animación con movimiento reducido, en el mapa 2D o sin WebGL: ahí la respuesta la dan las notas, como en la etapa 1.
-- Diseño previsto: el recorrido del helicóptero es una función pura en `core/src/voyage.ts` (de la cubierta de vuelo del buque a la base, sin pasar por debajo del relieve), con su prueba. `useVoyage.ts` guarda si el traslado no empezó, está en vuelo o terminó. `Voyage3D.tsx` dibuja el helicóptero y lleva la cámara con él. En `VoyagePanel.tsx`, al responder la pregunta aparece «Ver el traslado»; durante el vuelo la ficha se achica a una barra con «Saltar»; al posarse se abre la ficha de llegada.
-- El Irízar lleva dos Sea King `[O16]`: uno vuela y el otro queda dibujado en la cubierta.
-- La animación es ilustrativa y la ficha lo dice.
+- **Qué es:** una animación de 6 segundos (`TRANSFER_SECONDS`). Un helicóptero Sea King despega de la cubierta de vuelo del Irízar, cruza el mar y se posa en la base. Solo en el Irízar: `[O24]` habla de ese buque.
+- **Cuándo se ofrece:** al responder la pregunta de la llegada aparece el botón «Ver el traslado». Está junto a los botones fijos de la ficha, en su propio renglón, para que se vea sin desplazar las notas. Es el botón principal hasta que se vio el traslado; después lo es «Terminar el viaje». Se puede volver a ver.
+- **Durante el vuelo:** la ficha se cambia por una barra chica, para que se vea el mapa. La barra dice qué se ve con su fuente («Un helicóptero Sea King lleva la carga y el personal del rompehielos a la base» `[O24]`) y que es un dibujo. Tiene el botón «Saltar», que posa el helicóptero de una vez. La tecla Escape hace lo mismo. Al posarse, vuelve la ficha de llegada con la respuesta guardada.
+- **Es ilustrativo y la interfaz lo dice:** «La animación es ilustrativa: no muestra un vuelo real ni su recorrido. El helicóptero está agrandado para que se vea.» `[O24]` dice que el traslado se hace con un Sea King. No dice por dónde vuela ni cuánto tarda.
+- **Sin animación** con movimiento reducido o en el mapa 2D: el botón no aparece y la respuesta la dan las notas, como en la etapa 1.
+- **Modelo:** el Sea King de #68 (`HELICOPTER_BOXES`, `HELICOPTER_ROTOR_BOXES` y `HELICOPTER_ROTOR_ORIGIN`, en `react-ui/src/orcadas/stationModels.ts`). No se dibujó otro modelo. El rotor gira mientras vuela y se detiene al posarse.
+- **Tamaño:** el helicóptero mide 0,55 veces el largo del buque dibujado (`HELICOPTER_SIZE`). Un Sea King real mide cerca de un séptimo del Irízar. Se probó primero con 0,34 y no se distinguía desde la cámara del viaje.
+- **El otro Sea King:** el Irízar lleva dos `[O16]`. El modelo del buque ya tenía un helicóptero chico dibujado en la cubierta, y ese queda ahí. El modelo del buque no se tocó.
+- **Recorrido:** `transferAt(from, u)`, en `core/src/voyage.ts`. Sube derecho, gira hacia la base por el lado corto, vuela a 1,5 unidades por encima del punto más alto del camino y baja derecho sobre la meseta. Nunca pasa por debajo del relieve.
+- **Por qué sube y después baja:** el buque está agrandado. Su cubierta queda dibujada más alta (0,41 unidades) que la meseta de la base en el relieve del mapa (0,10 unidades).
+- **Pin de la base:** se oculta desde que el helicóptero despega. Los pines se dibujan por encima de todo, y el de la base tapaba el aterrizaje. Después, el helicóptero posado marca la base.
+- **Cámara:** no sigue al helicóptero, a diferencia de lo previsto. En la llegada la cámara ya está a mitad de camino entre el buque y la base (etapa 1), así que todo el vuelo entra en pantalla en celular y en escritorio.
+- **Estado:** `useVoyage.ts` guarda si el traslado no empezó, está en vuelo o terminó (`transfer`), y avanza el vuelo cuadro a cuadro. Un cuadro largo no hace saltar al helicóptero. El estado se limpia al empezar otro viaje o al salir.
+- **Pruebas:** en `core/test/voyage.test.ts`, el helicóptero sale de la cubierta y termina en la base; nunca vuela por debajo del relieve; sube y baja derecho y no salta; gira por el lado corto. La prueba E2E `voyage-arrival.spec.ts` suma el flujo con movimiento (botón, barra, vuelta sola de la ficha, repetir y «Saltar») y comprueba que con movimiento reducido el botón no aparece.
+- **Verificación:** capturas del vuelo a 390 y 1440 px, sin errores de consola. La prueba E2E con movimiento tarda cerca de 40 s a 390 px y 80 s a 1440 px en un equipo sin placa de video.
 
 ### Vuelta suave de la cámara al vehículo (13-11-2026)
 

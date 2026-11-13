@@ -243,6 +243,7 @@ Cambios del 13-11-2026 (#46):
 - La pregunta de Marambio pasa a ser sobre el traslado del Irízar a la base. Sus opciones son «Por un puente», «En botes» y «En helicóptero». Se redacta con la meseta porque es lo que dice `[O24]`: la fuente no dice que la base no tenga puerto ni muelle.
 - La pregunta «¿Cuánta gente vive en la Base Marambio durante el invierno?» y su nota (70 personas en invierno y 170 en verano, `[O45]`) salen de este viaje y pasan a la expedición de la base (#74).
 - La ficha del Irízar en el selector ya no dice cómo se usa el helicóptero en Marambio, para no responder la pregunta antes de zarpar. Dice «Lleva dos helicópteros Sea King» `[O16]`.
+- Después de responder la pregunta de Marambio, en el mapa 3D y con movimiento permitido, el botón «Ver el traslado» muestra una animación corta: un Sea King va del Irízar a la base. Mientras se ve, la pantalla dice «Un helicóptero Sea King lleva la carga y el personal del rompehielos a la base» `[O24]` y aclara que la animación es ilustrativa: no muestra un vuelo real ni su recorrido, y el helicóptero está agrandado. El detalle está en «Llegada a la Base Marambio», en `desde-ushuaia-diseno.md`.
 
 No hay puntaje durante el viaje. La primera respuesta queda fija, se muestra si era correcta y recién después aparecen los datos. La tarjeta de llegada dice cuántas preguntas se acertaron.
 
@@ -259,6 +260,7 @@ Límites conocidos: [O44] describe el curso del personal de las Fuerzas Armadas,
 - Tipo y largo actual de la pista de Marambio.
 - Que la Base Marambio no tenga puerto ni muelle: `[O24]` no lo dice (solo dice que está sobre una meseta y que el traslado fue «exclusivamente» en helicóptero). No se afirma en el viaje.
 - Dónde espera el buque frente a Marambio y a qué distancia de la costa: `[O24]` solo dice «frente a la base». La posición dibujada es ilustrativa.
+- Por dónde vuela el helicóptero entre el buque y la base, y cuánto tarda: `[O24]` no lo dice. La animación del traslado es ilustrativa.
 
 ## 10. Retirado del borrador anterior
 

@@ -29,7 +29,8 @@ async function arriveAtMarambio(page: Page, transport: RegExp) {
   await page.getByRole('button', { name: /^(Zarpar|Despegar)$/ }).click();
   const arrival = page.getByRole('dialog', { name: 'Base Marambio' });
   for (let i = 0; i < 12; i++) {
-    await expect(page.locator('section.sheet.voyage')).toBeVisible();
+    // With motion the trip travels to each milestone: its card takes a while to open.
+    await expect(page.locator('section.sheet.voyage')).toBeVisible({ timeout: 30_000 });
     if (await arrival.isVisible()) break;
     await page.getByRole('button', { name: 'Continuar', exact: true }).click();
     await page.getByRole('button', { name: 'Próximo hito', exact: true }).click();
@@ -55,6 +56,42 @@ test.describe('arrival at Base Marambio on the trip from Ushuaia', () => {
     // Where the ship waits is a drawing, and the card says so.
     await expect(card.getByText(/frente a la isla es ilustrativo/)).toBeVisible();
     await expect(card.getByText(/acertaste 1 de 3/)).toBeVisible();
+    await expect(card.getByRole('button', { name: 'Terminar el viaje' })).toBeVisible();
+    // The helicopter hop is an animation of the 3D map: with reduced motion the notes give the answer.
+    await expect(card.getByRole('button', { name: 'Ver el traslado' })).toHaveCount(0);
+  });
+
+  test('with motion, on the Irízar the helicopter hop plays after the answer and can be skipped', async ({ page }) => {
+    // The trip travels to each milestone and the hop lasts 6 s: slow without a GPU.
+    test.setTimeout(240_000);
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
+    await page.reload();
+    const relief = page.getByRole('group', { name: 'Modo de vista' }).getByRole('button', { name: 'Relieve 3D' });
+    if ((await relief.getAttribute('aria-pressed')) !== 'true') await relief.click();
+    await expect(page.locator('canvas').first()).toBeVisible();
+
+    const card = await arriveAtMarambio(page, /Irízar/);
+    const watch = card.getByRole('button', { name: 'Ver el traslado' });
+    // The hop shows the answer: it is not offered before it.
+    await expect(watch).toHaveCount(0);
+    await card.getByRole('button', { name: 'En helicóptero' }).click();
+    await watch.click();
+
+    // The card steps aside. The bar says what the hop is and that it is a drawing.
+    const bar = page.getByRole('group', { name: 'Del Irízar a la base' });
+    await expect(bar.getByText(/Sea King lleva la carga y el personal/)).toBeVisible();
+    await expect(bar.getByText(/La animación es ilustrativa/)).toBeVisible();
+    await expect(bar.getByRole('button', { name: 'Saltar' })).toBeFocused();
+    await expect(card).toBeHidden();
+
+    // The helicopter lands by itself and the card comes back with the answer kept.
+    await expect(card).toBeVisible({ timeout: 90_000 });
+    await expect(card.getByText('Correcto.')).toBeVisible();
+    await expect(card.getByRole('button', { name: 'Terminar el viaje' })).toBeFocused();
+
+    // It plays again, and «Saltar» lands it at once.
+    await watch.click();
+    await bar.getByRole('button', { name: 'Saltar' }).click();
     await expect(card.getByRole('button', { name: 'Terminar el viaje' })).toBeVisible();
   });
 
