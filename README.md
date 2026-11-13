@@ -12,7 +12,7 @@ Equipo **DOT ENV**, hackatón SoberaníaTech (Ushuaia, 2026), Eje 2: Antártida,
 
 El repositorio contiene dos enfoques en `apps/` para evaluar y seleccionar la base definitiva:
 
-- **`apps/dibujado`** (puerto 5103): mapa dibujado estilo acuarela con relieve (2D y 3D) y expediciones interactivas en Marambio («¿Cómo era la Antártida antes del hielo?») y Estación Orcadas («¿Cómo es pasar un invierno entero en Orcadas?»). Máxima optimización de interacción, foco en accesibilidad completa por teclado y zoom fluido.
+- **`apps/dibujado`** (puerto 5103): mapa dibujado estilo acuarela con relieve (2D y 3D) y expediciones interactivas en Marambio («¿Cómo era la Antártida antes del hielo?») y Estación Orcadas («¿Cuánto cambió el clima de la isla Laurie en 120 años?»). Máxima optimización de interacción, foco en accesibilidad completa por teclado y zoom fluido.
 - **`apps/atlas`** (puerto 5175): prototipo exploratorio de atlas 3D con 5 propuestas temáticas, filtros por Naturaleza e Historias, vista 2D/3D y paneles informativos accesibles.
 
 ### Cómo descartar una app
@@ -106,10 +106,20 @@ pnpm bench           # benchmark de rendimiento
   - **R. C. Mossman (1907):** Report on the Scientific Results of the Voyage of S.Y. Scotia, vol. II, Meteorology. URL: [https://archive.org/details/reportonscientif02scot](https://archive.org/details/reportonscientif02scot). Fecha de consulta: 12 de noviembre de 2026. Licencia: dominio público.
   - **Antarctic Station Catalogue (Argentina):** COMNAP. URL: [https://www.comnap.aq/s/Argentina_Catalogue_Aug2017.pdf](https://www.comnap.aq/s/Argentina_Catalogue_Aug2017.pdf). Fecha de consulta: 12 de noviembre de 2026.
   - **Sitio y Monumento Histórico N.º 42:** Secretaría del Tratado Antártico. URL: [https://www.ats.aq/devph/en/apa-database/119](https://www.ats.aq/devph/en/apa-database/119). Fecha de consulta: 12 de noviembre de 2026.
+  - **OpenStreetMap: edificios y costa de la Base Orcadas:** colaboradores de OpenStreetMap, trazado sobre imágenes Maxar 2019. URL: [https://www.openstreetmap.org/#map=18/-60.7378/-44.7375](https://www.openstreetmap.org/#map=18/-60.7378/-44.7375). Fecha de consulta: 12 de noviembre de 2026. Licencia: [ODbL 1.0](https://opendatacommons.org/licenses/odbl/1-0/) (© colaboradores de OpenStreetMap).
   - Las fuentes pendientes de verificación están en [`docs/orcadas-fuentes.md`](docs/orcadas-fuentes.md) y sus datos no se muestran en la interfaz.
-  - La serie de temperatura es dato real.
-  - La observación del día y el hielo de la bahía por mes son simulaciones rotuladas.
-  - El diorama de la estación es una reconstrucción ilustrada; las horas de luz son un cálculo astronómico.
+  - **Recorrido:** cuatro capítulos alrededor de una pregunta guía, «¿Cuánto cambió el clima de la isla Laurie en 120 años?»:
+    1. Llegar: la base y su ubicación.
+    2. Observar: una lectura con cuatro instrumentos.
+    3. Viajar: de 1903 a hoy con la serie del siglo.
+    4. Responder: la lectura comparada con el mismo mes de todos los años.
+
+    La tira de meses de arriba cambia la luz y el hielo de la escena en cualquier capítulo.
+  - **Dato real:** la serie de temperatura (SCAR READER), las fechas de la historia y la elevación.
+  - **Simulación (rotulada):** la observación del día, el hielo de la bahía por mes y la fauna por mes.
+  - **Cálculo:** las horas de luz, la media móvil y la tendencia en dos tramos (1904–1950 y 1951–2025).
+  - **Reconstrucción:** el diorama. Es un escenario de frente con una selección de edificios. La forma y el color de cada uno salen de OpenStreetMap, pero dónde está cada uno es ilustrativo. Los animales, instrumentos y la bandera están agrandados.
+  - La explicación de la disposición está en [`docs/orcadas-emplazamiento.md`](docs/orcadas-emplazamiento.md).
 - **Librerías 3D (apps/dibujado y react-ui):** Three.js (licencia MIT), React Three Fiber (licencia MIT), @react-three/drei (licencia MIT), @react-three/postprocessing (licencia MIT).
 - **Costa y barreras de hielo:** [Natural Earth](https://www.naturalearthdata.com/) (`ne_50m_land`, `ne_50m_antarctic_ice_shelves_polys`), dominio público. [Términos de uso](https://www.naturalearthdata.com/about/terms-of-use/).
 - **Base Orcadas (apps/atlas):** coordenadas de [Armada Argentina · bases permanentes](https://www.argentina.gob.ar/armada/antartida/bases-permanentes) e historia y ubicación de [Cancillería Argentina](https://cancilleria.gob.ar/es/iniciativas/dna/antartida-argentina/bases/orcadas).
@@ -127,6 +137,8 @@ En cumplimiento con las bases de la hackatón, se declara el uso de herramientas
   > Interfaz y código de este prototipo desarrollados con Codex a partir de la revisión de los dos proyectos y del borrador provisto por el equipo.
 - **Expedición Estación Orcadas:**
   > Planificación, arquitectura, revisión y verificación de fuentes con Claude Code (modelo Claude Fable 5.2); implementación delegada a agentes de Antigravity (Gemini 4 Argon y Gemini 3.8 Flash) bajo revisión; búsqueda inicial de fuentes con Gemini 3.8 Flash, con cada fuente publicada abierta y confirmada después por el orquestador (Claude Code); la confirmación humana de cada fuente se hace en la revisión del PR; ninguna imagen ni texto generado se presenta como dato.
+- **Pulido de la expedición Estación Orcadas (#53):**
+  > Auditoría, plan, revisión, verificación de fuentes y pulido visual con Claude Code (modelo Claude Opus 5.5); parte de la implementación delegada a Antigravity (Gemini 3.8 Flash) bajo revisión. Cada decisión de producto (cuatro capítulos, escenario de frente, selección de edificios) la aprobó quien lleva el issue. Las plantas de los edificios salen de OpenStreetMap (ODbL); ninguna imagen generada se presenta como dato.
 - **Resto del hemisferio sur en el mapa 3D (#42):**
   > Planificación, revisión y ajustes visuales con Claude Code (modelo Claude Opus 5.5); implementación de partes delegada a Antigravity (Gemini 3.8 Flash) bajo revisión. Las siluetas salen de Natural Earth y su color de Natural Earth II (ambos de dominio público); son contexto geográfico, no datos.
 - **Bordes del mapa 3D, resto del mundo hasta 60° N y gestos de la cámara (#46):**

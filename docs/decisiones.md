@@ -208,6 +208,20 @@ Pedido de quien lleva el issue: en el celular, el panel que sale desde abajo tie
 - **Verificación:** prueba e2e en el perfil de celular (`flow.spec.ts`): arrastre hacia arriba, hacia abajo y cierre con un toque simulado, desde el tirador y desde el cuerpo del panel, y Enter. La recarga al tirar hacia abajo no se puede probar con toques simulados: hay que confirmarla en un teléfono real.
 
 
+### Expedición Orcadas: pulido (#53, 12 y 13-11-2026)
+
+Plan: `.agents/plans/plan-orcadas-pulido.md`. Cada decisión la aprobó quien lleva el issue.
+
+- **Cuatro capítulos (Llegar, Observar, Viajar, Responder):** antes eran seis y el recorrido se perdía. Todo gira alrededor de una pregunta guía: «¿Cuánto cambió el clima de la isla Laurie en 120 años?». Se pregunta en Llegar y se responde en Responder, con la lectura del usuario comparada con el mismo mes de cada año. Los nombres de los capítulos tienen una sola fuente, en `@antartida/core`.
+- **Tira de meses en vez de la rueda del año:** la rueda ponía tres anillos y doce meses en 130 px, y en el celular los rótulos medían 6 px. La tira va fija sobre la escena y funciona en todos los capítulos. Cada mes tiene una barra con las horas de luz (cálculo) y una franja de hielo (simulación).
+- **Sin candado entre capítulos:** se puede avanzar sin completar las lecturas, y el texto avisa cuántas faltan. Un candado frenaba a quien solo quería mirar.
+- **Tendencia en dos tramos:** una sola recta de 1904 a 2025 escondía que el calentamiento empieza a mediados de siglo. Ahora hay dos tramos: 1904–1950, −0,02 °C por década, y 1951–2025, +0,13 °C por década. Es un cálculo propio de mínimos cuadrados. La significancia la da Zazulie, Rusticucci y Solomon (2010).
+- **Escenario de frente en vez de plano real:** se probó dibujar la base con las posiciones de OpenStreetMap, a escala y comprimida, y en los dos casos se leía como un plano, con edificios tapados y mucho suelo vacío. Quedó un escenario con ocho elementos en fila: forma, color y techo reales, posiciones ilustrativas. No hay cementerio ni usina. La etiqueta de la escena lo declara. Detalle en `docs/orcadas-emplazamiento.md`.
+- **Cámara fija:** al entrar se ve siempre la misma toma desde Bahía Scotia. Se puede girar 35° a cada lado y alejar hasta 1,2 veces la distancia de entrada, así nunca se ve dónde termina el escenario.
+- **Pingüinera animada:** catorce pingüinos. Los residentes miran, se acicalan, hacen la exhibición y duermen. Los viajeros caminan, se tiran de panza, se sacuden, nadan y vuelven a la playa. Cada pose es una función pura del tiempo (`penguins.ts`), y hay pruebas de que no se superponen, no caminan sobre el agua, no atraviesan edificios y no saltan entre cuadros. Es una reconstrucción: ninguna fuente ubica la colonia.
+- **Hielo marino con una sola regla:** el hielo crece desde la costa (`iceThreshold`). La usan las placas de cajas y el sombreador del agua, a través de un atributo con la distancia a la costa. Así las dos capas nunca se contradicen.
+- **Bandera de cajas:** cinco segmentos encadenados que se mueven en `useFrame`. Ya no usa un sombreador propio, así cumple la regla del estilo voxel.
+
 ## Benchmark
 
 - Lighthouse, peso, pan y pinch corren en Chromium headless sin GPU. Las cifras de frames e interacción sirven para comparar las apps entre sí, no como valores absolutos de un teléfono real.

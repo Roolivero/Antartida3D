@@ -514,12 +514,12 @@ Orden de prioridad, de lo que nunca se recorta a lo que se recorta primero:
 ## Checklist final
 
 - [x] B1 a B8 con prueba en verde.
-- [ ] Ningún dato real sin fuente verificada; fuentes nuevas abiertas y comprobadas.
-- [ ] Disposición de la base respaldada por `docs/orcadas-emplazamiento.md`; ninguna planta se interseca; elementos sin fuente fuera de la escena.
+- [x] Ningún dato real sin fuente verificada; fuentes nuevas abiertas y comprobadas.
+- [x] Disposición de la base respaldada por `docs/orcadas-emplazamiento.md`; ninguna planta se interseca; elementos sin fuente fuera de la escena. (Escenario ilustrativo declarado; ver enmienda de la fase 5.)
 - [x] 4 capítulos, pregunta guía en Llegar y respondida en Responder.
 - [x] Como mucho 2 fichas a la vista por capítulo; una sola capa flotante por vez.
-- [ ] Celular: botones de 44 px o más, texto de 12 px o más (11 px en SVG), horizontal usable, instrumento y control a la vista juntos.
-- [ ] Pingüinera en grupos sobre piedra; hielo coherente con el mes.
+- [x] Celular: botones de 44 px o más, texto de 12 px o más (11 px en SVG), horizontal usable, instrumento y control a la vista juntos.
+- [x] Pingüinera en grupos sobre piedra; hielo coherente con el mes.
 - [ ] `pnpm test`, `pnpm typecheck`, `pnpm build` y `pnpm e2e` en verde.
-- [ ] README, `docs/decisiones.md`, `docs/orcadas-fuentes.md` y `docs/orcadas-emplazamiento.md` al día.
+- [x] README, `docs/decisiones.md`, `docs/orcadas-fuentes.md` y `docs/orcadas-emplazamiento.md` al día.
 - [ ] Probado en un celular físico.
