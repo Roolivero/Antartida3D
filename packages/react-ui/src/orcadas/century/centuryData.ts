@@ -49,42 +49,6 @@ export function buildSegmentedPaths(
   return paths;
 }
 
-/**
- * Groups consecutive years where `value === null` into intervals `[startYear, endYear]`
- * so incomplete years can be drawn as hatched gap bands on the chart.
- */
-export function buildMissingSpans(
-  series: readonly YearValue[]
-): { startYear: number; endYear: number; count: number }[] {
-  const spans: { startYear: number; endYear: number; count: number }[] = [];
-  let currentStart: number | null = null;
-  let prevYear = 0;
-
-  for (const item of series) {
-    if (item.value === null || !Number.isFinite(item.value)) {
-      if (currentStart === null) {
-        currentStart = item.year;
-      }
-      prevYear = item.year;
-    } else if (currentStart !== null) {
-      spans.push({
-        startYear: currentStart,
-        endYear: prevYear,
-        count: prevYear - currentStart + 1,
-      });
-      currentStart = null;
-    }
-  }
-  if (currentStart !== null) {
-    spans.push({
-      startYear: currentStart,
-      endYear: prevYear,
-      count: prevYear - currentStart + 1,
-    });
-  }
-  return spans;
-}
-
 export function formatSlope(slopePerDecade: number): string {
   const absVal = Math.abs(slopePerDecade);
   const formatted = absVal.toFixed(2).replace('.', ',');

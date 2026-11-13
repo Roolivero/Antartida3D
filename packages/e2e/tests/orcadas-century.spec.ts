@@ -48,9 +48,11 @@ test('Viajar: renders annual series chart with moving average, two trend slopes,
   // Annual chart elements
   const chart = page.locator('.orc-century-svg');
   await expect(chart).toBeVisible();
-  await expect(page.getByText('Media anual real')).toBeVisible();
-  await expect(page.getByText('Media móvil 11 años')).toBeVisible();
-  await expect(page.getByText('Recta de tendencia', { exact: true })).toBeVisible();
+  // Legend rewritten in phase 7 (F5): each line says what it is, and incomplete years are a cut in
+  // the line instead of a hatched band.
+  await expect(page.getByText(/Media de cada año \(dato real; la línea se corta en los años incompletos\)/)).toBeVisible();
+  await expect(page.getByText('Media móvil de 11 años (cálculo)')).toBeVisible();
+  await expect(page.getByText('Tendencia en dos tramos (cálculo)')).toBeVisible();
 
   // Two-segment trend banner
   const trendBanner = page.locator('.orc-century-trend-banner');

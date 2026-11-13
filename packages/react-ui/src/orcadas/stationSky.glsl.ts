@@ -325,18 +325,24 @@ uniform float uTime;
 uniform float uWindSpeed;
 uniform float uSeaIce;
 
+// Signed distance to the stage coast (core worldCoastDistance): > 0 on land, < 0 at sea.
+attribute float aCoast;
+
 varying vec3 vWorldPos;
 varying vec2 vUv;
+varying float vOffshore;
 
 void main() {
   vUv = uv;
+  vOffshore = -aCoast;
   vec4 world4 = modelMatrix * vec4(position, 1.0);
   // Sea ice dampens open-water swell
   float iceDamp = 1.0 - clamp(uSeaIce, 0.0, 1.0) * 0.85;
   float waveAmp = clamp(uWindSpeed / 80.0, 0.02, 0.22) * iceDamp;
   float w = sin(world4.x * 0.45 + uTime * 1.8) * cos(world4.z * 0.38 + uTime * 1.4) * waveAmp;
-  float isthmusMask = smoothstep(6.0, 18.0, length(world4.xz));
-  world4.y += w * isthmusMask;
+  // No swell on the beach: the waves grow away from the shore.
+  float shoreMask = smoothstep(0.5, 4.0, -aCoast);
+  world4.y += w * shoreMask;
   vWorldPos = world4.xyz;
   gl_Position = projectionMatrix * viewMatrix * world4;
 }
@@ -353,6 +359,7 @@ uniform float uSeaIce;
 
 varying vec3 vWorldPos;
 varying vec2 vUv;
+varying float vOffshore;
 
 vec2 hash22(vec2 p) {
   vec3 p3 = fract(vec3(p.xyx) * vec3(0.1031, 0.1030, 0.0973));
@@ -414,10 +421,9 @@ void main() {
   float twilightFactor = smoothstep(-0.14, 0.04, sunEl) * (1.0 - smoothstep(0.08, 0.28, sunEl));
   float nightFactor = 1.0 - smoothstep(-0.10, 0.01, sunEl);
 
-  // Distance from central isthmus beaches (isthmus runs along x in [-16,16], z in [-8.5,8.5])
-  float dx = max(abs(vWorldPos.x) - 14.0, 0.0);
-  float dz = max(abs(vWorldPos.z) - 8.5, 0.0);
-  float bayDepth = clamp(length(vec2(dx * 0.4, dz)) / 24.0, 0.0, 1.0);
+  // Distance from the stage shore, in world units
+  float offshore = max(vOffshore, 0.0);
+  float bayDepth = clamp(offshore / 16.0, 0.0, 1.0);
 
   vec3 shallowCol = mix(glacierCol, vec3(0.42, 0.66, 0.76), 0.5);
   vec3 waterCol = mix(shallowCol, deepCol, smoothstep(0.0, 0.85, bayDepth));
@@ -443,8 +449,8 @@ void main() {
   waterCol = mix(waterCol, inkCol, inkRipple * 0.22 * (1.0 - uSeaIce * 0.7));
 
   // Coastal surf foam near the northern and southern beaches of the isthmus
-  if (abs(vWorldPos.x) < 22.0 && abs(vWorldPos.z) < 13.5) {
-    float beachBand = 1.0 - smoothstep(7.5, 12.8, abs(vWorldPos.z));
+  {
+    float beachBand = 1.0 - smoothstep(0.2, 2.6, offshore);
     float surf = smoothstep(0.35, 0.75, sin(abs(vWorldPos.z) * 2.2 - uTime * 2.1 + rippleA * 3.0)) * beachBand;
     waterCol = mix(waterCol, mix(paperCol, iceCol, 0.72), surf * 0.75 * (1.0 - uSeaIce * 0.6));
   }
@@ -455,10 +461,12 @@ void main() {
     float edgeDist = vIce.y;
     float cellId = vIce.z;
 
-    // Ice closes progressively from the coastline and headlands outward into the bay
-    float coastProximity = 1.0 - clamp(dz / 28.0, 0.0, 1.0);
-    float freezeScore = coastProximity * 0.55 + cellId * 0.45;
-    float cellFrozen = smoothstep(1.0 - uSeaIce * 1.12, 1.05 - uSeaIce * 0.95, freezeScore);
+    // Fast ice: the solid sheet grows from the shore. Same rule as iceThreshold (stationModels.ts):
+    // a point freezes at seaIce = offshore / 14 * 0.9; floes (box plates) drift in a band of 0.5
+    // ahead of it, so the sheet covers the points that froze more than 0.5 earlier.
+    float freezeAt = clamp(offshore / 14.0 * 0.9 + (cellId - 0.5) * 0.12, 0.03, 0.97);
+    // With the bay closed (July to September) the whole bay is ice; floes stay as ridges on it.
+    float cellFrozen = max(smoothstep(0.0, 0.06, uSeaIce - 0.5 - freezeAt), smoothstep(0.9, 1.0, uSeaIce));
 
     // Width of dark open-water leads between polygonal floes narrows as uSeaIce -> 1.0
     float leadWidth = mix(0.22, 0.035, clamp(uSeaIce, 0.0, 1.0));
@@ -499,56 +507,4 @@ void main() {
 }
 `;
 
-export const stationFlagVertexShader = /* glsl */ `
-uniform float uTime;
-uniform float uWindSpeed;
 
-varying vec2 vUv;
-varying float vWave;
-
-void main() {
-  vUv = uv;
-  vec3 pos = position;
-  float pin = clamp(uv.x, 0.0, 1.0);
-  float freq = 4.5 + uWindSpeed * 0.14;
-  float amp = (0.04 + clamp(uWindSpeed / 65.0, 0.0, 1.0) * 0.22) * pin;
-  float wave = sin(uv.x * 5.2 - uTime * freq) * cos(uv.y * 2.0 + uTime * 2.5);
-  pos.z += wave * amp;
-  pos.y += cos(uv.x * 4.0 - uTime * (freq * 0.8)) * amp * 0.25;
-  vWave = wave;
-  gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
-}
-`;
-
-export const stationFlagFragmentShader = /* glsl */ `
-precision highp float;
-
-varying vec2 vUv;
-varying float vWave;
-
-vec3 srgbToLinear(vec3 c) {
-  return pow(clamp(c, 0.0, 1.0), vec3(2.2));
-}
-
-void main() {
-  vec3 celeste = vec3(0.498, 0.714, 0.863); // #7FB6DC
-  vec3 whiteCol = vec3(0.969, 0.980, 0.984); // #F7FAFB
-  vec3 sunGold = vec3(0.949, 0.757, 0.306);  // #F2C14E
-  vec3 inkCol = vec3(0.122, 0.165, 0.212);   // #1F2A36
-
-  float stripe = step(0.333, vUv.y) * (1.0 - step(0.667, vUv.y));
-  vec3 col = mix(celeste, whiteCol, stripe);
-
-  vec2 sunDelta = (vUv - vec2(0.46, 0.5)) * vec2(1.65, 1.0);
-  float r = length(sunDelta);
-  float sunDisc = 1.0 - smoothstep(0.085, 0.105, r);
-  col = mix(col, sunGold, sunDisc);
-
-  col *= 0.94 + 0.10 * vWave;
-  float border = step(vUv.x, 0.025) + step(0.975, vUv.x) + step(vUv.y, 0.04) + step(0.96, vUv.y);
-  col = mix(col, inkCol, clamp(border, 0.0, 1.0) * 0.65);
-
-  gl_FragColor = vec4(srgbToLinear(col), 1.0);
-  #include <colorspace_fragment>
-}
-`;

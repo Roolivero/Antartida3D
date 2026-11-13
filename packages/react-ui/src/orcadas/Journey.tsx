@@ -378,19 +378,15 @@ export function Journey({
           <div className="orc-century-legend-items" aria-label="Referencias del gráfico anual">
             <span className="orc-legend-item">
               <i className="orc-swatch orc-swatch-annual" aria-hidden="true" />
-              Media anual real
+              Media de cada año (dato real; la línea se corta en los años incompletos)
             </span>
             <span className="orc-legend-item">
               <i className="orc-swatch orc-swatch-ma11" aria-hidden="true" />
-              Media móvil 11 años
+              Media móvil de 11 años (cálculo)
             </span>
             <span className="orc-legend-item">
               <i className="orc-swatch orc-swatch-trend" aria-hidden="true" />
-              Recta de tendencia
-            </span>
-            <span className="orc-legend-item">
-              <i className="orc-swatch orc-swatch-gap" aria-hidden="true" />
-              Año incompleto (hueco)
+              Tendencia en dos tramos (cálculo)
             </span>
           </div>
 

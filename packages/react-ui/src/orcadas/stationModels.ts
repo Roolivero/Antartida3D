@@ -9,7 +9,7 @@ import {
   type RoofShape,
   type SiteColour,
 } from '@antartida/core';
-import { buildBoxGeometry, type Box } from '../voyage/vehicles.ts';
+import type { Box } from '../voyage/vehicles.ts';
 import { SEA_MODELS } from '../voyage/sightingModels.ts';
 
 /** Building colours: orange from OpenStreetMap Maxar imagery, neutral grey for unassigned modules. */
@@ -74,8 +74,11 @@ const {
 export interface SeaIcePlate {
   x: number;
   z: number;
-  radius: number;
+  /** Half size along local x and z, in world units. */
+  sizeX: number;
+  sizeZ: number;
   rotY: number;
+  /** seaIce value from which the plate appears (it melts into the solid sheet later). */
   threshold: number;
 }
 
@@ -560,39 +563,34 @@ export const FLAGPOLE_BASE_BOXES: readonly Box[] = [
   [0, 0.36, 0.50, 0.22, 0.10, 0.03, BLACK],
 ];
 
-/**
- * Builds 5 articulated vertical segments of the voxel Argentine flag so they can wave
- * in the wind by rigid parts. Total across the 5 segments = 20 boxes.
- */
-export function buildFlagSegmentGeometries(): BufferGeometry[] {
-  const segWidth = 0.38;
-  const segments: Box[][] = [0, 1, 2, 3, 4].map((idx) => {
-    const cx = segWidth / 2;
-    const thick = idx === 0 ? 0.07 : 0.055;
-    const base: Box[] = [
-      // Top celeste stripe
-      [cx, 0.36, 0, segWidth + 0.02, 0.36, thick, SKY],
-      // Middle white stripe
-      [cx, 0.0, 0, segWidth + 0.02, 0.36, thick, WHITE],
-      // Bottom celeste stripe
-      [cx, -0.36, 0, segWidth + 0.02, 0.36, thick, SKY],
-    ];
-    // Sol de Mayo on segments 1 and 2
-    if (idx === 1) {
-      base.push([cx + 0.06, 0.0, 0, 0.22, 0.22, thick + 0.025, LAMP]);
-      base.push([cx + 0.06, 0.0, 0, 0.28, 0.10, thick + 0.018, ORANGE]);
-    } else if (idx === 2) {
-      base.push([cx - 0.06, 0.0, 0, 0.22, 0.22, thick + 0.025, LAMP]);
-      base.push([cx - 0.06, 0.0, 0, 0.10, 0.28, thick + 0.018, ORANGE]);
-    } else {
-      // Subtle cloth seam / border detail so every segment has 4 boxes
-      base.push([cx, 0.53, 0, segWidth, 0.03, thick + 0.006, ICE]);
-    }
-    return base;
-  });
+/** Width of each of the 5 vertical segments of the flag, in model units. */
+export const FLAG_SEGMENT_WIDTH = 0.38;
 
-  return segments.map((boxes) => buildBoxGeometry(boxes));
-}
+/**
+ * The Argentine flag in 5 vertical segments of boxes, each starting at its own hinge (x = 0),
+ * so the scene can chain them and make the cloth wave in the wind without a shader.
+ */
+export const FLAG_SEGMENT_BOXES: readonly (readonly Box[])[] = [0, 1, 2, 3, 4].map((idx) => {
+  const w = FLAG_SEGMENT_WIDTH;
+  const cx = w / 2;
+  const thick = idx === 0 ? 0.07 : 0.055;
+  const base: Box[] = [
+    [cx, 0.36, 0, w + 0.02, 0.36, thick, SKY],
+    [cx, 0.0, 0, w + 0.02, 0.36, thick, WHITE],
+    [cx, -0.36, 0, w + 0.02, 0.36, thick, SKY],
+  ];
+  // Sol de Mayo across segments 1 and 2
+  if (idx === 1) {
+    base.push([cx + 0.06, 0.0, 0, 0.22, 0.22, thick + 0.025, LAMP]);
+    base.push([cx + 0.06, 0.0, 0, 0.28, 0.1, thick + 0.018, ORANGE]);
+  } else if (idx === 2) {
+    base.push([cx - 0.06, 0.0, 0, 0.22, 0.22, thick + 0.025, LAMP]);
+    base.push([cx - 0.06, 0.0, 0, 0.1, 0.28, thick + 0.018, ORANGE]);
+  } else {
+    base.push([cx, 0.53, 0, w, 0.03, thick + 0.006, ICE]);
+  }
+  return base;
+});
 
 /**
  * 9. Station Whaleboat / Chalupa pulled up on the gravel shore (+x bow, +y up).
@@ -844,27 +842,54 @@ export function createIsthmusTerrainGeometry(seed = 19040222): BufferGeometry {
 }
 
 /** Sea-ice plates in both bays; each appears when seaIce passes its threshold (near shore first). */
+/**
+ * How far from the shore the sea ice reaches for a given cover (illustrative simulation): the
+ * ice grows from the coast outwards. Returns the seaIce value at which a point `offshore` units
+ * from the coast starts to freeze. The water shader uses the same rule through `aCoast`.
+ */
+export function iceThreshold(offshore: number, jitter = 0): number {
+  return Math.min(0.97, Math.max(0.03, (offshore / ICE_REACH) * 0.9 + jitter * 0.12));
+}
+
+/** Offshore distance, in world units, that freezes last. */
+export const ICE_REACH = 14;
+/** Floes float in a band this wide (in seaIce units) ahead of the solid fast-ice sheet. */
+export const ICE_FLOE_BAND = 0.5;
+
+/** Floes of varied size and shape; only the visible part of both bays gets them. */
 export function generateSeaIcePlates(seed = 190406): SeaIcePlate[] {
   const rng = createSeededRng(seed);
   const plates: SeaIcePlate[] = [];
-  const e = TERRAIN_HALF_EXTENT;
-  for (let gx = -e; gx <= e; gx += 2.4) {
-    for (let gz = -e; gz <= e; gz += 2.4) {
-      const x = gx + (rng() - 0.5) * 1.4;
-      const z = gz + (rng() - 0.5) * 1.4;
+  const step = 1.5;
+  for (let gx = -27; gx <= 27; gx += step) {
+    for (let gz = -22; gz <= 26; gz += step) {
+      const x = gx + (rng() - 0.5) * step * 0.9;
+      const z = gz + (rng() - 0.5) * step * 0.9;
       const d = worldCoastDistance(x, z);
-      if (d >= -0.8) continue;
-      const offshore = Math.min(1, (-d - 0.8) / 12);
+      const size = 0.22 + rng() ** 2 * 0.62;
+      const aspect = 0.6 + rng() * 0.8;
+      const rotY = rng() * Math.PI * 2;
+      const jitter = rng() - 0.5;
+      // Keep floes off the beach: their whole extent must be at sea.
+      if (d >= -0.35 - size) continue;
       plates.push({
         x,
         z,
-        radius: 0.7 + rng() * 0.7,
-        rotY: rng() * Math.PI * 2,
-        threshold: Math.min(0.92, Math.max(0.05, offshore * 0.75 + (rng() - 0.5) * 0.15)),
+        sizeX: size * aspect,
+        sizeZ: size / aspect,
+        rotY,
+        threshold: iceThreshold(-d, jitter),
       });
     }
   }
   return plates;
+}
+
+/** 0..1 visibility of a floe for a sea-ice cover: it appears, drifts in the pack, then joins the sheet. */
+export function floeVisibility(threshold: number, seaIce: number): number {
+  const appear = Math.min(1, Math.max(0, (seaIce - threshold) / 0.08));
+  const merge = Math.min(1, Math.max(0, (threshold + ICE_FLOE_BAND - seaIce) / 0.08));
+  return Math.min(appear, merge);
 }
 
 /** A few icebergs grounded or drifting in both bays, at least 2.5 units off the coast. */
@@ -891,6 +916,71 @@ export function generateIcebergs(seed = 190409): IcebergInstance[] {
       phase: rng() * Math.PI * 2,
       variant,
     }));
+}
+
+/** Light grey gravel of the paths between the buildings (photos: grey gravel ground). */
+const PATH_GRAVEL = 0xa8a49b;
+const PATH_GRAVEL_LIGHT = 0xbdb9af;
+
+/** True when (x, z) is inside a building footprint grown by `margin` (world units). */
+function nearBuilding(x: number, z: number, margin: number): boolean {
+  return STATION_LAYOUT.some((e) => {
+    const dx = x - e.position[0];
+    const dz = z - e.position[2];
+    const c = Math.cos(e.rotationY);
+    const sn = Math.sin(e.rotationY);
+    const u = dx * c - dz * sn;
+    const v = dx * sn + dz * c;
+    return Math.abs(u) < e.footprint[0] / 2 + margin && Math.abs(v) < e.footprint[1] / 2 + margin;
+  });
+}
+
+/**
+ * Ground details of the stage (illustrative): a gravel path in front of the buildings with
+ * spurs to their doors, loose rocks and patches of old snow. World coordinates, one geometry.
+ */
+export function buildStageDetailBoxes(seed = 190415): Box[] {
+  const rng = createSeededRng(seed);
+  const boxes: Box[] = [];
+  const groundAt = (x: number, z: number) => evaluateIsthmusTerrain(x, z).y;
+  const [kx, kz] = PENGUIN_KNOLL.center;
+  const onKnoll = (x: number, z: number) => Math.hypot(x - kx, z - kz) < PENGUIN_KNOLL.footRadius + 0.3;
+
+  // Gravel path along the front of the station, made of slightly uneven flat stones.
+  const pathZ = 2.35;
+  for (let x = -5.6; x <= 6.6; x += 0.42) {
+    const z = pathZ + Math.sin(x * 0.7) * 0.18 + (rng() - 0.5) * 0.08;
+    if (nearBuilding(x, z, 0.15)) continue;
+    boxes.push([x, groundAt(x, z) + 0.015, z, 0.36 + rng() * 0.08, 0.03, 0.3 + rng() * 0.1, rng() < 0.5 ? PATH_GRAVEL : PATH_GRAVEL_LIGHT]);
+  }
+  // Spurs from the path to the buildings that face it.
+  for (const id of ['screen', 'omond', 'module-360745961', 'module-360745962']) {
+    const e = STATION_LAYOUT.find((l) => l.id === id);
+    if (!e) continue;
+    const x0 = e.position[0];
+    const zFront = e.position[2] + e.footprint[1] / 2 + 0.2;
+    for (let z = zFront; z < pathZ - 0.15; z += 0.36) {
+      boxes.push([x0 + (rng() - 0.5) * 0.06, groundAt(x0, z) + 0.015, z, 0.3, 0.03, 0.3, PATH_GRAVEL_LIGHT]);
+    }
+  }
+
+  // Loose rocks and patches of old snow on the isthmus, away from paths and buildings.
+  for (let i = 0; i < 140; i++) {
+    const x = -13 + rng() * 26;
+    const z = -3.6 + rng() * 7.4;
+    const d = worldCoastDistance(x, z);
+    if (d < 0.3 || onKnoll(x, z) || nearBuilding(x, z, 0.5) || Math.abs(z - pathZ) < 0.45) continue;
+    const y = groundAt(x, z);
+    if (rng() < 0.7) {
+      const sz = 0.08 + rng() ** 2 * 0.26;
+      const col = [ROCK, ROCK_DARK, ROCK_LIGHT][Math.floor(rng() * 3)];
+      boxes.push([x, y + sz * 0.35, z, sz * (1 + rng() * 0.6), sz * 0.7, sz * (0.8 + rng() * 0.5), col]);
+    } else if (d > 0.8) {
+      const w = 0.4 + rng() * 0.9;
+      boxes.push([x, y + 0.012, z, w, 0.025, w * (0.4 + rng() * 0.4), rng() < 0.5 ? WHITE : ICE]);
+    }
+  }
+  return boxes;
 }
 
 export function generateSnowParticles(count: number, seed = 190412): Float32Array {

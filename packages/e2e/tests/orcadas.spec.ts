@@ -591,3 +591,28 @@ test('on mobile the observation shows the instrument and its control both in the
   // Notebook active cell updates with the recorded value
   await expect(page.locator('.orc-notebook-cell.is-active')).toContainText(/-2[.,]5 °C/);
 });
+
+test('G6: in the entry view every hotspot dot is inside the viewport and the camera cannot zoom out past the stage', async ({ page }) => {
+  await openOrcadasFromMap(page);
+  const vw = page.viewportSize()?.width ?? 1440;
+  const vh = page.viewportSize()?.height ?? 900;
+  const dots = page.locator('[data-hotspot]');
+  const n = await dots.count();
+  expect(n).toBeGreaterThan(0);
+  for (let i = 0; i < n; i++) {
+    const dot = dots.nth(i);
+    if ((await dot.evaluate((el) => getComputedStyle(el).opacity)) === '0') continue;
+    const box = (await dot.boundingBox())!;
+    expect(box.x).toBeGreaterThanOrEqual(0);
+    expect(box.y).toBeGreaterThanOrEqual(0);
+    expect(box.x + box.width).toBeLessThanOrEqual(vw);
+    expect(box.y + box.height).toBeLessThanOrEqual(vh);
+  }
+  // The zoom-out cap is a little beyond the entry view, never the whole sea.
+  const ratio = await page.evaluate(() => {
+    const c = (window as unknown as { __orcadasCamera: { distance: number; maxDistance: number } }).__orcadasCamera;
+    return c.maxDistance / c.distance;
+  });
+  expect(ratio).toBeGreaterThan(1);
+  expect(ratio).toBeLessThanOrEqual(1.25);
+});

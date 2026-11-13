@@ -78,26 +78,25 @@
 }
 
 .orc-swatch-annual {
-  background: var(--ink);
+  height: 2px;
+  border: 0;
+  border-radius: 1px;
+  background: #8A9096;
 }
 
 .orc-swatch-ma11 {
-  background: #7FA8C4;
-  border-color: #1E3E5C;
+  height: 4px;
+  border: 0;
+  border-radius: 2px;
+  background: #1E3E5C;
+  box-shadow: 0 0 0 2px rgba(127, 168, 196, 0.45);
 }
 
 .orc-swatch-trend {
-  background: #A4471F;
-}
-
-.orc-swatch-gap {
-  background: repeating-linear-gradient(
-    45deg,
-    #E8E1D3,
-    #E8E1D3 2px,
-    #5E656C 2px,
-    #5E656C 4px
-  );
+  height: 0;
+  border: 0;
+  border-top: 2px dashed #A4471F;
+  border-radius: 0;
 }
 
 /* Trend Banner */

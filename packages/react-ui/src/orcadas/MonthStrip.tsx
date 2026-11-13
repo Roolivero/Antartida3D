@@ -98,20 +98,27 @@ export function MonthStrip({
               onClick={() => onMonth(m)}
             >
               <span className="orc-month-short">{shortName}</span>
-              <span
-                className="orc-month-daylight-bar"
-                style={{ height: `${daylightPct.toFixed(0)}%` }}
-                aria-hidden="true"
-              />
+              <span className="orc-month-daylight-track" aria-hidden="true">
+                <span
+                  className="orc-month-daylight-bar"
+                  style={{ height: `${daylightPct.toFixed(0)}%` }}
+                />
+              </span>
               <span
                 className="orc-month-ice-stripe"
-                style={{ opacity: seaIce }}
+                style={{ opacity: 0.15 + seaIce * 0.85 }}
+                data-ice={seaIce > 0 ? 'yes' : 'no'}
                 aria-hidden="true"
               />
             </button>
           );
         })}
       </div>
+
+      <p className="orc-month-legend" aria-hidden="true">
+        <span className="orc-month-legend-sun" /> Horas de luz
+        <span className="orc-month-legend-ice" /> Hielo en la bahía (simulación)
+      </p>
 
       <details className="orc-month-details">
         <summary className="orc-month-summary-toggle">

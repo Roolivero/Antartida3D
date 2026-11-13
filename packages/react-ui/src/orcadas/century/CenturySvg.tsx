@@ -1,9 +1,7 @@
 import { useRef } from 'react';
 import { ORCADAS_ANNUAL_TEMP } from '@antartida/core';
 import {
-  buildMissingSpans,
   buildSegmentedPaths,
-  formatSlope,
   type computeCenturyDataset,
 } from './centuryData.ts';
 
@@ -31,7 +29,6 @@ export function CenturySvg({
 
   const yearSpan = Math.max(1, data.lastYear - data.firstYear);
   const xOfYear = (yr: number) => padL + ((yr - data.firstYear) / yearSpan) * plotW;
-  const yearStepW = plotW / data.totalYears;
 
   const handlePointerYear = (clientX: number) => {
     const svg = svgRef.current;
@@ -53,7 +50,6 @@ export function CenturySvg({
 
   const annualPaths = buildSegmentedPaths(ORCADAS_ANNUAL_TEMP, xOfYear, yOfAnnual);
   const ma11Paths = buildSegmentedPaths(data.ma11Series, xOfYear, yOfAnnual);
-  const annualMissing = buildMissingSpans(ORCADAS_ANNUAL_TEMP);
 
   const selectedRecord = data.recordsByYear.get(selectedYear) ?? data.records[0];
   const cursorX = xOfYear(selectedYear);
@@ -111,18 +107,6 @@ export function CenturySvg({
           }
         }}
       >
-        <defs>
-          <pattern
-            id="orc-century-hatch"
-            width="6"
-            height="6"
-            patternUnits="userSpaceOnUse"
-            patternTransform="rotate(35)"
-          >
-            <rect width="6" height="6" fill="#E8E1D3" />
-            <line x1="0" y1="0" x2="0" y2="6" stroke="#5E656C" strokeWidth="1.6" strokeOpacity="0.65" />
-          </pattern>
-        </defs>
 
         {/* Notebook plate background frame */}
         <rect
@@ -165,23 +149,33 @@ export function CenturySvg({
             );
           })}
 
-          {/* Incomplete years: visible hatched gaps (no interpolation) */}
-          {annualMissing.map((span) => {
-            const x1 = Math.max(padL, xOfYear(span.startYear) - yearStepW * 0.48);
-            const x2 = Math.min(padL + plotW, xOfYear(span.endYear) + yearStepW * 0.48);
+          {/* Annual means: thin grey line under everything (broken at incomplete years) (broken at missing years) */}
+          {annualPaths.map((d, idx) => (
+            <path
+              key={`ann-path-${idx}`}
+              d={d}
+              fill="none"
+              stroke="#8A9096"
+              strokeWidth="1"
+              strokeLinejoin="round"
+              pathLength={1}
+              className="orc-century-draw-path"
+            />
+          ))}
+
+          {/* Individual annual data points */}
+          {data.records.map((rec) => {
+            if (rec.annual === null) return null;
+            const cx = xOfYear(rec.year);
+            const cy = yOfAnnual(rec.annual);
             return (
-              <g key={`gap-${span.startYear}`}>
-                <rect
-                  x={x1}
-                  y={padT + 1}
-                  width={Math.max(2.2, x2 - x1)}
-                  height={plotH - 2}
-                  fill="url(#orc-century-hatch)"
-                  stroke="#5E656C"
-                  strokeOpacity="0.45"
-                  strokeWidth="0.6"
-                />
-              </g>
+              <circle
+                key={`pt-${rec.year}`}
+                cx={cx}
+                cy={cy}
+                r={1.3}
+                fill="#8A9096"
+              />
             );
           })}
 
@@ -192,8 +186,8 @@ export function CenturySvg({
                 d={d}
                 fill="none"
                 stroke="#7FA8C4"
-                strokeOpacity="0.42"
-                strokeWidth="8.5"
+                strokeOpacity="0.3"
+                strokeWidth="7"
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 pathLength={1}
@@ -203,7 +197,7 @@ export function CenturySvg({
                 d={d}
                 fill="none"
                 stroke="#1E3E5C"
-                strokeWidth="2.4"
+                strokeWidth="2.8"
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 pathLength={1}
@@ -224,8 +218,6 @@ export function CenturySvg({
                 const y2 = yOfAnnual(
                   seg.intercept + (seg.slopePerDecade / 10) * seg.toYear
                 );
-                const midX = (x1 + x2) / 2;
-                const midY = (y1 + y2) / 2;
                 return (
                   <g key={`trend-seg-${idx}`}>
                     <line
@@ -234,58 +226,27 @@ export function CenturySvg({
                       x2={x2}
                       y2={y2}
                       stroke="#A4471F"
-                      strokeWidth="1.7"
-                      strokeDasharray="5 3.5"
+                      strokeWidth="2"
+                      strokeDasharray="6 3.5"
+                      strokeLinecap="round"
                     />
-                    <text
-                      x={midX}
-                      y={midY - 6}
-                      textAnchor="middle"
-                      fontSize="14"
-                      fontWeight="700"
-                      fill="#A4471F"
-                    >
-                      {formatSlope(seg.slopePerDecade)}
-                    </text>
                   </g>
                 );
               })}
             </g>
           )}
 
-          {/* Annual mean thin ink line (broken at missing years) */}
-          {annualPaths.map((d, idx) => (
-            <path
-              key={`ann-path-${idx}`}
-              d={d}
-              fill="none"
+          {/* Selected year, on top of every line */}
+          {selectedRecord.annual !== null && (
+            <circle
+              cx={xOfYear(selectedRecord.year)}
+              cy={yOfAnnual(selectedRecord.annual)}
+              r={3.8}
+              fill="#C0862F"
               stroke="#1F2A36"
-              strokeOpacity="0.72"
-              strokeWidth="1.05"
-              strokeLinejoin="round"
-              pathLength={1}
-              className="orc-century-draw-path"
+              strokeWidth={1.4}
             />
-          ))}
-
-          {/* Individual annual data points */}
-          {data.records.map((rec) => {
-            if (rec.annual === null) return null;
-            const cx = xOfYear(rec.year);
-            const cy = yOfAnnual(rec.annual);
-            const isSelected = rec.year === selectedYear;
-            return (
-              <circle
-                key={`pt-${rec.year}`}
-                cx={cx}
-                cy={cy}
-                r={isSelected ? 3.8 : 1.55}
-                fill={isSelected ? '#C0862F' : '#1F2A36'}
-                stroke={isSelected ? '#1F2A36' : 'none'}
-                strokeWidth={isSelected ? 1.4 : 0}
-              />
-            );
-          })}
+          )}
 
           {/* Active year cursor line */}
           <line

@@ -41,7 +41,8 @@ const FIELD_META: Record<ReadingKind, InstrumentMeta> = {
     label: 'Presión atmosférica',
     shortLabel: '2. Barómetro',
     unit: 'hPa',
-    min: 960,
+    // Same range as the barometer dial (950 to 1030 hPa).
+    min: 950,
     max: 1030,
     step: 0.1,
     instruction:

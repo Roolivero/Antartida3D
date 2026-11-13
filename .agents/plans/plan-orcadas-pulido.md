@@ -468,6 +468,20 @@ Orden por impacto. Capturas en el tablero «4 · UI y gráficos» del lienzo.
 
 **Verificación:** la base, más capturas antes y después de F1 a F6 en 1440 y 390 px, adjuntas al PR.
 
+> Enmienda (13 nov 2026): fase 7 hecha por Claude, sin delegar, a pedido de Lk.
+> - F1: se hizo en la fase 5 (`penguins.ts`).
+> - F2: el hielo crece desde la costa del escenario con una sola regla (`iceThreshold`), que usan las placas de cajas y el sombreador del agua, este a través del atributo `aCoast`. Hay placas sueltas de tamaño y forma variados, una placa firme que avanza desde la costa y la bahía cerrada con `seaIce = 1`. Los témpanos quedan quietos y más hundidos cuando la bahía está cerrada. El bote está en la playa, no sobre el hielo.
+> - F3: la tira de meses tiene barras de luz sobre una pista de 0 a 24 h, una franja de hielo marcada como simulación y su leyenda. En celular ya no la tapan los botones de capítulo, y su «Saber más» queda sobre los puntos de interés. El rótulo «Horizonte 0°» del arco del sol pasó a la franja de noche.
+> - F4: en el barómetro, las palabras van dentro del anillo de números, el visor muestra números sin «h» y el dial y el deslizador van de 950 a 1030 hPa. En el viento, el contador dice km/h y la veleta queda sin rótulo. En nubes, cada nube se recorta a su octava y el botón ya no se pisa con la ayuda. En el termómetro, el rótulo de la lupa pasó abajo y «menisco» ya no se corta.
+> - F5: la serie anual va en gris, la media móvil en azul y la tendencia en dos tramos, sin rótulos dentro del gráfico. Se quitaron las franjas rayadas: el año incompleto es un corte de la línea y lo dice la leyenda. Se reescribió la aserción de leyenda en `orcadas-century.spec.ts` porque el requisito cambió.
+> - F6: no queda glaciar, porque los cerros nevados cierran el escenario (fase 5). El istmo suma sendero de grava, piedras y manchones de nieve (`buildStageDetailBoxes`).
+> - F7: opción A. La bandera es una cadena de 5 segmentos de cajas animada en `useFrame`. Se borró el sombreador propio y el modelo quedó registrado en `SCENE_MODELS`.
+> - Nueva e2e G6: en la toma de entrada todos los puntos de interés quedan dentro de la pantalla, y el tope del zoom no pasa de 1,25 veces la distancia de entrada.
+> - Arreglos que encontró la e2e G6:
+>   - en celular horizontal la expedición ocupaba 600 px de alto por el `min-height` compartido de `.app`; ahora `.orc` se ajusta al alto de la pantalla, sin tocar `painted.css`;
+>   - los puntos de interés que caerían bajo la tira de meses se ocultan, salvo el que está activo.
+> - Verificación: `pnpm test` (225 core, 84 react-ui), `pnpm typecheck`, `pnpm build` y e2e de Orcadas (83 pasan y 13 se omiten).
+
 ---
 
 ## Fase 8 · Cierre · sin issue nuevo

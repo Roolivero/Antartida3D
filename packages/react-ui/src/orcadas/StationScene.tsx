@@ -13,7 +13,6 @@ import {
   BufferAttribute,
   BufferGeometry,
   Color,
-  DoubleSide,
   Group,
   InstancedMesh,
   Object3D,
@@ -34,6 +33,7 @@ import {
   DIORAMA_PROP_SCALE,
   DIORAMA_ELEMENTS,
   layoutOf,
+  worldCoastDistance,
   midMonthDayOfYear,
   shouldTick,
   solarAzimuthDeg,
@@ -58,6 +58,8 @@ import {
   BIRD_WING_ROOT,
   ELEPHANT_SEAL_BOXES,
   FLAGPOLE_BASE_BOXES,
+  FLAG_SEGMENT_BOXES,
+  FLAG_SEGMENT_WIDTH,
   ICEBERG_PINNACLE_BOXES,
   ICEBERG_TABULAR_BOXES,
   SEA_ICE_FLOE_BOXES,
@@ -72,15 +74,15 @@ import {
   buildModuleBoxes,
   buildOmondBoxes,
   buildRadioTowerBoxes,
+  buildStageDetailBoxes,
   createIsthmusTerrainGeometry,
   evaluateIsthmusTerrain,
   generateIcebergs,
+  floeVisibility,
   generateSeaIcePlates,
   generateSnowParticles,
 } from './stationModels.ts';
 import {
-  stationFlagFragmentShader,
-  stationFlagVertexShader,
   stationSkyFragmentShader,
   stationSkyVertexShader,
   stationTerrainFragmentShader,
@@ -229,6 +231,13 @@ function SkyAndLighting({
   );
 }
 
+/** Paths, loose rocks and snow patches of the stage: static boxes in one geometry. */
+function StageDetails() {
+  const geo = useMemo(() => buildBoxGeometry(buildStageDetailBoxes()), []);
+  useEffect(() => () => geo.dispose(), [geo]);
+  return <mesh geometry={geo} material={vehicleMaterial} />;
+}
+
 function IsthmusTerrain({
   sunDir,
   sunElevationDeg,
@@ -285,8 +294,13 @@ function BayOcean({
   reduced: boolean;
 }) {
   const waterGeo = useMemo(() => {
-    const g = new PlaneGeometry(200, 200, 40, 40);
+    // Fine enough near the stage for the shore-based ice and surf (about 1.25 units per cell).
+    const g = new PlaneGeometry(200, 200, 160, 160);
     g.rotateX(-Math.PI / 2);
+    const pos = g.attributes.position;
+    const coast = new Float32Array(pos.count);
+    for (let i = 0; i < pos.count; i++) coast[i] = worldCoastDistance(pos.getX(i), pos.getZ(i));
+    g.setAttribute('aCoast', new BufferAttribute(coast, 1));
     return g;
   }, []);
 
@@ -353,11 +367,12 @@ function BayOcean({
     if (!mesh) return;
     for (let i = 0; i < plates.length; i++) {
       const p = plates[i];
-      const cov = Math.max(0, Math.min(1, (seaIce - p.threshold + 0.18) / 0.22));
-      const r = p.radius * cov;
-      dummy.position.set(p.x, 0.04, p.z);
+      const cov = floeVisibility(p.threshold, seaIce);
+      // The floe model is about 1.8 units wide; it grows into place as it appears.
+      const k = cov / 0.9;
+      dummy.position.set(p.x, 0.02, p.z);
       dummy.rotation.set(0, p.rotY, 0);
-      dummy.scale.set(r, cov > 0.01 ? 1 : 0, r);
+      dummy.scale.set(p.sizeX * k, cov > 0.01 ? 0.8 : 0, p.sizeZ * k);
       dummy.updateMatrix();
       mesh.setMatrixAt(i, dummy.matrix);
     }
@@ -370,7 +385,7 @@ function BayOcean({
       if (!mesh) return;
       for (let i = 0; i < list.length; i++) {
         const b = list[i];
-        dummy.position.set(b.x, 0.35, b.z);
+        dummy.position.set(b.x, 0.35 - seaIce * 0.2, b.z);
         dummy.rotation.set(0.08, b.rotY, -0.05);
         dummy.scale.set(b.scaleX, b.scaleY, b.scaleZ);
         dummy.updateMatrix();
@@ -380,21 +395,22 @@ function BayOcean({
     };
     initBergs(tabularRef.current, tabularBergs);
     initBergs(pinnacleRef.current, pinnacleBergs);
-  }, [tabularBergs, pinnacleBergs, dummy]);
+  }, [tabularBergs, pinnacleBergs, dummy, seaIce]);
 
   useFrame(({ clock }) => {
     if (reduced) return;
     const t = clock.getElapsedTime();
     uniforms.uTime.value = t;
 
-    const damp = 1 - seaIce * 0.7;
+    // Icebergs stop rocking as the bay closes; frozen in, they sit lower in the ice.
+    const damp = 1 - seaIce;
     const updateBergs = (mesh: InstancedMesh | null, list: typeof tabularBergs) => {
       if (!mesh) return;
       for (let i = 0; i < list.length; i++) {
         const b = list[i];
         const bob = Math.sin(t * 1.1 + b.phase) * 0.08 * damp;
         const tilt = Math.cos(t * 0.9 + b.phase) * 0.04 * damp;
-        dummy.position.set(b.x, 0.35 + bob, b.z);
+        dummy.position.set(b.x, 0.35 - seaIce * 0.2 + bob, b.z);
         dummy.rotation.set(0.06 + tilt, b.rotY, -0.04 + tilt);
         dummy.scale.set(b.scaleX, b.scaleY, b.scaleZ);
         dummy.updateMatrix();
@@ -426,6 +442,46 @@ function BayOcean({
       />
     </group>
   );
+}
+
+/**
+ * The flag as a chain of 5 box segments: each one hangs from the end of the previous one, so a
+ * small turn at every hinge adds up to a wave along the cloth.
+ */
+function FlagChain({
+  geos,
+  jointRefs,
+  index,
+}: {
+  geos: readonly BufferGeometry[];
+  jointRefs: RefObject<(Group | null)[]>;
+  index: number;
+}) {
+  if (index >= geos.length) return null;
+  return (
+    <group
+      ref={(node) => {
+        jointRefs.current[index] = node;
+      }}
+      position={[index === 0 ? 0 : FLAG_SEGMENT_WIDTH, 0, 0]}
+    >
+      <mesh geometry={geos[index]} material={vehicleMaterial} />
+      <FlagChain geos={geos} jointRefs={jointRefs} index={index + 1} />
+    </group>
+  );
+}
+
+/** Turns each hinge of the flag: a travelling wave that grows and quickens with the wind. */
+function waveFlag(joints: (Group | null)[], t: number, windKmh: number) {
+  const strength = Math.min(1, windKmh / 60);
+  const amp = 0.06 + strength * 0.24;
+  const speed = 2.2 + strength * 5;
+  joints.forEach((joint, i) => {
+    if (!joint) return;
+    joint.rotation.y = Math.sin(t * speed - i * 1.1) * amp * (0.6 + i * 0.15);
+    // Light wind lets the free end droop a little.
+    joint.rotation.z = i === 0 ? 0 : -(1 - strength) * 0.05;
+  });
 }
 
 /** The boat model is 2.3 units long; the measured boat is 5 m. */
@@ -513,30 +569,8 @@ function StationElements({
   const vaneGeo = useMemo(() => buildBoxGeometry(WIND_VANE_BOXES), []);
   const cupsGeo = useMemo(() => buildBoxGeometry(WIND_CUPS_BOXES), []);
 
-  const flagGeo = useMemo(() => {
-    const g = new PlaneGeometry(1.75, 1.05, 16, 8);
-    g.translate(0.875, 0, 0);
-    return g;
-  }, []);
-
-  const flagUniforms = useMemo(
-    () => ({
-      uTime: { value: 0 },
-      uWindSpeed: { value: 20 },
-    }),
-    []
-  );
-
-  const flagMat = useMemo(
-    () =>
-      new ShaderMaterial({
-        vertexShader: stationFlagVertexShader,
-        fragmentShader: stationFlagFragmentShader,
-        uniforms: flagUniforms,
-        side: DoubleSide,
-      }),
-    [flagUniforms]
-  );
+  const flagGeos = useMemo(() => FLAG_SEGMENT_BOXES.map((boxes) => buildBoxGeometry(boxes)), []);
+  const flagJointRefs = useRef<(Group | null)[]>([]);
 
   useEffect(() => {
     return () => {
@@ -545,13 +579,12 @@ function StationElements({
       }
       vaneGeo.dispose();
       cupsGeo.dispose();
-      flagGeo.dispose();
-      flagMat.dispose();
+      for (const g of flagGeos) g.dispose();
     };
-  }, [geometries, vaneGeo, cupsGeo, flagGeo, flagMat]);
+  }, [geometries, vaneGeo, cupsGeo, flagGeos]);
 
   useLayoutEffect(() => {
-    flagUniforms.uWindSpeed.value = windKmh;
+    if (reduced) waveFlag(flagJointRefs.current, 0, windKmh);
     if (vaneRef.current) {
       vaneRef.current.rotation.y = (-windDirDeg * Math.PI) / 180;
     }
@@ -569,11 +602,11 @@ function StationElements({
       }
     }
     invalidate();
-  }, [buildings, windKmh, windDirDeg, reduced, flagUniforms, invalidate]);
+  }, [buildings, windKmh, windDirDeg, reduced, invalidate]);
 
   useFrame(({ clock }, delta) => {
     if (!reduced) {
-      flagUniforms.uTime.value = clock.getElapsedTime();
+      waveFlag(flagJointRefs.current, clock.getElapsedTime(), windKmh);
       if (cupsRef.current) {
         const spinRate = 0.6 + (windKmh / 15) * 3.2;
         cupsRef.current.rotation.y += delta * spinRate;
@@ -640,12 +673,9 @@ function StationElements({
               </>
             )}
             {el.id === 'flag' && (
-              <mesh
-                position={[0, 3.95, 0]}
-                rotation={[0, windToRad, 0]}
-                geometry={flagGeo}
-                material={flagMat}
-              />
+              <group position={[0, 3.95, 0]} rotation={[0, windToRad, 0]}>
+                <FlagChain geos={flagGeos} jointRefs={flagJointRefs} index={0} />
+              </group>
             )}
             </group>
           </group>
@@ -1059,6 +1089,12 @@ function StationCameraAndProjection({
     lastSize.current.width = size.width;
     lastSize.current.height = size.height;
 
+    // Dots never go under the month strip (it sits above them so its «Saber más» stays usable).
+    const strip = document.querySelector('.orc-month-strip-wrap');
+    const minY = strip
+      ? strip.getBoundingClientRect().bottom - overlay.getBoundingClientRect().top + 24
+      : 116;
+
     for (const spot of HOTSPOTS) {
       const btn = map.get(spot.id);
       if (!btn) continue;
@@ -1075,20 +1111,24 @@ function StationCameraAndProjection({
         projVec.y >= -yBound &&
         projVec.y <= yBound;
 
-      if (!visible) {
+      const rawSx = ((projVec.x + 1) * size.width) / 2;
+      const rawSy = ((-projVec.y + 1) * size.height) / 2;
+      // A dot that would sit under the month strip is hidden, except the focused one, which is
+      // pulled down; pulling them all would stack several dots on the same line.
+      const underStrip = rawSy < minY && spot.id !== focus;
+
+      if (!visible || underStrip) {
         btn.style.opacity = '0';
         btn.style.pointerEvents = 'none';
         continue;
       }
 
-      const rawSx = ((projVec.x + 1) * size.width) / 2;
-      const rawSy = ((-projVec.y + 1) * size.height) / 2;
       const maxX = size.width >= 900 ? size.width - 560 : size.width - 68;
       const maxY = isPortrait
         ? (panelExpanded ? size.height * 0.14 : size.height * 0.52)
         : size.height - 64;
       const sx = Math.max(58, Math.min(maxX, rawSx));
-      const sy = Math.max(116, Math.min(maxY, rawSy));
+      const sy = Math.max(Math.min(minY, maxY), Math.min(maxY, rawSy));
       btn.style.opacity = '1';
       btn.style.pointerEvents = 'auto';
       btn.style.left = '0px';
@@ -1243,6 +1283,7 @@ export const StationScene = memo(function StationScene({
           reduced={reduced}
         />
         <IsthmusTerrain sunDir={sunDir} sunElevationDeg={sunElevationDeg} />
+        <StageDetails />
         <BayOcean
           sunDir={sunDir}
           windKmh={windKmh}

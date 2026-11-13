@@ -5,6 +5,9 @@ import {
   buildModuleBoxes,
   buildOmondBoxes,
   buildRadioTowerBoxes,
+  FLAGPOLE_BASE_BOXES,
+  FLAG_SEGMENT_BOXES,
+  FLAG_SEGMENT_WIDTH,
 } from '../orcadas/stationModels.ts';
 import { assemblePenguinBoxes, buildRookeryBoxes } from '../orcadas/penguins.ts';
 
@@ -578,6 +581,15 @@ export const SCENE_MODELS: Readonly<Record<string, readonly Box[]>> = {
   },
   get orcadasChinstrap() {
     return assemblePenguinBoxes('chinstrap');
+  },
+  get orcadasFlag() {
+    // Pole and the 5 flag segments laid flat, side by side as at rest.
+    return [
+      ...FLAGPOLE_BASE_BOXES,
+      ...FLAG_SEGMENT_BOXES.flatMap((seg, i) =>
+        seg.map(([x, y, z, sx, sy, sz, c]) => [x + i * FLAG_SEGMENT_WIDTH, y + 3.95, z, sx, sy, sz, c] as Box)
+      ),
+    ];
   },
   get rookery() {
     return buildRookeryBoxes();
