@@ -150,7 +150,7 @@ Criterio de terminado del issue:
 
 > Enmienda: `sheetAfterDrag` recibe `floor` (`'closed'` por defecto, `'peek'` para Orcadas) en lugar de una función nueva. Con `floor = 'peek'` el `BottomSheet` es una región, no un diálogo, y Escape no lo cierra; acepta `size` y `onSize` para que Orcadas encuadre la escena. El arrastre hacia abajo en tamaño alto mira el scroll del contenedor bajo el dedo, no solo el de la hoja. En peek se ven el nombre del capítulo y el botón principal; al cambiar de parada o tocar un punto, vuelve a small. Los pasos 1 a 4 van en un solo commit porque comparten `OrcadasExpedition.tsx` y `orcadas.css`.
 
-### Paso 5 · Tira de meses compacta en celular
+### [x] Paso 5 · Tira de meses compacta en celular
 
 1. Con pantalla menor a 900 px en vertical, la tira se muestra como un chip con el mes actual, la barra de luz y la franja de hielo de ese mes, más «▾» (por ejemplo «Noviembre ▾»).
    - Al tocarlo se despliega la tira completa de 12 meses (el `MonthStrip` de hoy) en una capa con la leyenda y el «Saber más».
@@ -162,7 +162,9 @@ Criterio de terminado del issue:
 
 → verificar: `pnpm typecheck` y capturas de la toma de entrada en 390 y 360 px, con el chip cerrado y abierto.
 
-### Paso 6 · e2e, documentación y cierre
+> Enmienda: el chip también se usa en celular horizontal (844x390), donde la tira completa tapaba un tercio de la escena y escondía la bandera y el mástil. La tira completa queda solo en pantallas de 900 px o más que no son un celular acostado (`useMediaQuery` en `hooks.ts`). En horizontal hay una toma propia (`OVERVIEW_POSE_LANDSCAPE`), más cerca, porque con la de escritorio el punto de Casa Omond tapaba el del abrigo; los puntos no pasan bajo el panel lateral (se lee su borde) y Fuentes ocupa el lugar del panel en vez de la mitad de abajo.
+
+### [x] Paso 6 · e2e, documentación y cierre
 
 1. **Reescribir las e2e de Orcadas** (`packages/e2e/tests/orcadas*.spec.ts`), porque el requisito cambia; decir cuáles en el commit:
    - **recorrido completo solo con teclado:** Tab y Enter avanzan por las paradas y los capítulos;
@@ -176,6 +178,8 @@ Criterio de terminado del issue:
 3. **Suite completa:** `pnpm test`, `pnpm typecheck`, `pnpm build` y `pnpm e2e -- --trace off`.
 4. **Ensayo del video:** llegar, recorrer las paradas, una lectura de temperatura con un toque, viajar a 1903 y a hoy, y responder. Tiene que entrar en unos 90 segundos.
 5. **PR** con `Closes #61`, sin la línea «Generated with». Antes del PR: `git fetch` y `git rebase origin/main`.
+
+> Enmienda: además se pulieron Responder (eje con grados enteros, bitácora en una línea y el detalle de la observación plegado) y la toma de la bandera. «Saber más» de la tarjeta de parada ya no se remonta al cambiar de parada (perdía el foco con ← y →) y la bitácora usa el signo menos tipográfico, como el resto de los gráficos. El PR queda para cuando Lk lo revise.
 
 ## Riesgos y decisiones abiertas
 

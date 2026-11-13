@@ -108,13 +108,13 @@ pnpm bench           # benchmark de rendimiento
   - **Sitio y Monumento Histórico N.º 42:** Secretaría del Tratado Antártico. URL: [https://www.ats.aq/devph/en/apa-database/119](https://www.ats.aq/devph/en/apa-database/119). Fecha de consulta: 12 de noviembre de 2026.
   - **OpenStreetMap: edificios y costa de la Base Orcadas:** colaboradores de OpenStreetMap, trazado sobre imágenes Maxar 2019. URL: [https://www.openstreetmap.org/#map=18/-60.7378/-44.7375](https://www.openstreetmap.org/#map=18/-60.7378/-44.7375). Fecha de consulta: 12 de noviembre de 2026. Licencia: [ODbL 1.0](https://opendatacommons.org/licenses/odbl/1-0/) (© colaboradores de OpenStreetMap).
   - Las fuentes pendientes de verificación están en [`docs/orcadas-fuentes.md`](docs/orcadas-fuentes.md) y sus datos no se muestran en la interfaz.
-  - **Recorrido:** cuatro capítulos alrededor de una pregunta guía, «¿Cuánto cambió el clima de la isla Laurie en 120 años?»:
-    1. Llegar: la base y su ubicación.
-    2. Observar: una lectura con cuatro instrumentos.
-    3. Viajar: de 1903 a hoy con la serie del siglo.
+  - **Recorrido guiado:** cuatro capítulos alrededor de una pregunta guía, «¿Cuánto cambió el clima de la isla Laurie en 120 años?». Cada capítulo tiene unas pocas paradas: la cámara viaja a un punto de la base y una tarjeta muestra una frase corta con su fuente; «Siguiente» pasa a la parada siguiente y, en la última, al capítulo siguiente.
+    1. Llegar: el istmo, la bandera, Casa Omond y la pingüinera.
+    2. Observar: una lectura de temperatura tocando la lupa del termómetro. Presión, viento y nubes son opcionales.
+    3. Viajar: 1903, 1927, 1951 y hoy, con la serie del siglo.
     4. Responder: la lectura comparada con el mismo mes de todos los años.
 
-    La tira de meses de arriba cambia la luz y el hielo de la escena en cualquier capítulo.
+    Se recorre entero sin escribir ningún número. El resto de las fichas queda en «Saber más». La tira de meses cambia la luz y el hielo de la escena en cualquier capítulo; en el celular es un chip con el mes que se despliega, y el panel del capítulo se arrastra para agrandarlo o achicarlo hasta dejar solo su nombre y el botón principal.
   - **Dato real:** la serie de temperatura (SCAR READER), las fechas de la historia y la elevación.
   - **Simulación (rotulada):** la observación del día, el hielo de la bahía por mes y la fauna por mes.
   - **Cálculo:** las horas de luz, la media móvil y la tendencia en dos tramos (1904–1950 y 1951–2025).
@@ -139,6 +139,8 @@ En cumplimiento con las bases de la hackatón, se declara el uso de herramientas
   > Planificación, arquitectura, revisión y verificación de fuentes con Claude Code (modelo Claude Fable 5.2); implementación delegada a agentes de Antigravity (Gemini 4 Argon y Gemini 3.8 Flash) bajo revisión; búsqueda inicial de fuentes con Gemini 3.8 Flash, con cada fuente publicada abierta y confirmada después por el orquestador (Claude Code); la confirmación humana de cada fuente se hace en la revisión del PR; ninguna imagen ni texto generado se presenta como dato.
 - **Pulido de la expedición Estación Orcadas (#53):**
   > Auditoría, plan, revisión, verificación de fuentes y pulido visual con Claude Code (modelo Claude Opus 5.5); parte de la implementación delegada a Antigravity (Gemini 3.8 Flash) bajo revisión. Cada decisión de producto (cuatro capítulos, escenario de frente, selección de edificios) la aprobó quien lleva el issue. Las plantas de los edificios salen de OpenStreetMap (ODbL); ninguna imagen generada se presenta como dato.
+- **Recorrido guiado de la expedición Estación Orcadas (#61):**
+  > Plan, decisiones de diseño, revisión, verificación con capturas y parte de la implementación con Claude Code (modelo Claude Opus 5.5); implementación de los pasos delegada a Antigravity (Gemini 4 Hydrogen) bajo revisión. Cada frase de parada sale de una ficha con fuente verificada; no se agregaron datos nuevos.
 - **Resto del hemisferio sur en el mapa 3D (#42):**
   > Planificación, revisión y ajustes visuales con Claude Code (modelo Claude Opus 5.5); implementación de partes delegada a Antigravity (Gemini 3.8 Flash) bajo revisión. Las siluetas salen de Natural Earth y su color de Natural Earth II (ambos de dominio público); son contexto geográfico, no datos.
 - **Bordes del mapa 3D, resto del mundo hasta 60° N y gestos de la cámara (#46):**
