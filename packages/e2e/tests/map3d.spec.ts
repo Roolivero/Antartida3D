@@ -437,4 +437,27 @@ test.describe('3D relief view', () => {
 
     expect(hitInside).toBe(true);
   });
+
+  test('sea cards show the block model of their point, and the Drake card shows none (#50)', async ({ page }) => {
+    await page.goto('/');
+    const toggle = page.getByRole('group', { name: 'Modo de vista' });
+    await toggle.getByRole('button', { name: 'Relieve 3D' }).click();
+    await page.waitForSelector('canvas');
+    await page.waitForTimeout(1000);
+
+    const sheet = page.locator('.sheet[role="dialog"]');
+    const open = async (key: string) => {
+      // Markers can sit under another one or off screen: open the card without aiming at it.
+      await page.locator(`[data-key="${key}"] button`).evaluate((b: HTMLElement) => b.click());
+      await expect(sheet).toBeVisible();
+    };
+    for (const key of ['sea-ballena', 'sea-pinguino', 'sea-irizar', 'sea-tempano']) {
+      await open(key);
+      await expect(sheet.locator('.vpreview canvas')).toHaveCount(1);
+      await page.keyboard.press('Escape');
+      await expect(sheet).not.toBeVisible();
+    }
+    await open('sea-drake');
+    await expect(sheet.locator('.vpreview')).toHaveCount(0);
+  });
 });
