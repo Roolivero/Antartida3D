@@ -378,29 +378,17 @@ float valueNoise(vec2 p) {
   return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);
 }
 
-// Cellular Voronoi for faceted polygonal sea-ice floes and dark water leads
-vec3 voronoiIce(vec2 x) {
-  vec2 n = floor(x);
-  vec2 f = fract(x);
-  float md1 = 8.0;
-  float md2 = 8.0;
-  float cellId = 0.0;
-  for (int j = -1; j <= 1; j++) {
-    for (int i = -1; i <= 1; i++) {
-      vec2 g = vec2(float(i), float(j));
-      vec2 o = hash22(n + g);
-      vec2 r = g + (0.18 + 0.64 * o) - f;
-      float d = dot(r, r);
-      if (d < md1) {
-        md2 = md1;
-        md1 = d;
-        cellId = o.x;
-      } else if (d < md2) {
-        md2 = d;
-      }
-    }
+// Multi-octave value noise for continuous fast-ice texture and ragged edges
+float iceFbm(vec2 p) {
+  float v = 0.0;
+  float a = 0.5;
+  mat2 rot = mat2(0.8, -0.6, 0.6, 0.8);
+  for (int i = 0; i < 3; i++) {
+    v += a * valueNoise(p);
+    p = rot * p * 2.05 + vec2(3.1, 1.7);
+    a *= 0.5;
   }
-  return vec3(sqrt(md1), sqrt(md2) - sqrt(md1), cellId);
+  return v;
 }
 
 vec3 srgbToLinear(vec3 c) {
@@ -455,41 +443,48 @@ void main() {
     waterCol = mix(waterCol, mix(paperCol, iceCol, 0.72), surf * 0.75 * (1.0 - uSeaIce * 0.6));
   }
 
-  // Believable closing sea-ice pack (uSeaIce: 0 = open summer bay, 0.3 = shore floes, 0.7 = pack with leads, 1.0 = fast-ice sheet)
+  // Fast-ice sheet and closing bay (uSeaIce: 0 = open summer bay, 0.3 = shore floes, 0.7 = pack with leads, 1.0 = fast-ice sheet)
   if (uSeaIce > 0.02) {
-    vec3 vIce = voronoiIce(vWorldPos.xz * 0.36);
-    float edgeDist = vIce.y;
-    float cellId = vIce.z;
-
     // Fast ice: the solid sheet grows from the shore. Same rule as iceThreshold (stationModels.ts):
     // a point freezes at seaIce = offshore / 14 * 0.9; floes (box plates) drift in a band of 0.5
     // ahead of it, so the sheet covers the points that froze more than 0.5 earlier.
-    float freezeAt = clamp(offshore / 14.0 * 0.9 + (cellId - 0.5) * 0.12, 0.03, 0.97);
+    float edgeNoise = (iceFbm(vWorldPos.xz * 0.24 + vec2(1.7, 4.3)) - 0.5) * 0.34
+                    + (valueNoise(vWorldPos.xz * 0.58 + vec2(-3.1, 7.5)) - 0.5) * 0.16;
+    float freezeAt = clamp(offshore / 14.0 * 0.9 + edgeNoise, 0.03, 0.97);
     // With the bay closed (July to September) the whole bay is ice; floes stay as ridges on it.
-    float cellFrozen = max(smoothstep(0.0, 0.06, uSeaIce - 0.5 - freezeAt), smoothstep(0.9, 1.0, uSeaIce));
+    float sheetFrozen = max(smoothstep(0.0, 0.06, uSeaIce - 0.5 - freezeAt), smoothstep(0.9, 1.0, uSeaIce));
 
-    // Width of dark open-water leads between polygonal floes narrows as uSeaIce -> 1.0
-    float leadWidth = mix(0.22, 0.035, clamp(uSeaIce, 0.0, 1.0));
-    float floeInterior = smoothstep(leadWidth * 0.45, leadWidth, edgeDist);
-    float ridgeRim = smoothstep(leadWidth * 0.35, leadWidth * 0.75, edgeDist) * (1.0 - smoothstep(leadWidth * 0.75, leadWidth * 1.4, edgeDist));
+    // Continuous fast-ice sheet: white to pale blue-grey with soft low-frequency noise (snow cover vs bare ice)
+    float snowNoise = valueNoise(vWorldPos.xz * 0.08 + vec2(2.3, 5.7)) * 0.65
+                    + valueNoise(vWorldPos.xz * 0.18 + vec2(-4.2, 1.6)) * 0.35;
+    vec3 bareIceCol = mix(glacierCol * 1.15, iceCol, 0.52);
+    vec3 snowCoverCol = mix(iceCol, paperCol, 0.22);
+    vec3 sheetBase = mix(bareIceCol, snowCoverCol, smoothstep(0.32, 0.68, snowNoise));
 
-    // Faceted shading per polygonal ice floe
-    vec3 floeBase = mix(mix(glacierCol, iceCol, 0.72), iceCol, step(0.45, cellId) * 0.65);
-    floeBase = mix(floeBase, iceCol, ridgeRim * 0.65);
-    // Apply time-of-day tint to sea ice
-    floeBase *= mix(vec3(1.0), mix(goldCol, paperCol, 0.45), twilightFactor * 0.45);
-    floeBase *= mix(1.0, 0.55, nightFactor);
+    // Soft pressure-ridge streaks
+    float ridgeNoise = valueNoise(vec2(vWorldPos.x * 0.14 + vWorldPos.z * 0.08, vWorldPos.z * 0.32) + vec2(7.1, 2.8));
+    float ridgeStreak = smoothstep(0.68, 0.78, ridgeNoise) * (1.0 - smoothstep(0.78, 0.88, ridgeNoise));
+    sheetBase = mix(sheetBase, iceCol * 1.05, ridgeStreak * 0.45);
 
-    // At uSeaIce == 1.0, even the narrow leads freeze over into blue-grey pressure-ridge seams
-    float solidPack = smoothstep(0.82, 0.99, uSeaIce);
-    vec3 seamCol = mix(deepCol * 0.85, mix(glacierCol, inkCol, 0.38), solidPack);
-    vec3 iceSheetCol = mix(seamCol, floeBase, max(floeInterior, solidPack * 0.68));
+    // A few long thin irregular cracks/leads: ridged noise 1 - abs(noise) thresholded thin, darker blue-grey, not ink-black, not closed polygons
+    float cN1 = valueNoise(vWorldPos.xz * 0.11 + vec2(8.2, 3.4)) * 2.0 - 1.0;
+    float cN2 = valueNoise(vWorldPos.xz * 0.15 + vec2(-5.6, 9.1)) * 2.0 - 1.0;
+    float ridge1 = 1.0 - abs(cN1);
+    float ridge2 = 1.0 - abs(cN2);
+    float crack1 = smoothstep(0.955, 0.988, ridge1);
+    float crack2 = smoothstep(0.96, 0.992, ridge2);
+    // Large-scale mask so cracks are sparse long fissures, not dense grid
+    float crackMask = max(crack1, crack2) * smoothstep(0.42, 0.75, valueNoise(vWorldPos.xz * 0.045 + vec2(1.9, -6.3)));
+    // In deep winter (seaIce -> 1.0) cracks freeze over into seams
+    crackMask *= (1.0 - smoothstep(0.85, 1.0, uSeaIce) * 0.75);
+    vec3 leadCol = mix(deepCol * 1.1, glacierCol, 0.42);
+    sheetBase = mix(sheetBase, leadCol, crackMask * 0.82);
 
-    // Ink outline around ice floe polygons
-    float floeOutline = smoothstep(leadWidth * 0.25, leadWidth * 0.48, edgeDist) * (1.0 - floeInterior);
-    iceSheetCol = mix(iceSheetCol, inkCol, floeOutline * 0.38);
+    // Time-of-day tint to sea-ice sheet
+    sheetBase *= mix(vec3(1.0), mix(goldCol, paperCol, 0.45), twilightFactor * 0.45);
+    sheetBase *= mix(1.0, 0.55, nightFactor);
 
-    waterCol = mix(waterCol, iceSheetCol, cellFrozen * smoothstep(0.02, 0.14, uSeaIce));
+    waterCol = mix(waterCol, sheetBase, sheetFrozen * smoothstep(0.02, 0.14, uSeaIce));
   }
 
   // Distance fog toward horizon

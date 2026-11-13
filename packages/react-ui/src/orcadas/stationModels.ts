@@ -80,6 +80,8 @@ export interface SeaIcePlate {
   rotY: number;
   /** seaIce value from which the plate appears (it melts into the solid sheet later). */
   threshold: number;
+  /** Floe shape variant index (0..3). */
+  variant: number;
 }
 
 export interface IcebergInstance {
@@ -645,9 +647,9 @@ export const ICEBERG_PINNACLE_BOXES: readonly Box[] = new Proxy([] as unknown as
 });
 
 /**
- * Faceted voxel sea-ice floe (bandejón de hielo marino) with pressure-ridge rim. (16 boxes)
+ * Variant A: Faceted voxel sea-ice floe with pressure-ridge rim. (16 boxes)
  */
-export const SEA_ICE_FLOE_BOXES: readonly Box[] = [
+export const SEA_ICE_FLOE_A: readonly Box[] = [
   // Submerged pale-blue underside
   [0, -0.04, 0, 1.72, 0.08, 1.48, ICE_BLUE],
   // Main polygonal-feel stepped slab
@@ -669,6 +671,91 @@ export const SEA_ICE_FLOE_BOXES: readonly Box[] = [
   [0.98, 0.02, 0.36, 0.26, 0.08, 0.28, ICE],
   [-0.96, 0.02, -0.32, 0.28, 0.08, 0.24, WHITE],
   [0.18, 0.02, -0.94, 0.30, 0.08, 0.24, ICE_BLUE],
+];
+
+/**
+ * Variant B: Angular wedge floe with fractured edges and stepped snow drifts. (15 boxes)
+ */
+export const SEA_ICE_FLOE_B: readonly Box[] = [
+  // Submerged pale-blue underside
+  [-0.1, -0.04, 0, 1.6, 0.08, 1.4, ICE_BLUE],
+  // Main stepped wedge body
+  [0, 0.04, 0, 1.4, 0.10, 1.2, WHITE],
+  [-0.3, 0.04, 0.2, 1.1, 0.10, 0.9, ICE],
+  [-0.4, 0.04, -0.2, 1.0, 0.10, 0.8, WHITE],
+  [0.45, 0.04, 0.05, 0.65, 0.09, 0.7, ICE],
+  [0.8, 0.04, -0.05, 0.45, 0.08, 0.45, WHITE],
+  // Pressure ridges and snow crests
+  [-0.6, 0.11, 0.15, 0.35, 0.07, 0.8, WHITE],
+  [0.1, 0.11, 0.52, 0.85, 0.07, 0.28, ICE],
+  [0.05, 0.11, -0.48, 0.9, 0.07, 0.26, WHITE],
+  [-0.15, 0.10, 0.02, 0.65, 0.06, 0.55, WHITE],
+  [0.35, 0.12, -0.15, 0.3, 0.06, 0.25, ICE_BLUE],
+  // Small satellite brash fragments
+  [-0.85, 0.02, -0.5, 0.24, 0.07, 0.22, ICE],
+  [0.75, 0.02, 0.45, 0.26, 0.07, 0.25, WHITE],
+  [0.2, 0.02, -0.75, 0.22, 0.07, 0.22, ICE_BLUE],
+  [-0.2, 0.02, 0.8, 0.25, 0.07, 0.22, WHITE],
+];
+
+/**
+ * Variant C: Elongated lobed floe with indented perimeter and central snow hummock. (15 boxes)
+ */
+export const SEA_ICE_FLOE_C: readonly Box[] = [
+  // Submerged underside
+  [0, -0.04, 0, 1.9, 0.08, 1.1, ICE_BLUE],
+  // Elongated stepped body
+  [0, 0.04, 0, 1.8, 0.10, 1.0, WHITE],
+  [-0.45, 0.04, 0.15, 0.9, 0.10, 0.9, ICE],
+  [0.45, 0.04, -0.12, 0.95, 0.10, 0.85, WHITE],
+  [-0.1, 0.04, -0.25, 1.1, 0.09, 0.65, ICE],
+  [0.15, 0.04, 0.25, 1.0, 0.09, 0.65, WHITE],
+  // Raised rims and snow drifts
+  [-0.8, 0.10, 0.05, 0.28, 0.06, 0.75, WHITE],
+  [0.82, 0.10, -0.05, 0.26, 0.06, 0.68, ICE],
+  [0.05, 0.10, 0.44, 0.95, 0.06, 0.25, WHITE],
+  [-0.05, 0.10, -0.44, 0.95, 0.06, 0.25, ICE],
+  [-0.25, 0.11, 0.02, 0.55, 0.07, 0.45, WHITE],
+  [0.35, 0.12, 0.08, 0.32, 0.07, 0.28, ICE_BLUE],
+  // Brash chunks
+  [-1.02, 0.02, 0.32, 0.25, 0.07, 0.22, ICE_BLUE],
+  [1.02, 0.02, -0.28, 0.24, 0.07, 0.24, WHITE],
+  [0.48, 0.02, 0.58, 0.22, 0.07, 0.20, ICE],
+];
+
+/**
+ * Variant D: Composite floe of two fused irregular pans with pressure rubble seam. (16 boxes)
+ */
+export const SEA_ICE_FLOE_D: readonly Box[] = [
+  // Submerged underside
+  [0, -0.04, 0, 1.6, 0.08, 1.5, ICE_BLUE],
+  // Two main fused pans
+  [-0.38, 0.04, -0.05, 0.95, 0.10, 1.25, WHITE],
+  [0.38, 0.04, 0.08, 0.92, 0.10, 1.28, ICE],
+  [-0.1, 0.04, 0.35, 0.8, 0.09, 0.75, WHITE],
+  [0.1, 0.04, -0.35, 0.78, 0.09, 0.72, ICE],
+  // Pressure ridge seam where two pans fused
+  [0.02, 0.12, 0, 0.22, 0.09, 1.2, WHITE],
+  [0.05, 0.14, 0.15, 0.18, 0.07, 0.45, ICE_BLUE],
+  [-0.02, 0.13, -0.25, 0.16, 0.06, 0.5, WHITE],
+  // Perimeter ridges and hummocks
+  [-0.75, 0.10, -0.1, 0.28, 0.06, 0.82, ICE],
+  [0.75, 0.10, 0.15, 0.26, 0.06, 0.85, WHITE],
+  [-0.35, 0.11, 0.45, 0.5, 0.06, 0.25, WHITE],
+  [0.32, 0.11, -0.48, 0.52, 0.06, 0.24, ICE],
+  // Satellite brash fragments
+  [-0.88, 0.02, 0.52, 0.24, 0.07, 0.24, ICE],
+  [0.85, 0.02, -0.55, 0.25, 0.07, 0.22, ICE_BLUE],
+  [-0.15, 0.02, -0.85, 0.26, 0.07, 0.24, WHITE],
+  [0.2, 0.02, 0.88, 0.24, 0.07, 0.24, WHITE],
+];
+
+export const SEA_ICE_FLOE_BOXES = SEA_ICE_FLOE_A;
+export const SEA_ICE_FLOE_VARIANTS: readonly (readonly Box[])[] = [
+  SEA_ICE_FLOE_A,
+  SEA_ICE_FLOE_B,
+  SEA_ICE_FLOE_C,
+  SEA_ICE_FLOE_D,
 ];
 
 // ============================================================================
@@ -803,7 +890,7 @@ function slideSnow(x: number, z: number): number {
   const [dx, dz] = SLIDE_DIRECTION;
   const along = (x - cx) * dx + (z - cz) * dz;
   const across = Math.abs((x - cx) * dz - (z - cz) * dx);
-  return 0.65 * (1 - smoothstep(0.45, 0.8, across)) * smoothstep(0.8, 1.4, along) * (1 - smoothstep(4.2, 5, along));
+  return 0.55 * (1 - smoothstep(0.32, 0.5, across)) * smoothstep(0.8, 1.4, along) * (1 - smoothstep(4.2, 5, along));
 }
 
 /** Unit vector from the knoll to the nearest water (down the coast-distance gradient). */
@@ -879,6 +966,7 @@ export function generateSeaIcePlates(seed = 190406): SeaIcePlate[] {
         sizeZ: size / aspect,
         rotY,
         threshold: iceThreshold(-d, jitter),
+        variant: Math.floor(rng() * 4),
       });
     }
   }
@@ -975,9 +1063,13 @@ export function buildStageDetailBoxes(seed = 190415): Box[] {
       const sz = 0.08 + rng() ** 2 * 0.26;
       const col = [ROCK, ROCK_DARK, ROCK_LIGHT][Math.floor(rng() * 3)];
       boxes.push([x, y + sz * 0.35, z, sz * (1 + rng() * 0.6), sz * 0.7, sz * (0.8 + rng() * 0.5), col]);
-    } else if (d > 0.8) {
-      const w = 0.4 + rng() * 0.9;
-      boxes.push([x, y + 0.012, z, w, 0.025, w * (0.4 + rng() * 0.4), rng() < 0.5 ? WHITE : ICE]);
+    } else if (d > 0.8 && rng() < 0.45) {
+      // Old snow lingers in small irregular drifts: two or three overlapping thin slabs.
+      const w = 0.22 + rng() * 0.32;
+      const col = rng() < 0.5 ? WHITE : ICE;
+      boxes.push([x, y + 0.012, z, w, 0.025, w * 0.6, col]);
+      boxes.push([x + w * 0.35, y + 0.014, z + w * 0.18, w * 0.6, 0.025, w * 0.45, col]);
+      if (rng() < 0.5) boxes.push([x - w * 0.3, y + 0.013, z - w * 0.15, w * 0.45, 0.025, w * 0.35, col]);
     }
   }
   return boxes;

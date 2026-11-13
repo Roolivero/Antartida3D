@@ -8,8 +8,13 @@ import {
   FLAGPOLE_BASE_BOXES,
   FLAG_SEGMENT_BOXES,
   FLAG_SEGMENT_WIDTH,
+  SEA_ICE_FLOE_A,
+  SEA_ICE_FLOE_B,
+  SEA_ICE_FLOE_C,
+  SEA_ICE_FLOE_D,
 } from '../orcadas/stationModels.ts';
 import { assemblePenguinBoxes, buildRookeryBoxes } from '../orcadas/penguins.ts';
+import { assembleWeddellSealBoxes, assembleElephantSealBoxes } from '../orcadas/seals.ts';
 
 // Approximate colors. The models are illustrations, not portraits: one unit is about the length of the model.
 const BLACK = 0x1f2a36;
@@ -593,6 +598,24 @@ export const SCENE_MODELS: Readonly<Record<string, readonly Box[]>> = {
   },
   get rookery() {
     return buildRookeryBoxes();
+  },
+  get orcadasFloeA() {
+    return SEA_ICE_FLOE_A;
+  },
+  get orcadasFloeB() {
+    return SEA_ICE_FLOE_B;
+  },
+  get orcadasFloeC() {
+    return SEA_ICE_FLOE_C;
+  },
+  get orcadasFloeD() {
+    return SEA_ICE_FLOE_D;
+  },
+  get orcadasWeddellSeal() {
+    return assembleWeddellSealBoxes();
+  },
+  get orcadasElephantSeal() {
+    return assembleElephantSealBoxes();
   },
 };
 

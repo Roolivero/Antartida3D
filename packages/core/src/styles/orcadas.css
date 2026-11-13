@@ -989,14 +989,17 @@ details.orc-more > summary:focus-visible {
 }
 
 .orc-month-legend {
-  display: flex;
+  display: inline-flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 4px 6px;
-  margin: 3px 2px 0;
+  margin: 4px 0 0;
+  padding: 2px 8px;
   font-size: 11px;
+  font-weight: 700;
   color: var(--ink);
-  text-shadow: 0 0 3px var(--paper), 0 0 2px var(--paper);
+  background: rgba(251, 244, 230, 0.92);
+  border-radius: 6px;
 }
 
 .orc-month-legend-sun,
@@ -1267,6 +1270,13 @@ details.orc-more > summary:focus-visible {
   padding: 0 14px;
 }
 
+/* The primary button fills the bar, so it is centred whether «Atrás» is there or not. */
+.orc-panel .orc-bar .btn.primary {
+  flex: 1 1 auto;
+  width: auto;
+  max-width: none;
+}
+
 .orc-panel .orc-obs-status {
   display: block;
   padding: 0 14px 8px;
@@ -1518,7 +1528,11 @@ details.orc-more > summary:focus-visible {
     font-size: 26px;
   }
 
-  .orc-hs .orc-hs-lbl {
+  /* Only the spots that matter in this chapter keep their label; the rest show it on hover or
+     focus, so six labels do not compete with the scene. */
+  .orc-hs:not(.is-dimmed) .orc-hs-lbl,
+  .orc-hs:hover .orc-hs-lbl,
+  .orc-hs:focus-visible .orc-hs-lbl {
     display: inline-block;
   }
 
@@ -1647,7 +1661,9 @@ details.orc-more > summary:focus-visible {
     bottom: 8px;
   }
 
-  .orc-hs .orc-hs-lbl {
+  .orc-hs:not(.is-dimmed) .orc-hs-lbl,
+  .orc-hs:hover .orc-hs-lbl,
+  .orc-hs:focus-visible .orc-hs-lbl {
     display: inline-block;
   }
 }

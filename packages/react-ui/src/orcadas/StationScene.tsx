@@ -56,18 +56,17 @@ import { PenguinColony } from './PenguinColony.tsx';
 import { beachPoint } from './penguins.ts';
 import {
   BIRD_WING_ROOT,
-  ELEPHANT_SEAL_BOXES,
   FLAGPOLE_BASE_BOXES,
   FLAG_SEGMENT_BOXES,
   FLAG_SEGMENT_WIDTH,
   ICEBERG_PINNACLE_BOXES,
   ICEBERG_TABULAR_BOXES,
-  SEA_ICE_FLOE_BOXES,
+  SEA_ICE_FLOE_VARIANTS,
   SKUA_MODEL,
   SNOW_PETREL_MODEL,
   STATION_BOAT_BOXES,
   STEVENSON_SCREEN_BOXES,
-  WEDDELL_SEAL_BOXES,
+  VOXEL_PALETTE,
   WIND_CUPS_BOXES,
   WIND_MAST_BASE_BOXES,
   WIND_VANE_BOXES,
@@ -81,7 +80,26 @@ import {
   floeVisibility,
   generateSeaIcePlates,
   generateSnowParticles,
+  type SeaIcePlate,
 } from './stationModels.ts';
+import {
+  ELEPHANT_FLIPPER_L,
+  ELEPHANT_FLIPPER_R,
+  ELEPHANT_JAW,
+  ELEPHANT_NECK,
+  ELEPHANT_TAIL,
+  WEDDELL_FLIPPER_L,
+  WEDDELL_FLIPPER_R,
+  WEDDELL_NECK,
+  WEDDELL_TAIL,
+  buildSealColony,
+  elephantSealParts,
+  residentPose as sealResidentPose,
+  restPose as restSealPose,
+  travellerPose as sealTravellerPose,
+  weddellSealParts,
+  type SealPose,
+} from './seals.ts';
 import {
   stationSkyFragmentShader,
   stationSkyVertexShader,
@@ -326,8 +344,18 @@ function BayOcean({
   );
 
   const plates = useMemo(() => generateSeaIcePlates(190406), []);
-  const plateGeo = useMemo(() => buildBoxGeometry(SEA_ICE_FLOE_BOXES), []);
-  const platesRef = useRef<InstancedMesh>(null);
+  const floeGeos = useMemo(
+    () => SEA_ICE_FLOE_VARIANTS.map((boxes) => buildBoxGeometry(boxes)),
+    []
+  );
+  const variantPlates = useMemo(() => {
+    const list: SeaIcePlate[][] = [[], [], [], []];
+    for (const p of plates) {
+      list[p.variant % 4].push(p);
+    }
+    return list;
+  }, [plates]);
+  const platesRefs = useRef<(InstancedMesh | null)[]>([]);
 
   const icebergs = useMemo(() => generateIcebergs(190409), []);
   const tabularBergs = useMemo(
@@ -348,11 +376,11 @@ function BayOcean({
     return () => {
       waterGeo.dispose();
       waterMat.dispose();
-      plateGeo.dispose();
+      for (const g of floeGeos) g.dispose();
       tabularGeo.dispose();
       pinnacleGeo.dispose();
     };
-  }, [waterGeo, waterMat, plateGeo, tabularGeo, pinnacleGeo]);
+  }, [waterGeo, waterMat, floeGeos, tabularGeo, pinnacleGeo]);
 
   useLayoutEffect(() => {
     uniforms.uSunDir.value.copy(sunDir);
@@ -363,21 +391,34 @@ function BayOcean({
 
   // Update sea-ice pancake plates whenever seaIce changes
   useLayoutEffect(() => {
-    const mesh = platesRef.current;
-    if (!mesh) return;
-    for (let i = 0; i < plates.length; i++) {
-      const p = plates[i];
-      const cov = floeVisibility(p.threshold, seaIce);
-      // The floe model is about 1.8 units wide; it grows into place as it appears.
-      const k = cov / 0.9;
-      dummy.position.set(p.x, 0.02, p.z);
-      dummy.rotation.set(0, p.rotY, 0);
-      dummy.scale.set(p.sizeX * k, cov > 0.01 ? 0.8 : 0, p.sizeZ * k);
-      dummy.updateMatrix();
-      mesh.setMatrixAt(i, dummy.matrix);
-    }
-    mesh.instanceMatrix.needsUpdate = true;
-  }, [plates, seaIce, dummy]);
+    const isClosed = seaIce >= 0.9;
+    variantPlates.forEach((group, v) => {
+      const mesh = platesRefs.current[v];
+      if (!mesh) return;
+      for (let i = 0; i < group.length; i++) {
+        const p = group[i];
+        if (isClosed) {
+          // On the closed sheet (seaIce >= 0.9) keep only about 1 in 6 as low rubble, rest hidden
+          if (i % 6 === 0) {
+            dummy.position.set(p.x, 0.015, p.z);
+            dummy.rotation.set(0, p.rotY, 0);
+            dummy.scale.set(p.sizeX * 0.65, 0.22, p.sizeZ * 0.65);
+          } else {
+            dummy.scale.set(0, 0, 0);
+          }
+        } else {
+          const cov = floeVisibility(p.threshold, seaIce);
+          const k = cov / 0.9;
+          dummy.position.set(p.x, 0.02, p.z);
+          dummy.rotation.set(0, p.rotY, 0);
+          dummy.scale.set(p.sizeX * k, cov > 0.01 ? 0.8 : 0, p.sizeZ * k);
+        }
+        dummy.updateMatrix();
+        mesh.setMatrixAt(i, dummy.matrix);
+      }
+      mesh.instanceMatrix.needsUpdate = true;
+    });
+  }, [variantPlates, seaIce, dummy]);
 
   // Update icebergs initially and bob in useFrame when !reduced
   useLayoutEffect(() => {
@@ -425,11 +466,16 @@ function BayOcean({
   return (
     <group>
       <mesh geometry={waterGeo} material={waterMat} position={[0, 0, 0]} />
-      <instancedMesh
-        ref={platesRef}
-        args={[plateGeo, vehicleMaterial, plates.length]}
-        frustumCulled={false}
-      />
+      {variantPlates.map((group, v) => (
+        <instancedMesh
+          key={v}
+          ref={(node) => {
+            platesRefs.current[v] = node;
+          }}
+          args={[floeGeos[v], vehicleMaterial, group.length]}
+          frustumCulled={false}
+        />
+      ))}
       <instancedMesh
         ref={tabularRef}
         args={[tabularGeo, vehicleMaterial, tabularBergs.length]}
@@ -501,15 +547,18 @@ function StationElements({
   windKmh,
   windDirDeg,
   reduced,
+  seaIce,
 }: {
   buildings: readonly BuildingId[];
   isNight: boolean;
   windKmh: number;
   windDirDeg: number;
   reduced: boolean;
+  seaIce: number;
 }) {
   const vaneRef = useRef<Group>(null);
   const cupsRef = useRef<Group>(null);
+  const boatRef = useRef<Group>(null);
   const elementRefs = useRef<Record<string, Group | null>>({});
 
   const presences = useRef<Record<BuildingId, number>>({
@@ -523,9 +572,100 @@ function StationElements({
 
   const invalidate = useThree((s) => s.invalidate);
 
+  const buildingElements = useMemo(
+    () => DIORAMA_ELEMENTS.filter((e) => e.kind !== 'boat'),
+    []
+  );
+
+  const boatLayout = useMemo(() => layoutOf('boat'), []);
+  const [bx, , bz] = boatLayout.position;
+  const bRotY = boatLayout.rotationY;
+  const isFrozen = seaIce >= 0.5;
+
+  // Pulled up for the winter onto the flat gravel above the beach, so the chocks stay short.
+  const boatBeachRest = useMemo(() => {
+    const [bx, bz] = beachPoint([boatLayout.position[0], boatLayout.position[2]], 1.9);
+    const c = Math.cos(bRotY);
+    const s = Math.sin(bRotY);
+    let maxGroundY = -Infinity;
+    for (let u = -0.7; u <= 0.7; u += 0.08) {
+      for (let v = -0.25; v <= 0.25; v += 0.06) {
+        const wx = bx + u * c + v * s;
+        const wz = bz - u * s + v * c;
+        const gy = evaluateIsthmusTerrain(wx, wz).y;
+        if (gy > maxGroundY) maxGroundY = gy;
+      }
+    }
+    const chockTopY = maxGroundY + 0.04;
+    const chockBoxes: Box[] = [];
+    for (const u of [0.35, -0.35]) {
+      const wx = bx + u * c;
+      const wz = bz - u * s;
+      const gy = evaluateIsthmusTerrain(wx, wz).y;
+      const h = Math.max(0.04, chockTopY - gy);
+      const midY = gy + h / 2;
+      chockBoxes.push(
+        [wx, midY, wz, 0.12, h, 0.52, VOXEL_PALETTE.WOOD],
+        [wx + 0.03 * c, chockTopY - 0.02, wz - 0.03 * s + 0.22, 0.14, 0.06, 0.1, VOXEL_PALETTE.WOOD_LIGHT],
+        [wx + 0.03 * c, chockTopY - 0.02, wz - 0.03 * s - 0.22, 0.14, 0.06, 0.1, VOXEL_PALETTE.WOOD_LIGHT]
+      );
+    }
+    return { x: bx, z: bz, chockTopY, chockGeo: buildBoxGeometry(chockBoxes) };
+  }, [boatLayout, bRotY]);
+
+  const mooredPoint = useMemo(() => {
+    const pt = beachPoint([bx, bz], -0.9);
+    return [pt[0], -0.02, pt[1]] as const;
+  }, [bx, bz]);
+
+  const bollardGeo = useMemo(() => {
+    const gy = evaluateIsthmusTerrain(bx, bz).y;
+    const boxes: Box[] = [
+      [bx, gy + 0.12, bz, 0.1, 0.24, 0.1, VOXEL_PALETTE.WOOD],
+      [bx, gy + 0.23, bz, 0.14, 0.04, 0.14, VOXEL_PALETTE.WOOD_LIGHT],
+    ];
+    return buildBoxGeometry(boxes);
+  }, [bx, bz]);
+
+  const mooringLineGeo = useMemo(() => {
+    const bowX = mooredPoint[0] + 1.18 * BOAT_SCALE * Math.cos(bRotY);
+    const bowY = mooredPoint[1] + 0.36 * BOAT_SCALE;
+    const bowZ = mooredPoint[2] - 1.18 * BOAT_SCALE * Math.sin(bRotY);
+    const bollardX = bx;
+    const bollardY = evaluateIsthmusTerrain(bx, bz).y + 0.22;
+    const bollardZ = bz;
+    const boxes: Box[] = [];
+    const segments = 8;
+    for (let i = 0; i < segments; i++) {
+      const t0 = i / segments;
+      const t1 = (i + 1) / segments;
+      const x0 = bowX + (bollardX - bowX) * t0;
+      const y0 = bowY + (bollardY - bowY) * t0 - Math.sin(t0 * Math.PI) * 0.08;
+      const z0 = bowZ + (bollardZ - bowZ) * t0;
+      const x1 = bowX + (bollardX - bowX) * t1;
+      const y1 = bowY + (bollardY - bowY) * t1 - Math.sin(t1 * Math.PI) * 0.08;
+      const z1 = bowZ + (bollardZ - bowZ) * t1;
+      const mx = (x0 + x1) / 2;
+      const my = (y0 + y1) / 2;
+      const mz = (z0 + z1) / 2;
+      boxes.push([
+        mx,
+        my,
+        mz,
+        Math.max(0.025, Math.abs(x1 - x0) + 0.015),
+        Math.max(0.025, Math.abs(y1 - y0) + 0.015),
+        Math.max(0.025, Math.abs(z1 - z0) + 0.015),
+        VOXEL_PALETTE.CREAM,
+      ]);
+    }
+    return buildBoxGeometry(boxes);
+  }, [mooredPoint, bx, bz, bRotY]);
+
+  const boatGeo = useMemo(() => buildBoxGeometry(STATION_BOAT_BOXES), []);
+
   const geometries = useMemo(() => {
     const map = new Map<string, BufferGeometry>();
-    for (const el of DIORAMA_ELEMENTS) {
+    for (const el of buildingElements) {
       let boxes: readonly Box[];
       const [length, width] = layoutOf(el.id).footprint;
       const height = el.heightM / DIORAMA_METERS_PER_UNIT;
@@ -549,9 +689,6 @@ function StationElements({
         case 'screen':
           boxes = STEVENSON_SCREEN_BOXES;
           break;
-        case 'boat':
-          boxes = STATION_BOAT_BOXES;
-          break;
         case 'windMast':
           boxes = WIND_MAST_BASE_BOXES;
           break;
@@ -564,7 +701,7 @@ function StationElements({
       map.set(el.id, buildBoxGeometry(boxes));
     }
     return map;
-  }, [isNight]);
+  }, [buildingElements, isNight]);
 
   const vaneGeo = useMemo(() => buildBoxGeometry(WIND_VANE_BOXES), []);
   const cupsGeo = useMemo(() => buildBoxGeometry(WIND_CUPS_BOXES), []);
@@ -580,19 +717,32 @@ function StationElements({
       vaneGeo.dispose();
       cupsGeo.dispose();
       for (const g of flagGeos) g.dispose();
+      boatBeachRest.chockGeo.dispose();
+      bollardGeo.dispose();
+      mooringLineGeo.dispose();
+      boatGeo.dispose();
     };
-  }, [geometries, vaneGeo, cupsGeo, flagGeos]);
+  }, [geometries, vaneGeo, cupsGeo, flagGeos, boatBeachRest, bollardGeo, mooringLineGeo, boatGeo]);
 
   useLayoutEffect(() => {
     if (reduced) waveFlag(flagJointRefs.current, 0, windKmh);
     if (vaneRef.current) {
       vaneRef.current.rotation.y = (-windDirDeg * Math.PI) / 180;
     }
+    if (boatRef.current) {
+      if (isFrozen) {
+        boatRef.current.position.set(boatBeachRest.x, boatBeachRest.chockTopY, boatBeachRest.z);
+        boatRef.current.rotation.set(0, bRotY, 0);
+      } else {
+        boatRef.current.position.set(mooredPoint[0], mooredPoint[1], mooredPoint[2]);
+        boatRef.current.rotation.set(0, bRotY, 0);
+      }
+    }
     if (reduced) {
       for (const id of ERA_BUILDING_IDS) {
         presences.current[id] = buildings.includes(id) ? 1 : 0;
       }
-      for (const el of DIORAMA_ELEMENTS) {
+      for (const el of buildingElements) {
         const grp = elementRefs.current[el.id];
         if (grp) {
           const p = el.era ? (buildings.includes(el.era) ? 1 : 0) : 1;
@@ -602,7 +752,7 @@ function StationElements({
       }
     }
     invalidate();
-  }, [buildings, windKmh, windDirDeg, reduced, invalidate]);
+  }, [buildings, windKmh, windDirDeg, reduced, invalidate, isFrozen, bx, bz, bRotY, boatBeachRest, mooredPoint, buildingElements]);
 
   useFrame(({ clock }, delta) => {
     if (!reduced) {
@@ -610,6 +760,15 @@ function StationElements({
       if (cupsRef.current) {
         const spinRate = 0.6 + (windKmh / 15) * 3.2;
         cupsRef.current.rotation.y += delta * spinRate;
+      }
+      if (!isFrozen && boatRef.current) {
+        const t = clock.getElapsedTime();
+        const swell = Math.min(1.0, Math.max(0.12, windKmh / 35));
+        const bob = Math.sin(t * 1.8) * 0.032 * swell;
+        const roll = Math.cos(t * 1.4) * 0.055 * swell;
+        const pitch = Math.sin(t * 1.1 + 0.4) * 0.024 * swell;
+        boatRef.current.position.set(mooredPoint[0], mooredPoint[1] + bob, mooredPoint[2]);
+        boatRef.current.rotation.set(pitch, bRotY, roll);
       }
     }
 
@@ -626,7 +785,7 @@ function StationElements({
       presences.current[id] = next;
     }
 
-    for (const el of DIORAMA_ELEMENTS) {
+    for (const el of buildingElements) {
       const grp = elementRefs.current[el.id];
       if (!grp) continue;
       const p = el.era ? presences.current[el.era] : 1;
@@ -642,67 +801,94 @@ function StationElements({
 
   return (
     <group>
-      {DIORAMA_ELEMENTS.map((el) => {
+      {buildingElements.map((el) => {
         const layout = layoutOf(el.id);
         const geo = geometries.get(el.id);
-        // Instruments and the flag are enlarged so they can be seen (declared in the scene
-        // label); the boat model is drawn at its real length and rests on the beach.
         const isProp = el.kind === 'screen' || el.kind === 'windMast' || el.kind === 'flag';
-        const scale = isProp ? DIORAMA_PROP_SCALE : el.kind === 'boat' ? BOAT_SCALE : 1;
+        const scale = isProp ? DIORAMA_PROP_SCALE : 1;
         const [x, y, z] = layout.position;
-        const groundY = el.kind === 'boat' ? evaluateIsthmusTerrain(x, z).y : y;
         return (
           <group
             key={el.id}
             ref={(node) => {
               elementRefs.current[el.id] = node;
             }}
-            position={[x, groundY, z]}
+            position={[x, y, z]}
             rotation={[0, layout.rotationY, 0]}
           >
             <group scale={scale}>
-            {geo && <mesh geometry={geo} material={vehicleMaterial} />}
-            {el.id === 'windMast' && (
-              <>
-                <group ref={vaneRef} position={[0, 3.85, 0]}>
-                  <mesh geometry={vaneGeo} material={vehicleMaterial} />
+              {geo && <mesh geometry={geo} material={vehicleMaterial} />}
+              {el.id === 'windMast' && (
+                <>
+                  <group ref={vaneRef} position={[0, 3.85, 0]}>
+                    <mesh geometry={vaneGeo} material={vehicleMaterial} />
+                  </group>
+                  <group ref={cupsRef} position={[0, 4.25, 0]}>
+                    <mesh geometry={cupsGeo} material={vehicleMaterial} />
+                  </group>
+                </>
+              )}
+              {el.id === 'flag' && (
+                <group position={[0, 3.95, 0]} rotation={[0, windToRad, 0]}>
+                  <FlagChain geos={flagGeos} jointRefs={flagJointRefs} index={0} />
                 </group>
-                <group ref={cupsRef} position={[0, 4.25, 0]}>
-                  <mesh geometry={cupsGeo} material={vehicleMaterial} />
-                </group>
-              </>
-            )}
-            {el.id === 'flag' && (
-              <group position={[0, 3.95, 0]} rotation={[0, windToRad, 0]}>
-                <FlagChain geos={flagGeos} jointRefs={flagJointRefs} index={0} />
-              </group>
-            )}
+              )}
             </group>
           </group>
         );
       })}
+
+      {/* Whaleboat: pulled up on chocks when frozen, moored off beach when open */}
+      <mesh geometry={bollardGeo} material={vehicleMaterial} />
+      {!isFrozen && <mesh geometry={mooringLineGeo} material={vehicleMaterial} />}
+      {isFrozen && <mesh geometry={boatBeachRest.chockGeo} material={vehicleMaterial} />}
+      <group
+        ref={boatRef}
+        position={isFrozen ? [boatBeachRest.x, boatBeachRest.chockTopY, boatBeachRest.z] : [mooredPoint[0], mooredPoint[1], mooredPoint[2]]}
+        rotation={[0, bRotY, 0]}
+      >
+        <group scale={BOAT_SCALE}>
+          <mesh geometry={boatGeo} material={vehicleMaterial} />
+        </group>
+      </group>
     </group>
   );
 }
 
-/** Seals resting on the beach of Bahía Scotia, in front of the stage (illustrative). */
-const SEALS = (
-  [
-    [[5.2, 4], 0.4, 'weddell'],
-    [[7.4, 4], -0.25, 'elephant'],
-    [[9, 4], 0.75, 'weddell'],
-  ] as const
-).map(([near, rot, type]) => {
-  const [x, z] = beachPoint(near, 0.35);
-  return { pos: [x, evaluateIsthmusTerrain(x, z).y, z] as const, rot, type };
-});
+interface SealRig {
+  root: Group | null;
+  tilt: Group | null;
+  neck: Group | null;
+  jaw: Group | null;
+  flipR: Group | null;
+  flipL: Group | null;
+  tail: Group | null;
+}
+
+const STILL_TIME = 2.0;
+
+function applySealPose(rig: SealRig, p: SealPose) {
+  const { root, tilt, neck, jaw, flipR, flipL, tail } = rig;
+  if (!root || !tilt || !neck || !flipR || !flipL || !tail) return;
+  root.position.set(p.x, p.y, p.z);
+  root.rotation.y = p.yaw;
+  tilt.rotation.set(p.pitch, 0, p.roll);
+  tilt.scale.set(1 + p.hump * 0.08, p.stretch, 1 - p.hump * 0.06);
+  neck.rotation.set(p.headPitch, p.headYaw, p.headRoll);
+  if (jaw) jaw.rotation.z = -p.jawOpen * 0.35;
+  flipR.rotation.set(p.flipRPitch, 0, p.flipRRoll);
+  flipL.rotation.set(p.flipLPitch, 0, p.flipLRoll);
+  tail.rotation.set(p.tailPitch, p.tailYaw, 0);
+}
 
 function StationFauna({
   animals,
   reduced,
+  seaIce,
 }: {
   animals: readonly string[];
   reduced: boolean;
+  seaIce: number;
 }) {
   const showPenguins =
     animals.includes('adelie') || animals.includes('chinstrap');
@@ -712,11 +898,64 @@ function StationFauna({
     animals.includes('skua') || animals.includes('snowPetrel');
 
   const birdsGroupRef = useRef<Group>(null);
-  const sealsGroupRef = useRef<Group>(null);
 
+  const sealColony = useMemo(() => buildSealColony((x, z) => evaluateIsthmusTerrain(x, z).y), []);
 
-  const weddellGeo = useMemo(() => buildBoxGeometry(WEDDELL_SEAL_BOXES), []);
-  const elephantGeo = useMemo(() => buildBoxGeometry(ELEPHANT_SEAL_BOXES), []);
+  const weddellParts = useMemo(() => weddellSealParts(), []);
+  const elephantParts = useMemo(() => elephantSealParts(), []);
+
+  const weddellGeos = useMemo(
+    () => ({
+      body: buildBoxGeometry(weddellParts.body),
+      head: buildBoxGeometry(weddellParts.head),
+      flipperR: buildBoxGeometry(weddellParts.flipperR),
+      flipperL: buildBoxGeometry(weddellParts.flipperL),
+      tail: buildBoxGeometry(weddellParts.tail),
+    }),
+    [weddellParts]
+  );
+
+  const elephantGeos = useMemo(
+    () => ({
+      body: buildBoxGeometry(elephantParts.body),
+      head: buildBoxGeometry(elephantParts.head),
+      jaw: elephantParts.jaw ? buildBoxGeometry(elephantParts.jaw) : null,
+      flipperR: buildBoxGeometry(elephantParts.flipperR),
+      flipperL: buildBoxGeometry(elephantParts.flipperL),
+      tail: buildBoxGeometry(elephantParts.tail),
+    }),
+    [elephantParts]
+  );
+
+  const seals = useMemo(
+    () => [
+      ...sealColony.residents.map((r) => ({
+        species: r.species,
+        pose: (t: number, o: SealPose) => sealResidentPose(r, t, o),
+      })),
+      {
+        species: sealColony.traveller.species,
+        pose: (t: number, o: SealPose) =>
+          seaIce >= 0.5
+            ? sealResidentPose(sealColony.traveller.rest, t, o)
+            : sealTravellerPose(sealColony.traveller.route, t, o),
+      },
+    ],
+    [sealColony, seaIce]
+  );
+
+  const sealRigs = useRef<SealRig[]>(
+    seals.map(() => ({
+      root: null,
+      tilt: null,
+      neck: null,
+      jaw: null,
+      flipR: null,
+      flipL: null,
+      tail: null,
+    }))
+  );
+  const tempSealPose = useMemo(() => restSealPose(), []);
 
   const mirrorZ = (boxes: readonly Box[]): Box[] =>
     boxes.map(([x, y, z, ...rest]) => [x, y, -z, ...rest]);
@@ -731,8 +970,18 @@ function StationFauna({
 
   useEffect(() => {
     return () => {
-      weddellGeo.dispose();
-      elephantGeo.dispose();
+      weddellGeos.body.dispose();
+      weddellGeos.head.dispose();
+      weddellGeos.flipperR.dispose();
+      weddellGeos.flipperL.dispose();
+      weddellGeos.tail.dispose();
+      elephantGeos.body.dispose();
+      elephantGeos.head.dispose();
+      elephantGeos.jaw?.dispose();
+      elephantGeos.flipperR.dispose();
+      elephantGeos.flipperL.dispose();
+      elephantGeos.tail.dispose();
+
       skuaBodyGeo.dispose();
       skuaRightWingGeo.dispose();
       skuaLeftWingGeo.dispose();
@@ -741,8 +990,8 @@ function StationFauna({
       petrelLeftWingGeo.dispose();
     };
   }, [
-    weddellGeo,
-    elephantGeo,
+    weddellGeos,
+    elephantGeos,
     skuaBodyGeo,
     skuaRightWingGeo,
     skuaLeftWingGeo,
@@ -750,6 +999,14 @@ function StationFauna({
     petrelRightWingGeo,
     petrelLeftWingGeo,
   ]);
+
+  useLayoutEffect(() => {
+    if (reduced) {
+      seals.forEach((s, i) =>
+        applySealPose(sealRigs.current[i], s.pose(STILL_TIME, tempSealPose))
+      );
+    }
+  }, [reduced, seals, tempSealPose]);
 
   useFrame(({ clock }) => {
     if (reduced) return;
@@ -777,13 +1034,10 @@ function StationFauna({
       }
     }
 
-    if (showSeals && sealsGroupRef.current) {
-      const nodes = sealsGroupRef.current.children;
-      for (let i = 0; i < nodes.length; i++) {
-        const seal = nodes[i];
-        const breath = Math.sin(t * 1.6 + i * 2) * 0.04;
-        seal.scale.set(1 + breath * 0.3, 1 + breath, 1 + breath * 0.3);
-      }
+    if (showSeals) {
+      seals.forEach((s, i) =>
+        applySealPose(sealRigs.current[i], s.pose(t, tempSealPose))
+      );
     }
   });
 
@@ -791,16 +1045,49 @@ function StationFauna({
     <group>
       {showPenguins && <PenguinColony reduced={reduced} />}
 
-      {/* Seals resting on the southern beach of Bahía Scotia */}
+      {/* Seals on the front beach of Bahía Scotia */}
       {showSeals && (
-        <group ref={sealsGroupRef}>
-          {SEALS.map((s, i) => {
-            const isElephant =
-              s.type === 'elephant' && animals.includes('elephant');
-            const geo = isElephant ? elephantGeo : weddellGeo;
+        <group>
+          {seals.map((s, i) => {
+            if (s.species === 'elephant' && !animals.includes('elephant')) return null;
+            if (s.species === 'weddell' && !animals.includes('weddell')) return null;
+            const isElephant = s.species === 'elephant';
+            const geos = isElephant ? elephantGeos : weddellGeos;
+            const rig = sealRigs.current[i];
+            const neckPivot = isElephant ? ELEPHANT_NECK : WEDDELL_NECK;
+            const flipRPivot = isElephant ? ELEPHANT_FLIPPER_R : WEDDELL_FLIPPER_R;
+            const flipLPivot = isElephant ? ELEPHANT_FLIPPER_L : WEDDELL_FLIPPER_L;
+            const tailPivot = isElephant ? ELEPHANT_TAIL : WEDDELL_TAIL;
+
             return (
-              <group key={i} position={s.pos} rotation={[0, s.rot, 0]}>
-                <mesh geometry={geo} material={vehicleMaterial} />
+              <group key={i} ref={(n) => void (rig.root = n)}>
+                <group ref={(n) => void (rig.tilt = n)}>
+                  <mesh geometry={geos.body} material={vehicleMaterial} />
+                  <group ref={(n) => void (rig.neck = n)} position={neckPivot}>
+                    <mesh geometry={geos.head} material={vehicleMaterial} />
+                    {isElephant && elephantGeos.jaw && (
+                      <group
+                        ref={(n) => void (rig.jaw = n)}
+                        position={[
+                          ELEPHANT_JAW[0] - ELEPHANT_NECK[0],
+                          ELEPHANT_JAW[1] - ELEPHANT_NECK[1],
+                          0,
+                        ]}
+                      >
+                        <mesh geometry={elephantGeos.jaw} material={vehicleMaterial} />
+                      </group>
+                    )}
+                  </group>
+                  <group ref={(n) => void (rig.flipR = n)} position={flipRPivot}>
+                    <mesh geometry={geos.flipperR} material={vehicleMaterial} />
+                  </group>
+                  <group ref={(n) => void (rig.flipL = n)} position={flipLPivot}>
+                    <mesh geometry={geos.flipperL} material={vehicleMaterial} />
+                  </group>
+                  <group ref={(n) => void (rig.tail = n)} position={tailPivot}>
+                    <mesh geometry={geos.tail} material={vehicleMaterial} />
+                  </group>
+                </group>
               </group>
             );
           })}
@@ -1296,9 +1583,14 @@ export const StationScene = memo(function StationScene({
           isNight={isNight}
           windKmh={windKmh}
           windDirDeg={windDirDeg}
+          seaIce={seaIce}
           reduced={reduced}
         />
-        <StationFauna animals={animals} reduced={reduced} />
+        <StationFauna
+          animals={animals}
+          seaIce={seaIce}
+          reduced={reduced}
+        />
         <SnowAndSpindrift
           windKmh={windKmh}
           windVec={windVec}
