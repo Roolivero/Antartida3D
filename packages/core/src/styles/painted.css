@@ -54,14 +54,22 @@ button:focus-visible,[tabindex]:focus-visible{outline:3px solid #1E3E5C;outline-
 .mk.tsea{z-index:1}
 .mk.tsea .dot{width:22px;height:22px;background:var(--paper);border:2px solid var(--ink);display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 2px rgba(30,62,92,.22)}
 .mk.tsea .dot svg{width:14px;height:14px;display:block}
-.mk.tsea .mlabel{display:none;background:rgba(247,250,251,.96);border-color:var(--deep);pointer-events:none}
-.mk.tsea:hover .mlabel,.mk.tsea:focus-visible .mlabel{display:block;z-index:10}
-.mk.tsea.labelled .mlabel{display:block}
+.mk.tsea .mlabel{background:rgba(247,250,251,.96);border-color:var(--deep)}
 .mk.cluster .dot{width:34px;height:34px;background:#F7FAFB;border:2px solid #3B4651;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;color:var(--ink)}
 .mk.cluster.has-a .dot{border:3px solid var(--ocre);box-shadow:0 0 0 2px var(--ink)}
 .mk.cluster .dot::before{content:'';position:absolute;inset:-6px;border-radius:50%;border:1.5px dashed #3B4651;opacity:.55}
 .mlabel{position:absolute;left:44px;top:50%;transform:translateY(-50%);white-space:nowrap;background:rgba(247,250,251,.94);border:1px solid rgba(31,42,54,.35);border-radius:4px 10px 6px 9px;padding:3px 8px 4px;text-align:left;line-height:1.15;pointer-events:none;box-shadow:1px 2px 0 rgba(31,42,54,.12)}
 .mk.lbl-left .mlabel{left:auto;right:44px}
+/* Labels are closed: one shows on a first touch (.shown), under the mouse or with the keyboard focus. */
+.mk .mlabel{display:none}
+.mk.shown .mlabel,.mk:focus-visible .mlabel{display:block}
+.mk.shown,.mk:focus-visible{z-index:20}
+.ov [data-key]:has(.mk.shown),.ov [data-key]:focus-within{z-index:20 !important}
+@media (hover:hover){
+  .mk:hover .mlabel{display:block}
+  .mk:hover{z-index:20}
+  .ov [data-key]:hover{z-index:20 !important}
+}
 .mlabel strong{display:block;font-family:'Fraunces',Georgia,serif;font-size:14px;font-weight:700}
 .mlabel span{display:block;font-size:12px;color:#3B4651}
 .mk.ta .mlabel{background:#FBF4E6;border-color:var(--ink)}

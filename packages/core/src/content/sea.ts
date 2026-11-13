@@ -22,8 +22,6 @@ export interface SeaPoint {
   fallbackY: number;
   /** Tag of the card. Without it the point is sea life. */
   tag?: string;
-  /** The label stays in view, as a hint to open the card; the others show theirs on hover. */
-  hint?: boolean;
   /** The marker floats over something drawn: at this world height, and only while that thing is this wide (map units) and big enough on screen. */
   over?: { height: number; width: number };
 }
@@ -123,7 +121,6 @@ export const SEA_POINTS: readonly SeaPoint[] = [
     // Same facts as the Drake milestone of the trip from Ushuaia (sources O46 and I6).
     desc: 'Unos 800 km de mar abierto entre el Cabo de Hornos y las islas Shetland del Sur. Tiene fama de ser uno de los mares más bravos del planeta: es famoso por sus temporales. Acá se registraron vientos de más de 50 nudos y olas de 10 metros. La tormenta dibujada en el mapa es ilustrativa: no muestra el tiempo de hoy ni el lugar exacto de un temporal.',
     tag: 'Mar y clima',
-    hint: true,
     over: { height: DRAKE_STORM.cloudBase + 4, width: 2 * DRAKE_STORM.radius },
     fallbackX: DRAKE_STORM.x,
     fallbackY: DRAKE_STORM.y,

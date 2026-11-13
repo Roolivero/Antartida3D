@@ -472,6 +472,7 @@ export function Map3DLayer({
   phase,
   diveTarget,
   markers,
+  shown,
   onPick,
   command,
   onCameraRest,
@@ -495,7 +496,7 @@ export function Map3DLayer({
         x: sp.fallbackX,
         y: sp.fallbackY,
         point: sp,
-        cls: sp.hint ? 'mk tsea labelled' : 'mk tsea',
+        cls: 'mk tsea',
         aria: `${sp.title}, ${sp.place}. ${sp.tag ?? 'Vida en el mar'}. Ver ficha.`,
         label: {
           title: sp.title,
@@ -626,7 +627,7 @@ export function Map3DLayer({
                     zIndex,
                   }}
                 >
-                  <MarkerButton m={m} style={{ left: 0, top: 0 }} onPick={onPick} />
+                  <MarkerButton m={m} style={{ left: 0, top: 0 }} shown={m.key === shown} onPick={onPick} />
                 </div>
               );
             })}
@@ -645,7 +646,7 @@ export function Map3DLayer({
                     zIndex,
                   }}
                 >
-                  <MarkerButton m={sm} style={{ left: 0, top: 0 }} onPick={onPick} />
+                  <MarkerButton m={sm} style={{ left: 0, top: 0 }} shown={sm.key === shown} onPick={onPick} />
                 </div>
               );
             })}

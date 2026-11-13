@@ -607,7 +607,7 @@ export function getPtsLabelBox(
 ): { x1: number; y1: number; x2: number; y2: number } {
   const sub = pt.tier === 'A' ? 'Expedición disponible' : TIER[pt.tier];
   const w = estimateLabelWidth(pt.title, sub);
-  // The label side is chosen at runtime by placeLabels (labels.ts) from free space, so cover both
+  // The label side is chosen at runtime by labelSide (labels.ts) from the room on screen, so cover both
   // possible sides instead of guessing one.
   const x1 = m.sx - 20 - w;
   const x2 = m.sx + 20 + w;

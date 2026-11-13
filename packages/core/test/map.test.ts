@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  PTS, buildMarkers, clusterPoints, geometry, keyView, placeLabels, project, unproject, separationZoom,
+  PTS, buildMarkers, markerPress, clusterPoints, geometry, keyView, labelSide, project, unproject, separationZoom,
   zoomAround, wheelFactor, HOME, MAX_K, MIN_K, toScreen,
 } from '../src/index.ts';
 
@@ -117,14 +117,20 @@ describe('clustering', () => {
 });
 
 describe('markers and labels', () => {
-  it('always labels the expedition point and hides B/C labels on a small map', () => {
-    const markers = buildMarkers({ vw: 1440, vh: 900 }, { k: 2.5, px: -400, py: -400 }, []);
-    const a = markers.find((m) => m.kind === 'point' && m.point.tier === 'A');
-    expect(a?.kind === 'point' && a.label).toBeTruthy();
-    const small = buildMarkers({ vw: 390, vh: 844 }, HOME, []);
-    expect(
-      small.every((m) => m.kind === 'cluster' || (m.kind === 'point' && m.point.tier === 'A') || m.label === null)
-    ).toBe(true);
+  it('gives every single marker its label, on any map size: the interface shows one at a time', () => {
+    for (const [size, view] of [[{ vw: 1440, vh: 900 }, { k: 2.5, px: -400, py: -400 }], [{ vw: 390, vh: 844 }, HOME]] as const) {
+      const singles = buildMarkers(size, view, []).filter((m) => m.kind === 'point');
+      expect(singles.length).toBeGreaterThan(0);
+      for (const m of singles) expect(m.kind === 'point' && m.label?.title, m.key).toBe(m.kind === 'point' && m.point.title);
+    }
+  });
+
+  it('shows the label on a first touch and opens on the second; a mouse or the keyboard open at once', () => {
+    expect(markerPress(null, 'campana', true)).toBe('show');
+    expect(markerPress('campana', 'campana', true)).toBe('open');
+    // Touching another marker shows that one instead.
+    expect(markerPress('campana', 'orcadas', true)).toBe('show');
+    expect(markerPress(null, 'campana', false)).toBe('open');
   });
 
   it('marks the explored point with a check and no pulse', () => {
@@ -134,19 +140,12 @@ describe('markers and labels', () => {
     expect(a?.kind === 'point' && a.check && !a.pulse).toBe(true);
   });
 
-  it('flips or hides colliding labels', () => {
-    const base = { title: 'Estación', sub: 'Ampliación prevista' };
-    const sides = placeLabels(
-      [
-        { id: 'one', left: 100, top: 100, preferred: 'right', ...base },
-        { id: 'two', left: 100, top: 120, preferred: 'right', ...base },
-        { id: 'three', left: 100, top: 110, preferred: 'right', ...base },
-      ],
-      [],
-    );
-    expect(sides.get('one')).toBe('right');
-    expect(sides.get('two')).toBe('left');
-    expect(sides.get('three')).toBeNull();
+  it('opens a label to the right, or to the left when it would run off the screen', () => {
+    expect(labelSide(100, 'Estación', 'Ampliación prevista', 1440)).toBe('right');
+    expect(labelSide(1400, 'Estación', 'Ampliación prevista', 1440)).toBe('left');
+    // A marker at the left edge of a phone: the label would be cut on the left, so it goes right.
+    expect(labelSide(20, 'Desde Ushuaia', 'Ushuaia', 390)).toBe('right');
+    expect(labelSide(370, 'Desde Ushuaia', 'Ushuaia', 390)).toBe('left');
   });
 });
 
