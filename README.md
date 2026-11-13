@@ -130,6 +130,8 @@ En cumplimiento con las bases de la hackatón, se declara el uso de herramientas
   > Plan, decisiones de diseño, revisión, verificación con capturas y parte de la implementación con Claude Code (modelo Claude Opus 5.5); implementación de los pasos delegada a Antigravity (Gemini 4 Hydrogen) bajo revisión. Cada frase de parada sale de una ficha con fuente verificada; no se agregaron datos nuevos.
 - **Helipuerto y helicóptero en la expedición Estación Orcadas (#68):**
   > Plan, búsqueda y verificación de fuentes, revisión de cada paso, capturas y ajustes con Claude Code (modelo Claude Opus 5.5); implementación de los pasos delegada a Antigravity (Gemini 4 Hydrogen) bajo revisión. El helipuerto sale de OpenStreetMap (ODbL); la ficha del relevo en helicóptero cita a la Armada Argentina (15 dic 2025) y a COMNAP (2017). El tipo de helicóptero, sus colores, su escala y su vuelo de llegada son ilustrativos.
+- **Pruebas e2e de Orcadas y tobogán de los pingüinos (#84):**
+  > Diagnóstico de las pruebas, ajuste del tiempo límite y cambio de la ruta de los pingüinos con Claude Code (modelo Claude Sonnet 5.5). No se agregaron datos ni fuentes; el movimiento de los pingüinos es una reconstrucción ilustrada.
 - **Resto del hemisferio sur en el mapa 3D (#42):**
   > Planificación, revisión y ajustes visuales con Claude Code (modelo Claude Opus 5.5); implementación de partes delegada a Antigravity (Gemini 3.8 Flash) bajo revisión. Las siluetas salen de Natural Earth y su color de Natural Earth II (ambos de dominio público); son contexto geográfico, no datos.
 - **Documento de tecnologías (#82):**

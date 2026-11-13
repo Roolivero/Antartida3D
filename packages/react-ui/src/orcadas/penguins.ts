@@ -541,11 +541,9 @@ export function buildPenguinRoute(heightAt: HeightAt): PenguinRoute {
   const walk1 = toSamples(curve([rest, knollPoint(0.8, 0.7), rim], 0.15), ground);
   add('walk', walk1, walk1[walk1.length - 1].d / WALK_SPEED);
   add('flop', still(last()), 0.75);
-  const slide = toSamples(curve([rim, slideEnd], 0.12), ground);
+  // The slide does not stop at the beach: it runs on to the water's edge and into the dive.
+  const slide = toSamples(curve([rim, slideEnd, edge], 0.12), ground);
   add('slide', slide, slide[slide.length - 1].d / SLIDE_SPEED);
-  add('standUp', still(last()), 0.8);
-  const walk2 = toSamples([slideEnd, edge], ground);
-  add('walk', walk2, Math.max(0.6, walk2[walk2.length - 1].d / WALK_SPEED));
   const diveP = toSamples(curve([edge, dive], 0.1), (x, z) => Math.max(SWIM_Y, ground(x, z)));
   add('dive', diveP, 0.9);
   const swim = toSamples(curve([dive, out1, out2, back], 0.15), () => SWIM_Y);
@@ -561,7 +559,7 @@ export function buildPenguinRoute(heightAt: HeightAt): PenguinRoute {
   segs.push({
     mode: 'rest',
     path: restSeg,
-    duration: 3,
+    duration: 2,
     yaw0: segs[segs.length - 1].yaw1,
     yaw1: segs[0].yaw0,
     slope0: segs[segs.length - 1].slope1,
@@ -663,8 +661,8 @@ export function travellerPose(route: PenguinRoute, t: number, offset: number, ou
       out.headPitch = smooth(0.4, 1, u) * 1.2;
       break;
     case 'slide': {
-      // Accelerates down the slope and brakes on the flat; kicks with the feet at the start.
-      dist = total * (u < 0.7 ? 0.7 * (u / 0.7) ** 1.6 : 1 - 0.3 * (1 - (u - 0.7) / 0.3) ** 2);
+      // Accelerates down the slope and keeps its speed to the water; kicks with the feet at the start.
+      dist = total * u ** 1.3;
       lie = 1;
       out.flipL = out.flipR = 1.0 + Math.sin(u * 20) * 0.08;
       out.headPitch = 1.2;
@@ -687,7 +685,8 @@ export function travellerPose(route: PenguinRoute, t: number, offset: number, ou
       break;
     }
     case 'dive':
-      lie = smooth(0, 0.3, u);
+      // Already on its belly from the slide.
+      lie = 1;
       out.flipL = out.flipR = 0.3 + smooth(0, 0.6, u) * 0.4;
       out.headPitch = smooth(0.3, 1, u) * 0.6;
       break;

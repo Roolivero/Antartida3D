@@ -151,7 +151,8 @@ test.describe('Orcadas · observación', () => {
   test('completes temperature via lens slider and optional readings via Mirá también with keyboard only, and carries them into Responder', async ({
     page,
   }) => {
-    test.setTimeout(90_000);
+    // About 170 Tab, arrow and evaluate steps; on desktop each one takes ~0.4 s while the 3D scene keeps drawing.
+    test.setTimeout(180_000);
     await openOrcadasObservation(page);
     const reading = currentExpectedReading();
     const windBf = beaufort(reading.windKmh);
