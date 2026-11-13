@@ -81,6 +81,11 @@ const MAX_PITCH = 0.4;
 /** A place farther than this from the vehicle, in map units, is out of view: the camera goes to it while its card is open. */
 const VISIT_DISTANCE = 6;
 
+/** How far (world units) the vehicle has to move for the camera to follow it. */
+const FOLLOW_EPSILON = 1e-4;
+const followGoal = new Vector3();
+const followTarget = new Vector3();
+
 const routeMaterial = new LineDashedMaterial({ color: 0x1f2a36, dashSize: 0.8, gapSize: 0.6, transparent: true, opacity: 0.75 });
 
 /** The vehicle travelling on the live map, its path and the camera, which stays centered on it. */
@@ -228,6 +233,9 @@ export function Voyage3D({ bus, reduced, overlay }: {
 
     // The camera always stays on the vehicle: the user can orbit and zoom around it, not pan away.
     if (controls) {
+      // The controls apply a move on the next frame, and the canvas draws on demand: a move asks for
+      // that frame, or a move without animation (reduced motion) is not drawn until something else redraws (#76).
+      let moved = false;
       // Entering the storm, the camera comes down under the clouds; leaving it, it goes back up.
       // Only for a ship: the plane is above the clouds, and the camera stays up there with it.
       const inside = s.kind === 'ship' && rough > 0;
@@ -240,9 +248,11 @@ export function Voyage3D({ bus, reduced, overlay }: {
           storm.current.distance = null;
         }
         storm.current.inside = inside;
+        moved = true;
       }
       const departing = s.t === 0 && (drawn.current.t !== 0 || drawn.current.transport !== s.transport);
       if (departing) {
+        moved = true;
         // At the vehicle, so the camera does not jump to it when the trip starts moving.
         void controls.setLookAt(p.x - 500 + DEPARTURE_OFFSET.x, DEPARTURE_OFFSET.y, p.y - 500 + DEPARTURE_OFFSET.z, p.x - 500, 0, p.y - 500, !reduced);
       } else {
@@ -256,15 +266,26 @@ export function Voyage3D({ bus, reduced, overlay }: {
           // Opening a far place takes the camera there, to see it; the trip waits.
           if (visit.current.id !== far.id) {
             visit.current = { id: far.id, returning: false };
+            moved = true;
             void controls.moveTo(far.x - 500, 0, far.y - 500, !reduced);
           }
         } else if (visit.current.id) {
           // Closing it brings the camera back to the vehicle.
           const state = { id: null, returning: true };
           visit.current = state;
+          moved = true;
           void controls.moveTo(g.position.x, Math.max(0, height), g.position.z, !reduced).then(() => void (state.returning = false));
-        } else if (s.t > 0 && !visit.current.returning) void controls.moveTo(g.position.x, Math.max(0, height), g.position.z, false);
+        } else if (s.t > 0 && !visit.current.returning) {
+          // With reduced motion nothing else moves: follow only when the vehicle moved, or each move would
+          // ask for a frame and the canvas would never rest. Otherwise the sway keeps it drawing, as before.
+          const goal = followGoal.set(g.position.x, Math.max(0, height), g.position.z);
+          if (!reduced || controls.getTarget(followTarget).distanceToSquared(goal) > FOLLOW_EPSILON ** 2) {
+            moved = true;
+            void controls.moveTo(goal.x, goal.y, goal.z, false);
+          }
+        }
       }
+      if (moved) invalidate();
     }
     drawn.current = { t: s.t, transport: s.transport };
   });
