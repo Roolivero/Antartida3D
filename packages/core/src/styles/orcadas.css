@@ -33,7 +33,7 @@
   bottom: calc(45dvh + 10px);
   top: auto;
   z-index: 5;
-  pointer-events: auto;
+  pointer-events: none;
   display: flex;
   flex-direction: column-reverse;
   align-items: flex-start;
@@ -65,6 +65,7 @@
   cursor: pointer;
   padding: 0;
   line-height: 1;
+  pointer-events: auto;
 }
 
 .orc-scene-help-btn:focus-visible {
@@ -73,6 +74,7 @@
 }
 
 .orc-scene-help-popover {
+  pointer-events: auto;
   margin-top: 6px;
   max-width: 280px;
   background: #FBF4E6;
@@ -87,6 +89,27 @@
 
 .orc-scene-help-popover p {
   margin: 0;
+}
+
+.orc-scene-help-popover p + p {
+  margin-top: 6px;
+}
+
+.orc-scene-sources-link {
+  appearance: none;
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: var(--navy, #274666);
+  text-decoration: underline;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.orc-scene-sources-link:hover,
+.orc-scene-sources-link:focus-visible {
+  color: var(--teal, #1a7f72);
 }
 
 /* KindChip: color + shape + border + text */

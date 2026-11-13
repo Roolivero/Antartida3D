@@ -360,6 +360,8 @@ El agente, con internet en tu PC, arma `docs/orcadas-emplazamiento.md`. Fuentes 
 
 ---
 
+> Enmienda (13 nov 2026): fase 5 hecha con un cambio de rumbo aprobado por Lk. G1 quedó como referencia: el sitio medido de OSM está en `orcadas-site.ts`, con su prueba. Primero se dibujó a escala real y después como maqueta compacta, pero en las dos la base se leía como un plano, con mucho suelo vacío y edificios tapados. La escena final es un escenario de frente (`orcadas-layout.ts`): ocho elementos de OSM con su forma, su color y su techo reales, en posiciones ilustrativas. No hay cementerio, usina, tanque ni helipuerto. La cámara mira desde Bahía Scotia, siempre con la misma toma de entrada, con una órbita de ±35° y zoom acotado. La etiqueta de la escena lo declara y la fuente OSM está en el panel Fuentes. Además se adelantó el pulido de los pingüinos (F1 de la fase 7): `penguins.ts` tiene una pingüinera de 14, con residentes que miran, se acicalan, hacen la exhibición y duermen, y viajeros que caminan, se tiran de panza, se sacuden, nadan y saltan a la playa. Todo es una función pura del tiempo, con prueba de que no se superponen, no caminan sobre el agua, no atraviesan edificios y no saltan entre cuadros. También se pulieron los modelos de Omond y de los pabellones, y se borraron los modelos sin uso (usina, tanque, cementerio, helipuerto, módulos viejos, Moneta y LABORC). Verificación: `pnpm test` (189 core, 80 react-ui), `pnpm typecheck`, `pnpm build` y e2e de Orcadas (79 pasan y 13 se omiten por tamaño de pantalla).
+
 ## Fase 6 · Celular · Issue E
 
 Va después de la Fase 5 porque los encuadres de cámara dependen de la base nueva. Medido en 390 × 844, 360 × 740 y 844 × 390, con un script de Playwright.

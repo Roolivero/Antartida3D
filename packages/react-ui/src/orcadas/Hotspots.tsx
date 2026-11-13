@@ -10,6 +10,8 @@ import {
 import { useFocusReturn, useIsDesktop } from '../hooks.ts';
 import { Icon } from '../ui.tsx';
 import { FactCard } from './FactList.tsx';
+import { beachPoint } from './penguins.ts';
+import { PENGUIN_KNOLL, evaluateIsthmusTerrain } from './stationModels.ts';
 
 export type HotspotId =
   | 'overview'
@@ -36,24 +38,57 @@ export interface HotspotDef {
 }
 
 /**
- * Low, near-horizontal overview: the sky, the sea horizon and the glaciers stay in frame.
- * On desktop the target sits right of the station so it clears the side panel.
+ * Camera looking at `target` from a compass bearing (225 = from the south-west) and an elevation.
+ * `right` moves the target to the right of the screen, so what is framed lands on the left
+ * (clear of the desktop side panel); `near` moves it towards the camera, so what is framed
+ * rises on screen (clear of the mobile bottom panel).
  */
-export const OVERVIEW_POSE_DESKTOP: CameraPose = {
-  pos: [-10.5, 7.6, 25],
-  target: [4.2, 2.3, -1],
-};
+function orbit(
+  target: readonly [number, number, number],
+  distance: number,
+  bearingDeg: number,
+  elevationDeg: number,
+  right = 0,
+  near = 0
+): CameraPose {
+  const b = (bearingDeg * Math.PI) / 180;
+  const e = (elevationDeg * Math.PI) / 180;
+  const dx = Math.sin(b);
+  const dz = -Math.cos(b);
+  const tx = target[0] + dz * right + dx * near;
+  const tz = target[2] - dx * right + dz * near;
+  const h = Math.cos(e) * distance;
+  return {
+    pos: [tx + dx * h, target[1] + Math.sin(e) * distance, tz + dz * h],
+    target: [tx, target[1], tz],
+  };
+}
 
-/** On a phone the target sits below the ground so the station lands above the bottom sheet. */
-export const OVERVIEW_POSE_MOBILE: CameraPose = {
-  pos: [-11, 9.2, 30.5],
-  target: [0.8, -2.4, 0],
-};
+/** Centre of the stage, from the penguin knoll on the left to the pavilions on the right. */
+const STATION_CENTRE = [-1.0, 2.6, 0.6] as const;
 
-export const OVERVIEW_POSE_MOBILE_EXPANDED: CameraPose = {
-  pos: [-9.5, 7.8, 23.5],
-  target: [0.8, -7.2, 0],
-};
+/**
+ * Every view looks at the stage from Bahía Scotia (bearing 180 in stage axes), low over the
+ * water, like a model on a table: the station in a row in front, hills at both ends and Bahía
+ * Uruguay behind. The camera can only orbit a little around this bearing.
+ */
+export const VIEW_BEARING_DEG = 180;
+/** How far the user can orbit to each side of VIEW_BEARING_DEG, in degrees. */
+export const VIEW_ORBIT_DEG = 35;
+/** Lowest and highest camera elevation the user can reach, in degrees. */
+export const VIEW_ELEVATION_DEG: readonly [number, number] = [5, 38];
+
+/** Entry view on desktop; the station sits left of the side panel. */
+export const OVERVIEW_POSE_DESKTOP: CameraPose = orbit(STATION_CENTRE, 22, VIEW_BEARING_DEG, 12, 4.8);
+
+/** Portrait phone: farther back, the station high on the screen above the bottom panel. */
+export const OVERVIEW_POSE_MOBILE: CameraPose = orbit([STATION_CENTRE[0], 0.4, STATION_CENTRE[2]], 44, VIEW_BEARING_DEG, 15, 0, 6);
+
+/** Portrait phone with the panel expanded: only a strip at the top is left. */
+export const OVERVIEW_POSE_MOBILE_EXPANDED: CameraPose = orbit([STATION_CENTRE[0], 0.4, STATION_CENTRE[2]], 52, VIEW_BEARING_DEG, 20, 0, 14);
+
+/** How far the user can zoom out, relative to the entry view of the device. */
+export const VIEW_MAX_ZOOM_OUT = 1.2;
 
 /** A portrait screen is narrow and its lower half is covered: pull back and aim lower. */
 function mobilePose(pose: CameraPose, expanded = false): CameraPose {
@@ -69,8 +104,21 @@ function mobilePose(pose: CameraPose, expanded = false): CameraPose {
 
 const screenLayout = layoutOf('screen');
 const mastLayout = layoutOf('windMast');
-const houseLayout = layoutOf('moneta');
+const omondLayout = layoutOf('omond');
 const flagLayout = layoutOf('flag');
+
+/** A point in Bahía Scotia, a little off the beach where the boat rests. */
+const bayPoint: [number, number, number] = (() => {
+  const boat = layoutOf('boat').position;
+  const [x, z] = beachPoint([boat[0], boat[2]], -2.2);
+  return [x, 0.4, z];
+})();
+
+/** The penguin colony on its knoll (reconstruction, see penguins.ts). */
+const colonyPoint: [number, number, number] = (() => {
+  const [x, z] = PENGUIN_KNOLL.center;
+  return [x, evaluateIsthmusTerrain(x, z).y + 0.6, z];
+})();
 
 export const HOTSPOTS: readonly HotspotDef[] = [
   {
@@ -80,13 +128,10 @@ export const HOTSPOTS: readonly HotspotDef[] = [
     subtitle: 'Termómetros e higrómetro al resguardo del sol y del viento',
     worldPos: [
       screenLayout.position[0],
-      screenLayout.position[1] + 0.95,
-      screenLayout.position[2] + 0.4,
+      screenLayout.position[1] + 1.15,
+      screenLayout.position[2],
     ],
-    pose: {
-      pos: [-9.2, 4.6, 8.8],
-      target: [-4.0, 1.8, 2.2],
-    },
+    pose: orbit([screenLayout.position[0], screenLayout.position[1] + 0.5, screenLayout.position[2]], 5.5, 175, 12, 1.0),
     fallbackPct: [33, 52],
   },
   {
@@ -95,31 +140,25 @@ export const HOTSPOTS: readonly HotspotDef[] = [
     shortLabel: 'Anemómetro',
     subtitle: 'Veleta de rumbo y cazoletas que giran con las ráfagas del mar de Scotia',
     worldPos: [
-      mastLayout.position[0] + 0.4,
-      mastLayout.position[1] + 3.95,
+      mastLayout.position[0],
+      mastLayout.position[1] + 2.4,
       mastLayout.position[2],
     ],
-    pose: {
-      pos: [-13.2, 6.4, 5.2],
-      target: [-6.8, 3.5, -1.2],
-    },
+    pose: orbit([mastLayout.position[0], mastLayout.position[1] + 1.2, mastLayout.position[2]], 6.5, 170, 12, 1.2),
     fallbackPct: [23, 38],
   },
   {
     id: 'house',
     label: 'Casas históricas',
     shortLabel: 'Estación',
-    subtitle: 'De la pirca de piedra de Omond House a Casa Moneta y los módulos actuales',
+    subtitle: 'De la pirca de piedra de Omond House a los módulos actuales',
     worldPos: [
-      houseLayout.position[0] + 1.2,
-      houseLayout.position[1] + 1.95,
-      houseLayout.position[2] + 0.1,
+      omondLayout.position[0],
+      omondLayout.position[1] + 0.7,
+      omondLayout.position[2],
     ],
-    pose: {
-      pos: [9.5, 6.0, 8.8],
-      target: [2.8, 2.1, -1.2],
-    },
-    fallbackPct: [55, 43],
+    pose: orbit([omondLayout.position[0], omondLayout.position[1] + 0.3, omondLayout.position[2]], 7, 185, 14, 1.4),
+    fallbackPct: [45, 48],
   },
   {
     id: 'flag',
@@ -127,26 +166,20 @@ export const HOTSPOTS: readonly HotspotDef[] = [
     shortLabel: 'Pabellón',
     subtitle: 'Permanencia ininterrumpida en el istmo de la isla Laurie desde 1904',
     worldPos: [
-      flagLayout.position[0] - 0.6,
-      flagLayout.position[1] + 4.75,
-      flagLayout.position[2] + 0.2,
+      flagLayout.position[0],
+      flagLayout.position[1] + 2.7,
+      flagLayout.position[2],
     ],
-    pose: {
-      pos: [4.4, 5.2, 11.6],
-      target: [0.2, 4.2, 3.4],
-    },
-    fallbackPct: [45, 37],
+    pose: orbit([flagLayout.position[0], flagLayout.position[1] + 1.4, flagLayout.position[2]], 6.5, 190, 10, 1.2),
+    fallbackPct: [48, 38],
   },
   {
     id: 'bay',
     label: 'Bahía Scotia y hielo marino',
     shortLabel: 'Bahía Scotia',
     subtitle: 'Aguas que se cierran de hielo en invierno y se abren en el deshielo austral',
-    worldPos: [-2.4, 1.2, 12.5],
-    pose: {
-      pos: [-10.5, 7.8, 24.5],
-      target: [-1.5, 0.8, 11.0],
-    },
+    worldPos: bayPoint,
+    pose: orbit([bayPoint[0], 0.3, bayPoint[2]], 12, 180, 16, 2.5),
     fallbackPct: [30, 66],
   },
   {
@@ -154,11 +187,8 @@ export const HOTSPOTS: readonly HotspotDef[] = [
     label: 'Pingüinera y fauna',
     shortLabel: 'Pingüinera',
     subtitle: 'Colonias de pingüinos adelia y barbijo en las laderas rocosas de Laurie',
-    worldPos: [8.2, 2.4, 5.4],
-    pose: {
-      pos: [3.8, 6.0, 16.0],
-      target: [9.5, 2.2, 5.6],
-    },
+    worldPos: colonyPoint,
+    pose: orbit([colonyPoint[0], colonyPoint[1] - 0.4, colonyPoint[2]], 6, 165, 18, 1.2),
     fallbackPct: [74, 46],
   },
 ];

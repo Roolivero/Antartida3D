@@ -14,6 +14,17 @@ import { useFocusReturn } from '../hooks.ts';
 import { Icon } from '../ui.tsx';
 import { KindChip } from './KindChip.tsx';
 
+export const OSM_SOURCE: OrcadasSource = {
+  id: 'osm-site',
+  label: 'OpenStreetMap: edificios y costa de la Base Orcadas',
+  short: 'OpenStreetMap',
+  org: 'colaboradores de OpenStreetMap',
+  url: 'https://www.openstreetmap.org/#map=18/-60.7378/-44.7375',
+  license: 'ODbL 1.0',
+  consulted: '12 de noviembre de 2026',
+  verified: true,
+};
+
 export function SourcesPanel({
   chapter,
   highlightSource,
@@ -63,7 +74,11 @@ export function SourcesPanel({
   }, []);
 
   useEffect(() => {
-    if (highlightSource && !chapterSources.some((s) => s.id === highlightSource)) {
+    if (
+      highlightSource &&
+      highlightSource !== OSM_SOURCE.id &&
+      !chapterSources.some((s) => s.id === highlightSource)
+    ) {
       setShowAll(true);
     }
   }, [highlightSource, chapterSources]);
@@ -163,6 +178,30 @@ export function SourcesPanel({
             );
           })}
         </ul>
+
+        <div className="orc-sources-section">
+          <span className="orc-kicker">Datos del mapa de la escena</span>
+          <ul className="orc-sources-list">
+            <li className="orc-source-item">
+              <a
+                href={OSM_SOURCE.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="orc-source-card"
+                data-source-id={OSM_SOURCE.id}
+                data-highlight={highlightSource === OSM_SOURCE.id ? true : undefined}
+                aria-current={highlightSource === OSM_SOURCE.id ? 'true' : undefined}
+              >
+                <strong className="orc-source-label">{OSM_SOURCE.label}</strong>
+                <span className="orc-source-org">{OSM_SOURCE.org}</span>
+                <small className="orc-source-meta">
+                  Consultado {OSM_SOURCE.consulted}
+                  {OSM_SOURCE.license ? ` · Licencia: ${OSM_SOURCE.license}` : ''}
+                </small>
+              </a>
+            </li>
+          </ul>
+        </div>
 
         <div className="orc-sources-footer">
           <button

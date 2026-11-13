@@ -1,7 +1,12 @@
 import type { BufferGeometry, Object3D } from 'three';
 import { createSeededRng, type Sighting } from '@antartida/core';
 import { buildBoxGeometry, type Box } from './vehicles.ts';
-import { buildLaborcBoxes } from '../orcadas/stationModels.ts';
+import {
+  buildModuleBoxes,
+  buildOmondBoxes,
+  buildRadioTowerBoxes,
+} from '../orcadas/stationModels.ts';
+import { assemblePenguinBoxes, buildRookeryBoxes } from '../orcadas/penguins.ts';
 
 // Approximate colors. The models are illustrations, not portraits: one unit is about the length of the model.
 const BLACK = 0x1f2a36;
@@ -552,8 +557,30 @@ export const SCENE_MODELS: Readonly<Record<string, readonly Box[]>> = {
   ...Object.fromEntries(Object.entries(SEA_MODELS).map(([id, boxes]) => [`sea:${id}`, boxes])),
   ushuaia: TOWN,
   orcadas: ORCADAS_SITE,
-  get laborc() {
-    return buildLaborcBoxes(false);
+  // Orcadas station models: getters, because stationModels.ts imports this module (cycle).
+  get moduleRound() {
+    return buildModuleBoxes(4.8, 1.7, 0.67, 'orange', 'round', false);
+  },
+  get moduleGabled() {
+    return buildModuleBoxes(3.2, 1.8, 0.5, 'orange', 'gabled', false);
+  },
+  get moduleFlat() {
+    return buildModuleBoxes(6.2, 1.6, 0.5, 'unknown', 'flat', false);
+  },
+  get omond() {
+    return buildOmondBoxes(false);
+  },
+  get radioTower() {
+    return buildRadioTowerBoxes(5);
+  },
+  get orcadasAdelie() {
+    return assemblePenguinBoxes('adelie');
+  },
+  get orcadasChinstrap() {
+    return assemblePenguinBoxes('chinstrap');
+  },
+  get rookery() {
+    return buildRookeryBoxes();
   },
 };
 

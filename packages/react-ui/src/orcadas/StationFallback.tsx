@@ -35,7 +35,6 @@ export function StationFallback({
   const sunCy = Math.max(60, Math.min(270, 235 - sunEl * 4.2));
 
   const hasOmond = buildings.includes('omond');
-  const hasMoneta = buildings.includes('moneta');
   const hasRadio = buildings.includes('radioMast');
   const hasModern = buildings.includes('modern');
   const hasWindMast = buildings.includes('windMast');
@@ -187,54 +186,6 @@ export function StationFallback({
               strokeWidth="2"
             />
             <rect x="18" y="22" width="10" height="16" fill="#1F2A36" />
-          </g>
-        )}
-
-        {/* Casa Moneta (1905 wooden gable house) */}
-        {hasMoneta && (
-          <g transform="translate(495, 252)">
-            <rect
-              x="0"
-              y="18"
-              width="66"
-              height="32"
-              fill="#C89B6E"
-              stroke="#1F2A36"
-              strokeWidth="2"
-            />
-            <polygon
-              points="-5,18 33,-2 71,18"
-              fill="#A4471F"
-              stroke="#1F2A36"
-              strokeWidth="2"
-            />
-            <rect
-              x="46"
-              y="-6"
-              width="8"
-              height="16"
-              fill="#7A3B24"
-              stroke="#1F2A36"
-              strokeWidth="1.6"
-            />
-            <rect
-              x="12"
-              y="26"
-              width="12"
-              height="12"
-              fill={isNight ? '#F5C469' : '#D6E5EF'}
-              stroke="#1F2A36"
-              strokeWidth="1.5"
-            />
-            <rect
-              x="38"
-              y="26"
-              width="12"
-              height="12"
-              fill={isNight ? '#F5C469' : '#D6E5EF'}
-              stroke="#1F2A36"
-              strokeWidth="1.5"
-            />
           </g>
         )}
 

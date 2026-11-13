@@ -50,7 +50,7 @@ function primaryButtonText(chapter: Chapter, recorded: number): string {
   }
 }
 
-function SceneBadge() {
+function SceneBadge({ onOpenSource }: { onOpenSource?: (id: string) => void }) {
   const [open, setOpen] = useState(false);
   const fact = useMemo(() => factsFor('scene')[0], []);
   return (
@@ -72,6 +72,19 @@ function SceneBadge() {
       {open && fact && (
         <div className="orc-scene-help-popover" role="note">
           <p>{fact.text}</p>
+          <p>
+            Disposición ilustrativa, no a escala: una selección de los edificios de la base, con su forma y sus colores según OpenStreetMap (imágenes Maxar 2019), acomodados en fila para que se vean; alturas aproximadas; animales, instrumentos y bandera agrandados para que se vean; relieve y pingüinera ilustrativos.{' '}
+            <button
+              type="button"
+              className="orc-scene-sources-link"
+              onClick={() => {
+                setOpen(false);
+                onOpenSource?.('osm-site');
+              }}
+            >
+              Ver fuentes
+            </button>
+          </p>
         </div>
       )}
     </div>
@@ -231,7 +244,13 @@ export function OrcadasExpedition({
         />
 
         {/* Always-visible scene reconstruction label with help toggle */}
-        <SceneBadge />
+        <SceneBadge
+          onOpenSource={(id) => {
+            if (openSpot) setOpenSpot(null);
+            setHighlightSource(id);
+            if (!s.panel) dispatch({ type: 'togglePanel' });
+          }}
+        />
 
         {/* Interactive 3D-projected HTML hotspots */}
         <Hotspots
