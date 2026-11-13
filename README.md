@@ -132,6 +132,8 @@ En cumplimiento con las bases de la hackatón, se declara el uso de herramientas
   > Plan, búsqueda y verificación de fuentes, revisión de cada paso, capturas y ajustes con Claude Code (modelo Claude Opus 5.5); implementación de los pasos delegada a Antigravity (Gemini 4 Hydrogen) bajo revisión. El helipuerto sale de OpenStreetMap (ODbL); la ficha del relevo en helicóptero cita a la Armada Argentina (15 dic 2025) y a COMNAP (2017). El tipo de helicóptero, sus colores, su escala y su vuelo de llegada son ilustrativos.
 - **Pruebas e2e de Orcadas y tobogán de los pingüinos (#84):**
   > Diagnóstico de las pruebas, ajuste del tiempo límite y cambio de la ruta de los pingüinos con Claude Code (modelo Claude Sonnet 5.5). No se agregaron datos ni fuentes; el movimiento de los pingüinos es una reconstrucción ilustrada.
+- **Prueba e2e del reloj del mar 3D (#41):**
+  > Diagnóstico y arreglo de la prueba con asistencia de IA, con revisión del equipo. Solo cambia la prueba; no se agregaron datos ni fuentes.
 - **Resto del hemisferio sur en el mapa 3D (#42):**
   > Planificación, revisión y ajustes visuales con Claude Code (modelo Claude Opus 5.5); implementación de partes delegada a Antigravity (Gemini 3.8 Flash) bajo revisión. Las siluetas salen de Natural Earth y su color de Natural Earth II (ambos de dominio público); son contexto geográfico, no datos.
 - **Documento de tecnologías (#82):**
