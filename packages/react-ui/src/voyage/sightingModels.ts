@@ -1,13 +1,15 @@
 import type { BufferGeometry, Object3D } from 'three';
-import { createSeededRng, type Sighting } from '@antartida/core';
+import { createSeededRng, layoutOf, type Sighting } from '@antartida/core';
 import { buildBoxGeometry, type Box } from './vehicles.ts';
 import {
+  buildHelipadBoxes,
   buildModuleBoxes,
   buildOmondBoxes,
   buildRadioTowerBoxes,
   FLAGPOLE_BASE_BOXES,
   FLAG_SEGMENT_BOXES,
   FLAG_SEGMENT_WIDTH,
+  HELICOPTER_BOXES,
   SEA_ICE_FLOE_A,
   SEA_ICE_FLOE_B,
   SEA_ICE_FLOE_C,
@@ -620,6 +622,12 @@ export const SCENE_MODELS: Readonly<Record<string, readonly Box[]>> = {
   },
   get orcadasBoat() {
     return STATION_BOAT_BOXES;
+  },
+  get helipad() {
+    return buildHelipadBoxes(layoutOf('helipad').footprint[0]);
+  },
+  get helicopter() {
+    return HELICOPTER_BOXES;
   },
 };
 
