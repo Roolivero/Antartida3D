@@ -3,6 +3,7 @@ import {
   HOTSPOT_BUILDING,
   hotspotFacts,
   layoutOf,
+  tourStops,
   type BuildingId,
   type Chapter,
   type OrcadasHotspotId,
@@ -20,7 +21,8 @@ export type HotspotId =
   | 'house'
   | 'bay'
   | 'colony'
-  | 'flag';
+  | 'flag'
+  | 'boat';
 
 export interface CameraPose {
   pos: readonly [number, number, number];
@@ -87,6 +89,9 @@ export const OVERVIEW_POSE_MOBILE: CameraPose = orbit([STATION_CENTRE[0], 0.4, S
 /** Portrait phone with the panel expanded: only a strip at the top is left. */
 export const OVERVIEW_POSE_MOBILE_EXPANDED: CameraPose = orbit([STATION_CENTRE[0], 0.4, STATION_CENTRE[2]], 52, VIEW_BEARING_DEG, 20, 0, 14);
 
+/** Phone on its side: a short, wide screen with the panel on the right; closer, so no two dots overlap. */
+export const OVERVIEW_POSE_LANDSCAPE: CameraPose = orbit(STATION_CENTRE, 16, VIEW_BEARING_DEG, 12, 4.6);
+
 /** How far the user can zoom out, relative to the entry view of the device. */
 export const VIEW_MAX_ZOOM_OUT = 1.2;
 
@@ -107,10 +112,17 @@ const mastLayout = layoutOf('windMast');
 const omondLayout = layoutOf('omond');
 const flagLayout = layoutOf('flag');
 
-/** A point in Bahía Scotia, a little off the beach where the boat rests. */
+/** The Zodiac, beached with its bow on the gravel (StationScene strands it at the same point). */
+const boatPoint: [number, number, number] = (() => {
+  const boat = layoutOf('boat').position;
+  const [x, z] = beachPoint([boat[0], boat[2]], -0.03);
+  return [x, 0.45, z];
+})();
+
+/** A point in Bahía Scotia off the beach, to one side of the boat so the two dots never stack. */
 const bayPoint: [number, number, number] = (() => {
   const boat = layoutOf('boat').position;
-  const [x, z] = beachPoint([boat[0], boat[2]], -2.2);
+  const [x, z] = beachPoint([boat[0] - 3, boat[2]], -2.2);
   return [x, 0.4, z];
 })();
 
@@ -150,7 +162,7 @@ export const HOTSPOTS: readonly HotspotDef[] = [
   {
     id: 'house',
     label: 'Casas históricas',
-    shortLabel: 'Estación',
+    shortLabel: 'Casa Omond',
     subtitle: 'De la pirca de piedra de Omond House a los módulos actuales',
     worldPos: [
       omondLayout.position[0],
@@ -170,7 +182,7 @@ export const HOTSPOTS: readonly HotspotDef[] = [
       flagLayout.position[1] + 2.7,
       flagLayout.position[2],
     ],
-    pose: orbit([flagLayout.position[0], flagLayout.position[1] + 1.4, flagLayout.position[2]], 6.5, 190, 10, 1.2),
+    pose: orbit([flagLayout.position[0], flagLayout.position[1] + 2.0, flagLayout.position[2]], 9.5, 190, 12, 1.6),
     fallbackPct: [48, 38],
   },
   {
@@ -181,6 +193,15 @@ export const HOTSPOTS: readonly HotspotDef[] = [
     worldPos: bayPoint,
     pose: orbit([bayPoint[0], 0.3, bayPoint[2]], 12, 180, 16, 2.5),
     fallbackPct: [30, 66],
+  },
+  {
+    id: 'boat',
+    label: 'Bote Zodiac',
+    shortLabel: 'Zodiac',
+    subtitle: 'Bote neumático con motor fuera de borda: la base no tiene muelle',
+    worldPos: boatPoint,
+    pose: orbit([boatPoint[0], 0.2, boatPoint[2]], 6, 180, 14, 1.0),
+    fallbackPct: [40, 60],
   },
   {
     id: 'colony',
@@ -196,9 +217,11 @@ export const HOTSPOTS: readonly HotspotDef[] = [
 export function poseForHotspot(
   focus: HotspotId | null,
   mobile: boolean,
-  panelExpanded = false
+  panelExpanded = false,
+  landscape = false
 ): CameraPose {
   if (!focus || focus === 'overview') {
+    if (landscape) return OVERVIEW_POSE_LANDSCAPE;
     if (mobile) {
       return panelExpanded ? OVERVIEW_POSE_MOBILE_EXPANDED : OVERVIEW_POSE_MOBILE;
     }
@@ -213,13 +236,6 @@ export function poseForHotspot(
   }
   return mobile ? mobilePose(found.pose, panelExpanded) : found.pose;
 }
-
-const CHAPTER_KEY_SPOTS: Record<Chapter, readonly HotspotId[]> = {
-  arrival: ['house', 'flag'],
-  observation: ['screen', 'mast'],
-  journey: ['house', 'flag'],
-  answer: ['flag'],
-};
 
 export function Hotspots({
   overlayRef,
@@ -312,6 +328,17 @@ export function Hotspots({
       ) ?? null
   );
 
+  const keySpots = useMemo(() => {
+    if (!chapter) return null;
+    const spots = tourStops(chapter)
+      .map((stop) => stop.spot)
+      .filter((spot): spot is Exclude<HotspotId, 'overview'> => spot !== 'overview');
+    if (chapter === 'answer' && spots.length === 0) {
+      return new Set<HotspotId>(['flag']);
+    }
+    return new Set<HotspotId>(spots);
+  }, [chapter]);
+
   return (
     <>
       <div
@@ -322,7 +349,7 @@ export function Hotspots({
       >
         {visibleHotspots.map((spot) => {
           const isSelected = activeSpot === spot.id;
-          const isKeySpot = chapter ? CHAPTER_KEY_SPOTS[chapter]?.includes(spot.id) : true;
+          const isKeySpot = keySpots ? keySpots.has(spot.id) : true;
           return (
             <button
               key={spot.id}

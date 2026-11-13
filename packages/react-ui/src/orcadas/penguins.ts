@@ -351,11 +351,15 @@ interface Segment {
   /** Heading at the start and the end (for the segments that do not move). */
   yaw0: number;
   yaw1: number;
+  /** Pitch slope at the start and end of the segment so transitions stay continuous. */
+  slope0: number;
+  slope1: number;
 }
 
 export interface PenguinRoute {
   segments: Segment[];
   duration: number;
+  heightAt: HeightAt;
 }
 
 const WALK_SPEED = 0.3;
@@ -363,6 +367,82 @@ const SLIDE_SPEED = 0.95;
 const SWIM_SPEED = 1.0;
 /** Height of the swimming penguin: the back just above the water. */
 const SWIM_Y = -0.035;
+/** Lateral clearance around the swim corridor to keep free of floating ice and icebergs. */
+export const PENGUIN_SWIM_CLEARANCE = 0.6;
+
+/** Extreme support points of the penguin body in tilt-local coordinates (feet at y = 0, beak +x). */
+const BODY_SUPPORT_POINTS: readonly (readonly [number, number, number])[] = [
+  [0.145, 0.001, 0.1275],
+  [0.145, 0.001, -0.1275],
+  [0.13, 0, 0.12],
+  [0.13, 0, -0.12],
+  [-0.03, 0, 0.12],
+  [-0.03, 0, -0.12],
+  [-0.23, 0.03, 0.0375],
+  [-0.23, 0.03, -0.0375],
+  [-0.125, 0.08, 0.13],
+  [-0.125, 0.08, -0.13],
+  [0.125, 0.09, 0.1225],
+  [0.125, 0.09, -0.1225],
+  [0.1275, 0.26, 0.1125],
+  [0.1275, 0.26, -0.1125],
+  [0.1275, 0.46, 0.1125],
+  [0.1275, 0.46, -0.1125],
+  [0.115, 0.52, 0.095],
+  [0.115, 0.52, -0.095],
+];
+
+/** Extreme head points relative to PENGUIN_NECK (covering both Adélie and chinstrap). */
+const HEAD_SUPPORT_POINTS: readonly (readonly [number, number, number])[] = [
+  [0.115, 0.005, 0.098],
+  [0.115, 0.005, -0.098],
+  [0.115, 0.115, 0.098],
+  [0.115, 0.115, -0.098],
+  [0.1925, 0.051, 0],
+  [0.08, 0.1725, 0],
+];
+
+/** Minimum pivot y so no support point of the rotated penguin sinks below `heightAt(wx, wz)`. */
+function groundSupportY(heightAt: HeightAt, p: PenguinPose): number {
+  const zRot = -p.lie * (Math.PI / 2) + p.slope;
+  const cz = Math.cos(zRot);
+  const sz = Math.sin(zRot);
+  const cx = Math.cos(p.roll);
+  const sx = Math.sin(p.roll);
+  const cy = Math.cos(p.yaw);
+  const sy = Math.sin(p.yaw);
+  const chp = Math.cos(p.headPitch);
+  const shp = Math.sin(p.headPitch);
+  const chy = Math.cos(p.headYaw);
+  const shy = Math.sin(p.headYaw);
+  const [nx, ny, nz] = PENGUIN_NECK;
+
+  let neededY = -Infinity;
+  const checkPoint = (lx: number, ly: number, lz: number) => {
+    const syLy = ly * p.stretch;
+    const x1 = lx * cz - syLy * sz;
+    const y1 = lx * sz + syLy * cz;
+    const y2 = y1 * cx - lz * sx;
+    const z2 = y1 * sx + lz * cx;
+    const wx = p.x + (x1 * cy + z2 * sy) * PENGUIN_SCALE;
+    const wz = p.z + (-x1 * sy + z2 * cy) * PENGUIN_SCALE;
+    const dy = y2 * PENGUIN_SCALE;
+    const req = heightAt(wx, wz) - dy;
+    if (req > neededY) neededY = req;
+  };
+
+  for (const [lx, ly, lz] of BODY_SUPPORT_POINTS) checkPoint(lx, ly, lz);
+  for (const [hx, hy, hz] of HEAD_SUPPORT_POINTS) {
+    // neck rotation is YZX with rx = 0: Z (headPitch) then Y (headYaw)
+    const rx = hx * chp - hy * shp;
+    const ry = hx * shp + hy * chp;
+    const wxHead = rx * chy + hz * shy + nx;
+    const wyHead = ry + ny;
+    const wzHead = -rx * shy + hz * chy + nz;
+    checkPoint(wxHead, wyHead, wzHead);
+  }
+  return neededY;
+}
 
 /** Point at a given distance to the coast, moving from p along the coast-distance gradient. */
 export function beachPoint(p: V2, target: number): V2 {
@@ -444,7 +524,13 @@ export function buildPenguinRoute(heightAt: HeightAt): PenguinRoute {
     const prevYaw = segs.length ? segs[segs.length - 1].yaw1 : 0;
     const yaw0 = moving ? endYaw(path, false) : prevYaw;
     const yaw1 = moving ? endYaw(path, true) : prevYaw;
-    segs.push({ mode, path, duration, yaw0, yaw1 });
+    const total = path[path.length - 1].d;
+    const slopeScale = mode === 'walk' ? 0.35 : 1;
+    const slope0 =
+      mode === 'leap' ? 0.55 : moving ? headingAt(path, 0).slope * slopeScale : 0;
+    const slope1 =
+      mode === 'dive' || mode === 'swim' ? 0 : moving ? headingAt(path, total).slope * slopeScale : 0;
+    segs.push({ mode, path, duration, yaw0, yaw1, slope0, slope1 });
   };
   const still = (p: Sample): Sample[] => [{ ...p, d: 0 }];
   const last = () => {
@@ -472,19 +558,36 @@ export function buildPenguinRoute(heightAt: HeightAt): PenguinRoute {
   add('walk', walk3, walk3[walk3.length - 1].d / WALK_SPEED);
   // At rest the penguin turns back towards the rim, ready for the next trip.
   const restSeg = still(last());
-  segs.push({ mode: 'rest', path: restSeg, duration: 3, yaw0: segs[segs.length - 1].yaw1, yaw1: segs[0].yaw0 });
+  segs.push({
+    mode: 'rest',
+    path: restSeg,
+    duration: 3,
+    yaw0: segs[segs.length - 1].yaw1,
+    yaw1: segs[0].yaw0,
+    slope0: segs[segs.length - 1].slope1,
+    slope1: segs[0].slope0,
+  });
 
   // A segment that does not move turns in place from the previous heading to the next one.
   for (let k = 0; k < segs.length; k++) {
     const seg = segs[k];
     if (seg.path.length > 1) continue;
-    seg.yaw0 = segs[(k + segs.length - 1) % segs.length].yaw1;
+    const prev = segs[(k + segs.length - 1) % segs.length];
     const next = segs[(k + 1) % segs.length];
-    if (next.path.length > 1) seg.yaw1 = next.yaw0;
-    else seg.yaw1 = seg.yaw0;
+    seg.yaw0 = prev.yaw1;
+    seg.yaw1 = next.path.length > 1 ? next.yaw0 : prev.yaw1;
+    seg.slope0 = prev.slope1;
+    seg.slope1 = seg.mode === 'flop' ? next.slope0 : 0;
   }
 
-  return { segments: segs, duration: segs.reduce((a, s) => a + s.duration, 0) };
+  return { segments: segs, duration: segs.reduce((a, s) => a + s.duration, 0), heightAt };
+}
+
+/** Water corridor (dive, swim, leap) in world [x, z] derived from the route as single source of truth. */
+export function penguinSwimCorridor(route: PenguinRoute): readonly V2[] {
+  return route.segments
+    .filter((s) => s.mode === 'dive' || s.mode === 'swim' || s.mode === 'leap')
+    .flatMap((s) => s.path.map((p) => [p.x, p.z] as const));
 }
 
 function sampleAt(path: Sample[], dist: number): Sample {
@@ -555,6 +658,7 @@ export function travellerPose(route: PenguinRoute, t: number, offset: number, ou
     case 'flop':
       // Drops forward onto the belly, flippers opening to steer.
       lie = smooth(0.15, 0.85, u);
+      out.slope = lerp(seg.slope0, seg.slope1, smooth(0.45, 1, u));
       out.flipL = out.flipR = 0.1 + smooth(0.2, 0.9, u) * 0.9;
       out.headPitch = smooth(0.4, 1, u) * 1.2;
       break;
@@ -569,6 +673,7 @@ export function travellerPose(route: PenguinRoute, t: number, offset: number, ou
     }
     case 'standUp':
       lie = 1 - smooth(0.1, 0.9, u);
+      out.slope = seg.slope0 * (1 - smooth(0, 0.7, u));
       out.flipL = out.flipR = 1.0 - smooth(0.2, 1, u) * 0.85;
       out.headPitch = (1 - smooth(0, 0.7, u)) * 1.2;
       break;
@@ -597,10 +702,10 @@ export function travellerPose(route: PenguinRoute, t: number, offset: number, ou
       break;
     }
     case 'leap':
-      // Shoots out of the water and lands on the beach on its belly.
+      // Shoots out of the water and lands flat on its belly along the beach slope.
       lie = 1;
       lift = Math.sin(u * Math.PI) * 0.55;
-      out.slope = Math.cos(u * Math.PI) * 0.6;
+      out.slope = lerp(seg.slope0, seg.slope1, u) - Math.sin(u * Math.PI) * 0.35;
       out.flipL = out.flipR = 1.0;
       out.headPitch = 1.0;
       break;
@@ -614,26 +719,46 @@ export function travellerPose(route: PenguinRoute, t: number, offset: number, ou
   const h = moving ? headingAt(path, dist) : null;
   out.yaw = h ? h.yaw : lerpAngle(seg.yaw0, seg.yaw1, smooth(0.1, 0.9, u));
   // Blend the heading into the next segment's so turns at joins never snap.
+  const prev = route.segments[(i + route.segments.length - 1) % route.segments.length];
   const next = route.segments[(i + 1) % route.segments.length];
   const remaining = seg.duration - tt;
   if (remaining < 0.3 && moving) out.yaw = lerpAngle(out.yaw, next.yaw0, (0.3 - remaining) / 0.6);
 
   if (seg.mode === 'slide' && h) out.slope = h.slope;
-  if (seg.mode === 'walk' && h) out.slope = h.slope * 0.4;
+  if (seg.mode === 'walk' && h) out.slope = h.slope * 0.35;
+  if (seg.mode === 'dive' && h) {
+    out.slope = lerp(prev.slope1, h.slope, smooth(0.05, 0.4, u)) * (1 - smooth(0.65, 1, u));
+  }
 
-  // Lying on the belly lifts the feet pivot so the belly rests on the ground.
   out.lie = lie;
   out.x = p.x + P[0] * offset;
   out.z = p.z + P[1] * offset;
-  out.y = p.y + lift + lie * 0.125 * PENGUIN_SCALE;
+  const swimPivotY = SWIM_Y + 0.125 * PENGUIN_SCALE;
+  if (seg.mode === 'swim') {
+    out.y = swimPivotY + lift;
+  } else {
+    const supportY = groundSupportY(route.heightAt, out);
+    const baseY = seg.mode === 'dive' || seg.mode === 'leap' ? Math.max(swimPivotY, supportY) : supportY;
+    out.y = baseY + lift;
+  }
   return out;
 }
+
+/** Knoll-top spots for the 5 travellers when the bay is frozen (`seaIce >= 0.5`). */
+const FROZEN_TRAVELLER_SPOTS: readonly V2[] = [
+  [0.2, 0.95],
+  [0.75, 0.85],
+  [1.25, 0.45],
+  [0.85, -0.15],
+  [1.15, 1.2],
+];
 
 /** The penguins of the colony: residents on the nests, `travellers` doing the round trip. */
 export function buildPenguinColony(heightAt: HeightAt): {
   residents: Resident[];
   route: PenguinRoute;
   travellers: readonly { delay: number; offset: number; species: PenguinSpecies }[];
+  frozenTravellers: Resident[];
 } {
   const residents = NEST_POSITIONS.map(([x, z], i) => ({
     x,
@@ -650,5 +775,16 @@ export function buildPenguinColony(heightAt: HeightAt): {
     offset: (i % 3) * 0.14 - 0.14,
     species: (i % 2 === 0 ? 'chinstrap' : 'adelie') as PenguinSpecies,
   }));
-  return { residents, route, travellers };
+  const frozenTravellers = FROZEN_TRAVELLER_SPOTS.map(([s, p], i) => {
+    const [x, z] = knollPoint(s, p);
+    return {
+      x,
+      y: heightAt(x, z),
+      z,
+      species: travellers[i].species,
+      seed: 5201 + i * 23,
+      yaw: yawOf(x - CX, z - CZ) + (hash(i, 19) - 0.5) * 0.6,
+    };
+  });
+  return { residents, route, travellers, frozenTravellers };
 }

@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { ORCADAS_GUIDING_QUESTION } from '../../core/src/content/orcadas.ts';
 
 let consoleErrors: string[] = [];
 
@@ -60,7 +61,7 @@ test.describe('3D relief view', () => {
       await orcadasBtn.click();
     }
 
-    await expect(page.getByRole('heading', { level: 2, name: 'Estación Orcadas' })).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole('heading', { level: 2, name: ORCADAS_GUIDING_QUESTION })).toBeVisible({ timeout: 10000 });
   });
 
   test('zoom buttons move the orbit camera from where it is, without resetting it', async ({ page }) => {

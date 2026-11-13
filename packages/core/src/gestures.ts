@@ -71,17 +71,23 @@ export const SHEET_SNAP_PX = 40;
 /** A press that moves less than this is a tap, not a drag. */
 export const SHEET_TAP_PX = 6;
 
-export type SheetSize = 'small' | 'tall' | 'closed';
+/** `peek` shows only the top of a sheet that never closes (its title and main button). */
+export type SheetSize = 'peek' | 'small' | 'tall' | 'closed';
 
 /**
  * Size of a bottom sheet after its handle is let go. `draggedUp` is how far the finger went, in
- * px, up the screen positive. A tap switches between small and tall. A drag past SHEET_SNAP_PX
- * goes one step the way it was dragged: up to tall, down to small, and down from small closes the
- * sheet. A shorter drag falls back to the size it had.
+ * px, up the screen positive. A tap goes up one size (peek to small, small to tall) and from tall
+ * back to small. A drag past SHEET_SNAP_PX goes one step the way it was dragged: up towards tall,
+ * down towards `floor`. With the default floor, down from small closes the sheet; a sheet that must
+ * stay on screen passes `floor = 'peek'` and stops there. A shorter drag keeps the size it had.
  */
-export function sheetAfterDrag(size: 'small' | 'tall', draggedUp: number): SheetSize {
-  if (Math.abs(draggedUp) < SHEET_TAP_PX) return size === 'tall' ? 'small' : 'tall';
-  if (draggedUp >= SHEET_SNAP_PX) return 'tall';
-  if (draggedUp <= -SHEET_SNAP_PX) return size === 'tall' ? 'small' : 'closed';
+export function sheetAfterDrag(
+  size: 'peek' | 'small' | 'tall',
+  draggedUp: number,
+  floor: 'closed' | 'peek' = 'closed'
+): SheetSize {
+  if (Math.abs(draggedUp) < SHEET_TAP_PX) return size === 'small' ? 'tall' : 'small';
+  if (draggedUp >= SHEET_SNAP_PX) return size === 'peek' ? 'small' : 'tall';
+  if (draggedUp <= -SHEET_SNAP_PX) return size === 'tall' ? 'small' : floor;
   return size;
 }

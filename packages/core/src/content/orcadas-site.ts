@@ -240,7 +240,7 @@ export const SITE_ELEMENTS: readonly SiteElement[] = [
     // COMNAP lists two Zodiac boats and beaches suitable for small boats; the spot is an estimate.
     id: 'boat',
     kind: 'boat',
-    name: 'Bote',
+    name: 'Bote Zodiac',
     center: [130, -120],
     footprint: [5, 2],
     bearingDeg: 135,

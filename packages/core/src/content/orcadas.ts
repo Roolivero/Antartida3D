@@ -11,7 +11,8 @@ export const CHAPTER_NAMES: Record<Chapter, string> = {
 };
 
 export const CHAPTER_HEADINGS: Record<Chapter, string> = {
-  arrival: 'Estación Orcadas',
+  // The top bar already names the station: the first chapter opens with the question.
+  arrival: ORCADAS_GUIDING_QUESTION,
   observation: 'Observación del día',
   journey: 'Viaje en el tiempo',
   answer: 'La respuesta',
@@ -166,6 +167,14 @@ export const ORCADAS_FACTS: readonly OrcadasFact[] = [
     title: 'Fauna',
     text: 'Fauna: pingüinos barbijo y adelia; skúas, gaviota cocinera, petreles de las tormentas, petrel de las nieves y petrel damero; elefantes marinos, lobo fino antártico, focas de Weddell y cangrejeras.',
     sourceIds: ['cancilleria'],
+  },
+  {
+    id: 'arrival-transporte',
+    chapter: 'arrival',
+    kind: 'real',
+    title: 'Cómo se llega',
+    text: 'A la base se llega en buque o en helicóptero, con unas 25 visitas de buques por año entre noviembre y marzo. No tiene muelle: cuenta con dos botes Zodiac con motor fuera de borda y con playas aptas para desembarcar botes chicos.',
+    sourceIds: ['comnap'],
   },
   {
     id: 'arrival-elevacion',
@@ -472,7 +481,138 @@ export const ORCADAS_ERAS: readonly OrcadasEra[] = [
   },
 ] as const;
 
-export type OrcadasHotspotId = 'screen' | 'mast' | 'house' | 'flag' | 'bay' | 'colony';
+export type OrcadasHotspotId = 'screen' | 'mast' | 'house' | 'flag' | 'bay' | 'colony' | 'boat';
+
+export interface OrcadasTourStop {
+  id: string;
+  chapter: Chapter;
+  spot: OrcadasHotspotId | 'overview';
+  factId: string;
+  /** Short 1-2 line summary (<= 120 chars), derived only from the fact text. */
+  line: string;
+  /** Journey stops only: the year the stop sets ('now' = maxYear). */
+  year?: number | 'now';
+  /**
+   * Facts folded under the stop's «Saber más»: what the line leaves out. The stop's own fact is
+   * listed only when the line shortens it; otherwise «Saber más» would repeat the line.
+   */
+  more: readonly string[];
+}
+
+export const ORCADAS_TOUR: readonly OrcadasTourStop[] = [
+  // arrival
+  {
+    id: 'arrival-istmo',
+    chapter: 'arrival',
+    spot: 'overview',
+    factId: 'arrival-istmo',
+    line: 'La base está en el istmo Ibarguren, entre las bahías Scotia y Uruguay, en la isla Laurie.',
+    more: ['arrival-coordenadas', 'arrival-elevacion'],
+  },
+  {
+    id: 'arrival-antiguedad',
+    chapter: 'arrival',
+    spot: 'flag',
+    factId: 'arrival-antiguedad',
+    line: 'Es la presencia humana estable más antigua de la Antártida.',
+    more: [],
+  },
+  {
+    id: 'arrival-monumento',
+    chapter: 'arrival',
+    spot: 'house',
+    factId: 'done-monumento-hsm42',
+    line: 'Casa Omond y Casa Moneta forman, con un cementerio, el Sitio y Monumento Histórico N.º 42.',
+    more: [],
+  },
+  {
+    id: 'arrival-fauna',
+    chapter: 'arrival',
+    spot: 'colony',
+    factId: 'arrival-fauna',
+    line: 'Viven pingüinos barbijo y adelia, skúas, petreles, elefantes marinos y focas de Weddell.',
+    more: ['arrival-fauna'],
+  },
+
+  // observation
+  {
+    id: 'obs-abrigo',
+    chapter: 'observation',
+    spot: 'screen',
+    factId: 'obs-instrumental-1903',
+    line: 'En 1903 había cuatro abrigos meteorológicos con termómetros seco y húmedo, de máxima y de mínima.',
+    more: ['obs-instrumental-1903', 'obs-registro-1903', 'obs-simulacion'],
+  },
+
+  // journey
+  {
+    id: 'journey-1903',
+    chapter: 'journey',
+    spot: 'overview',
+    factId: 'eras-expedicion-bruce',
+    year: 1903,
+    line: 'La expedición escocesa de Bruce inauguró el observatorio el 1 de abril de 1903.',
+    more: ['eras-decreto-1904', 'eras-traspaso-1904', 'eras-hugo-acuna', 'eras-casa-moneta-1905'],
+  },
+  {
+    id: 'journey-1927',
+    chapter: 'journey',
+    spot: 'overview',
+    factId: 'eras-radio-1927',
+    year: 1927,
+    line: 'En 1927 se inauguró la primera estación radiotelegráfica antártica.',
+    more: ['eras-radio-1927', 'eras-dotacion-nativa-1927', 'eras-jose-moneta'],
+  },
+  {
+    id: 'journey-1951',
+    chapter: 'journey',
+    spot: 'overview',
+    factId: 'eras-traspaso-armada',
+    year: 1951,
+    line: 'En 1951 pasó a la Armada como Destacamento Naval (1952 según Cancillería).',
+    more: ['eras-unica-base'],
+  },
+  {
+    id: 'journey-now',
+    chapter: 'journey',
+    spot: 'overview',
+    factId: 'century-tendencia-zazulie',
+    year: 'now',
+    line: 'Desde 1950 el registro muestra un calentamiento significativo en las cuatro estaciones.',
+    more: ['century-tendencia-zazulie', 'century-promedios-temp', 'century-record-frio'],
+  },
+] as const;
+
+const FACT_MAP = new Map<string, OrcadasFact>(ORCADAS_FACTS.map((f) => [f.id, f]));
+const TOUR_FACT_IDS = new Set(ORCADAS_TOUR.flatMap((stop) => [stop.factId, ...stop.more]));
+
+export function factById(id: string): OrcadasFact | null {
+  return FACT_MAP.get(id) ?? null;
+}
+
+/** Publishable guided-tour stops for a chapter, in declared order. */
+export function tourStops(chapter: Chapter): OrcadasTourStop[] {
+  return ORCADAS_TOUR.filter((stop) => {
+    if (stop.chapter !== chapter) return false;
+    const fact = FACT_MAP.get(stop.factId);
+    return fact !== undefined && isPublishable(fact);
+  });
+}
+
+/** Publishable facts folded under a stop's «Saber más», in declared order. */
+export function stopMoreFacts(stop: OrcadasTourStop): OrcadasFact[] {
+  return stop.more
+    .map((id) => FACT_MAP.get(id))
+    .filter((f): f is OrcadasFact => f !== undefined && isPublishable(f));
+}
+
+/** Guided-tour stop at `index` for `chapter`, or null if out of range. */
+export function tourStop(chapter: Chapter, index: number): OrcadasTourStop | null {
+  const stops = tourStops(chapter);
+  const idx = Math.trunc(index);
+  if (idx < 0 || idx >= stops.length) return null;
+  return stops[idx];
+}
 
 /** Facts shown on each scene hotspot card. Explicit ids: one fact never appears on two hotspots. */
 export const ORCADAS_HOTSPOT_FACTS: Record<OrcadasHotspotId, readonly string[]> = {
@@ -481,6 +621,7 @@ export const ORCADAS_HOTSPOT_FACTS: Record<OrcadasHotspotId, readonly string[]> 
   house: ['arrival-coordenadas'],
   flag: ['arrival-antiguedad'],
   bay: ['year-hielo-octubre'],
+  boat: ['arrival-transporte'],
   colony: ['arrival-fauna'],
 };
 
@@ -488,15 +629,15 @@ export const ORCADAS_HOTSPOT_FACTS: Record<OrcadasHotspotId, readonly string[]> 
 export const PANEL_VISIBLE_FACTS = 2;
 
 /**
- * Facts for a panel (a chapter or the month strip): never the ones a hotspot card shows,
- * so the same fact is not on screen twice. Split into the visible ones and the folded rest.
+ * Facts for a panel (a chapter or the month strip): never the ones a hotspot card or a tour stop
+ * shows, so the same fact is not on screen twice. Split into the visible ones and the folded rest.
  */
 export function panelFacts(facts: readonly OrcadasFact[]): {
   visible: OrcadasFact[];
   more: OrcadasFact[];
 } {
   const onHotspots = new Set(Object.values(ORCADAS_HOTSPOT_FACTS).flat());
-  const own = facts.filter((f) => !onHotspots.has(f.id));
+  const own = facts.filter((f) => !onHotspots.has(f.id) && !TOUR_FACT_IDS.has(f.id));
   return { visible: own.slice(0, PANEL_VISIBLE_FACTS), more: own.slice(PANEL_VISIBLE_FACTS) };
 }
 

@@ -1,5 +1,10 @@
 import { createSeededRng } from './rng.ts';
 import {
+  tourStop,
+  tourStops,
+  type OrcadasTourStop,
+} from './content/orcadas.ts';
+import {
   ORCADAS_ANNUAL_TEMP,
   ORCADAS_CLIMATE,
   ORCADAS_MONTHLY_TEMP,
@@ -17,6 +22,9 @@ export const ORCADAS_LAT = -60.74;
 export interface OrcadasState {
   chapter: Chapter;
   visited: readonly Chapter[];
+  tourIndex: number;
+  /** Ids of the guided-tour stops seen, in any chapter: the closing checklist reads them. */
+  seenStops: readonly string[];
   guesses: Partial<Record<ReadingKind, number>>;
   /** Month shown by the scene and the month controls (1..12). */
   month: number;
@@ -33,6 +41,9 @@ export type OrcadasAction =
   | { type: 'goto'; chapter: Chapter }
   | { type: 'next' }
   | { type: 'back' }
+  | { type: 'tourNext' }
+  | { type: 'tourPrev' }
+  | { type: 'tourGo'; index: number }
   | { type: 'guess'; kind: ReadingKind; value: number }
   | { type: 'clearGuesses' }
   | { type: 'month'; month: number }
@@ -54,6 +65,10 @@ function clampYear(year: number, maxYear: number): number {
   return Math.max(ORCADAS_FIRST_YEAR, Math.min(maxYear, Math.trunc(year)));
 }
 
+function appendSeen(seen: readonly string[], stop: OrcadasTourStop | null): readonly string[] {
+  return !stop || seen.includes(stop.id) ? seen : [...seen, stop.id];
+}
+
 function appendVisited(visited: readonly Chapter[], chapter: Chapter): readonly Chapter[] {
   return visited.includes(chapter) ? visited : [...visited, chapter];
 }
@@ -62,11 +77,10 @@ export function chapterIndex(c: Chapter): number {
   return CHAPTERS.indexOf(c);
 }
 
+/** True once the main temperature reading is recorded. */
 export function observationDone(s: OrcadasState): boolean {
-  return READING_KINDS.every((k) => {
-    const v = s.guesses[k];
-    return typeof v === 'number' && Number.isFinite(v);
-  });
+  const v = s.guesses.temp;
+  return typeof v === 'number' && Number.isFinite(v);
 }
 
 /** The observation is optional: the closing chapter covers a missing one. */
@@ -74,11 +88,82 @@ export function canAdvanceOrcadas(s: OrcadasState): boolean {
   return s.chapter !== 'answer';
 }
 
+function resolveStopYear(stop: OrcadasTourStop | null, maxYear: number): number | null {
+  if (!stop || stop.year === undefined) return null;
+  return clampYear(stop.year === 'now' ? maxYear : stop.year, maxYear);
+}
+
+function enterChapter(s: OrcadasState, chapter: Chapter): OrcadasState {
+  const first = tourStop(chapter, 0);
+  const stopYear = resolveStopYear(first, s.maxYear);
+  return {
+    ...s,
+    chapter,
+    visited: appendVisited(s.visited, chapter),
+    tourIndex: 0,
+    seenStops: appendSeen(s.seenStops, first),
+    year: stopYear ?? s.year,
+  };
+}
+
+function goToStop(s: OrcadasState, index: number): OrcadasState {
+  const stops = tourStops(s.chapter);
+  const idx = Math.trunc(index);
+  if (idx < 0 || idx >= stops.length) return s;
+  const stopYear = resolveStopYear(stops[idx], s.maxYear);
+  return {
+    ...s,
+    tourIndex: idx,
+    seenStops: appendSeen(s.seenStops, stops[idx]),
+    year: stopYear ?? s.year,
+  };
+}
+
+/** True when no further guided-tour stops remain in the active chapter. */
+export function tourAtEnd(s: OrcadasState): boolean {
+  const stops = tourStops(s.chapter);
+  return stops.length === 0 || s.tourIndex >= stops.length - 1;
+}
+
+/** One line of the closing checklist: what the visitor did in a part of the expedition. */
+export interface OrcadasProgressItem {
+  id: 'arrival' | 'temp' | 'extra' | 'journey';
+  /** Chapter that completes it. */
+  chapter: Chapter;
+  done: number;
+  total: number;
+  /** Extra readings are optional: missing them is not a gap. */
+  optional: boolean;
+}
+
+/** What the visitor saw and did, for the checklist at the end (like the voyage's notebook). */
+export function orcadasProgress(s: OrcadasState): OrcadasProgressItem[] {
+  const seenIn = (chapter: Chapter) => {
+    const stops = tourStops(chapter);
+    return { done: stops.filter((stop) => s.seenStops.includes(stop.id)).length, total: stops.length };
+  };
+  const extras = READING_KINDS.filter((kind) => kind !== 'temp');
+  return [
+    { id: 'arrival', chapter: 'arrival', ...seenIn('arrival'), optional: false },
+    { id: 'temp', chapter: 'observation', done: observationDone(s) ? 1 : 0, total: 1, optional: false },
+    {
+      id: 'extra',
+      chapter: 'observation',
+      done: extras.filter((kind) => Number.isFinite(s.guesses[kind])).length,
+      total: extras.length,
+      optional: true,
+    },
+    { id: 'journey', chapter: 'journey', ...seenIn('journey'), optional: false },
+  ];
+}
+
 export function initialOrcadas(month: number, year: number): OrcadasState {
   const maxYear = Math.max(ORCADAS_FIRST_YEAR, Math.trunc(year));
   return {
     chapter: 'arrival',
     visited: ['arrival'],
+    tourIndex: 0,
+    seenStops: appendSeen([], tourStop('arrival', 0)),
     guesses: {},
     month: normalizeMonth(month),
     obsMonth: normalizeMonth(month),
@@ -92,32 +177,28 @@ export function initialOrcadas(month: number, year: number): OrcadasState {
 export function orcadasReducer(s: OrcadasState, a: OrcadasAction): OrcadasState {
   switch (a.type) {
     case 'goto':
-      return {
-        ...s,
-        chapter: a.chapter,
-        visited: appendVisited(s.visited, a.chapter),
-      };
+      return enterChapter(s, a.chapter);
     case 'next': {
       if (!canAdvanceOrcadas(s)) return s;
       const idx = chapterIndex(s.chapter);
       if (idx < 0 || idx >= CHAPTERS.length - 1) return s;
-      const nextChapter = CHAPTERS[idx + 1];
-      return {
-        ...s,
-        chapter: nextChapter,
-        visited: appendVisited(s.visited, nextChapter),
-      };
+      return enterChapter(s, CHAPTERS[idx + 1]);
     }
     case 'back': {
       const idx = chapterIndex(s.chapter);
       if (idx <= 0) return s;
-      const prevChapter = CHAPTERS[idx - 1];
-      return {
-        ...s,
-        chapter: prevChapter,
-        visited: appendVisited(s.visited, prevChapter),
-      };
+      return enterChapter(s, CHAPTERS[idx - 1]);
     }
+    case 'tourNext': {
+      if (tourAtEnd(s)) return s;
+      return goToStop(s, s.tourIndex + 1);
+    }
+    case 'tourPrev': {
+      if (s.tourIndex <= 0) return s;
+      return goToStop(s, Math.min(s.tourIndex - 1, tourStops(s.chapter).length - 1));
+    }
+    case 'tourGo':
+      return goToStop(s, a.index);
     case 'guess':
       return {
         ...s,
@@ -138,11 +219,21 @@ export function orcadasReducer(s: OrcadasState, a: OrcadasAction): OrcadasState 
         ...s,
         hour: clampHour(a.hour),
       };
-    case 'year':
-      return {
-        ...s,
-        year: clampYear(a.year, s.maxYear),
-      };
+    case 'year': {
+      const year = clampYear(a.year, s.maxYear);
+      if (s.chapter !== 'journey') {
+        return { ...s, year };
+      }
+      const stops = tourStops('journey');
+      let tourIndex = 0;
+      for (let i = 0; i < stops.length; i++) {
+        const stopYear = resolveStopYear(stops[i], s.maxYear);
+        if (stopYear !== null && stopYear <= year) {
+          tourIndex = i;
+        }
+      }
+      return { ...s, year, tourIndex, seenStops: appendSeen(s.seenStops, stops[tourIndex] ?? null) };
+    }
     case 'togglePanel':
       return {
         ...s,

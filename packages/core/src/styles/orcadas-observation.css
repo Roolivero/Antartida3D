@@ -8,16 +8,16 @@
   max-width: 100%;
 }
 
-/* Instrument step / tab navigation (1 to 4 selector) */
+/* Optional instruments tab navigation (pressure, wind, clouds) */
 .orc-obs-tabs {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 4px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 5px;
 }
 
 .orc-obs-tab {
   min-height: 44px;
-  padding: 4px 4px;
+  padding: 5px 6px;
   border-radius: 6px 10px 6px 8px;
   border: 1.5px solid var(--ink);
   background: var(--paper);
@@ -26,27 +26,14 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 1px;
+  gap: 2px;
   text-align: center;
   box-shadow: 1px 2px 0 rgba(31, 42, 54, 0.14);
   transition: transform 0.15s ease, background-color 0.15s ease;
 }
 
-.orc-obs-tab-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-}
-
-.orc-obs-tab-num {
-  font-family: 'Fraunces', Georgia, serif;
-  font-size: 13px;
-  font-weight: 700;
-  line-height: 1;
-}
-
 .orc-obs-tab-check {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 800;
   color: var(--deep);
   line-height: 1;
@@ -58,7 +45,7 @@
 
 .orc-obs-tab-title {
   font-family: 'Fraunces', Georgia, serif;
-  font-size: 12px;
+  font-size: 12.5px;
   font-weight: 700;
   line-height: 1.1;
   white-space: nowrap;
@@ -106,22 +93,10 @@
   color: var(--oxide);
 }
 
-/* Active instrument stage */
-.orc-obs-stage {
-  background: var(--paper);
-  border: 1.5px solid var(--ink);
-  border-radius: 10px 14px 8px 12px;
-  padding: 9px 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  min-width: 0;
-}
-
 .orc-obs-stage-head {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
 }
 
 .orc-obs-stage-title-wrap {
@@ -140,27 +115,56 @@
   color: var(--ink);
 }
 
+.orc-obs-hint {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.3;
+  color: var(--ink);
+}
+
 details.orc-obs-details {
-  margin-top: 2px;
-  border: 1px dashed rgba(31, 42, 54, 0.25);
-  border-radius: 6px;
-  padding: 4px 8px;
-  background: rgba(251, 244, 230, 0.6);
+  border: 1px dashed rgba(31, 42, 54, 0.3);
+  border-radius: 8px;
+  padding: 6px 9px;
+  background: rgba(251, 244, 230, 0.65);
 }
 
 details.orc-obs-details > summary {
-  font-size: 12px;
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+  font-size: 13px;
   font-weight: 700;
   color: var(--deep);
   cursor: pointer;
   user-select: none;
 }
 
-.orc-obs-stage-desc {
-  margin: 4px 0 0;
-  font-size: 12px;
-  line-height: 1.32;
-  color: var(--ink);
+.orc-obs-fine-body,
+.orc-obs-more-body,
+.orc-obs-optional-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.orc-obs-optional-panel {
+  margin-top: 2px;
+}
+
+.orc-obs-lens-hit {
+  cursor: ns-resize;
+  touch-action: none;
+  stroke: transparent;
+  stroke-width: 0;
+}
+
+.orc-obs-lens-hit:focus-visible {
+  outline: none;
+  stroke: var(--deep);
+  stroke-width: 3;
+  stroke-dasharray: 5 3;
 }
 
 .orc-obs-tol-pill {
@@ -265,18 +269,51 @@ details.orc-obs-details > summary {
 }
 
 /* 1. Shelter louvered door opening animation */
+.orc-obs-shelter-door-front,
 .orc-obs-shelter-door {
-  transform-box: fill-box;
-  transform-origin: 0% 50%;
-  animation: orc-shelter-open 1.1s cubic-bezier(0.22, 0.8, 0.26, 1) 0.15s both;
+  transform-box: view-box;
+  transform-origin: 40px 96px;
 }
 
-@keyframes orc-shelter-open {
+.orc-obs-shelter-door-front {
+  animation: orc-shelter-door-front 1.1s linear 0.15s both;
+}
+
+.orc-obs-shelter-door {
+  animation: orc-shelter-door-open 1.1s linear 0.15s both;
+}
+
+@keyframes orc-shelter-door-front {
   0% {
-    transform: perspective(300px) rotateY(0deg) scaleX(1);
+    transform: scaleX(1);
+    opacity: 1;
+    animation-timing-function: cubic-bezier(0.45, 0.05, 0.85, 0.6);
+  }
+  38% {
+    transform: scaleX(0.001);
+    opacity: 1;
+  }
+  39%,
+  100% {
+    transform: scaleX(0.001);
+    opacity: 0;
+  }
+}
+
+@keyframes orc-shelter-door-open {
+  0%,
+  38% {
+    transform: scaleX(0.001);
+    opacity: 0;
+  }
+  39% {
+    transform: scaleX(0.02);
+    opacity: 1;
+    animation-timing-function: cubic-bezier(0.18, 0.72, 0.28, 1);
   }
   100% {
-    transform: perspective(300px) scaleX(-0.26) skewY(-12deg);
+    transform: scaleX(1);
+    opacity: 1;
   }
 }
 
@@ -351,37 +388,6 @@ details.orc-obs-details > summary {
 
 .orc-obs-okta-sector:hover path {
   fill: rgba(192, 134, 47, 0.34);
-}
-
-/* Custom Fine Slider Control */
-.orc-obs-control-box {
-  background: var(--ice);
-  border: 1.5px solid var(--ink);
-  border-radius: 8px 12px 8px 10px;
-  padding: 8px 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-}
-
-.orc-obs-control-top {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.orc-obs-control-lbl {
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--ink);
-}
-
-.orc-obs-draft-readout {
-  font-size: 21px;
-  font-weight: 700;
-  line-height: 1;
-  color: var(--deep);
 }
 
 .orc-obs-slider-row {
@@ -499,10 +505,6 @@ details.orc-obs-details > summary {
   outline-offset: 1px;
 }
 
-.orc-obs-confirm-row {
-  display: flex;
-}
-
 .orc-obs-confirm-btn {
   width: 100%;
   min-height: 44px;
@@ -557,234 +559,19 @@ details.orc-obs-details > summary {
   font-weight: 700;
 }
 
-/* Meteorological Field Notebook (Notebook.tsx) */
-.orc-notebook {
-  position: relative;
-  display: flex;
-  background: var(--paper);
-  border: 2px solid var(--ink);
-  border-radius: 6px 14px 10px 8px;
-  box-shadow: 2px 4px 0 rgba(31, 42, 54, 0.18);
-  overflow: hidden;
-}
-
-.orc-notebook-holes {
-  flex: none;
-  width: 20px;
-  background: rgba(31, 42, 54, 0.06);
-  border-right: 1.5px dashed rgba(164, 71, 31, 0.45);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: space-evenly;
-  padding: 8px 0;
-}
-
-.orc-notebook-holes span {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--ink);
-  opacity: 0.35;
-}
-
-.orc-notebook-page {
-  flex: 1;
-  min-width: 0;
-  padding: 9px 11px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  background-image: repeating-linear-gradient(
-    to bottom,
-    transparent 0px,
-    transparent 23px,
-    rgba(30, 62, 92, 0.1) 24px
-  );
-}
-
-.orc-notebook-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.orc-notebook-title {
-  display: block;
-  font-size: 20px;
-  line-height: 1.05;
-  color: var(--ink);
-}
-
-.orc-notebook-date {
-  display: block;
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--deep);
-}
-
-.orc-notebook-count {
-  flex: none;
-  font-size: 12px;
-  font-weight: 700;
-  padding: 2px 8px;
-  border-radius: 10px;
-  background: var(--ice);
-  border: 1px solid var(--ink);
-  color: var(--ink);
-}
-
-.orc-notebook-cells {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 6px;
-}
-
-.orc-notebook-cell {
-  min-height: 48px;
-  padding: 6px 8px;
-  border-radius: 6px 10px 6px 8px;
-  border: 1.5px solid var(--ink);
-  background: var(--ice);
-  color: var(--ink);
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 1px;
-  text-align: left;
-}
-
-.orc-notebook-cell.is-active {
-  border-color: var(--deep);
-  box-shadow: 0 0 0 2px rgba(30, 62, 92, 0.22);
-}
-
-.orc-notebook-cell-lbl {
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--ink);
-}
-
-.orc-notebook-cell-val {
-  font-size: 18px;
-  font-weight: 700;
-  line-height: 1.1;
-  color: var(--deep);
-}
-
-.orc-notebook-cell-empty {
-  font-size: 16px;
-  line-height: 1.1;
-  color: var(--pencil);
-}
-
-.orc-notebook-cell-status {
-  font-size: 10.5px;
-  font-weight: 700;
-  color: var(--deep);
-}
-
-.orc-notebook-cell-status.is-off {
-  color: var(--oxide);
-}
-
-/* Completion rubber stamp + simulation notice */
-.orc-notebook-complete {
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-  padding: 8px 10px;
-  border-radius: 8px;
-  border: 1.5px solid var(--ink);
-  background: var(--ice);
-}
-
-.orc-notebook-stamp {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  animation: orc-stamp-in 0.38s cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
-}
-
-@keyframes orc-stamp-in {
-  0% {
-    opacity: 0;
-    transform: scale(1.45) rotate(-8deg);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1) rotate(-2deg);
-  }
-}
-
-.orc-notebook-seal-svg {
-  width: 52px;
-  height: 52px;
-  flex: none;
-}
-
-.orc-notebook-stamp-txt {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.orc-notebook-stamp-title {
-  font-size: 21px;
-  line-height: 1.05;
-  color: var(--oxide);
-}
-
-.orc-notebook-stamp-txt span {
-  font-size: 12px;
-  line-height: 1.3;
-  color: var(--ink);
-}
-
-.orc-notebook-sim-note {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px;
-  padding-top: 6px;
-  border-top: 1px dashed rgba(31, 42, 54, 0.3);
-  font-size: 12px;
-  line-height: 1.32;
-  color: var(--ink);
-}
-
-.orc-notebook-actions {
-  display: flex;
-  justify-content: flex-end;
-}
-
-.orc-notebook-reset-btn {
-  min-height: 44px;
-  min-width: 44px;
-  padding: 0 12px;
-  border-radius: 8px;
-  border: 1.5px solid var(--ink);
-  background: var(--ice);
-  color: var(--ink);
-  font-size: 12.5px;
-  font-weight: 700;
-}
-
-.orc-notebook-reset-btn:hover:not(:disabled) {
-  background: var(--paper);
-}
-
-.orc-notebook-reset-btn:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-
 /* Reduced motion support (both class and media query) */
+.orc-obs.is-reduced .orc-obs-shelter-door-front,
+.orc-obs-plate.is-reduced .orc-obs-shelter-door-front {
+  animation: none;
+  opacity: 0;
+  transform: scaleX(0.001);
+}
+
 .orc-obs.is-reduced .orc-obs-shelter-door,
 .orc-obs-plate.is-reduced .orc-obs-shelter-door {
   animation: none;
-  transform: perspective(300px) scaleX(-0.26) skewY(-12deg);
+  opacity: 1;
+  transform: scaleX(1);
 }
 
 .orc-obs.is-reduced .orc-obs-baro-tremor,
@@ -792,8 +579,7 @@ details.orc-obs-details > summary {
 .orc-obs.is-reduced .orc-obs-baro-tremor-y,
 .orc-obs-plate.is-reduced .orc-obs-baro-tremor-y,
 .orc-obs.is-reduced .orc-obs-anemo-rotor,
-.orc-obs-plate.is-reduced .orc-obs-anemo-rotor,
-.orc-notebook.is-reduced .orc-notebook-stamp {
+.orc-obs-plate.is-reduced .orc-obs-anemo-rotor {
   animation: none;
 }
 
@@ -805,14 +591,19 @@ details.orc-obs-details > summary {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .orc-obs-shelter-door-front {
+    animation: none;
+    opacity: 0;
+    transform: scaleX(0.001);
+  }
   .orc-obs-shelter-door {
     animation: none;
-    transform: perspective(300px) scaleX(-0.26) skewY(-12deg);
+    opacity: 1;
+    transform: scaleX(1);
   }
   .orc-obs-baro-tremor,
   .orc-obs-baro-tremor-y,
   .orc-obs-anemo-rotor,
-  .orc-notebook-stamp,
   .orc-obs-tab {
     animation: none;
     transition: none;

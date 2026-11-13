@@ -1,5 +1,8 @@
 import { useEffect, useRef, useState, type MouseEvent, type PointerEvent, type ReactNode, type RefObject } from 'react';
-import { SHEET_TAP_PX, sheetAfterDrag } from '@antartida/core';
+import { SHEET_TAP_PX, sheetAfterDrag, type SheetSize } from '@antartida/core';
+
+/** Sizes a sheet on screen can have. */
+export type OpenSheetSize = Exclude<SheetSize, 'closed'>;
 
 /** Part of the height of its container an expanded sheet takes. */
 const EXPANDED = 0.92;
@@ -14,18 +17,35 @@ const SHEET_MIN_PX = 56;
  * sheet is a card in a corner and the handle is hidden (`.sheet-handle` in painted.css).
  *
  * The small size is whatever `max-height` the sheet has in CSS; the tall one is `.sheet.grows.full`.
+ *
+ * With `floor = 'peek'` the sheet never closes: dragged down from small it shrinks to `.peek`, which
+ * the page styles to show only its title and main button. Such a sheet is part of the page, not a
+ * dialog: it is a labelled region and Escape does not close it. Pass `size` and `onSize` to let the
+ * page know and set the size (for example, to frame the scene above the sheet).
  */
-export function BottomSheet({ className = '', labelledBy, sheetRef, onClose, children }: {
+export function BottomSheet({ className = '', labelledBy, sheetRef, onClose, floor = 'closed', size: sizeProp, onSize, children }: {
   /** Extra classes for the sheet, next to `sheet grows`. */
   className?: string;
   /** Id of the heading that names the dialog. */
   labelledBy: string;
   sheetRef: RefObject<HTMLElement | null>;
-  /** Escape closes the sheet, and so does dragging it down from its small size. */
-  onClose: () => void;
+  /** Escape closes the sheet, and so does dragging it down from its small size. Unused with `floor = 'peek'`. */
+  onClose?: () => void;
+  /** Smallest size: 'closed' (dragging down from small closes it) or 'peek' (it never closes). */
+  floor?: 'closed' | 'peek';
+  /** Size set by the page; without it the sheet keeps its own, starting small. */
+  size?: OpenSheetSize;
+  onSize?: (size: OpenSheetSize) => void;
   children: ReactNode;
 }) {
-  const [expanded, setExpanded] = useState(false);
+  const [ownSize, setOwnSize] = useState<OpenSheetSize>('small');
+  const size = sizeProp ?? ownSize;
+  const expanded = size === 'tall';
+  const setSize = (next: OpenSheetSize) => {
+    setOwnSize(next);
+    onSize?.(next);
+  };
+  const persistent = floor === 'peek';
   const [dragging, setDragging] = useState(false);
   const drag = useRef<{ y: number; height: number } | null>(null);
 
@@ -46,11 +66,11 @@ export function BottomSheet({ className = '', labelledBy, sheetRef, onClose, chi
   const release = (y: number) => {
     const sheet = sheetRef.current;
     if (!drag.current || !sheet) return;
-    const size = sheetAfterDrag(expanded ? 'tall' : 'small', drag.current.y - y);
+    const next = sheetAfterDrag(size, drag.current.y - y, floor);
     drag.current = null;
     // Dragged down from its small size, the sheet closes: it stays where the finger left it until it is gone.
-    if (size === 'closed') return onClose();
-    setExpanded(size === 'tall');
+    if (next === 'closed') return onClose?.();
+    setSize(next);
     setDragging(false);
     // Back to the sizes of the style sheet: it eases to the one it snapped to.
     sheet.style.maxHeight = '';
@@ -72,10 +92,16 @@ export function BottomSheet({ className = '', labelledBy, sheetRef, onClose, chi
     // Where the finger landed, until the move is told apart; then whether it drags the sheet.
     let press: { x: number; y: number; top: number } | null = null;
     let sheetDrag = false;
+    // How far the text under the finger is scrolled: the sheet itself, or a box inside it that scrolls.
+    const scrolledBy = (el: Element | null) => {
+      let top = 0;
+      for (let n = el; n && n !== sheet.parentElement; n = n.parentElement) top += n.scrollTop;
+      return top;
+    };
     const onStart = (e: TouchEvent) => {
       sheetDrag = false;
       const onHandle = (e.target as Element).closest('.sheet-handle');
-      press = e.touches.length === 1 && !onHandle ? { x: e.touches[0].clientX, y: e.touches[0].clientY, top: sheet.scrollTop } : null;
+      press = e.touches.length === 1 && !onHandle ? { x: e.touches[0].clientX, y: e.touches[0].clientY, top: scrolledBy(e.target as Element) } : null;
     };
     const onTouchMove = (e: TouchEvent) => {
       if (!press) return;
@@ -116,17 +142,18 @@ export function BottomSheet({ className = '', labelledBy, sheetRef, onClose, chi
   // A press is handled above. A click that no pointer made (detail 0) comes from the keyboard or
   // a screen reader.
   const onClick = (e: MouseEvent<HTMLButtonElement>) => {
-    if (e.detail === 0) setExpanded(!expanded);
+    // A tap never closes the sheet.
+    if (e.detail === 0) setSize(sheetAfterDrag(size, 0, floor) as OpenSheetSize);
   };
 
   return (
     <section
-      className={`sheet grows${expanded ? ' full' : ''}${dragging ? ' dragging' : ''} ${className}`}
-      role="dialog"
-      aria-modal="true"
+      className={`sheet grows${expanded ? ' full' : ''}${size === 'peek' ? ' peek' : ''}${dragging ? ' dragging' : ''} ${className}`}
+      role={persistent ? 'region' : 'dialog'}
+      aria-modal={persistent ? undefined : true}
       aria-labelledby={labelledBy}
       ref={sheetRef}
-      onKeyDown={(e) => e.key === 'Escape' && onClose()}
+      onKeyDown={persistent ? undefined : (e) => e.key === 'Escape' && onClose?.()}
     >
       <button
         type="button"

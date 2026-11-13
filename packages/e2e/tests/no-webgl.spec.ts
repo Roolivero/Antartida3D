@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { ORCADAS_GUIDING_QUESTION } from '../../core/src/content/orcadas.ts';
 
 let consoleErrors: string[] = [];
 
@@ -36,5 +37,5 @@ test('without WebGL the app falls back cleanly to 2D without the toggle', async 
   const dialog = page.getByRole('dialog', { name: 'Todos los puntos' });
   await expect(dialog).toBeVisible();
   await dialog.getByRole('button', { name: /Estación Orcadas/ }).click();
-  await expect(page.getByRole('heading', { level: 2, name: 'Estación Orcadas' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 2, name: ORCADAS_GUIDING_QUESTION })).toBeVisible();
 });

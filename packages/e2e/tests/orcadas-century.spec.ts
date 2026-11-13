@@ -1,11 +1,12 @@
 import { expect, test, type Page } from '@playwright/test';
+import { ORCADAS_GUIDING_QUESTION } from '../../core/src/content/orcadas.ts';
 import { answerFor, climateFor } from '../../core/src/orcadas.ts';
 
 async function openOrcadasFromMap(page: Page) {
   const cluster = page.getByRole('button', { name: /Grupo de .*Estación Orcadas/ });
   if (await cluster.isVisible()) await cluster.click();
   await page.getByRole('button', { name: /^Estación Orcadas, Islas Orcadas del Sur/ }).click();
-  await expect(page.getByRole('heading', { level: 2, name: 'Estación Orcadas' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 2, name: ORCADAS_GUIDING_QUESTION })).toBeVisible();
   await page.waitForFunction(
     () => (window as unknown as { __orcadasReady?: boolean }).__orcadasReady === true
   );
@@ -28,7 +29,7 @@ test.afterEach(() => {
   expect(consoleErrors, 'console errors (hydration mismatches, exceptions)').toEqual([]);
 });
 
-test('Viajar: renders annual series chart with moving average, two trend slopes, and cursor in sync', async ({
+test('Viajar: renders annual series chart, folds legend and two-segment trend in details, and syncs cursor with stops', async ({
   page,
 }) => {
   await openOrcadasFromMap(page);
@@ -39,54 +40,61 @@ test('Viajar: renders annual series chart with moving average, two trend slopes,
     .click();
   await expect(page.getByRole('heading', { level: 2, name: 'Viaje en el tiempo' })).toBeVisible();
 
-  // Verify no horizontal overflow
   const overflow = await page.evaluate(
     () => document.documentElement.scrollWidth - document.documentElement.clientWidth
   );
   expect(overflow).toBeLessThanOrEqual(0);
 
-  // Annual chart elements
   const chart = page.locator('.orc-century-svg');
   await expect(chart).toBeVisible();
-  // Legend rewritten in phase 7 (F5): each line says what it is, and incomplete years are a cut in
-  // the line instead of a hatched band.
-  await expect(page.getByText(/Media de cada año \(dato real; la línea se corta en los años incompletos\)/)).toBeVisible();
+
+  // Legend and two-segment trend live folded inside "Cómo leer el gráfico"
+  const legendDetails = page.locator('details.orc-century-details');
+  await expect(legendDetails).not.toHaveAttribute('open', /.*/);
+  await legendDetails.locator('> summary').click();
+
+  await expect(
+    page.getByText(/Media de cada año \(dato real; la línea se corta en los años incompletos\)/)
+  ).toBeVisible();
   await expect(page.getByText('Media móvil de 11 años (cálculo)')).toBeVisible();
   await expect(page.getByText('Tendencia en dos tramos (cálculo)')).toBeVisible();
 
-  // Two-segment trend banner
   const trendBanner = page.locator('.orc-century-trend-banner');
   await expect(trendBanner).toBeVisible();
   await expect(trendBanner).toContainText('−0,02 °C por década');
   await expect(trendBanner).toContainText('+0,13 °C por década');
   await expect(trendBanner).toContainText('Zazulie');
 
-  // Verify year cursor sync: ruler and chart
-  const rulerSlider = page.getByRole('slider', { name: 'Año en la estación' });
+  // Verify cursor sync with tour stops and Home key
   const chartSlider = page.getByRole('slider', { name: 'Cursor de años en el gráfico histórico' });
-
-  await rulerSlider.focus();
-  await page.keyboard.press('Home');
-  await expect(rulerSlider).toHaveAttribute('aria-valuenow', '1903');
   await expect(chartSlider).toHaveAttribute('aria-valuenow', '1903');
-  await expect(page.getByRole('heading', { level: 3, name: 'Casa Omond' })).toBeVisible();
+  await page.locator('.orc-btn-primary').click();
+  await expect(chartSlider).toHaveAttribute('aria-valuenow', '1927');
+  await expect(page.locator('.orc-year-counter')).toHaveAttribute('aria-label', 'Año 1927');
+
+  await chartSlider.focus();
+  await page.keyboard.press('Home');
+  await expect(chartSlider).toHaveAttribute('aria-valuenow', '1903');
+  await expect(page.locator('.orc-year-counter')).toHaveAttribute('aria-label', 'Año 1903');
 });
 
-test('Responder: with user reading, sentence matches answerFor and chart shows threshold line', async ({
+test('Responder: with user reading, sentence matches answerFor, chart shows threshold line, and observation detail is folded', async ({
   page,
 }) => {
   await openOrcadasFromMap(page);
 
-  // 1. Enter temperature guess -3.0 in Observar
+  // 1. Enter temperature guess -3.0 in Observar via Ajuste fino
   await page
     .getByRole('navigation', { name: 'Capítulos de la expedición' })
     .getByRole('button', { name: /Observar/ })
     .click();
   await expect(page.getByRole('heading', { level: 2, name: 'Observación del día' })).toBeVisible();
 
-  const tempControl = page.getByLabel(/^Temperatura del abrigo/);
-  await tempControl.focus();
-  await page.keyboard.type('-3.0');
+  await page.locator('details.orc-obs-fine > summary').click();
+  const numInput = page.locator('details.orc-obs-fine .orc-obs-num-input');
+  await numInput.fill('-3.0');
+  await page.locator('.orc-obs-confirm-btn').first().click();
+  await expect(page.locator('.orc-obs-feedback')).toBeVisible();
 
   // 2. Navigate to Responder
   await page
@@ -95,17 +103,14 @@ test('Responder: with user reading, sentence matches answerFor and chart shows t
     .click();
   await expect(page.getByRole('heading', { level: 2, name: 'La respuesta' })).toBeVisible();
 
-  // Guiding question heading
   await expect(page.locator('.orc-question')).toContainText('¿Cuánto cambió el clima');
 
-  // Dot chart
   const dotChart = page.getByRole('img', { name: /Gráfico de puntos de temperatura/ });
   await expect(dotChart).toBeVisible();
   await expect(page.getByText(/Dato real: .* igual de frío o más/)).toBeVisible();
   await expect(page.getByText(/Dato real: .* más cálido/)).toBeVisible();
   await expect(page.getByText('Tu lectura (simulación)')).toBeVisible();
 
-  // Check calculated sentence matches answerFor(-3.0, month)
   const currentMonth = new Date().getMonth() + 1;
   const [seg1, seg2] = answerFor(-3.0, currentMonth);
 
@@ -119,10 +124,15 @@ test('Responder: with user reading, sentence matches answerFor and chart shows t
   await expect(sentenceBlock).toContainText('−3,0 °C');
   await expect(sentenceBlock).toContainText('SCAR READER');
 
-  // Bitácora sellada closing content
   await expect(page.locator('.orc-seal')).toBeVisible();
   await expect(page.getByText('Bitácora sellada')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Terminar expedición' })).toBeVisible();
+
+  // Detailed reading breakdown stays folded under "Tu observación del día"
+  const obsDetails = page.locator('details.orc-more', { hasText: 'Tu observación del día' });
+  await expect(obsDetails).not.toHaveAttribute('open', /.*/);
+  await obsDetails.locator('> summary').click();
+  await expect(page.locator('.orc-done-readings')).toContainText('−3,0 °C');
 });
 
 test('Responder: without reading shows monthly mean, reference line, and Volver a Observar button', async ({
@@ -130,7 +140,6 @@ test('Responder: without reading shows monthly mean, reference line, and Volver 
 }) => {
   await openOrcadasFromMap(page);
 
-  // Directly navigate to Responder without recording readings
   await page
     .getByRole('navigation', { name: 'Capítulos de la expedición' })
     .getByRole('button', { name: /Responder/ })
@@ -148,7 +157,10 @@ test('Responder: without reading shows monthly mean, reference line, and Volver 
   await expect(sentenceBlock).toContainText(`${seg1.asCold} de ${seg1.years}`);
   await expect(sentenceBlock).toContainText(`${seg2.asCold} de ${seg2.years}`);
 
-  // Button "Volver a Observar" returns to Observación chapter
+  // Straight to Responder: the checklist shows what was left, dashed.
+  await expect(page.locator('.orc-checklist-lead')).toContainText('Te faltó lo punteado');
+  await expect(page.locator('.orc-check', { hasText: 'Temperatura sin anotar' })).not.toHaveClass(/is-done/);
+
   const backToObsBtn = page.getByRole('button', { name: 'Volver a Observar' });
   await expect(backToObsBtn).toBeVisible();
   await backToObsBtn.click();

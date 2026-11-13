@@ -100,4 +100,23 @@ describe('bottom sheet handle', () => {
     expect(sheetAfterDrag('small', -(SHEET_SNAP_PX - 1))).toBe('small');
     expect(sheetAfterDrag('tall', -(SHEET_SNAP_PX - 1))).toBe('tall');
   });
+
+  it('stops at peek instead of closing when the floor is peek', () => {
+    expect(sheetAfterDrag('small', -SHEET_SNAP_PX, 'peek')).toBe('peek');
+    expect(sheetAfterDrag('peek', -600, 'peek')).toBe('peek');
+    expect(sheetAfterDrag('tall', -600, 'peek')).toBe('small');
+  });
+
+  it('goes up one size at a time from peek', () => {
+    expect(sheetAfterDrag('peek', SHEET_SNAP_PX, 'peek')).toBe('small');
+    expect(sheetAfterDrag('peek', 600, 'peek')).toBe('small');
+    expect(sheetAfterDrag('small', SHEET_SNAP_PX, 'peek')).toBe('tall');
+  });
+
+  it('cycles peek, small and tall on taps', () => {
+    expect(sheetAfterDrag('peek', 0, 'peek')).toBe('small');
+    expect(sheetAfterDrag('small', 0, 'peek')).toBe('tall');
+    expect(sheetAfterDrag('tall', 0, 'peek')).toBe('small');
+    expect(sheetAfterDrag('peek', SHEET_SNAP_PX - 1, 'peek')).toBe('peek');
+  });
 });

@@ -1,10 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
+import { ORCADAS_GUIDING_QUESTION } from '../../core/src/content/orcadas.ts';
 import { ORCADAS_CLIMATE } from '../../core/src/content/orcadas-series.ts';
-import {
-  beaufort,
-  observationFor,
-  type Reading,
-} from '../../core/src/orcadas.ts';
+import { beaufort, observationFor, type Reading } from '../../core/src/orcadas.ts';
 
 const primary = (page: Page) => page.locator('.ebar .btn.primary');
 
@@ -21,11 +18,14 @@ async function openOrcadasObservation(page: Page) {
   const cluster = page.getByRole('button', { name: /Grupo de .*Estación Orcadas/ });
   if (await cluster.isVisible()) await cluster.click();
   await page.getByRole('button', { name: /^Estación Orcadas, Islas Orcadas del Sur/ }).click();
-  await expect(page.getByRole('heading', { level: 2, name: 'Estación Orcadas' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 2, name: ORCADAS_GUIDING_QUESTION })).toBeVisible();
   await page.waitForFunction(
     () => (window as unknown as { __orcadasReady?: boolean }).__orcadasReady === true
   );
-  await page.getByRole('button', { name: 'Hacer la observación' }).click();
+  await page
+    .getByRole('navigation', { name: 'Capítulos de la expedición' })
+    .getByRole('button', { name: /Observar/ })
+    .click();
   await expect(
     page.getByRole('heading', { level: 2, name: 'Observación del día' })
   ).toBeVisible();
@@ -101,33 +101,37 @@ test.describe('Orcadas · observación', () => {
     const obs = page.locator('.orc-obs');
     await expect(obs).toBeVisible();
 
-    // Check across all 4 instrument tabs that the true value and Beaufort name are not leaked before guessing
-    const tabLabels = [
-      /^Temperatura del abrigo/,
-      /^Presión atmosférica/,
-      /^Velocidad del viento/,
-      /^Cobertura de nubes/,
-    ];
-
-    for (const tabRegex of tabLabels) {
-      await page.getByRole('tab', { name: tabRegex }).click();
+    const tempComma = reading.tempC.toFixed(1).replace('.', ',');
+    const pressComma = reading.pressureHpa.toFixed(1).replace('.', ',');
+    const assertNoTruthExposed = async () => {
       const text = await obs.innerText();
       expect(text).not.toContain(`${reading.tempC.toFixed(1)} °C`);
+      expect(text).not.toContain(`${tempComma} °C`);
       expect(text).not.toContain(`${reading.pressureHpa.toFixed(1)} hPa`);
+      expect(text).not.toContain(`${pressComma} hPa`);
       expect(text).not.toContain(`${reading.windKmh} km/h`);
       expect(text).not.toContain(`${reading.cloudOktas}/8 octas`);
       expect(text).not.toContain(windBf.name);
+    };
+
+    // Main temperature stage does not leak truth before guessing
+    await assertNoTruthExposed();
+
+    // Open "Mirá también" and check optional instrument tabs do not leak truth before guessing
+    await page.locator('details.orc-obs-more > summary').click();
+    const optionalTabs = [/^Presión atmosférica/, /^Velocidad del viento/, /^Cobertura de nubes/];
+    for (const tabRegex of optionalTabs) {
+      await page.getByRole('tab', { name: tabRegex }).click();
+      await assertNoTruthExposed();
     }
 
-    // Switch to Thermometer and submit a distant value (-25.0 °C via Home key)
-    await page.getByRole('tab', { name: /^Temperatura del abrigo/ }).click();
-    const slider = page.getByRole('slider', { name: 'Deslizador de Temperatura del abrigo' });
-    await slider.focus();
+    // Submit a distant value (-25,0 °C) using the magnifier lens slider + Home + Enter
+    const lensSlider = page.getByRole('slider', { name: 'Guía de lectura en la lupa del termómetro' });
+    await lensSlider.focus();
     await page.keyboard.press('Home');
-    await expect(slider).toHaveAttribute('aria-valuetext', '-25.0 °C');
+    await expect(lensSlider).toHaveAttribute('aria-valuetext', '-25,0 °C');
     await page.keyboard.press('Enter');
 
-    // Should show 'off' feedback with deviation amount and a retry button
     const feedback = page.locator('.orc-obs-feedback.is-off');
     await expect(feedback).toBeVisible();
     await expect(feedback).toContainText('se desvió por');
@@ -135,52 +139,51 @@ test.describe('Orcadas · observación', () => {
     await expect(retryBtn).toBeVisible();
     await retryBtn.click();
 
-    // Clicking Reintentar returns focus to the slider so the user can correct the value
-    const focusedRole = await page.evaluate(() =>
-      document.activeElement?.getAttribute('role')
-    );
-    expect(focusedRole).toBe('slider');
+    // Clicking Reintentar returns focus to the lens slider
+    const focusedClass = await page.evaluate(() => ({
+      role: document.activeElement?.getAttribute('role'),
+      cls: document.activeElement?.getAttribute('class'),
+    }));
+    expect(focusedClass.role).toBe('slider');
+    expect(focusedClass.cls).toContain('orc-obs-lens-hit');
   });
 
-  test('completes all four readings with the keyboard only, shows the animated seal in the notebook, and resets on Empezar de nuevo', async ({
+  test('completes temperature via lens slider and optional readings via Mirá también with keyboard only, and carries them into Responder', async ({
     page,
   }) => {
-    // Long keyboard-only flow with several camera flights. Without a GPU (CI, headless) each frame of a
-    // 1440 px flight is drawn in software: measured 40 s on desktop against 14 s on mobile, with no step stuck.
     test.setTimeout(90_000);
     await openOrcadasObservation(page);
     const reading = currentExpectedReading();
     const windBf = beaufort(reading.windKmh);
 
     await expect(primary(page)).toBeEnabled();
-    await expect(primary(page)).toHaveText('Seguir');
-    await expect(page.getByText('Observación registrada')).toHaveCount(0);
+    await expect(primary(page)).toHaveText('Viajar en el tiempo');
 
-    // 1. Thermometer (keyboard only: Tab to tab, Enter, Tab to slider, arrows to exact tempC, Enter)
-    await tabTo(page, /^Temperatura del abrigo/);
-    await page.keyboard.press('Enter');
-    await tabTo(page, /^Deslizador de Temperatura del abrigo$/);
+    // 1. Thermometer via magnifier lens slider (keyboard arrows to exact tempC + Enter)
+    await tabTo(page, /^Guía de lectura en la lupa del termómetro$/);
     await adjustSliderWithArrows(page, reading.tempC, 0.1);
     await expect(
-      page.getByRole('slider', { name: 'Deslizador de Temperatura del abrigo' })
-    ).toHaveAttribute('aria-valuetext', `${reading.tempC.toFixed(1)} °C`);
+      page.getByRole('slider', { name: 'Guía de lectura en la lupa del termómetro' })
+    ).toHaveAttribute('aria-valuetext', `${reading.tempC.toFixed(1).replace('.', ',')} °C`);
     await page.keyboard.press('Enter');
     await expect(page.locator('.orc-obs-feedback.is-exact')).toContainText('¡Lectura exacta!');
 
-    // 2. Barometer
-    await page.getByRole('heading', { level: 2, name: 'Observación del día' }).focus();
+    // 2. Optional instruments in "Mirá también": pressure, wind (Beaufort appears only after confirming), clouds
+    await tabTo(page, /^Mirá también$/);
+    await page.keyboard.press('Enter');
+
     await tabTo(page, /^Presión atmosférica/);
     await page.keyboard.press('Enter');
     await tabTo(page, /^Deslizador de Presión atmosférica$/);
     await adjustSliderWithArrows(page, reading.pressureHpa, 0.1);
     await expect(
       page.getByRole('slider', { name: 'Deslizador de Presión atmosférica' })
-    ).toHaveAttribute('aria-valuetext', `${reading.pressureHpa.toFixed(1)} hPa`);
+    ).toHaveAttribute('aria-valuetext', `${reading.pressureHpa.toFixed(1).replace('.', ',')} hPa`);
     await page.keyboard.press('Enter');
-    await expect(page.locator('.orc-obs-feedback.is-exact')).toContainText('¡Lectura exacta!');
+    await expect(page.locator('.orc-obs-optional-panel .orc-obs-feedback.is-exact')).toContainText(
+      '¡Lectura exacta!'
+    );
 
-    // 3. Wind (Beaufort name appears only after confirming)
-    await page.getByRole('heading', { level: 2, name: 'Observación del día' }).focus();
     await tabTo(page, /^Velocidad del viento/);
     await page.keyboard.press('Enter');
     await expect(page.locator('.orc-obs')).not.toContainText(windBf.name);
@@ -190,11 +193,11 @@ test.describe('Orcadas · observación', () => {
       page.getByRole('slider', { name: 'Deslizador de Velocidad del viento' })
     ).toHaveAttribute('aria-valuetext', `${reading.windKmh} km/h`);
     await page.keyboard.press('Enter');
-    await expect(page.locator('.orc-obs-feedback.is-exact')).toContainText('¡Lectura exacta!');
+    await expect(page.locator('.orc-obs-optional-panel .orc-obs-feedback.is-exact')).toContainText(
+      '¡Lectura exacta!'
+    );
     await expect(page.locator('.orc-obs-beaufort')).toContainText(windBf.name);
 
-    // 4. Clouds
-    await page.getByRole('heading', { level: 2, name: 'Observación del día' }).focus();
     await tabTo(page, /^Cobertura de nubes/);
     await page.keyboard.press('Enter');
     await tabTo(page, /^Deslizador de Cobertura de nubes$/);
@@ -204,25 +207,19 @@ test.describe('Orcadas · observación', () => {
     ).toHaveAttribute('aria-valuetext', `${reading.cloudOktas} octas`);
     await page.keyboard.press('Enter');
 
-    // All 4 completed: seal, simulation notice, and primary button enabled
-    await expect(page.getByText('Observación registrada')).toBeVisible();
-    await expect(
-      page.locator('.orc-notebook-sim-note')
-    ).toContainText('La observación del día es una simulación sorteada dentro del clima real del mes.');
-    await expect(primary(page)).toBeEnabled();
-    await expect(primary(page)).toHaveText('Viajar en el tiempo');
-
-    // No horizontal overflow at current viewport (390px mobile or 1440px desktop)
     const overflow = await page.evaluate(
       () => document.documentElement.scrollWidth - document.documentElement.clientWidth
     );
     expect(overflow).toBeLessThanOrEqual(0);
 
-    // Reset with "Empezar de nuevo" via keyboard
-    await tabTo(page, /^Empezar de nuevo$/);
-    await page.keyboard.press('Enter');
-    await expect(page.getByText('Observación registrada')).toHaveCount(0);
-    await expect(primary(page)).toBeEnabled();
-    await expect(primary(page)).toHaveText('Seguir');
+    // Advance to Responder and verify seal + folded "Tu observación del día" with 4 of 4
+    await page
+      .getByRole('navigation', { name: 'Capítulos de la expedición' })
+      .getByRole('button', { name: /Responder/ })
+      .click();
+    await expect(page.getByRole('heading', { level: 2, name: 'La respuesta' })).toBeVisible();
+    await expect(page.locator('.orc-done-summary')).toContainText('4 de 4 lecturas dentro del margen');
+    await page.locator('details.orc-more', { hasText: 'Tu observación del día' }).locator('> summary').click();
+    await expect(page.locator('.orc-done-readings')).toContainText(windBf.name);
   });
 });

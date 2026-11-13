@@ -45,7 +45,7 @@ function applyPose(rig: Rig, p: PenguinPose) {
  * Penguin colony on its knoll (reconstruction): residents on their nests and travellers doing
  * the round trip to Bahía Scotia. Poses come from penguins.ts, a pure function of time.
  */
-export function PenguinColony({ reduced }: { reduced: boolean }) {
+export function PenguinColony({ reduced, seaIce = 0 }: { reduced: boolean; seaIce?: number }) {
   const colony = useMemo(() => buildPenguinColony((x, z) => evaluateIsthmusTerrain(x, z).y), []);
   const geos = useMemo(() => {
     const make = (species: PenguinSpecies) => {
@@ -76,15 +76,19 @@ export function PenguinColony({ reduced }: { reduced: boolean }) {
     [geos, rookeryGeo]
   );
 
+  const isFrozen = seaIce >= 0.5;
   const penguins = useMemo(
     () => [
       ...colony.residents.map((r) => ({ species: r.species, pose: (t: number, o: PenguinPose) => residentPose(r, t, o) })),
-      ...colony.travellers.map((v) => ({
+      ...colony.travellers.map((v, idx) => ({
         species: v.species,
-        pose: (t: number, o: PenguinPose) => travellerPose(colony.route, t - v.delay, v.offset, o),
+        pose: (t: number, o: PenguinPose) =>
+          isFrozen
+            ? residentPose(colony.frozenTravellers[idx], t, o)
+            : travellerPose(colony.route, t - v.delay, v.offset, o),
       })),
     ],
-    [colony]
+    [colony, isFrozen]
   );
   const rigs = useRef<Rig[]>(penguins.map(() => ({ root: null, tilt: null, neck: null, flipL: null, flipR: null })));
   const pose = useMemo(() => restPose(), []);
