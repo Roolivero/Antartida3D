@@ -104,11 +104,12 @@ Verificar: `pnpm --filter @antartida/react-ui test`, `pnpm typecheck` y captura 
 
 Hecho y pusheado en la rama (`2ed474b`): pasos 1 a 6 y el panel ocultable en escritorio (lo que iba a ser #69, cerrado y sumado a #68). `pnpm test`, `pnpm typecheck` y `pnpm build` en verde.
 
-Falta:
-- [ ] `pnpm e2e` completo en esta rama (la corrida en el worktree de #69 se cortó sin resultado).
-- [ ] Capturas headless: enero (llegada a mitad y posado), julio (sin helicóptero), panel oculto y visible, a 1440 y 390 px.
-- [ ] Borrar el worktree `../Antartida3D-69` (`git worktree remove ../Antartida3D-69`) y la rama `69-ocultar-panel-del-capitulo-en-escritorio` (local y remota).
-- [ ] Revisión final del diff contra `main` y PR con `Closes #68`.
+Cerrado (13 nov 2026):
+- [x] `pnpm e2e` completo: 120 pasan, 6 fallan. Los 6 fallan igual en `main` (2ab6f80) con un solo worker: `ocean3d` (#41, de NeichS) y tres de Orcadas (BottomSheet en celular, observación en escritorio y apaisado, TourCard en escritorio). No los causa esta rama.
+- [x] Capturas headless a 1440 y 390 px: llegada, posado, julio sin helicóptero, panel oculto y ficha del helipuerto.
+- [x] Worktree y rama de #69 borrados.
+- [x] Agregados a pedido de Lk: pasos del capítulo alineados sobre el panel en escritorio, pingüinos que se sacuden al salir del agua y vista de celular que encuadra el helipuerto.
+- [x] Rebase sobre `origin/main` y PR con `Closes #68`.
 
 ### 7. Revisión final (Claude Code)
 
