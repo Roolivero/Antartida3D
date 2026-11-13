@@ -23,7 +23,6 @@ import {
 } from '@antartida/core';
 import { BottomSheet } from '../BottomSheet.tsx';
 import { useFocusReturn } from '../hooks.ts';
-import { Icon } from '../ui.tsx';
 import { Fact, type OpenSources } from './Fact.tsx';
 import { SightingIcon } from './SightingIcon.tsx';
 import type { VoyageController } from './useVoyage.ts';
@@ -89,10 +88,8 @@ function Picker({ onStart, onExit, onSource, preview, reduced }: {
     {/* Touching the map outside the sheet closes it, like the sheet of a point. */}
     <div className="scrim vscrim" onClick={onExit} />
     <BottomSheet className="voyage" labelledBy="voyage-title" sheetRef={ref} onClose={onExit}>
-      <div className="row vhead">
-        <h2 id="voyage-title">Desde Ushuaia</h2>
-        <button type="button" className="iconbtn" onClick={onExit} aria-label="Cerrar y volver al mapa">{Icon.close}</button>
-      </div>
+      {/* No close button: the sheet is dragged down, and «Volver al mapa» is below. */}
+      <h2 id="voyage-title">Desde Ushuaia</h2>
       <p className="place">Elegí cómo cruzar a la Antártida. Son los medios que usa la ciencia argentina.</p>
       <div className="vpick" role="group" aria-label="Medio de transporte">
         {TRANSPORTS.map((v) => (

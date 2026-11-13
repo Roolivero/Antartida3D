@@ -201,6 +201,7 @@ Pedido de quien lleva el issue: en el celular, el panel que sale desde abajo tie
 - **Regla en `@antartida/core`:** `sheetAfterDrag(expanded, draggedUp)` en `core/src/gestures.ts`, con pruebas.
 - **Por encima del título:** el panel grande tapa el título y el registro de exploración. Mientras está grande o se arrastra sube a `z-index: 21`; si no, el título quedaba encima y el tirador no recibía toques.
 - **Sin recarga al tirar hacia abajo:** `html` y `body` llevan `overscroll-behavior: none` (`painted.css`). La app ocupa toda la pantalla y maneja sus propios gestos; vale para toda la app, no solo para el panel. El panel además lleva `overscroll-behavior: contain`.
+- **Sin botón X en el selector de transporte** (pedido de quien lleva el issue): el panel se cierra arrastrándolo hacia abajo, con «Volver al mapa», con Escape o tocando el mapa. En pantallas anchas, donde no hay tirador, quedan «Volver al mapa», Escape y el clic fuera del panel.
 - **Pantallas anchas:** el panel es una tarjeta en una esquina y el tirador no se muestra.
 - **Movimiento reducido:** cambia de tamaño sin animación.
 - **Para usarlo en otro panel:** reemplazar su `<section className="sheet ...">` por `<BottomSheet className="..." labelledBy="..." sheetRef={ref} onClose={...}>`. `PointSheet` y las fichas de los hitos siguen como estaban.
