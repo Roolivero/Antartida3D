@@ -22,7 +22,7 @@ import {
   type Chapter,
 } from '@antartida/core';
 import { BottomSheet, type OpenSheetSize } from '../BottomSheet.tsx';
-import { useFocusReturn, useIsDesktop } from '../hooks.ts';
+import { useFocusReturn, useIsDesktop, useMediaQuery } from '../hooks.ts';
 import { Icon } from '../ui.tsx';
 import { Answer } from './Answer.tsx';
 import { FactCard, FactList, SourceContext } from './FactList.tsx';
@@ -123,8 +123,11 @@ export function OrcadasExpedition({
   const [openSpot, setOpenSpot] = useState<Exclude<HotspotId, 'overview'> | null>(null);
   const [highlightSource, setHighlightSource] = useState<string | null>(null);
   const [sheetSize, setSheetSize] = useState<OpenSheetSize>('small');
+  const [panelHidden, setPanelHidden] = useState(false);
 
   const isDesktop = useIsDesktop(900);
+  const canHidePanel = useMediaQuery('(min-width: 900px) and (min-height: 501px)');
+  const isPanelHidden = canHidePanel && panelHidden;
   // On a phone held upright the chapter panel is a bottom sheet; tall, it leaves the scene a strip.
   const panelExpanded = !isDesktop && sheetSize === 'tall';
   const panelRef = useRef<HTMLElement>(null);
@@ -134,13 +137,21 @@ export function OrcadasExpedition({
   const hotspotsRef = useRef<HTMLDivElement>(null);
   const mobileCardRef = useRef<HTMLElement>(null);
   const primaryBtnRef = useRef<HTMLButtonElement>(null);
+  const showPanelBtnRef = useRef<HTMLButtonElement>(null);
+  const focusTargetRef = useRef<'show' | 'heading' | null>(null);
+  const isPanelHiddenRef = useRef(isPanelHidden);
+  isPanelHiddenRef.current = isPanelHidden;
 
   // Move focus to the chapter h2 heading and reset panel scroll whenever chapter changes
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = 0;
     }
-    headingRef.current?.focus({ preventScroll: true });
+    if (isPanelHiddenRef.current) {
+      focusTargetRef.current = 'heading';
+    } else {
+      headingRef.current?.focus({ preventScroll: true });
+    }
     // Observing needs the thermometer and its button on screen: the sheet opens tall there.
     setSheetSize(s.chapter === 'observation' ? 'tall' : 'small');
   }, [s.chapter]);
@@ -151,7 +162,24 @@ export function OrcadasExpedition({
     setFocus(chapterFocus(s.chapter, s.tourIndex));
     // A new stop has a line to read: a sheet folded down to its title comes back up.
     setSheetSize((size) => (size === 'peek' ? 'small' : size));
+    setPanelHidden(false);
   }, [s.chapter, s.tourIndex]);
+
+  useEffect(() => {
+    if (!canHidePanel) {
+      setPanelHidden(false);
+    }
+  }, [canHidePanel]);
+
+  useEffect(() => {
+    if (isPanelHidden && focusTargetRef.current === 'show') {
+      focusTargetRef.current = null;
+      showPanelBtnRef.current?.focus();
+    } else if (!isPanelHidden && focusTargetRef.current === 'heading') {
+      focusTargetRef.current = null;
+      headingRef.current?.focus({ preventScroll: true });
+    }
+  }, [isPanelHidden]);
 
   const activeSpotDef = useMemo(
     () => (openSpot ? HOTSPOTS.find((h) => h.id === openSpot) ?? null : null),
@@ -271,12 +299,28 @@ export function OrcadasExpedition({
         <>
           <div className="orc-panel-scroll" ref={scrollRef}>
             <div className="orc-panel-head">
-              <span className="orc-kicker hand">
-                Capítulo {idx + 1} de {CHAPTERS.length} · {CHAPTER_NAMES[s.chapter]}
-              </span>
-              <h2 ref={headingRef} tabIndex={-1} className="orc-chapter-h2">
-                {CHAPTER_HEADINGS[s.chapter]}
-              </h2>
+              <div className="orc-panel-head-title">
+                <span className="orc-kicker hand">
+                  Capítulo {idx + 1} de {CHAPTERS.length} · {CHAPTER_NAMES[s.chapter]}
+                </span>
+                <h2 ref={headingRef} tabIndex={-1} className="orc-chapter-h2">
+                  {CHAPTER_HEADINGS[s.chapter]}
+                </h2>
+              </div>
+              {canHidePanel && (
+                <button
+                  type="button"
+                  className="btn ghost orc-panel-hide"
+                  aria-expanded={!isPanelHidden}
+                  aria-controls="orc-chapter-panel"
+                  onClick={() => {
+                    focusTargetRef.current = 'show';
+                    setPanelHidden(true);
+                  }}
+                >
+                  Ocultar panel
+                </button>
+              )}
             </div>
 
             {s.chapter === 'arrival' && (
@@ -385,6 +429,7 @@ export function OrcadasExpedition({
           focus={focus}
           reduced={reduced}
           panelExpanded={panelExpanded}
+          panelHidden={isPanelHidden}
           overlayRef={hotspotsRef}
         />
 
@@ -497,7 +542,13 @@ export function OrcadasExpedition({
 
         {/* Field Notebook Chapter Panel: a side card on wide screens, a bottom sheet on phones */}
         {isDesktop ? (
-          <div className="orc-panel" role="region" aria-labelledby="orc-panel-label">
+          <div
+            id="orc-chapter-panel"
+            className={`orc-panel${isPanelHidden ? ' is-hidden' : ''}`}
+            role="region"
+            aria-labelledby="orc-panel-label"
+            inert={isPanelHidden || undefined}
+          >
             {panelBody}
           </div>
         ) : (
@@ -511,6 +562,22 @@ export function OrcadasExpedition({
           >
             {panelBody}
           </BottomSheet>
+        )}
+
+        {isPanelHidden && (
+          <button
+            ref={showPanelBtnRef}
+            type="button"
+            className="orc-panel-show"
+            aria-expanded={false}
+            aria-controls="orc-chapter-panel"
+            onClick={() => {
+              focusTargetRef.current = 'heading';
+              setPanelHidden(false);
+            }}
+          >
+            Mostrar panel
+          </button>
         )}
 
         {s.panel && (

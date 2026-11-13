@@ -132,6 +132,7 @@ export interface StationSceneProps {
   focus: HotspotId | null;
   reduced: boolean;
   panelExpanded?: boolean;
+  panelHidden?: boolean;
   onReady?: () => void;
   overlayRef?: RefObject<HTMLDivElement | null>;
 }
@@ -1478,12 +1479,14 @@ function StationCameraAndProjection({
   focus,
   reduced,
   panelExpanded,
+  panelHidden,
   overlayRef,
   onReady,
 }: {
   focus: HotspotId | null;
   reduced: boolean;
   panelExpanded?: boolean;
+  panelHidden?: boolean;
   overlayRef?: RefObject<HTMLDivElement | null>;
   onReady?: () => void;
 }) {
@@ -1521,7 +1524,7 @@ function StationCameraAndProjection({
     cc.maxPolarAngle = (90 - VIEW_ELEVATION_DEG[0]) * deg;
     cc.minDistance = 3;
     // Never farther than a little beyond the entry view: the stage ends past it.
-    const entry = poseForHotspot(null, mobile, Boolean(panelExpanded), landscape);
+    const entry = poseForHotspot(null, mobile, Boolean(panelExpanded), landscape, Boolean(panelHidden));
     cc.maxDistance =
       Math.hypot(
         entry.pos[0] - entry.target[0],
@@ -1531,7 +1534,8 @@ function StationCameraAndProjection({
     cc.smoothTime = 0.32;
     cc.setBoundary(new Box3(new Vector3(-20, -1, -14), new Vector3(20, 24, 60)));
 
-    const pose = poseForHotspot(focus, mobile, Boolean(panelExpanded), landscape);
+    const pose = poseForHotspot(focus, mobile, Boolean(panelExpanded), landscape, Boolean(panelHidden));
+    projectedRef.current = false;
     if (!initializedRef.current) {
       // Every visit starts from the same view, without an entry flight.
       initializedRef.current = true;
@@ -1560,7 +1564,7 @@ function StationCameraAndProjection({
       );
     }
     invalidate();
-  }, [focus, mobile, landscape, reduced, panelExpanded, invalidate]);
+  }, [focus, mobile, landscape, reduced, panelExpanded, panelHidden, invalidate]);
 
   // Keyboard orbit (Arrow keys) and zoom (+ / -)
   useEffect(() => {
@@ -1665,7 +1669,7 @@ function StationCameraAndProjection({
       : 116;
     // Nor under the chapter panel: above it on a portrait phone (a bottom sheet the user drags),
     // left of it elsewhere (a card on the right).
-    const panelRect = document.querySelector('.orc-panel')?.getBoundingClientRect();
+    const panelRect = !panelHidden ? document.querySelector('.orc-panel')?.getBoundingClientRect() : null;
     const overlayRect = overlay.getBoundingClientRect();
     const panelTop = panelRect && isPortrait ? panelRect.top - overlayRect.top - 28 : null;
     const panelLeft = panelRect && !isPortrait ? panelRect.left - overlayRect.left - 28 : null;
@@ -1778,6 +1782,7 @@ export const StationScene = memo(function StationScene({
   focus,
   reduced,
   panelExpanded,
+  panelHidden,
   onReady,
   overlayRef,
 }: StationSceneProps) {
@@ -1924,6 +1929,7 @@ export const StationScene = memo(function StationScene({
           focus={focus}
           reduced={reduced}
           panelExpanded={panelExpanded}
+          panelHidden={panelHidden}
           overlayRef={overlayRef}
           onReady={onReady}
         />

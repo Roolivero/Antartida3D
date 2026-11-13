@@ -84,6 +84,9 @@ export const VIEW_ELEVATION_DEG: readonly [number, number] = [5, 38];
 /** Entry view on desktop; the station sits left of the side panel. */
 export const OVERVIEW_POSE_DESKTOP: CameraPose = orbit(STATION_CENTRE, 22, VIEW_BEARING_DEG, 12, 4.8);
 
+/** Entry view on desktop with the side panel hidden; the station sits centred. */
+export const OVERVIEW_POSE_DESKTOP_FULL: CameraPose = orbit(STATION_CENTRE, 22, VIEW_BEARING_DEG, 12, 0);
+
 /** Portrait phone: farther back, the station high on the screen above the bottom panel. */
 export const OVERVIEW_POSE_MOBILE: CameraPose = orbit([STATION_CENTRE[0], 0.4, STATION_CENTRE[2]], 44, VIEW_BEARING_DEG, 15, 0, 6);
 
@@ -233,21 +236,22 @@ export function poseForHotspot(
   focus: HotspotId | null,
   mobile: boolean,
   panelExpanded = false,
-  landscape = false
+  landscape = false,
+  panelHidden = false
 ): CameraPose {
   if (!focus || focus === 'overview') {
     if (landscape) return OVERVIEW_POSE_LANDSCAPE;
     if (mobile) {
       return panelExpanded ? OVERVIEW_POSE_MOBILE_EXPANDED : OVERVIEW_POSE_MOBILE;
     }
-    return OVERVIEW_POSE_DESKTOP;
+    return panelHidden ? OVERVIEW_POSE_DESKTOP_FULL : OVERVIEW_POSE_DESKTOP;
   }
   const found = HOTSPOTS.find((h) => h.id === focus);
   if (!found) {
     if (mobile) {
       return panelExpanded ? OVERVIEW_POSE_MOBILE_EXPANDED : OVERVIEW_POSE_MOBILE;
     }
-    return OVERVIEW_POSE_DESKTOP;
+    return panelHidden ? OVERVIEW_POSE_DESKTOP_FULL : OVERVIEW_POSE_DESKTOP;
   }
   return mobile ? mobilePose(found.pose, panelExpanded) : found.pose;
 }
@@ -311,7 +315,8 @@ export function Hotspots({
       const dotX = r.left + r.width / 2;
       const dotY = r.top + r.height / 2;
       const panelEl = document.querySelector('.orc-panel');
-      const panelLeft = panelEl ? panelEl.getBoundingClientRect().left : window.innerWidth - 504;
+      const panelVisible = panelEl && !panelEl.classList.contains('is-hidden');
+      const panelLeft = panelVisible ? panelEl.getBoundingClientRect().left : window.innerWidth - 24;
       const cardWidth = 320;
       const maxRight = panelLeft - 16;
 
