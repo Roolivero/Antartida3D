@@ -118,6 +118,8 @@ pnpm bench           # benchmark de rendimiento
 
 En cumplimiento con las bases de la hackatón, se declara el uso de herramientas de inteligencia artificial en el desarrollo de los prototipos:
 
+- **Bandera argentina en Malvinas (#97):**
+  > Modelado e inspección en Blender mediante MCP, integración y verificaciones con Codex. Asta con soporte horizontal y bandera desplegada, sin animación. Por pedido del usuario, mantiene un tamaño fijo en el mundo tanto en 2D como en 3D, sin compensar el zoom. Es un símbolo ilustrativo: su ubicación y tamaño no representan un mástil real. Usa la cartografía existente; no agrega datos históricos ni recursos de terceros. Modelo editable en [`malvinas-flag.blend`](docs/diseno/modelos/malvinas-flag.blend); script de construcción y exportación en [`build-malvinas-flag.py`](packages/react-ui/scripts/build-malvinas-flag.py).
 - **App dibujada:**
   > Como exigen las bases de la hackatón: se dibujo un boceto con todas las posibles ideas y luego **el diseño se generó con Claude Design** (prototipo en `docs/diseno/design/Main.dc.html`) y **el código de este repositorio se escribió con Claude Code**, con multiples revisiones del equipo.
 - **Prototipo atlas (descartado, ya no está en el repositorio; se recupera en el commit `2ab6f80`):**
