@@ -11,6 +11,7 @@ import {
   type View,
 } from '@antartida/core';
 import { Markers, type MarkerPick } from './Markers.tsx';
+import { MalvinasFlag2D } from './MalvinasFlag2D.tsx';
 import type { Anim, Phase } from './MapView.tsx';
 
 export interface LayerProps {
@@ -83,6 +84,7 @@ export function Map2DLayer({ geo, view, anim, phase, markers, shown, onPick }: L
           dangerouslySetInnerHTML={{ __html: ink }}
         />
       </div>
+      <MalvinasFlag2D geo={geo} view={view} transition={LAYER_TRANSITION[anim]} />
       <Markers
         markers={markers}
         className={

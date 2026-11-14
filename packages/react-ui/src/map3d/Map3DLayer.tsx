@@ -51,6 +51,7 @@ import { SeaLife } from './SeaLife.tsx';
 import { Terrain } from './Terrain.tsx';
 import { SouthernLands } from './SouthernLands.tsx';
 import { Fuegia } from './Fuegia.tsx';
+import { MalvinasFlag } from './MalvinasFlag.tsx';
 import { Graticule3D } from './Graticule3D.tsx';
 import { InkEffect } from './InkEffect.ts';
 import { SeaTimeContext, useAnimationClock } from './useAnimationClock.ts';
@@ -132,6 +133,7 @@ function SceneContent({
       <Terrain wide={wide} />
       <SouthernLands />
       <Fuegia wide={wide} />
+      <MalvinasFlag wide={wide} />
       <Graticule3D />
       <SeaLife visible={phase !== 'dive'} timeUniform={seaTime} instances={seaLifeInstances} voyage={voyage} />
       <Town3D reduced={reduced} wide={wide} overlay={overlayRef} />
